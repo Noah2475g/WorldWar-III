@@ -521,6 +521,13 @@ describe('R-MP-11/AK1 Der Gast bekommt das vollstaendige Spiel', () => {
     for (const verweis of verweise) {
       // Ein Verweis nach aussen waere ein Download und damit ein gebrochenes Versprechen.
       expect(verweis, `externer Verweis in index.html: ${verweis}`).not.toMatch(/^https?:\/\//)
+      // Ein data:-Verweis (Favicon, T-M44-19) steckt in der Seite selbst und wird nicht nachgeladen;
+      // die CSP erlaubt ihn ausdruecklich (img-src data:). Er zaehlt zu den Bytes, ist aber kein Abruf.
+      if (verweis.startsWith('data:')) {
+        expect(verweis, `data:-Verweis ist kein Bild: ${verweis.slice(0, 40)}`).toMatch(/^data:image\//)
+        bytes += verweis.length
+        continue
+      }
       const datei = await httpGet(port, verweis.replace(/^\.\//, '/'))
       expect(datei.status, `nicht ausgeliefert: ${verweis}`).toBe(200)
       bytes += datei.body.length

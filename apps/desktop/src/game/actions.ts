@@ -4,6 +4,9 @@ import {
   armyHp,
   armyRange,
   canApply,
+  canUseSea,
+  edgeTravelTicks,
+  isAirFormation,
   currentDay,
   exchangeAmount,
   planRoute,
@@ -301,6 +304,15 @@ export function recruitActions(ctx: ActionContext, provinceId: string): ActionSp
   })
 }
 
+/**
+ * „Hauptstadt verlegen“ für eine eigene Provinz — und **keine Knöpfe**, wenn sie schon die Hauptstadt ist
+ * (T-M44-06, R-UX-03/AK1): ein Befehl, der an diesem Ort nie gelingen kann, wird nicht angeboten.
+ */
+export function capitalActions(ctx: ActionContext, provinceId: string): ActionSpec[] {
+  if (ctx.state.players[ctx.playerId]?.capitalProvinceId === provinceId) return []
+  return [capitalAction(ctx, provinceId)]
+}
+
 export function capitalAction(ctx: ActionContext, provinceId: string): ActionSpec {
   return checked(ctx, { type: 'SET_CAPITAL', playerId: ctx.playerId, provinceId }, 'set-capital', t('actions.setCapital'))
 }
@@ -531,6 +543,131 @@ export function planArrival(
   // (T-M32-01) — die Vorschau muss dieselbe Rechnung machen wie der Kern.
   const arrivalTick = route.arrivalTick + Math.max(0, departInTicks)
   return { arrivalTick, text: arrival(ctx.state.tick, arrivalTick, ctx.ticksPerDay) }
+}
+
+/**
+ * Die Marschziele einer Armee: erreichbare mit Ankunft zuerst, unerreichbare getrennt (T-M44-11,
+ * R-UX-04/AK2).
+ *
+ * **Gemessen, bevor etwas gebaut wurde** (2026-10-03, Weltkarte, Vereinigte Staaten, „Mittlerer Westen“,
+ * `planRoute` einzeln gegen alle 236 anderen Provinzen, Maschine unter Last durch andere Läufe):
+ *  - Infanterie zu Fuß: 33 erreichbar, 203 nicht; 10–25 ms warm, **der erste Durchlauf kalt 68–108 ms**.
+ *    Gerade die unerreichbaren sind teuer — jede Suche durchsucht den ganzen Graphen, bevor sie aufgibt.
+ *  - mit Transportschiff: alle 236 erreichbar, **118–334 ms kalt** — eine lange Aufgabe weit über 50 ms
+ *    genau beim Öffnen. Zwischenspeichern allein hilft dem ersten Öffnen nicht.
+ *
+ * Darum zwei Maßnahmen, beide ohne Kernänderung:
+ *  1. **Eine einzige Suche von der Armee aus statt 236 Suchen** (`routeCostsFrom`): derselbe Graph, dieselbe
+ *     Kantenkostenfunktion des Kerns (`edgeTravelTicks`, nur Seekanten mit `canUseSea` — genau das, was
+ *     `planRoute` über `findPath` tut), nur dass der Dijkstra alle Ziele auf einmal beantwortet. Die Kosten sind
+ *     dieselben (kürzeste Wege sind eindeutig in ihren Kosten; Gleichstände ändern nur den Weg, nicht die
+ *     Ankunft). Ein Test belegt über die ganze Weltkarte, für Land- und Seearmee, dass Ankunft und
+ *     Erreichbarkeit mit `planRoute` für jedes einzelne Ziel übereinstimmen.
+ *  2. **Zwischengespeichert je (Armee, Ort, Spieltag)** (`MarchTargetCache`): die Liste wird beim Öffnen
+ *     gerechnet und danach nicht mehr, auch wenn sich der Stand mit jedem Tick ändert.
+ */
+export interface MarchTarget {
+  id: string
+  name: string
+  /** Absoluter Ankunftstick bei sofortigem Abmarsch; fehlt bei unerreichbaren Zielen. */
+  arrivalTick: number | null
+}
+
+export interface MarchTargets {
+  /** Nach Ankunft, bei Gleichstand nach Name. */
+  reachable: MarchTarget[]
+  /** Nach Name; im Panel gesperrt. */
+  unreachable: MarchTarget[]
+}
+
+/** Der Zwischenspeicher der Zielliste — je (Armee, Ort, Spieltag), klein gehalten, mit Zähler für die Probe. */
+export class MarchTargetCache {
+  private readonly entries = new Map<string, MarchTargets>()
+  /** Wie oft die Liste wirklich gerechnet wurde (nicht: abgefragt) — die Probe liest es. */
+  computed = 0
+
+  constructor(private readonly capacity = 16) {}
+
+  get(key: string, compute: () => MarchTargets): MarchTargets {
+    const hit = this.entries.get(key)
+    if (hit) return hit
+    const fresh = compute()
+    this.computed += 1
+    if (this.entries.size >= this.capacity) this.entries.delete(this.entries.keys().next().value as string)
+    this.entries.set(key, fresh)
+    return fresh
+  }
+
+  /** Eine neue Partie oder ein geladener Stand: Armeekennungen zweier Partien dürfen nichts teilen. */
+  clear(): void {
+    this.entries.clear()
+  }
+}
+
+/**
+ * Die Kosten (in Ticks) von der Armee zu jeder erreichbaren Provinz — eine Suche für alle Ziele.
+ * Unerreichbare Provinzen fehlen im Ergebnis.
+ */
+export function routeCostsFrom(state: GameState, army: Army, map: MapData, rules: Rules): Map<string, number> {
+  const sea = canUseSea(army, rules)
+  const cost = new Map<string, number>([[army.locationProvinceId, 0]])
+  const settled = new Set<string>()
+  for (;;) {
+    // Der naechste ungeklaerte Ort mit den geringsten Kosten; bei Gleichstand der kleinere Name (wie `findPath`).
+    let here: string | null = null
+    let best = Infinity
+    for (const [id, c] of cost) {
+      if (settled.has(id)) continue
+      if (c < best || (c === best && here !== null && id < here)) {
+        best = c
+        here = id
+      }
+    }
+    if (here === null) return cost
+    settled.add(here)
+    for (const index of map.edgesByProvince[here] ?? []) {
+      const edge = map.edges[index]!
+      if (edge.kind === 'sea' && !sea) continue
+      const next = edge.a === here ? edge.b : edge.a
+      if (settled.has(next)) continue
+      const total = best + edgeTravelTicks(state, army, edge, here, next, rules)
+      if (total < (cost.get(next) ?? Infinity)) cost.set(next, total)
+    }
+  }
+}
+
+export function marchTargets(
+  ctx: ActionContext,
+  armyId: string,
+  nameOfProvince: (id: string) => string,
+  cache?: MarchTargetCache,
+): MarchTargets {
+  const army = ctx.state.armies[armyId]
+  if (!army) return { reachable: [], unreachable: [] }
+  const day = Math.trunc(ctx.state.tick / ctx.ticksPerDay)
+  // Der Schluessel ist (Armee, Ort, Spieltag); ob die Armee Schiffe hat, steht dabei, weil das Zusammenlegen
+  // oder Abspalten innerhalb eines Tages die Seekanten oeffnet oder schliesst, ohne dass sich Ort oder Tag aendern.
+  const key = `${army.id}|${army.locationProvinceId}|${day}|${canUseSea(army, ctx.rules) ? 'sea' : 'land'}`
+  const compute = (): MarchTargets => {
+    const costs = routeCostsFrom(ctx.state, army, ctx.map, ctx.rules)
+    // Flugverbaende landen nur auf eigenen Flugplaetzen (`commands/move.ts`): alles andere ist fuer sie unerreichbar.
+    const air = isAirFormation(army, ctx.rules)
+    const reachable: MarchTarget[] = []
+    const unreachable: MarchTarget[] = []
+    for (const province of ctx.map.provinces) {
+      if (province.id === army.locationProvinceId) continue
+      const entry = { id: province.id, name: nameOfProvince(province.id), arrivalTick: null as number | null }
+      const target = ctx.state.provinces[province.id]
+      const airOk = !air || (target?.owner === ctx.playerId && (target.buildings.airfield ?? 0) > 0)
+      const cost = costs.get(province.id)
+      if (cost !== undefined && airOk) reachable.push({ ...entry, arrivalTick: ctx.state.tick + cost })
+      else unreachable.push(entry)
+    }
+    reachable.sort((a, b) => a.arrivalTick! - b.arrivalTick! || a.name.localeCompare(b.name, 'de'))
+    unreachable.sort((a, b) => a.name.localeCompare(b.name, 'de'))
+    return { reachable, unreachable }
+  }
+  return cache ? cache.get(key, compute) : compute()
 }
 
 /**
@@ -822,53 +959,61 @@ function describeTradeRejection(
   offer?: TradeOffer,
 ): string {
   const detail = result.detail ?? {}
-  const provinceId = typeof detail.provinceId === 'string' ? detail.provinceId : undefined
+  // (`provinceId` liest jetzt `describeRejection`, T-M44-06)
   const reason = typeof detail.reason === 'string' ? detail.reason : undefined
 
+  // T-M44-06 (R-UX-03/AK1): die Tabelle (Befehlstyp, Grund) → Satz steht jetzt in `rejections.ts`
+  // (`REASON_KEYS`, dieselben `trade.blocked`-Saetze); hier bleibt nur die Provinznamen-Zuordnung.
   if (result.code === 'INVALID_TARGET' && reason !== undefined) {
-    switch (reason) {
-      // E1/N2 (Nacharbeit Durchsicht 2026-09-25): scheitert die Annahme an einer Provinz der
-      // GEBENDEN (Anbieter-)Seite, traegt schon der Kern nur noch diesen neutralen Grund — ohne
-      // Provinz, ohne Ursache. Bis 2026-09-25 stand hier `eigene Armeen`/`fremde Armeen` mit
-      // `provinceId`, und nur diese Oberflaeche verdeckte es (Falle 7, Test A7); jetzt weiss
-      // auch `COMMAND_REJECTED` selbst nichts mehr davon.
-      case 'lapsing':
-        return t('trade.blocked.lapsing')
-      case 'nicht im Besitz':
-        return t('trade.blocked.notOwned', { province: nameOfProvince(provinceId ?? '') })
-      case 'Hauptstadt':
-        return t('trade.blocked.capital', { province: nameOfProvince(provinceId ?? '') })
-      case 'umkämpft':
-        return t('trade.blocked.contested', { province: nameOfProvince(provinceId ?? '') })
-      case 'eigene Armeen':
-        return t('trade.blocked.ownArmies', { province: nameOfProvince(provinceId ?? '') })
-      case 'fremde Armeen':
-        return t('trade.blocked.foreignArmies', { province: nameOfProvince(provinceId ?? '') })
-      case 'doppelte Provinz':
-        return t('trade.blocked.duplicate')
-      case 'leeres Angebot':
-        return t('trade.blocked.empty')
-      case 'gleicher Rohstoff auf beiden Seiten':
-        return t('trade.blocked.sameResource')
-      case 'über der Höchstmenge': {
-        const resource = typeof detail.resource === 'string' ? detail.resource : undefined
-        const max = resource === 'money' ? ctx.rules.constants.tradeMaxMoney : ctx.rules.constants.tradeMaxResource
-        return t('trade.blocked.limit', { max: amount(max), resource: resource ? t(`resources.${resource}`) : '' })
-      }
-      case 'ungültige Menge':
-      case 'unbekannter Rohstoff':
-      case 'ungültiges Angebot':
-        return t('trade.blocked.invalidAmount')
-      case 'im Krieg':
-        return t('trade.blocked.war')
-      case 'Kriegserklärung läuft':
-        return t('trade.blocked.declaration')
-      case 'Anbieter ausgeschieden':
-        return t('trade.blocked.gone')
-      default:
-        break
-    }
+    return describeRejection(result, command, { ...ctx, nameOfProvince })
   }
+
+  // LOESCHVERMERK (Review): bis T-M44-06 stand hier der Block `switch (reason)` mit den Handelsgruenden,
+  // wortgleich nach `rejections.ts` gezogen (REASON_KEYS, OFFER_TRADE/ACCEPT_TRADE) — Wortlaut:
+  //   if (result.code === 'INVALID_TARGET' && reason !== undefined) {
+  //     switch (reason) {
+  //       // E1/N2 (Nacharbeit Durchsicht 2026-09-25): scheitert die Annahme an einer Provinz der
+  //       // GEBENDEN (Anbieter-)Seite, traegt schon der Kern nur noch diesen neutralen Grund — ohne
+  //       // Provinz, ohne Ursache. Bis 2026-09-25 stand hier `eigene Armeen`/`fremde Armeen` mit
+  //       // `provinceId`, und nur diese Oberflaeche verdeckte es (Falle 7, Test A7); jetzt weiss
+  //       // auch `COMMAND_REJECTED` selbst nichts mehr davon.
+  //       case 'lapsing':
+  //         return t('trade.blocked.lapsing')
+  //       case 'nicht im Besitz':
+  //         return t('trade.blocked.notOwned', { province: nameOfProvince(provinceId ?? '') })
+  //       case 'Hauptstadt':
+  //         return t('trade.blocked.capital', { province: nameOfProvince(provinceId ?? '') })
+  //       case 'umkämpft':
+  //         return t('trade.blocked.contested', { province: nameOfProvince(provinceId ?? '') })
+  //       case 'eigene Armeen':
+  //         return t('trade.blocked.ownArmies', { province: nameOfProvince(provinceId ?? '') })
+  //       case 'fremde Armeen':
+  //         return t('trade.blocked.foreignArmies', { province: nameOfProvince(provinceId ?? '') })
+  //       case 'doppelte Provinz':
+  //         return t('trade.blocked.duplicate')
+  //       case 'leeres Angebot':
+  //         return t('trade.blocked.empty')
+  //       case 'gleicher Rohstoff auf beiden Seiten':
+  //         return t('trade.blocked.sameResource')
+  //       case 'über der Höchstmenge': {
+  //         const resource = typeof detail.resource === 'string' ? detail.resource : undefined
+  //         const max = resource === 'money' ? ctx.rules.constants.tradeMaxMoney : ctx.rules.constants.tradeMaxResource
+  //         return t('trade.blocked.limit', { max: amount(max), resource: resource ? t(`resources.${resource}`) : '' })
+  //       }
+  //       case 'ungültige Menge':
+  //       case 'unbekannter Rohstoff':
+  //       case 'ungültiges Angebot':
+  //         return t('trade.blocked.invalidAmount')
+  //       case 'im Krieg':
+  //         return t('trade.blocked.war')
+  //       case 'Kriegserklärung läuft':
+  //         return t('trade.blocked.declaration')
+  //       case 'Anbieter ausgeschieden':
+  //         return t('trade.blocked.gone')
+  //       default:
+  //         break
+  //     }
+  //   }
 
   if (result.code === 'PLAYER_ELIMINATED') return t('trade.blocked.gone')
 

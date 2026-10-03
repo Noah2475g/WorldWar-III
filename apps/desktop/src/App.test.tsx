@@ -98,6 +98,12 @@ const waehleErsteMacht = (panel: HTMLElement) => {
   fireEvent.click(within(zeile).getAllByRole('button')[0]!)
 }
 
+/** „Krieg erklären“ fragt nach (T-M44-09b): erster Klick nennt die Folge, der zweite sendet den Befehl. */
+function klickeKrieg(scope: { getByRole: (role: string, options?: { name: string | RegExp }) => HTMLElement }): void {
+  fireEvent.click(scope.getByRole('button', { name: 'Krieg erklären' }))
+  fireEvent.click(scope.getByRole('button', { name: /noch einmal klicken/ }))
+}
+
 describe('R-UI-03 Die Partie startet', () => {
   it('zeigt vor dem Start den Dialog', () => {
     render(<App map={world} rules={TEST_RULES} maps={maps} />)
@@ -139,6 +145,24 @@ describe('R-UI-03 Die Partie startet', () => {
   })
 })
 
+describe('R-UX-01 T-M44-03b Das Blatt oeffnet auf halb', () => {
+  it('ein gewaehltes Panel traegt data-sheet=half, Griff schaltet auf voll, Escape schliesst', () => {
+    startGame()
+    const app = document.querySelector('.app')!
+    expect(app.getAttribute('data-sheet')).toBeNull()
+    const select = document.querySelector('.picker select') as HTMLSelectElement
+    const own = [...select.querySelectorAll('optgroup')[0]!.querySelectorAll('option')][0]!
+    fireEvent.change(select, { target: { value: own.value } })
+    expect(app.getAttribute('data-sheet')).toBe('half')
+
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(t('sheet.handle')) }))
+    expect(app.getAttribute('data-sheet')).toBe('full')
+
+    fireEvent.keyDown(screen.getByRole('button', { name: new RegExp(t('sheet.handle')) }), { key: 'Escape' })
+    expect(app.getAttribute('data-panel')).toBe('closed')
+  })
+})
+
 describe('R-UI-06 Bedienung ohne Maus', () => {
   it('startet und stoppt die Zeit mit der Leertaste', () => {
     startGame()
@@ -177,10 +201,10 @@ describe('R-UI-06 Bedienung ohne Maus', () => {
     startGame()
 
     fireEvent.keyDown(window, { key: 'F1' })
-    expect(screen.getByRole('dialog', { name: 'Tastatur' })).toBeTruthy()
+    expect(screen.getByRole('dialog', { name: 'Tastenkürzel' })).toBeTruthy()
 
     fireEvent.keyDown(window, { key: 'Escape' })
-    expect(screen.queryByRole('dialog', { name: 'Tastatur' })).toBeNull()
+    expect(screen.queryByRole('dialog', { name: 'Tastenkürzel' })).toBeNull()
   })
 
   it('oeffnet die Spielstaende mit Strg+S', () => {
@@ -258,7 +282,7 @@ describe('R-TIME-04 Datum und Uhrzeit sind jederzeit sichtbar', () => {
     startGame()
     fireEvent.keyDown(window, { key: 'F1' })
 
-    expect(screen.getByRole('dialog', { name: 'Tastatur' })).toBeTruthy()
+    expect(screen.getByRole('dialog', { name: 'Tastenkürzel' })).toBeTruthy()
     expect(clock()).toBeTruthy()
   })
 
@@ -342,7 +366,7 @@ describe('R-TIME-06 Das Protokoll spricht in ganzen Zeilen', () => {
       fireEvent.keyDown(window, { key: 'd' })
       const panel = screen.getByRole('region', { name: 'Diplomatie' })
       waehleErsteMacht(panel)
-      fireEvent.click(within(panel).getByRole('button', { name: 'Krieg erklären' }))
+      klickeKrieg(within(panel))
       fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
 
       const log = screen.getByRole('region', { name: 'Ereignisse' })
@@ -581,7 +605,7 @@ describe('R-UI-05 Befehle aus der Oberflaeche', () => {
     fireEvent.keyDown(window, { key: 'd' })
     const panel = screen.getByRole('region', { name: 'Diplomatie' })
     waehleErsteMacht(panel)
-    fireEvent.click(within(panel).getByRole('button', { name: 'Krieg erklären' }))
+    klickeKrieg(within(panel))
     // Der Befehl wirkt im naechsten Tick (T-M22-05).
     fastForward(1)
 
@@ -747,7 +771,7 @@ describe('R-UI-05 Jeder Befehl quittiert sofort sichtbar', () => {
     fireEvent.keyDown(window, { key: 'd' })
     const panel = screen.getByRole('region', { name: 'Diplomatie' })
     waehleErsteMacht(panel)
-    fireEvent.click(within(panel).getByRole('button', { name: 'Krieg erklären' }))
+    klickeKrieg(within(panel))
 
     // Die Quittung steht am Knopf — und bei stehender Uhr nennt sie das Weiterlaufen.
     expect(panel.textContent).toContain('befohlen')
@@ -767,10 +791,9 @@ describe('R-UI-05 Jeder Befehl quittiert sofort sichtbar', () => {
     fireEvent.keyDown(window, { key: 'd' })
     const panel = screen.getByRole('region', { name: 'Diplomatie' })
     waehleErsteMacht(panel)
-    const war = within(panel).getByRole('button', { name: 'Krieg erklären' })
-    fireEvent.click(war)
+    klickeKrieg(within(panel))
 
-    expect(war.hasAttribute('disabled')).toBe(true)
+    expect(within(panel).getByRole('button', { name: 'Krieg erklären' }).hasAttribute('disabled')).toBe(true)
   })
 
   /**
@@ -987,6 +1010,71 @@ describe('T-M41-04/T-M41-17 Die Uhrschleife im Spiel verliert keine Ticks', () =
 
     expect(screen.getByText(/Tag \d+ · \d{2}:\d{2}/).textContent).toMatch(/Tag 5 · 04:00/)
   })
+
+})
+
+describe('R-UI-15 Escape blendet den Tooltip aus, ohne die Uhr in eine Schleife zu treiben', () => {
+  /**
+   * Befund aus der UX-Aufnahme (T-M44-02), am Dev-Server: Provinz waehlen, "Menü" oeffnen,
+   * Escape, Tempo 100 — nach wenigen Sekunden meldet React "Maximum update depth exceeded"
+   * ueber `console.error`. Escape schliesst dabei auch das Provinzpanel; das ist aber nicht
+   * die Ursache. Entscheidend ist, dass Escape den Tooltip ausblendet: solange er steht,
+   * schiebt seine Messung Commits ohne Update zwischen die Bilder, und die setzen Reacts
+   * Zaehler fuer "Update aus einem Effekt" zurueck. Ohne Tooltip zaehlte jeder Tick, weil
+   * der Effekt der Spionage-Meldungen `setNews` bei jedem Tick aufrief, auch ohne Aenderung.
+   *
+   * Dieser Test laeuft NICHT unter `act()`. `act` leert nach jedem Bild alle Effekte, und
+   * genau dann verwirft React einen Aufruf, der nichts aendert, schon vorab — der Fehler
+   * braucht ein Bild, das zwischen Commit und Effekten ankommt, wie im Browser. Dafuer
+   * laeuft Reacts eigener Scheduler, und `performance.now` schreitet bei jedem Aufruf um
+   * 2 ms fort: der Scheduler gibt dann nach jedem Commit ab (Zeitscheibe 5 ms), und das
+   * naechste Bild kommt vor den Effekten an.
+   */
+  let jetzt = 0
+  const actUmgebung = (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean | undefined }).IS_REACT_ACT_ENVIRONMENT
+
+  beforeEach(() => {
+    jetzt = 1000
+    vi.spyOn(performance, 'now').mockImplementation(() => (jetzt += 2))
+    vi.stubGlobal('requestAnimationFrame', (rueckruf: FrameRequestCallback) =>
+      setTimeout(() => rueckruf(performance.now()), 0),
+    )
+  })
+
+  afterEach(() => {
+    ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean | undefined }).IS_REACT_ACT_ENVIRONMENT = actUmgebung
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+  })
+
+  it('R-UI-15 Provinz waehlen, Menue, Escape, Tempo 100: keine "Maximum update depth"-Meldung', async () => {
+    const fehler = vi.spyOn(console, 'error').mockImplementation(() => {})
+    startGame({ storage: new MemoryStorage() })
+    fireEvent.change(screen.getByRole('combobox', { name: 'Provinz' }), { target: { value: 'USA-MW' } })
+    expect(screen.getByRole('button', { name: 'Kaserne bauen' })).toBeTruthy()
+
+    // Im Browser schliesst EIN Escape im Dialog Dialog und Panel: der Dialog schliesst sich
+    // selbst, React rendert synchron, und der neu gebundene Fenster-Hoerer laeuft fuer
+    // dieselbe Taste noch einmal durch die Kaskade. Unter Testing Library rendert React erst
+    // nach dem Ereignis — dort braucht derselbe Endzustand ein zweites Escape.
+    fireEvent.click(screen.getByRole('button', { name: 'Menü' }))
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
+    if (screen.queryByRole('button', { name: 'Kaserne bauen' })) fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Kaserne bauen' })).toBeNull()
+
+    ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean | undefined }).IS_REACT_ACT_ENVIRONMENT = false
+    fireEvent.click(within(screen.getByRole('group', { name: 'Geschwindigkeit' })).getByRole('button', { name: '100' }))
+    // Bis zur Meldung braucht React mehr als 50 Bilder in Folge.
+    const tagAmStart = screen.getByText(/Tag \d+ · \d{2}:\d{2}/).textContent
+    await new Promise((fertig) => setTimeout(fertig, 4000))
+    // Die Uhr lief wirklich — sonst bewiese das Schweigen der Konsole nichts.
+    expect(screen.getByText(/Tag \d+ · \d{2}:\d{2}/).textContent).not.toBe(tagAmStart)
+    fireEvent.click(within(screen.getByRole('group', { name: 'Geschwindigkeit' })).getByRole('button', { name: 'Pause' }))
+
+    const schleife = fehler.mock.calls.filter((args) => args.some((arg) => String(arg).includes('Maximum update depth')))
+    expect(schleife.length, 'React meldet setState in einem Effekt bei jedem Bild').toBe(0)
+  }, 20_000)
 })
 
 /**
@@ -1500,7 +1588,11 @@ describe('R-UI-05 Das Menue kennt drei Wege — auch aus der laufenden Partie', 
     startGame({ storage: new MemoryStorage() })
 
     fireEvent.click(screen.getByRole('button', { name: 'Menü' }))
+    // R-UX-04/AK1 (T-M44-09a): aus der laufenden Partie braucht „Neue Partie“ den zweiten Klick
+    // am selben Knopf; nach dem ersten ist noch kein Dialog da.
     fireEvent.click(screen.getByRole('button', { name: 'Neue Partie' }))
+    expect(screen.queryByRole('dialog', { name: 'Neue Partie' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: /Partie wird verlassen/ }))
 
     expect(screen.getByRole('dialog', { name: 'Neue Partie' })).toBeTruthy()
     // Abbrechen laesst die laufende Partie unberuehrt.
@@ -1778,6 +1870,24 @@ describe('R-UI-14 Die Meldungen erreichen den Spieler', () => {
       expect(armeePanel.textContent).toContain(army.name)
     })
 
+    it('T-M44-12 Zurueck im Armeepanel fuehrt zur Provinz der Armee', async () => {
+      const { state, p1, hostProvinceId, hostId } = grenzfall()
+      placeArmy(state, { owner: p1, at: hostProvinceId, units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
+      const key = relationKey(p1, hostId)
+      state.diplomacy.relations[key]!.state = 'truce'
+      state.diplomacy.relations[key]!.sinceTick = state.tick
+
+      const meldungen = await zeige(state)
+      fireEvent.click(await within(meldungen).findByRole('button', { name: /^Räumfrist: / }))
+      const armeePanel = await screen.findByRole('region', { name: t('army.title') })
+
+      fireEvent.click(within(armeePanel).getByRole('button', { name: t('panel.back') }))
+
+      const provinzPanel = await screen.findByRole('region', { name: state.provinces[hostProvinceId]!.name })
+      expect(provinzPanel).toBeTruthy()
+      expect(screen.queryByRole('region', { name: t('army.title') })).toBeNull()
+    })
+
     it('AP2 ohne versetzte Armee steht keine Raeumfrist-Meldung', async () => {
       const { state, p1, hostId } = grenzfall()
       const key = relationKey(p1, hostId)
@@ -1814,7 +1924,7 @@ describe('R-UI-14 Die Meldungen erreichen den Spieler', () => {
 
       wähle(nationOf(p2))
       const gruppeP2 = screen.getByRole('region', { name: `Verträge mit ${nationOf(p2)}` })
-      fireEvent.click(within(gruppeP2).getByRole('button', { name: 'Krieg erklären' }))
+      klickeKrieg(within(gruppeP2))
       expect(within(gruppeP2).getByText(/befohlen/)).toBeTruthy()
 
       // Bei stehender Uhr (T-M22-05) zur dritten Macht wechseln: deren eigener Knopf
@@ -1944,7 +2054,7 @@ describe('T-M41-13 Tempo waehrend des Vorspulens verliert keine Befehle', () => 
     fireEvent.keyDown(window, { key: 'd' })
     const panel = screen.getByRole('region', { name: 'Diplomatie' })
     waehleErsteMacht(panel)
-    fireEvent.click(within(panel).getByRole('button', { name: 'Krieg erklären' }))
+    klickeKrieg(within(panel))
   }
 
   const beideAngewandt = () => {
@@ -2061,12 +2171,56 @@ describe('T-M31-01 Der Tooltip folgt auch der Tastaturauswahl', () => {
     const capital = world.startPositions[0]!.capital
     expect(screen.queryByRole('tooltip')).toBeNull()
 
+    // Seit T-M44-07 gilt der Tooltip der Auswahl nur, wenn die Tastatur gewaehlt hat — also ein Tastendruck davor.
+    fireEvent.keyDown(screen.getByRole('combobox', { name: 'Provinz' }), { key: 'ArrowDown' })
     fireEvent.change(screen.getByRole('combobox', { name: 'Provinz' }), { target: { value: capital } })
     const tip = screen.getByRole('tooltip')
     expect(tip.textContent).toContain(world.provinces.find((p) => p.id === capital)!.name)
     expect(tip.textContent).toMatch(/Moral/)
 
     fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.queryByRole('tooltip')).toBeNull()
+  })
+})
+
+/**
+ * R-UX-02/AK3 · Der Tooltip der Auswahl (T-M44-07, Befund B-06).
+ *
+ * Gemessen am 2026-10-03: „Mittlerer Westen / Moral / Armeen" lag ueber der Depesche und blieb
+ * stehen, obwohl der Zeiger laengst weg war — `tooltipId = hover?.id ?? selectedProvince` haelt
+ * ihn nach jeder Auswahl. Absicht war es nur fuer die Tastatur (T-M31-01).
+ */
+describe('R-UX-02/AK3 Der Auswahl-Tooltip gehoert der Tastatur und nie einem Dialog', () => {
+  const picker = () => screen.getByRole('combobox', { name: 'Provinz' })
+  const waehle = () =>
+    fireEvent.change(picker(), { target: { value: world.startPositions[0]!.capital } })
+
+  it('zeigt nach einer Auswahl per Maus keinen Tooltip, wenn der Zeiger nicht auf der Karte ist (heute rot)', () => {
+    startGame()
+    fireEvent.pointerDown(picker())
+    waehle()
+
+    expect(screen.queryByRole('tooltip')).toBeNull()
+  })
+
+  it('zeigt nach einer Auswahl per Tastatur den Tooltip — ohne „Klicken: auswaehlen"', () => {
+    startGame()
+    fireEvent.keyDown(picker(), { key: 'ArrowDown' })
+    waehle()
+
+    const tip = screen.getByRole('tooltip')
+    expect(tip.textContent).toMatch(/Moral/)
+    expect(tip.textContent).not.toMatch(/Klick|Maus/)
+  })
+
+  it('zeigt bei offenem Dialog keinen Tooltip, auch wenn die Tastatur die Provinz gewaehlt hat (heute rot)', () => {
+    startGame()
+    fireEvent.keyDown(picker(), { key: 'ArrowDown' })
+    waehle()
+    expect(screen.getByRole('tooltip')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Menü' }))
+    expect(screen.getByRole('dialog')).toBeTruthy()
     expect(screen.queryByRole('tooltip')).toBeNull()
   })
 })

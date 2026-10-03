@@ -1,0 +1,202 @@
+{
+  "map": "world",
+  "seed": 1683,
+  "players": 8,
+  "ai": 7,
+  "nations": [
+    "Vereinigte Staaten",
+    "Kanada",
+    "Mexiko",
+    "Brasilien",
+    "Argentinien",
+    "Russland",
+    "China",
+    "Indien"
+  ],
+  "decidedOnDay": 594,
+  "winner": "p7",
+  "condition": "points",
+  "warDeclarations": 6,
+  "captures": 1467,
+  "battles": 3074,
+  "factory": {
+    "highestLevelPerNation": {
+      "Vereinigte Staaten": 0,
+      "Kanada": 0,
+      "Mexiko": 3,
+      "Brasilien": 2,
+      "Argentinien": 3,
+      "Russland": 0,
+      "China": 3,
+      "Indien": 2
+    },
+    "provincesAtLevel2OrMore": 45,
+    "provincesAtLevel3": 13,
+    "upgradesStartedToLevel2": 57,
+    "upgradesStartedToLevel3": 14
+  },
+  "cities": {
+    "Vereinigte Staaten": {
+      "staedte": 3,
+      "eisenbahn": 0,
+      "festung": 0,
+      "festung2": 0,
+      "fabrikOhneEisenbahn": 0
+    },
+    "Kanada": {
+      "staedte": 0,
+      "eisenbahn": 0,
+      "festung": 0,
+      "festung2": 0,
+      "fabrikOhneEisenbahn": 0
+    },
+    "Mexiko": {
+      "staedte": 3,
+      "eisenbahn": 3,
+      "festung": 3,
+      "festung2": 3,
+      "fabrikOhneEisenbahn": 0
+    },
+    "Brasilien": {
+      "staedte": 4,
+      "eisenbahn": 1,
+      "festung": 4,
+      "festung2": 4,
+      "fabrikOhneEisenbahn": 3
+    },
+    "Argentinien": {
+      "staedte": 5,
+      "eisenbahn": 5,
+      "festung": 5,
+      "festung2": 5,
+      "fabrikOhneEisenbahn": 0
+    },
+    "Russland": {
+      "staedte": 0,
+      "eisenbahn": 0,
+      "festung": 0,
+      "festung2": 0,
+      "fabrikOhneEisenbahn": 0
+    },
+    "China": {
+      "staedte": 55,
+      "eisenbahn": 51,
+      "festung": 52,
+      "festung2": 51,
+      "fabrikOhneEisenbahn": 3
+    },
+    "Indien": {
+      "staedte": 10,
+      "eisenbahn": 2,
+      "festung": 2,
+      "festung2": 1,
+      "fabrikOhneEisenbahn": 0
+    }
+  },
+  "goals": {
+    "marks": {
+      "provinces": 25,
+      "pointShareFirst": 400,
+      "populationShare": 350,
+      "pointShareSecond": 600
+    },
+    "winner": {
+      "provinces": 159,
+      "pointShareFirst": 275,
+      "populationShare": 440,
+      "pointShareSecond": 539
+    },
+    "perNation": {
+      "Vereinigte Staaten": {
+        "provinces": null,
+        "pointShareFirst": null,
+        "populationShare": null,
+        "pointShareSecond": null
+      },
+      "Kanada": {
+        "provinces": null,
+        "pointShareFirst": null,
+        "populationShare": null,
+        "pointShareSecond": null
+      },
+      "Mexiko": {
+        "provinces": null,
+        "pointShareFirst": null,
+        "populationShare": null,
+        "pointShareSecond": null
+      },
+      "Brasilien": {
+        "provinces": null,
+        "pointShareFirst": null,
+        "populationShare": null,
+        "pointShareSecond": null
+      },
+      "Argentinien": {
+        "provinces": null,
+        "pointShareFirst": null,
+        "populationShare": null,
+        "pointShareSecond": null
+      },
+      "Russland": {
+        "provinces": 127,
+        "pointShareFirst": null,
+        "populationShare": null,
+        "pointShareSecond": null
+      },
+      "China": {
+        "provinces": 159,
+        "pointShareFirst": 275,
+        "populationShare": 440,
+        "pointShareSecond": 539
+      },
+      "Indien": {
+        "provinces": 141,
+        "pointShareFirst": null,
+        "populationShare": null,
+        "pointShareSecond": null
+      }
+    },
+    "reachedEvents": 6
+  },
+  "aiMemory": {
+    "Kanada": {
+      "eintraege": 3,
+      "armeen": 3,
+      "veraltet": 0
+    },
+    "Mexiko": {
+      "eintraege": 15,
+      "armeen": 15,
+      "veraltet": 0
+    },
+    "Brasilien": {
+      "eintraege": 8,
+      "armeen": 8,
+      "veraltet": 0
+    },
+    "Argentinien": {
+      "eintraege": 12,
+      "armeen": 12,
+      "veraltet": 0
+    },
+    "Russland": {
+      "eintraege": 0,
+      "armeen": 0,
+      "veraltet": 0
+    },
+    "China": {
+      "eintraege": 151,
+      "armeen": 151,
+      "veraltet": 0
+    },
+    "Indien": {
+      "eintraege": 117,
+      "armeen": 117,
+      "veraltet": 0
+    }
+  },
+  "aiMemoryKB": 7,
+  "stateKB": 340,
+  "maxDays": 1500,
+  "measuredAt": "2026-10-03T12:14:51.174Z"
+}

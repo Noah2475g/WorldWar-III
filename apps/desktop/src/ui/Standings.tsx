@@ -4,9 +4,12 @@ import { isPluralNation } from '../i18n/grammar.ts'
 import { plural, t } from '../i18n/text.ts'
 import { LineChart, type ChartRole, type ChartSeries } from './charts/LineChart.tsx'
 import { TOKENS } from './tokens.ts'
+import { Dialog } from './Dialogs.tsx'
 import { amount } from './format.ts'
+import { victoryProgress } from './Header.tsx'
 import { Meter } from './Meter.tsx'
 import { NationName } from './Nation.tsx'
+import { useScrollableTab } from './useScrollableTab.ts'
 
 /**
  * Where everyone stands (T-M13-12, R-UI-13).
@@ -178,6 +181,9 @@ export function StandingsPanel({
   /** Die Zeitreihe der Partie (T-M25-01); ohne sie bleibt es beim ehrlichen Satz. */
   timeline?: readonly TimelineEntry[]
 }) {
+  // Die Tabelle rollt in sich, wo die Seitenleiste schmal ist (touch.css, Telefon quer) — dann
+  // braucht sie einen Tabstopp (T-M44-08, R-UX-06/AK1: axe `scrollable-region-focusable`).
+  const tableScroll = useScrollableTab<HTMLTableElement>()
   const rows = standingsRows(view, nameOf)
   if (rows.length === 0) return null
 
@@ -209,7 +215,7 @@ export function StandingsPanel({
             : t('standings.historyWaiting', { days: days.size })}
         </p>
       )}
-      <table className="table">
+      <table className="table" aria-label={t('standings.title')} ref={tableScroll.ref} tabIndex={tableScroll.tabIndex}>
         <thead>
           <tr>
             <th>{t('newGame.nation')}</th>
@@ -255,6 +261,30 @@ export function StandingsPanel({
  * in three figures, and lets the player close it — a game that cannot be looked at
  * after the last move is not an ending, it is a crash with a caption.
  */
+// LOESCHVERMERK (Review): bis T-M44-08/-15 stand der Endedialog als eigenes Geruest ohne Fokusfalle und Escape.
+// Ersetzt durch `Dialog` (Fokus-Einzug, Falle, Escape) und eine sichtbare Ueberschrift mit dem Ausgang. Wortlaut davor:
+//
+//   <div className="dialog-backdrop">
+//     <div className="dialog" role="dialog" aria-modal="true" aria-label={t('standings.victoryTitle')}>
+//       <div className="dialog__head"><h2>{t('standings.victoryTitle')}</h2></div>
+//       <div className="dialog__body">
+//         <p className={own ? 'state' : 'state state--war'}>
+//           {own ? t('standings.won') : eliminated && !winner ? t('standings.eliminated') : (() => {
+//             const nation = winner ? nameOf(winner) : '—'
+//             return t(isPluralNation(nation) ? 'standings.lostPlural' : 'standings.lost', { nation })
+//           })()}
+//         </p>
+//         <p className="facts__inline">
+//           {[t('standings.summaryHead', { day: Math.floor(view.tick / ticksPerDay) + 1 }),
+//             plural(Math.round(view.self.score), 'standings.summaryPointsOne', 'standings.summaryPointsMany'),
+//             plural(provinces, 'standings.summaryProvincesOne', 'standings.summaryProvincesMany')].join(' · ')}
+//         </p>
+//         <div className="actions">
+//           {onNewGame && <button type="button" className="button button--primary" onClick={onNewGame}>{t('standings.newGame')}</button>}
+//           <button type="button" className="button" onClick={onClose}>{t('standings.close')}</button>
+//         </div></div></div></div>
+//
+// Ebenso: die Tabelle der Rangliste trug `<table className="table">` ohne weitere Klasse.
 export function VictoryDialog({
   view,
   nameOf,
@@ -283,48 +313,72 @@ export function VictoryDialog({
     (province) => province.owner === view.playerId && !province.stale,
   ).length
 
+  const nation = winner ? nameOf(winner) : '—'
+  const condition = victoryConditionSentence(view, own, nation)
+
   return (
-    <div className="dialog-backdrop">
-      <div className="dialog" role="dialog" aria-modal="true" aria-label={t('standings.victoryTitle')}>
-        <div className="dialog__head">
-          <h2>{t('standings.victoryTitle')}</h2>
-        </div>
-        <div className="dialog__body">
-          <p className={own ? 'state' : 'state state--war'}>
-            {own
-              ? t('standings.won')
-              : eliminated && !winner
-                ? t('standings.eliminated')
-                : (() => {
-                    // „Vereinigte Staaten haben gewonnen" — der Numerus haengt am
-                    // Machtnamen (T-M23-02, V2-11).
-                    const nation = winner ? nameOf(winner) : '—'
-                    return t(isPluralNation(nation) ? 'standings.lostPlural' : 'standings.lost', { nation })
-                  })()}
-          </p>
-          <p className="facts__inline">
-            {[
-              t('standings.summaryHead', { day: Math.floor(view.tick / ticksPerDay) + 1 }),
-              plural(
-                Math.round(view.self.score),
-                'standings.summaryPointsOne',
-                'standings.summaryPointsMany',
-              ),
-              plural(provinces, 'standings.summaryProvincesOne', 'standings.summaryProvincesMany'),
-            ].join(' · ')}
-          </p>
-          <div className="actions">
-            {onNewGame && (
-              <button type="button" className="button button--primary" onClick={onNewGame}>
-                {t('standings.newGame')}
-              </button>
-            )}
-            <button type="button" className="button" onClick={onClose}>
-              {t('standings.close')}
+    // Das gemeinsame Dialoggerüst (T-M44-08, R-UX-06/AK2): Fokus-Einzug, Fokusfalle und Escape
+    // (= „Karte ansehen“). Ein Klick neben den Dialog schließt NICHT — das Spielende wegzuwischen
+    // wäre ein Versehen. Der Name bleibt „Die Partie ist entschieden“ (daran findet ihn die
+    // Hülle), die sichtbare Überschrift sagt den Ausgang (T-M44-15, R-UX-05/AK4).
+    <Dialog
+      title={t('standings.victoryTitle')}
+      heading={own ? t('standings.headingWon') : t('standings.headingLost')}
+      onClose={onClose}
+      backdropCloses={false}
+      foot={
+        <>
+          {onNewGame && (
+            <button type="button" className="button button--primary" onClick={onNewGame} data-autofocus>
+              {t('standings.newGame')}
             </button>
-          </div>
-        </div>
-      </div>
-    </div>
+          )}
+          <button type="button" className="button" onClick={onClose} data-autofocus={onNewGame ? undefined : true}>
+            {t('standings.close')}
+          </button>
+        </>
+      }
+    >
+      <p className={own ? 'state' : 'state state--war'}>
+        {own
+          ? t('standings.won')
+          : eliminated && !winner
+            ? t('standings.eliminated')
+            : // „Vereinigte Staaten haben gewonnen" — der Numerus haengt am Machtnamen (T-M23-02, V2-11).
+              t(isPluralNation(nation) ? 'standings.lostPlural' : 'standings.lost', { nation })}
+      </p>
+      {condition && <p className="victory__condition">{condition}</p>}
+      <p className="facts__inline">
+        {[
+          t('standings.summaryHead', { day: Math.floor(view.tick / ticksPerDay) + 1 }),
+          plural(Math.round(view.self.score), 'standings.summaryPointsOne', 'standings.summaryPointsMany'),
+          plural(provinces, 'standings.summaryProvincesOne', 'standings.summaryProvincesMany'),
+        ].join(' · ')}
+      </p>
+    </Dialog>
   )
+}
+
+/**
+ * Die Siegbedingung der Partie in einem Satz, mit der Zahl aus der Sicht (T-M44-15, R-UX-05/AK4).
+ *
+ * Für den Sieg steht der Anteil dabei, der sie wirklich erfüllt — nicht nur, dass ein Sieger
+ * gesetzt ist (Befund B-22). Fehlt die Schwelle in der Sicht, bleibt der Satz bei der Art der
+ * Bedingung; ein Satz mit erfundener Zahl wäre schlimmer als keiner.
+ */
+function victoryConditionSentence(view: PublicView, own: boolean, nation: string): string | null {
+  const { condition, winner } = view.victory
+  if (condition === 'conquest') {
+    if (own) return t('standings.conditionConquestWon')
+    return winner ? t('standings.conditionConquestLost', { nation }) : t('standings.conditionConquestOpen')
+  }
+  const progress = victoryProgress(view)
+  const goal = view.victory.pointsShareToWin ? Math.round(view.victory.pointsShareToWin / 10) : null
+  if (goal === null) return null
+  if (own) {
+    return progress
+      ? t('standings.conditionPointsWon', { share: Math.round(progress.share), goal })
+      : t('standings.conditionPointsOpen', { goal })
+  }
+  return winner ? t('standings.conditionPointsLost', { goal, nation }) : t('standings.conditionPointsOpen', { goal })
 }

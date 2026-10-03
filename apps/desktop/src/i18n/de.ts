@@ -24,6 +24,10 @@ export const de = {
 
   menu: {
     title: 'Menü',
+    // Der Folgesatz am Knopf „Neue Partie“ (T-M44-09a, R-UX-04/AK1); er nennt auch den zweiten Klick.
+    newGameConfirm: 'Die laufende Partie wird verlassen, Ungespeichertes geht verloren — noch einmal klicken.',
+    // Der Weg zur Tastenübersicht (T-M44-16, R-UX-05).
+    keys: 'Tastenkürzel',
   },
 
   header: {
@@ -72,6 +76,18 @@ export const de = {
     menu: 'Menü',
     diplomacy: 'Diplomatie',
     market: 'Markt',
+  },
+
+  /** Das Blatt im Hochformat (T-M44-03b): Griff und die drei Rasten. */
+  sheet: {
+    handle: 'Panelhöhe',
+    snap: { peek: 'Streifen', half: 'halb', full: 'voll' },
+  },
+
+  /** Der Kopf jedes Panels (T-M44-12). */
+  panel: {
+    back: 'Zurück',
+    close: 'Schließen',
   },
 
   economy: {
@@ -377,7 +393,10 @@ export const de = {
     MISSING_BUILDING: 'Dafür fehlt das Gebäude: {{building}}.',
     NOT_YET_AVAILABLE: 'Das gibt es erst ab Spieltag {{availableFromDay}}.',
     BUILDING_MAX_LEVEL: 'Dieses Gebäude ist bereits voll ausgebaut.',
-    NO_PATH: 'Dorthin führt kein Weg — feindliches Gebiet oder offenes Meer liegt dazwischen.',
+    // T-M44-06 (R-UX-03/AK4): `planRoute` kennt nur den Kartengraphen — NO_PATH heißt „Graph nicht
+    // verbunden“, nie „feindliches Gebiet“.
+    // LOESCHVERMERK (Review): vorher 'Dorthin führt kein Weg — feindliches Gebiet oder offenes Meer liegt dazwischen.'
+    NO_PATH: 'Dorthin führt kein Weg: Zwischen hier und dem Ziel gibt es auf der Karte keine Land- oder Seeverbindung.',
     ARMY_BUSY: 'Die Armee ist noch gebunden und kann jetzt keinen neuen Befehl annehmen.',
     ARMY_NOT_FOUND: 'Diese Armee gibt es nicht mehr.',
     PROVINCE_NOT_FOUND: 'Diese Provinz gibt es nicht.',
@@ -517,6 +536,9 @@ export const de = {
 
   diplomacy: {
     title: 'Diplomatie',
+    // Folgesätze der Rückfrage (T-M44-09b, R-UX-04/AK1): die Folge nennen und sagen, dass noch einmal geklickt wird.
+    declareWarConfirm: 'Krieg gegen {{nation}} — lässt sich nicht zurücknehmen, noch einmal klicken.',
+    breakAllianceConfirm: 'Das Bündnis mit {{nation}} endet — noch einmal klicken.',
     peace: 'Frieden',
     war: 'Krieg',
     truce: 'Waffenstillstand',
@@ -740,6 +762,12 @@ export const de = {
     nation: 'Macht',
     seed: 'Startzahl',
     seedHint: 'Dieselbe Startzahl ergibt dieselbe Partie.',
+    // Kurzhilfe je Feld (T-M44-15, R-UX-05/AK4). Die Zahlen stammen aus data/rules/default/ai.json
+    // (planningDepth und maxFronts: leicht 1/1, normal 2/2, schwer 3/3).
+    opponentsHint: 'So viele Mächte führt der Rechner gegen Sie (höchstens {{max}}).',
+    easyHint: 'Der Rechner plant einen Schritt voraus und führt höchstens eine Front.',
+    normalHint: 'Der Rechner plant zwei Schritte voraus und führt bis zu zwei Fronten.',
+    hardHint: 'Der Rechner plant drei Schritte voraus und führt bis zu drei Fronten.',
     difficulty: 'Schwierigkeit',
     easy: 'leicht',
     normal: 'normal',
@@ -751,7 +779,9 @@ export const de = {
     // Die Zahlen stammen aus newGame.ts: Punkte 700 von 1000, Eroberung 1000 von 1000.
     // Sie stehen hier ausgeschrieben, weil eine Wahl, die den Ausgang der Partie
     // bestimmt, nicht unerklaerter dastehen darf als die Startzahl darueber.
-    victoryPointsHint: 'Sie gewinnen, sobald Ihnen 70 % aller Siegpunkte gehören.',
+    // LOESCHVERMERK (Review): bis Durchsicht B: 'Sie gewinnen, sobald Ihnen 70 % aller Siegpunkte gehören.' (feste Zahl;
+    // der Endedialog liest die Schwelle aus der Partie, beide sagen jetzt dasselbe).
+    victoryPointsHint: 'Sie gewinnen, sobald Ihnen {{goal}} % aller Siegpunkte gehören.',
     victoryConquestHint: 'Sie gewinnen erst, wenn Ihnen alles gehört — 100 % der Siegpunkte.',
     map: 'Karte',
     start: 'Partie beginnen',
@@ -873,12 +903,17 @@ export const de = {
     corrupt: 'Dieser Spielstand ist beschädigt und wurde nicht geladen.',
     wrongVersion: 'Dieser Spielstand stammt aus einer anderen Fassung des Spiels.',
     confirmOverwrite: 'Diesen Stand überschreiben?',
+    // Der Folgesatz am Knopf „Speichern“ eines belegten Platzes (T-M44-09a, R-UX-04/AK1).
+    overwriteConfirm: '{{slot}} wird überschrieben — noch einmal klicken.',
   },
 
   settings: {
     title: 'Einstellungen',
     autosaveInterval: 'Automatisch speichern alle',
     minutes: '{{count}} Minuten',
+    // Die Einheit hinter dem Feld des Speicherabstands (T-M44-16).
+    minuteUnit: 'Minute',
+    minutesUnit: 'Minuten',
     sound: 'Ton',
     soundOn: 'an',
     soundOff: 'aus',
@@ -889,6 +924,7 @@ export const de = {
     fontLarge: 'groß',
     debug: 'Debug-Ansicht',
     reset: 'Auf Vorgabe zurücksetzen',
+    resetConfirm: 'Alle Einstellungen gehen auf die Vorgabe zurück — noch einmal klicken.',
   },
 
   debug: {
@@ -911,6 +947,8 @@ export const de = {
     jumpTo: 'Zur Provinz springen',
     // Die Automatik lässt eine Armee marschieren (T-M40-13): eine leise Zeile, kein Alarm.
     adjutantMarch: '{{army}} rückt von selbst nach {{province}} nach.',
+    // Gleichlautende Gefechtszeilen derselben Provinz und Stunde als eine Zeile (T-M44-10, R-UX-02/AK4).
+    repeated: '{{text}} ({{count}} Mal)',
     battleReport: 'Kampfbericht',
     attacker: 'Angreifer',
     defender: 'Verteidiger',
@@ -945,6 +983,8 @@ export const de = {
     battleRound: 'Runde {{round}}',
     stale: 'Sicht',
     hint: 'Klicken: auswählen · Escape: schließen',
+    // Die schon gewählte Provinz (T-M44-07, R-UX-02/AK3): keine Mausbedienung, nur der Weg hinaus.
+    hintSelected: 'Escape: schließen',
   },
 
   foot: {
@@ -967,7 +1007,8 @@ export const de = {
   },
 
   keys: {
-    title: 'Tastatur',
+    // LOESCHVERMERK (Review): bis Durchsicht B hiess der Dialog „Tastatur“ (der Menüpunkt „Tastenkürzel“).
+    title: 'Tastenkürzel',
     pause: 'Leertaste — Pause',
     speedUp: '+ — schneller',
     speedDown: '− — langsamer',
@@ -979,7 +1020,9 @@ export const de = {
     market: 'H — Markt (Handel)',
     standings: 'L — Lage der Mächte',
     escape: 'Escape — Dialog, Panel oder Zielwahl abbrechen',
-    help: 'F1 — diese Übersicht',
+    // LOESCHVERMERK (Review): bis Durchsicht B: help: 'F1 — diese Übersicht' (das Fragezeichen löst dasselbe aus).
+    help: 'F1 oder ? — diese Übersicht',
+    pan: 'Pfeiltasten — Karte verschieben',
     zoomIn: 'Bild↑ — hineinzoomen',
     zoomOut: 'Bild↓ — herauszoomen',
     home: 'Pos1 — Hauptstadt zentrieren',
@@ -1000,12 +1043,12 @@ export const de = {
     steps: {
       select: {
         title: 'Ihre Provinzen',
-        text: 'Klicken Sie eine Ihrer Provinzen an. Rechts stehen Moral, Bevölkerung und was im Boden liegt.',
+        text: 'Klicken Sie eine Ihrer Provinzen an. Das Provinzpanel zeigt dann Moral, Bevölkerung und was im Boden liegt.',
         why: 'Alles in diesem Spiel — Bau, Aushebung, Moral, Punkte — geschieht in Provinzen. Wer seine kennt, kennt seine Lage.',
       },
       build: {
         title: 'Etwas bauen',
-        text: 'Jeder Knopf nennt vorher Kosten und Dauer. Was Sie sich nicht leisten können, ist ausgegraut — mit dem Grund daneben.',
+        text: 'Jeder Knopf nennt vorher Kosten und Dauer. Was Sie sich nicht leisten können, ist ausgegraut — der Grund steht dabei.',
         why: 'Gebäude kommen vor Einheiten: erst die Kaserne macht das Ausheben möglich, und dieselbe Kaserne macht jedes weitere schneller.',
       },
       speed: {
@@ -1054,7 +1097,7 @@ export const de = {
       },
       events: {
         title: 'Was geschieht',
-        text: 'Unten stehen die Ereignisse. Rot heißt hinsehen; ein Klick springt zu der Provinz, um die es geht.',
+        text: 'Das Ereignisprotokoll zeigt, was geschieht. Rot heißt hinsehen; ein Klick springt zu der Provinz, um die es geht.',
         why: 'Was Sie hier übersehen, meldet niemand ein zweites Mal — das Protokoll ist das Gedächtnis der Partie.',
       },
       expansion: {
@@ -1160,6 +1203,8 @@ export const de = {
     // Kaserne → sie, der Hafen → ihn, das Jagdflugzeug → es.
     unlockBuilding: 'Neu ab heute: {{building}}. Sie können {{pronoun}} jetzt bauen.',
     unlockUnit: 'Neu ab heute: {{unit}}. Sie können {{pronoun}} jetzt ausheben.',
+    // Mehrere Freischaltungen am selben Tag in einer Zeile (T-M44-12).
+    unlockMany: 'Neu ab heute: {{things}}.',
     // Die Ankündigung zwei Spieltage vorher (T-M41-03): was kommt, und was dafür fehlt.
     // Leise wie die Freischaltung — keine Alarmfarbe, kein Sprung auf die Karte.
     upcoming: 'In zwei Tagen: {{thing}}.',
@@ -1248,10 +1293,30 @@ export const de = {
     summaryProvincesOne: '1 Provinz',
     summaryProvincesMany: '{{count}} Provinzen',
     close: 'Karte ansehen',
+    // Die sichtbare Überschrift des Endedialogs (T-M44-15, R-UX-05/AK4); sein Name für Hilfsmittel
+    // bleibt `victoryTitle`.
+    headingWon: 'Sieg',
+    headingLost: 'Niederlage',
+    // Die Siegbedingung der Partie, mit dem Anteil, der sie erfüllt (T-M44-15).
+    conditionPointsWon: 'Siegbedingung erfüllt: Ihnen gehören {{share}} % aller Siegpunkte, verlangt waren {{goal}} %.',
+    conditionPointsLost: 'Siegbedingung: {{goal}} % aller Siegpunkte — erreicht von {{nation}}.',
+    conditionPointsOpen: 'Siegbedingung der Partie: {{goal}} % aller Siegpunkte.',
+    conditionConquestWon: 'Siegbedingung erfüllt: Eroberung — Ihnen gehört alles.',
+    conditionConquestLost: 'Siegbedingung: Eroberung — {{nation}} besitzt alles.',
+    conditionConquestOpen: 'Siegbedingung der Partie: Eroberung — wer alles besitzt, gewinnt.',
   },
 
   explainUi: {
     about: 'Was ist {{subject}}?',
+  },
+
+  /**
+   * Der Hinweis im Hochformat (T-M44-03a, R-UX-05/AK2, Orchestrator-Entscheid F1): das Telefon
+   * hochkant ist bedienbar, aber die Karte ist dort ein Streifen. Ein Hinweis, keine Sperre.
+   */
+  orientation: {
+    hint: 'Quer halten empfohlen',
+    dismiss: 'Hinweis ausblenden',
   },
 
   meter: {
@@ -1266,6 +1331,88 @@ export const de = {
   time: {
     hours: '{{hours}} h',
     days: '{{days}} Tage',
+  },
+
+  // --- M44 Paket D (UX V2): Texte und Panels ---------------------------------------------------
+  // Neue Schlüssel nur hier anhängen (Merge-Konflikte klein halten, UX-PLAN §6).
+
+  /** Namen, wenn der Spielstand keinen kennt (T-M44-06, R-UX-03/AK2): nie eine Kennung wie „a68“. */
+  names: {
+    unknownArmy: 'eine Armee',
+  },
+
+  /**
+   * Ein Satz je (Befehlstyp, Grund) des Kerns (T-M44-06, R-UX-03/AK1) — `game/rejections.ts`
+   * `REASON_KEYS` schlägt hier nach. Die Handelsgründe teilen sich die Sätze unter `trade.blocked`.
+   */
+  refusal: {
+    thatPower: 'diese Macht',
+    thatProvince: 'diese Provinz',
+    SPLIT_ARMY: {
+      nothingChosen: 'Wählen Sie aus, was abgespalten werden soll.',
+      wholeStrength: 'So würde die ganze Truppe abgespalten — dann bleibt nichts zurück. Schicken Sie sie stattdessen auf den Marsch.',
+    },
+    MERGE_ARMIES: {
+      needTwo: 'Zum Zusammenlegen braucht es mindestens zwei Armeen.',
+      notTogether: 'Die Armeen stehen nicht am selben Ort.',
+      partlyEmbarked: 'Ein Teil der Armeen ist eingeschifft — an Bord lässt sich nichts zusammenlegen.',
+    },
+    BOMBARD: {
+      embarked: 'Eine eingeschiffte Armee kann nicht beschießen.',
+      noRanged: 'Diese Armee hat keine Fernwaffe.',
+    },
+    BUILD: {
+      needsCoast: '{{building}} lässt sich nur an der Küste bauen.',
+    },
+    SET_STANCE: {
+      unknown: 'Diese Haltung gibt es nicht.',
+    },
+    MOVE_ARMY: {
+      empty: 'In dieser Armee stehen keine Truppen mehr.',
+      alreadyThere: 'Die Armee steht schon dort.',
+      noAirfield: 'Flieger landen nur auf einem eigenen Flugplatz.',
+    },
+    RECRUIT: {
+      lowMorale: 'Die Moral in dieser Provinz ist zu niedrig, um Truppen auszuheben.',
+    },
+    TRADE: {
+      sameResource: 'Tauschen Sie gegen einen anderen Rohstoff.',
+      tooMuch: 'So viel lässt sich nicht auf einmal tauschen.',
+      tooLittle: 'Dafür gäbe es nichts: Die Menge ist zu klein.',
+    },
+    OFFER_TRADE: {
+      self: 'Mit der eigenen Macht lässt sich nicht handeln.',
+    },
+    ACCEPT_TRADE: {
+      noOffer: 'Dieses Angebot gibt es nicht mehr.',
+    },
+    DIPLOMACY: {
+      self: 'Mit der eigenen Macht geht das nicht.',
+      alreadyAtWar: 'Mit {{target}} herrscht schon Krieg.',
+      noOffer: '{{target}} hat Ihnen nichts angeboten, oder das Angebot ist verfallen.',
+      notAtPeace: 'Ein Bündnis mit {{target}} setzt Frieden voraus.',
+      noAlliance: 'Mit {{target}} besteht kein Bündnis.',
+      atWar: 'Mit {{target}} herrscht Krieg — schließen Sie zuerst Frieden.',
+      declarationRunning: 'Eine Kriegserklärung zwischen Ihnen und {{target}} läuft schon.',
+      passageEnding: 'Der Durchmarsch durch das Land von {{target}} ist gekündigt und läuft aus.',
+      passageAlreadyGranted: '{{target}} lässt Sie schon durchmarschieren.',
+      passageNotGranted: 'Sie haben {{target}} keinen Durchmarsch gewährt.',
+      passageAlreadyRevoked: 'Den Durchmarsch für {{target}} haben Sie schon gekündigt.',
+      inAlliance: 'Im Bündnis mit {{target}} lässt sich der Durchmarsch nicht kündigen.',
+    },
+  },
+
+  /** Die Zielwahl des Marsches (T-M44-11, R-UX-04/AK2): erreichbare zuerst, unerreichbare getrennt. */
+  march: {
+    reachable: 'Erreichbar — mit Ankunftstag',
+    unreachable: 'Nicht erreichbar',
+    optionArrival: '{{name}} — Ankunft Tag {{day}}',
+    noneReachable: 'Von hier ist für diese Armee kein Ziel erreichbar: Auf der Karte gibt es keine Land- oder Seeverbindung.',
+  },
+
+  /** Die Sammelzeile der Sperrgründe im Diplomatiepanel (T-M44-18, R-UX-03/AK1): „Knopf, Knopf: Grund“. */
+  collected: {
+    line: '{{labels}}: {{reason}}',
   },
 } as const
 

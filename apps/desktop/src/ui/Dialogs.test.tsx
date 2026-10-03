@@ -2,7 +2,21 @@
 import { readFileSync } from 'node:fs'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { DebugPanel, LobbyDialog, NewGameDialog, localizeDebugText } from './Dialogs.tsx'
+import {
+  DebugPanel,
+  Dialog,
+  JoinDialog,
+  LobbyDialog,
+  MenuDialog,
+  NewGameDialog,
+  SavesDialog,
+  KeyboardHelp,
+  SettingsDialog,
+  localizeDebugText,
+} from './Dialogs.tsx'
+import { MENU_ENTRIES } from './menuEntries.ts'
+import { resolveKey } from '../keyboard.ts'
+import { DEFAULT_SETTINGS } from '../state/uiState.ts'
 import {
   DEFAULT_NEW_GAME,
   MULTIPLAYER_SPEEDS,
@@ -467,5 +481,466 @@ describe('R-MP-12/AK2 Der Gastgeber sieht, wer wartet, und startet', () => {
     zeigeLobby({ phase: 'refused', reason: 'Dieser Link passt zu keiner Partie auf diesem Rechner.' })
     expect(screen.getByText(/passt zu keiner Partie/)).toBeTruthy()
     expect((screen.getByRole('button', { name: 'Partie starten' }) as HTMLButtonElement).disabled).toBe(true)
+  })
+})
+
+/**
+ * Das Dialog-Gerüst mit fester Fußzeile (T-M44-05, R-UX-05/AK1, R-UX-01/AK2).
+ *
+ * Gemessen am 2026-10-03: „Partie beginnen“ lag bei 1280×800 auf y = 733, der Dialog endet
+ * bei 720 — wer nicht im Dialog rollt, findet die Hauptaktion nicht. Das Gerüst teilt den
+ * Dialog darum in drei Streifen: Kopf und Fußzeile stehen fest, nur der Körper rollt. jsdom
+ * rechnet kein Layout; hier steht deshalb die Bauweise (Aktionen außerhalb des rollenden
+ * Körpers, Rollen am Körper), die Größen prüft `pnpm ux:check --only R-UX-05/AK1`.
+ */
+describe('R-UX-05/AK1 Die Hauptaktion eines Dialogs steht in einer festen Fußzeile', () => {
+  const inFuss = (name: string) => {
+    const knopf = screen.getByRole('button', { name })
+    const fuss = knopf.closest('.dialog__foot')
+    expect(fuss, `„${name}“ steht nicht in .dialog__foot`).toBeTruthy()
+    expect(knopf.closest('.dialog__body'), `„${name}“ steht im rollenden Körper`).toBeNull()
+    return fuss as HTMLElement
+  }
+
+  it('Partie beginnen und Spielstände stehen außerhalb des rollenden Körpers', () => {
+    render(
+      <NewGameDialog
+        options={DEFAULT_NEW_GAME}
+        nations={['Vereinigte Staaten', 'Kanada']}
+        maps={[{ id: 'world', name: 'Welt', data: { provinces: new Array(237) } }]}
+        modes={gameModesFor(true, true)}
+        aiBonus={0}
+        onChange={vi.fn()}
+        onStart={vi.fn()}
+        onClose={vi.fn()}
+        onSaves={vi.fn()}
+      />,
+    )
+
+    const fuss = inFuss('Partie beginnen')
+    expect(fuss.contains(screen.getByRole('button', { name: 'Spielstände' }))).toBe(true)
+    // Der Körper steht vor der Fußzeile, nicht dahinter: die Fußzeile ist der letzte Streifen.
+    const dialog = fuss.parentElement!
+    expect([...dialog.children].map((kind) => kind.className)).toEqual([
+      'dialog__head',
+      'dialog__body',
+      'dialog__foot',
+    ])
+  })
+
+  it('Beitritt: „Beitreten“ steht in der Fußzeile, der Name im Körper', () => {
+    render(
+      <JoinDialog
+        terms={{ ownNation: 'Kanada', hostNation: 'Mexiko', aiOpponents: 2, victory: 'points', fixedSpeed: 5 }}
+        mapName="Welt"
+        phase="lobby"
+        reason={null}
+        joined={false}
+        onJoin={vi.fn()}
+        onLeave={vi.fn()}
+      />,
+    )
+
+    const fuss = inFuss('Beitreten')
+    expect(fuss).toBeTruthy()
+    expect(screen.getByLabelText(/Name/).closest('.dialog__body')).toBeTruthy()
+  })
+
+  it('Lobby: Starten und Verlassen stehen in der Fußzeile, das Kopieren des Links im Körper', () => {
+    render(
+      <LobbyDialog
+        guestLink="http://x/#/beitreten"
+        guestName="Jonas"
+        offered
+        phase="lobby"
+        reason={null}
+        onBegin={vi.fn()}
+        onLeave={vi.fn()}
+      />,
+    )
+
+    const fuss = inFuss('Partie starten')
+    expect(fuss.querySelectorAll('button')).toHaveLength(2)
+    expect(screen.getByRole('button', { name: /Link/ }).closest('.dialog__body')).toBeTruthy()
+  })
+
+  it('der Körper rollt, Kopf und Fußzeile nicht (Kaskade)', () => {
+    const style = document.createElement('style')
+    style.textContent = readFileSync(`${process.cwd()}/apps/desktop/src/ui/app.css`, 'utf8')
+    document.head.appendChild(style)
+    try {
+      render(
+        <Dialog title="Beispiel" onClose={vi.fn()} foot={<button type="button">Los</button>}>
+          <p>Inhalt</p>
+        </Dialog>,
+      )
+      const dialog = screen.getByRole('dialog')
+      const rechne = (selector: string) => getComputedStyle(dialog.querySelector(selector)!)
+
+      expect(getComputedStyle(dialog).display).toBe('flex')
+      expect(getComputedStyle(dialog).flexDirection).toBe('column')
+      expect(getComputedStyle(dialog).overflowY).toBe('hidden')
+      expect(rechne('.dialog__body').overflowY).toBe('auto')
+      expect(rechne('.dialog__foot').flexShrink).toBe('0')
+      expect(rechne('.dialog__head').flexShrink).toBe('0')
+    } finally {
+      style.remove()
+    }
+  })
+})
+
+/**
+ * Spielstände als Liste (T-M44-05, R-UX-01/AK2): `.slots` heißt auch das Bauplatzraster mit
+ * vier Spalten (T-M29-03) — die spätere Regel gewann gegen die Liste, und der Dialog lief
+ * waagerecht über (gemessen 604 > 518 und 592 > 494). Die Liste trägt darum ein eigenes
+ * Kennzeichen und zeichnet eine Zeile je Platz.
+ */
+describe('R-UX-01/AK2 Die Spielstandliste ist eine Liste und kein Raster', () => {
+  const plaetze = [
+    { name: 'manual-0', label: 'Stand 1', savedAtDay: 12 },
+    { name: 'manual-1', label: 'Stand 2', savedAtDay: null },
+  ]
+
+  it('zeichnet eine Zeile je Platz mit Tag oder „leer“', () => {
+    render(<SavesDialog slots={plaetze} onSave={vi.fn()} onLoad={vi.fn()} onClose={vi.fn()} notice={null} />)
+
+    const zeilen = [...document.querySelectorAll('.slots--saves > li')]
+    expect(zeilen).toHaveLength(2)
+    expect(zeilen[0]!.textContent).toContain('Stand 1')
+    expect(zeilen[0]!.textContent).toContain('Tag 12')
+    expect(zeilen[1]!.textContent).toContain('leer')
+  })
+
+  it('wird von der späteren Rasterregel nicht erfasst (Kaskade)', () => {
+    const style = document.createElement('style')
+    style.textContent = readFileSync(`${process.cwd()}/apps/desktop/src/ui/app.css`, 'utf8')
+    document.head.appendChild(style)
+    try {
+      render(<SavesDialog slots={plaetze} onSave={vi.fn()} onLoad={vi.fn()} onClose={vi.fn()} notice={null} />)
+      const liste = document.querySelector('.slots--saves')!
+      expect(getComputedStyle(liste).display).toBe('flex')
+      expect(getComputedStyle(liste).gridTemplateColumns).toBe('none')
+      expect(getComputedStyle(document.querySelector('.slots--saves .slot')!).flexDirection).toBe('row')
+    } finally {
+      style.remove()
+    }
+  })
+})
+
+/**
+ * Die Rückfrage in den Dialogen (T-M44-09a, R-UX-04/AK1, Entscheid F2): Überschreiben,
+ * Zurücksetzen und „neue Partie aus laufender Partie“ brauchen den zweiten Klick am selben
+ * Knopf. Ein leerer Platz und ein Laden fragen nicht — dort geht nichts verloren.
+ */
+describe('R-UX-04/AK1 Folgenschweres in den Dialogen fragt nach', () => {
+  it('einen belegten Stand überschreiben: erst der zweite Klick speichert', () => {
+    const onSave = vi.fn()
+    render(
+      <SavesDialog
+        slots={[{ name: 'manual-0', label: 'Stand 1', savedAtDay: 12 }]}
+        onSave={onSave}
+        onLoad={vi.fn()}
+        onClose={vi.fn()}
+        notice={null}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Speichern' }))
+    expect(onSave).not.toHaveBeenCalled()
+    const frage = screen.getByRole('button', { name: /Stand 1 wird überschrieben/ })
+    fireEvent.click(frage)
+
+    expect(onSave).toHaveBeenCalledExactlyOnceWith('manual-0')
+  })
+
+  it('einen leeren Platz speichern: ein Klick, keine Frage', () => {
+    const onSave = vi.fn()
+    render(
+      <SavesDialog
+        slots={[{ name: 'manual-1', label: 'Stand 2', savedAtDay: null }]}
+        onSave={onSave}
+        onLoad={vi.fn()}
+        onClose={vi.fn()}
+        notice={null}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Speichern' }))
+
+    expect(onSave).toHaveBeenCalledExactlyOnceWith('manual-1')
+  })
+
+  it('Escape beantwortet die Frage, schließt aber den Dialog nicht', () => {
+    const onClose = vi.fn()
+    render(
+      <SavesDialog
+        slots={[{ name: 'manual-0', label: 'Stand 1', savedAtDay: 12 }]}
+        onSave={vi.fn()}
+        onLoad={vi.fn()}
+        onClose={onClose}
+        notice={null}
+      />,
+    )
+    const knopf = screen.getByRole('button', { name: 'Speichern' })
+    fireEvent.click(knopf)
+
+    fireEvent.keyDown(knopf, { key: 'Escape' })
+    expect(onClose).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: 'Speichern' })).toBeTruthy()
+
+    fireEvent.keyDown(knopf, { key: 'Escape' })
+    expect(onClose).toHaveBeenCalledOnce()
+  })
+
+  it('Einstellungen zurücksetzen: erst der zweite Klick setzt zurück', () => {
+    const onReset = vi.fn()
+    render(
+      <SettingsDialog
+        settings={{ ...DEFAULT_SETTINGS, sound: false }}
+        onChange={vi.fn()}
+        onReset={onReset}
+        onClose={vi.fn()}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Auf Vorgabe zurücksetzen' }))
+    expect(onReset).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: /Vorgabe zurück/ }))
+
+    expect(onReset).toHaveBeenCalledOnce()
+  })
+
+  it('Einstellungen auf Vorgabe: der Knopf bleibt gesperrt, es gibt nichts zurückzusetzen', () => {
+    render(<SettingsDialog settings={DEFAULT_SETTINGS} onChange={vi.fn()} onReset={vi.fn()} onClose={vi.fn()} />)
+
+    expect((screen.getByRole('button', { name: 'Auf Vorgabe zurücksetzen' }) as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  it('Neue Partie im Menü: erst der zweite Klick wählt den Eintrag', () => {
+    const onSelect = vi.fn()
+    render(<MenuDialog entries={MENU_ENTRIES} onSelect={onSelect} onClose={vi.fn()} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Neue Partie' }))
+    expect(onSelect).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: /Partie wird verlassen/ }))
+
+    expect(onSelect).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ target: 'new' }))
+  })
+
+  it('Spielstände und Einstellungen im Menü fragen nicht', () => {
+    const onSelect = vi.fn()
+    render(<MenuDialog entries={MENU_ENTRIES} onSelect={onSelect} onClose={vi.fn()} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Spielstände' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Einstellungen' }))
+
+    expect(onSelect).toHaveBeenCalledTimes(2)
+  })
+})
+
+/**
+ * Erkennen statt Erinnern (T-M44-16, R-UX-05): die Einstellungen nennen ihre Einheiten, die
+ * Höchstgeschwindigkeit ist eine Auswahl der Tempostufen — und die Tastenkürzel sind aus dem
+ * Menü erreichbar, nicht nur mit der Taste, die man kennen muss.
+ */
+describe('R-UX-05 Einstellungen mit Einheiten, Tastenkürzel im Menü', () => {
+  const zeigeEinstellungen = (extra: Partial<typeof DEFAULT_SETTINGS> = {}) => {
+    const onChange = vi.fn()
+    render(
+      <SettingsDialog
+        settings={{ ...DEFAULT_SETTINGS, ...extra }}
+        onChange={onChange}
+        onReset={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+    return onChange
+  }
+
+  it('nennt hinter dem Feld des Speicherabstands die Einheit', () => {
+    zeigeEinstellungen({ autosaveMinutes: 5 })
+    expect(screen.getByText('Minuten')).toBeTruthy()
+    cleanup()
+
+    zeigeEinstellungen({ autosaveMinutes: 1 })
+    expect(screen.getByText('Minute')).toBeTruthy()
+  })
+
+  it('bietet die Höchstgeschwindigkeit als Auswahl der Tempostufen an, ohne die Pause', () => {
+    const onChange = zeigeEinstellungen({ maxSpeed: 100 })
+    const wahl = screen.getByLabelText('Höchstgeschwindigkeit') as HTMLSelectElement
+
+    expect(wahl.tagName).toBe('SELECT')
+    expect([...wahl.options].map((option) => option.value)).toEqual(['1', '2', '5', '10', '25', '50', '100'])
+    expect(wahl.options[0]!.textContent).toBe('1 Stunden je Sekunde')
+    expect(wahl.value).toBe('100')
+
+    fireEvent.change(wahl, { target: { value: '25' } })
+    expect(onChange).toHaveBeenCalledExactlyOnceWith({ maxSpeed: 25 })
+  })
+
+  it('zeigt einen gespeicherten Wert zwischen den Stufen, statt ihn stumm umzuschreiben', () => {
+    zeigeEinstellungen({ maxSpeed: 7 })
+    const wahl = screen.getByLabelText('Höchstgeschwindigkeit') as HTMLSelectElement
+
+    expect(wahl.value).toBe('7')
+    expect([...wahl.options].map((option) => option.value)).toContain('7')
+  })
+
+  it('führt im Menü den Eintrag „Tastenkürzel“, der die Übersicht öffnet', () => {
+    const onSelect = vi.fn()
+    render(<MenuDialog entries={MENU_ENTRIES} onSelect={onSelect} onClose={vi.fn()} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tastenkürzel' }))
+
+    expect(onSelect).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ target: 'keys' }))
+  })
+})
+
+/**
+ * Der Startdialog erklärt sich (T-M44-15, R-UX-05/AK4): Gegner, Schwierigkeit und Startzahl
+ * tragen je eine Kurzhilfe unter dem Feld — wie die Siegbedingung und die Rate es schon tun.
+ */
+describe('R-UX-05/AK4 Der Startdialog trägt zu jedem Feld eine Kurzhilfe', () => {
+  it('erklärt Gegner, Schwierigkeit und Startzahl', () => {
+    zeige('points')
+
+    for (const feld of ['Gegner', 'Schwierigkeit', 'Startzahl']) {
+      const label = screen.getByText(feld).closest('label')!
+      const hilfe = label.querySelector('small')
+      expect(hilfe?.textContent?.length ?? 0, `${feld} ohne Kurzhilfe`).toBeGreaterThan(15)
+    }
+  })
+
+  it('bindet die Kurzhilfe an das Feld, damit ein Vorleseprogramm sie mit vorliest', () => {
+    zeige('points')
+
+    for (const feld of ['Gegner', 'Schwierigkeit']) {
+      const label = screen.getByText(feld).closest('label')!
+      const eingabe = label.querySelector('input, select')!
+      const hilfe = label.querySelector('small')!
+      expect(hilfe.id).not.toBe('')
+      expect(eingabe.getAttribute('aria-describedby')).toBe(hilfe.id)
+    }
+  })
+
+  it('wechselt den Satz zur Schwierigkeit mit der Wahl', () => {
+    const onChange = vi.fn()
+    const { rerender } = render(
+      <NewGameDialog
+        options={{ ...DEFAULT_NEW_GAME, difficulty: 'easy' }}
+        nations={['Vereinigte Staaten', 'Kanada']}
+        maps={[{ id: 'world', name: 'Welt', data: { provinces: new Array(237) } }]}
+        modes={gameModesFor(true, true)}
+        aiBonus={0}
+        onChange={onChange}
+        onStart={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+    const hilfe = () => screen.getByText('Schwierigkeit').closest('label')!.querySelector('small')!.textContent
+    const leicht = hilfe()
+
+    rerender(
+      <NewGameDialog
+        options={{ ...DEFAULT_NEW_GAME, difficulty: 'hard' }}
+        nations={['Vereinigte Staaten', 'Kanada']}
+        maps={[{ id: 'world', name: 'Welt', data: { provinces: new Array(237) } }]}
+        modes={gameModesFor(true, true)}
+        aiBonus={0}
+        onChange={onChange}
+        onStart={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+
+    expect(hilfe()).not.toBe(leicht)
+  })
+})
+
+/**
+ * T-M44-16 vollständig (Durchsicht B, Befund 2): die Tastenübersicht nennt jede Taste, die
+ * `keyboard.ts` wirklich belegt — gegengeprüft an der Quelle, nicht an einer zweiten Liste im Test.
+ */
+describe('R-UX-05 Die Tastenübersicht nennt alle echten Tastenbelegungen', () => {
+  const context = { speed: 1, mode: 'political', typing: false, dialogOpen: false, fastForwarding: false } as const
+  /** Je Taste: was `resolveKey` tut und welche Zeile der Übersicht sie nennen muss (Glyphe im Text). */
+  const BELEGUNG: ReadonlyArray<{ key: string; ctrl?: boolean; type: string; glyph: RegExp }> = [
+    { key: ' ', type: 'togglePause', glyph: /Leertaste/ },
+    { key: '+', type: 'speed', glyph: /\+/ },
+    { key: '-', type: 'speed', glyph: /−/ },
+    { key: 'f', type: 'fastForward', glyph: /F — vorspulen/ },
+    { key: 'm', type: 'cycleMode', glyph: /M — / },
+    { key: 'd', type: 'openPanel', glyph: /D — Diplomatie/ },
+    { key: 'h', type: 'openPanel', glyph: /H — Markt/ },
+    { key: 'l', type: 'openPanel', glyph: /L — Lage der Mächte/ },
+    { key: 's', type: 'openPanel', glyph: /S — Spionage/ },
+    { key: 's', ctrl: true, type: 'save', glyph: /Strg\+S/ },
+    { key: 'l', ctrl: true, type: 'load', glyph: /Strg\+L/ },
+    { key: 'F1', type: 'help', glyph: /F1/ },
+    { key: '?', type: 'help', glyph: /\?/ },
+    { key: 'ArrowLeft', type: 'pan', glyph: /Pfeiltasten — Karte verschieben/ },
+    { key: 'ArrowRight', type: 'pan', glyph: /Pfeiltasten/ },
+    { key: 'ArrowUp', type: 'pan', glyph: /Pfeiltasten/ },
+    { key: 'ArrowDown', type: 'pan', glyph: /Pfeiltasten/ },
+    { key: 'PageUp', type: 'zoom', glyph: /Bild↑/ },
+    { key: 'PageDown', type: 'zoom', glyph: /Bild↓/ },
+    { key: 'Home', type: 'centreCapital', glyph: /Pos1/ },
+    { key: 'Escape', type: 'close', glyph: /Escape/ },
+  ]
+
+  it('führt zu jeder belegten Taste eine Zeile (heute rot: L, Pfeiltasten und ? fehlen)', () => {
+    render(<KeyboardHelp onClose={vi.fn()} />)
+    const text = screen.getByRole('dialog').textContent ?? ''
+    for (const { key, ctrl, type, glyph } of BELEGUNG) {
+      const shortcut = resolveKey({ key, ctrlKey: ctrl === true }, context)
+      expect(shortcut?.type, `resolveKey(${ctrl ? 'Strg+' : ''}${key})`).toBe(type)
+      expect(text, `Übersicht nennt ${ctrl ? 'Strg+' : ''}${key}`).toMatch(glyph)
+    }
+  })
+
+  it('deckt jeden `case` in keyboard.ts ab (eine neue Taste ohne Zeile fällt hier auf)', () => {
+    const source = readFileSync(`${process.cwd()}/apps/desktop/src/keyboard.ts`, 'utf8')
+    const cases = [...source.matchAll(/case '([^']+)':/g)].map((match) => match[1]!.toLowerCase())
+    const known = new Set(BELEGUNG.map((entry) => entry.key.toLowerCase()).concat(['=', '−']))
+    for (const key of cases) expect(known.has(key), `keyboard.ts belegt ${key}, die Übersicht nicht`).toBe(true)
+  })
+
+  it('heißt wie der Menüpunkt: Tastenkürzel', () => {
+    render(<KeyboardHelp onClose={vi.fn()} />)
+    expect(screen.getByRole('dialog', { name: 'Tastenkürzel' })).toBeTruthy()
+  })
+})
+
+describe('Durchsicht B · Startdialog: Fokus und Siegschwelle', () => {
+  const zeigeStart = (extra: Record<string, unknown> = {}) =>
+    render(
+      <NewGameDialog
+        options={{ ...DEFAULT_NEW_GAME, victory: 'points' }}
+        nations={['Vereinigte Staaten', 'Kanada']}
+        maps={[{ id: 'world', name: 'Welt', data: { provinces: new Array(237) } }]}
+        modes={gameModesFor(true, true)}
+        aiBonus={0}
+        onChange={vi.fn()}
+        onStart={vi.fn()}
+        onClose={vi.fn()}
+        {...extra}
+      />,
+    )
+
+  it('setzt den Fokus auf „Partie beginnen“, wenn es nichts zum Weiterspielen gibt (heute rot)', () => {
+    zeigeStart()
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Partie beginnen' }))
+  })
+
+  it('lässt „Weiterspielen“ den Fokus, wenn es da ist', () => {
+    zeigeStart({ resume: { day: 3 }, onResume: vi.fn() })
+    expect((document.activeElement as HTMLElement).textContent).toMatch(/Weiterspielen/)
+  })
+
+  it('nennt die Schwelle aus der Konfiguration, nicht eine feste Zahl (heute rot)', () => {
+    zeigeStart({ pointsGoal: 65 })
+    expect(screen.getByText(/65 % aller Siegpunkte/)).toBeTruthy()
+    expect(screen.queryByText(/70 % aller Siegpunkte/)).toBeNull()
   })
 })

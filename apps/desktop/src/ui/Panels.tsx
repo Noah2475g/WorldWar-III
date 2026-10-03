@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { MAX_DEPART_DELAY_DAYS } from '@worldwar/core'
 import type { PublicView, ResourceKey, Terrain, VisibleArmy, VisibleProvince } from '@worldwar/core'
 // Nur der Typ: zur Laufzeit importiert weiterhin events.ts aus Panels.tsx, nicht umgekehrt.
@@ -24,6 +24,7 @@ import { NationName } from './Nation.tsx'
 import { ART_FOR_ICON, BUILDING_ART, UnitArt, type ArtName, type ArtTone } from './art.tsx'
 import { UnitMarker } from './UnitMarker.tsx'
 import { Explain } from './Explain.tsx'
+import { ConfirmButton } from './ConfirmButton.tsx'
 import { useInputMode } from './inputMode.ts'
 // Die Richtung einer Bilanz als Klassenzusatz - dieselbe Funktion wie in der
 // Kopfleiste (T-M36-05). Zwei Tabellen, die dieselbe Zahl verschieden einfaerben,
@@ -155,6 +156,42 @@ function hintParts(action: Pick<Action, 'disabledReason' | 'hint'>): string[] {
 }
 
 /**
+ * Der Kopf eines Panels (T-M44-12, R-UX-02): Zurueck (nur wo es einen Weg zurueck gibt),
+ * Titel, Schliessen. Beide Knoepfe sind optionale Rueckrufe; ohne sie steht nur der Titel,
+ * wie vorher. Die Leiste ist eine Zeile, damit der Kopf auch im Hochformat im Bild bleibt.
+ */
+export function PanelHead({
+  title,
+  sub,
+  onBack,
+  onClose,
+}: {
+  title: ReactNode
+  sub?: ReactNode
+  onBack?: (() => void) | undefined
+  onClose?: (() => void) | undefined
+}) {
+  return (
+    <header className="panel__head">
+      <div className="panel__bar">
+        {onBack && (
+          <button type="button" className="panel__back" aria-label={t('panel.back')} title={t('panel.back')} onClick={onBack}>
+            <span aria-hidden="true">‹</span>
+          </button>
+        )}
+        <h2>{title}</h2>
+        {onClose && (
+          <button type="button" className="panel__close" aria-label={t('panel.close')} title={t('panel.close')} onClick={onClose}>
+            <span aria-hidden="true">×</span>
+          </button>
+        )}
+      </div>
+      {sub}
+    </header>
+  )
+}
+
+/**
  * Was im Touch-Betrieb sichtbar unter dem Knopf steht (Android-Emulator, 2026-09-24).
  *
  * Dieselben Angaben wie im Titel — ein Finger schwebt nie, also sieht er den Titel nie.
@@ -170,6 +207,9 @@ export function touchHint(
   return reason || cost ? { reason, cost } : null
 }
 
+// LOESCHVERMERK (Review): bis T-M44-18 lautete die Touch-Zeile in `ActionButton`:
+//   const touchInfo = useInputMode() === 'touch' ? touchHint(action, showReason) : null
+// Jetzt `showReason || reasonInGroup` (der Grund steht schon in der Sammelzeile der Gruppe).
 function ActionButton({
   action,
   showReason,
@@ -178,9 +218,15 @@ function ActionButton({
   pressed,
   artWidth = 34,
   artTone = 'ink',
+  reasonInGroup = false,
+  confirm,
 }: {
   action: Action
   showReason: boolean
+  /** Der Folgesatz, wenn der Befehl nachfragen soll (T-M44-09b): dann ein `ConfirmButton` statt des einfachen Knopfs. */
+  confirm?: string | undefined
+  /** Der Grund steht schon in der Sammelzeile der Gruppe (T-M44-18): auch im Touch-Betrieb nicht noch einmal. */
+  reasonInGroup?: boolean
   /** Breite des Schattenrisses, falls die Aktion einen fuehrt (D33.3). */
   artWidth?: number
   /** Seine Farbe: in der Rekrutierungsliste `ink`, im Bauplatzraster `building` (D33.2). */
@@ -193,34 +239,38 @@ function ActionButton({
   pressed?: boolean
 }) {
   const reasonId = `${action.id}-reason`
-  const touchInfo = useInputMode() === 'touch' ? touchHint(action, showReason) : null
+  const touchInfo = useInputMode() === 'touch' ? touchHint(action, showReason || reasonInGroup) : null
   return (
     <div className={compact ? 'action action--compact' : 'action'}>
       {/* Knopf und Fragezeichen in einer Zeile: untereinander ergaeben die
           Erklaerzeichen eine eigene Reihe einsamer Kreise (in der Sichtpruefung
           zu T-M13-17 gefunden). */}
       <span className="action__head">
-        <button
-          type="button"
-          className={primary ? 'button button--primary' : 'button'}
-          aria-pressed={pressed}
-          disabled={action.disabledReason !== null || action.pendingNotice !== undefined}
-          title={buttonTitle(action)}
-          // Der Name nennt die Handlung, nicht nur die Sache (T-M22-06, V2-13).
-          aria-label={compact ? (action.aria ?? action.label) : action.aria}
-          aria-describedby={action.disabledReason ? reasonId : undefined}
-          onClick={action.onRun}
-        >
-          {/* Das Bild geht vor, wo es eines gibt (T-M33-02); sonst die Glyphe wie bisher.
-              Ohne Namen, denn den traegt der Knopf schon — zweimal vorgelesen waere er
-              eine Zumutung (T-M22-06). */}
-          {action.art ? (
-            <UnitArt name={action.art} width={artWidth} tone={artTone} />
-          ) : (
-            action.icon && <Icon name={action.icon} size={13} />
-          )}
-          {compact ? '+' : action.label}
-        </button>
+        {confirm !== undefined && action.disabledReason === null && action.pendingNotice === undefined ? (
+          <ConfirmButton label={action.label} consequence={confirm} onConfirm={action.onRun} />
+        ) : (
+          <button
+            type="button"
+            className={primary ? 'button button--primary' : 'button'}
+            aria-pressed={pressed}
+            disabled={action.disabledReason !== null || action.pendingNotice !== undefined}
+            title={buttonTitle(action)}
+            // Der Name nennt die Handlung, nicht nur die Sache (T-M22-06, V2-13).
+            aria-label={compact ? (action.aria ?? action.label) : action.aria}
+            aria-describedby={action.disabledReason ? reasonId : undefined}
+            onClick={action.onRun}
+          >
+            {/* Das Bild geht vor, wo es eines gibt (T-M33-02); sonst die Glyphe wie bisher.
+                Ohne Namen, denn den traegt der Knopf schon — zweimal vorgelesen waere er
+                eine Zumutung (T-M22-06). */}
+            {action.art ? (
+              <UnitArt name={action.art} width={artWidth} tone={artTone} />
+            ) : (
+              action.icon && <Icon name={action.icon} size={13} />
+            )}
+            {compact ? '+' : action.label}
+          </button>
+        )}
         {action.explainKey && <Explain textKey={action.explainKey} subject={action.label} />}
       </span>
       {/* Nur im Touch-Betrieb: was sonst allein im Titel steht (2026-09-24). Fuers Ohr
@@ -291,7 +341,26 @@ function NextUnlockLine({ next }: { next: NextUnlock }) {
   )
 }
 
-export function ActionGroup({ group, next }: { group: ActionGroupSpec; next?: NextUnlock | null | undefined }) {
+// LOESCHVERMERK (Review): bis T-M44-18 lautete die Signatur:
+//   export function ActionGroup({ group, next }: { group: ActionGroupSpec; next?: NextUnlock | null | undefined }) {
+// und die Knoepfe wurden ohne `reasonInGroup` gezeichnet:
+//   <ActionButton key={action.id} action={action} showReason={showsReason(action)} />
+export function ActionGroup({
+  group,
+  next,
+  collectReasons = false,
+  confirms,
+}: {
+  group: ActionGroupSpec
+  /** Folgesätze je Aktionskennung: diese Knöpfe fragen vor dem Senden nach (T-M44-09b). */
+  confirms?: Readonly<Record<string, string>>
+  next?: NextUnlock | null | undefined
+  /**
+   * Sperrgründe als **eine** Sammelzeile über den Knöpfen statt als Absatz unter jedem (T-M44-18,
+   * R-UX-03/AK1); jeder gesperrte Knopf behält seinen Grund über `aria-describedby`.
+   */
+  collectReasons?: boolean
+}) {
   const reasons = new Set(group.actions.map((action) => action.disabledReason))
   const shared =
     group.actions.length > 0 && reasons.size === 1 && !reasons.has(null) ? group.actions[0]!.disabledReason : null
@@ -306,10 +375,20 @@ export function ActionGroup({ group, next }: { group: ActionGroupSpec; next?: Ne
    */
   const alreadyShown = new Set<string>()
   const showsReason = (action: Action): boolean => {
+    if (collectReasons) return false
     if (shared !== null || action.disabledReason === null) return false
     if (alreadyShown.has(action.disabledReason)) return false
     alreadyShown.add(action.disabledReason)
     return true
+  }
+
+  // Die Sammelzeile (T-M44-18): je Grund einmal, mit den Knöpfen davor, die er sperrt.
+  const collected = new Map<string, string[]>()
+  if (collectReasons && shared === null) {
+    for (const action of group.actions) {
+      if (action.disabledReason === null) continue
+      collected.set(action.disabledReason, [...(collected.get(action.disabledReason) ?? []), action.label])
+    }
   }
 
   return (
@@ -317,9 +396,18 @@ export function ActionGroup({ group, next }: { group: ActionGroupSpec; next?: Ne
       <h3 className="group__title">{group.title}</h3>
       {next && <NextUnlockLine next={next} />}
       {shared && <p className="group__reason">{shared}</p>}
+      {collected.size > 0 && (
+        <p className="group__reasons">
+          {[...collected].map(([reason, labels]) => (
+            <span key={reason} className="group__reasons-item">
+              {t('collected.line', { labels: labels.join(', '), reason })}
+            </span>
+          ))}
+        </p>
+      )}
       <div className="actions">
         {group.actions.map((action) => (
-          <ActionButton key={action.id} action={action} showReason={showsReason(action)} />
+          <ActionButton key={action.id} action={action} showReason={showsReason(action)} reasonInGroup={collectReasons} confirm={confirms?.[action.id]} />
         ))}
       </div>
     </section>
@@ -369,6 +457,8 @@ export function ProvincePicker({
 }
 
 export interface ProvincePanelProps {
+  /** Schliesst das Panel (T-M44-12). */
+  onClose?: (() => void) | undefined
   province: VisibleProvince | null
   ownerName: string | null
   /** Die Farbe des Besitzers auf der Karte (T-M20-02, R-UI-16). */
@@ -406,26 +496,31 @@ export function ProvincePanel(props: ProvincePanelProps) {
 
   return (
     <section className="panel" aria-label={province.name}>
-      <header className="panel__head">
-        <h2>
-          {/* Der Stern der Hauptstadt als Zeichen vor dem Namen (D27.6). */}
-          {props.isCapital && <Icon name="capital" size={14} title={t('province.capital')} />}
-          {props.isCapital ? ' ' : ''}
-          {province.name}
-        </h2>
-        <p className="panel__sub">
-          {province.kind === 'city' ? t('province.kindCity') : t('province.kindRural')} ·{' '}
-          {/* Das Zeichen vor dem Wort, nicht statt seiner: R-UI-11 verlangt das Symbol,
-              und der Name bleibt daneben stehen, weil ein Bild allein keine Auskunft ist
-              (T-M20-01). Seit T-M29-03 mit dem Bonus, den das Gelaende dem Verteidiger
-              gibt — die Zahl, die der Angreifer wissen will. */}
-          <Icon name={TERRAIN_ICONS[province.terrain]} size={13} />{' '}
-          {t(`terrain.${province.terrain}`)}
-          {defence > 0 ? ` · ${t('province.defenceBonus', { percent: defence / 10 })}` : ''}
-          <Explain textKey={`explain.terrain.${province.terrain}`} subject={t(`terrain.${province.terrain}`)} /> ·{' '}
-          {province.coastal ? t('province.coastal') : t('province.landlocked')}
-        </p>
-      </header>
+      <PanelHead
+        onClose={props.onClose}
+        title={
+          <>
+            {/* Der Stern der Hauptstadt als Zeichen vor dem Namen (D27.6). */}
+            {props.isCapital && <Icon name="capital" size={14} title={t('province.capital')} />}
+            {props.isCapital ? ' ' : ''}
+            {province.name}
+          </>
+        }
+        sub={
+          <p className="panel__sub">
+            {province.kind === 'city' ? t('province.kindCity') : t('province.kindRural')} ·{' '}
+            {/* Das Zeichen vor dem Wort, nicht statt seiner: R-UI-11 verlangt das Symbol,
+                und der Name bleibt daneben stehen, weil ein Bild allein keine Auskunft ist
+                (T-M20-01). Seit T-M29-03 mit dem Bonus, den das Gelaende dem Verteidiger
+                gibt — die Zahl, die der Angreifer wissen will. */}
+            <Icon name={TERRAIN_ICONS[province.terrain]} size={13} />{' '}
+            {t(`terrain.${province.terrain}`)}
+            {defence > 0 ? ` · ${t('province.defenceBonus', { percent: defence / 10 })}` : ''}
+            <Explain textKey={`explain.terrain.${province.terrain}`} subject={t(`terrain.${province.terrain}`)} /> ·{' '}
+            {province.coastal ? t('province.coastal') : t('province.landlocked')}
+          </p>
+        }
+      />
 
       {province.stale && (
         <p className="notice notice--info">
@@ -616,10 +711,19 @@ export function ProvincePanel(props: ProvincePanelProps) {
 }
 
 /** The panel's state while an order still needs a place on the map. */
+// LOESCHVERMERK (Review): bis T-M44-11 war `options` eine flache Liste, im Auswahlfeld so gezeichnet:
+//   options: readonly { id: string; name: string }[]
+//   {targeting.options.map((province) => (<option key={province.id} value={province.id}>{province.name}</option>))}
+// Der Zweig `unreachable === undefined` (Beschuss) zeichnet sie weiter so.
 export interface Targeting {
   kind: 'move' | 'bombard'
   target: { id: string; name: string; arrivalText: string | null } | null
-  options: readonly { id: string; name: string }[]
+  options: readonly { id: string; name: string; arrivalDay?: number | undefined }[]
+  /**
+   * Beim Marsch: die unerreichbaren Ziele, getrennt und gesperrt (T-M44-11, R-UX-04/AK2). Fehlt es (Beschuss),
+   * ist `options` die eine flache Liste wie bisher; sonst sind `options` die erreichbaren, mit Ankunftstag.
+   */
+  unreachable?: readonly { id: string; name: string }[] | undefined
   /** The order for the chosen target, checked — null until a target is chosen. */
   confirm: Action | null
   onChoose: (id: string | null) => void
@@ -666,6 +770,10 @@ function DepartStepper(props: { days: number; onDelay: (days: number) => void })
 }
 
 export interface ArmyPanelProps {
+  /** Zurueck zur Provinz der Armee (T-M44-12). */
+  onBack?: (() => void) | undefined
+  /** Schliesst das Panel (T-M44-12). */
+  onClose?: (() => void) | undefined
   army: VisibleArmy | null
   name?: string | undefined
   /** The stacks of an own army, as symbols with counts (R-UI-10). */
@@ -715,13 +823,17 @@ export function ArmyPanel(props: ArmyPanelProps) {
 
   return (
     <section className="panel" aria-label={t('army.title')}>
-      <header className="panel__head">
-        <h2>{props.name ?? t('army.title')}</h2>
-        <p className="panel__sub">
-          {t('army.power')} {amount(army.strength)}
-          {props.condition !== undefined && ` · ${t('army.condition')} ${percent(Math.round(props.condition * 100))}`}
-        </p>
-      </header>
+      <PanelHead
+        title={props.name ?? t('army.title')}
+        onBack={props.onBack}
+        onClose={props.onClose}
+        sub={
+          <p className="panel__sub">
+            {t('army.power')} {amount(army.strength)}
+            {props.condition !== undefined && ` · ${t('army.condition')} ${percent(Math.round(props.condition * 100))}`}
+          </p>
+        }
+      />
 
       {/* Der Zustand als Balken: Trefferpunkte am Vollstand (T-M31-02, R-UI-09). */}
       {props.condition !== undefined && (
@@ -811,13 +923,41 @@ export function ArmyPanel(props: ArmyPanelProps) {
               onChange={(event) => targeting.onChoose(event.target.value || null)}
             >
               <option value="">{t('province.pickNone')}</option>
-              {targeting.options.map((province) => (
-                <option key={province.id} value={province.id}>
-                  {province.name}
-                </option>
-              ))}
+              {targeting.unreachable === undefined ? (
+                targeting.options.map((province) => (
+                  <option key={province.id} value={province.id}>
+                    {province.name}
+                  </option>
+                ))
+              ) : (
+                <>
+                  {targeting.options.length > 0 && (
+                    <optgroup label={t('march.reachable')}>
+                      {targeting.options.map((province) => (
+                        <option key={province.id} value={province.id}>
+                          {province.arrivalDay === undefined
+                            ? province.name
+                            : t('march.optionArrival', { name: province.name, day: province.arrivalDay })}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {targeting.unreachable.length > 0 && (
+                    <optgroup label={t('march.unreachable')}>
+                      {targeting.unreachable.map((province) => (
+                        <option key={province.id} value={province.id} disabled>
+                          {province.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                </>
+              )}
             </select>
           </label>
+          {targeting.unreachable !== undefined && targeting.options.length === 0 && (
+            <p className="notice notice--info">{t('march.noneReachable')}</p>
+          )}
           {targeting.kind === 'move' && targeting.onDelay && (
             <DepartStepper days={targeting.delayDays ?? 0} onDelay={targeting.onDelay} />
           )}
@@ -1294,6 +1434,10 @@ function OfferList({ title, rows }: { title: string; rows: readonly OfferRow[] }
  * Gesteuert (E9): welche Macht gewaehlt ist, steht in `uiState`, nicht in einem lokalen `useState`
  * — nur so kann eine Meldung "Diplomatie mit X" die richtige Macht oeffnen.
  */
+// LOESCHVERMERK (Review): bis T-M44-18 trugen die zwei Leerzustaende keine Klasse:
+//   <p>{t('diplomacy.noRelations')}</p>
+//   <p>{t('diplomacy.noWars')}</p>
+// Jetzt `className="panel__empty"` (Satzgroesse statt Absatz in Ueberschriftgroesse).
 export function DiplomacyPanel({
   view,
   nameOf,
@@ -1305,7 +1449,9 @@ export function DiplomacyPanel({
   passageFor,
   offers,
   tradeForm,
+  onClose,
 }: {
+  onClose?: (() => void) | undefined
   view: PublicView | null
   nameOf: (id: string) => string
   /** Der Massstab des Ansehensbalkens (`reputationBaseline`); ohne ihn kein Balken. */
@@ -1324,7 +1470,7 @@ export function DiplomacyPanel({
   if (!view || view.others.length === 0) {
     return (
       <section className="panel" aria-label={t('diplomacy.title')}>
-        <p>{t('diplomacy.noRelations')}</p>
+        <p className="panel__empty">{t('diplomacy.noRelations')}</p>
       </section>
     )
   }
@@ -1336,7 +1482,7 @@ export function DiplomacyPanel({
 
   return (
     <section className="panel" aria-label={t('diplomacy.title')}>
-      <h2>{t('diplomacy.title')}</h2>
+      <PanelHead title={t('diplomacy.title')} onClose={onClose} />
       {reputationMax !== undefined && (
         <Meter
           label={t('diplomacy.ownReputation')}
@@ -1419,7 +1565,7 @@ export function DiplomacyPanel({
       <section className="group wars" aria-label={t('diplomacy.wars')}>
         <h3 className="group__title">{t('diplomacy.wars')}</h3>
         {view.publicWars.length === 0 ? (
-          <p>{t('diplomacy.noWars')}</p>
+          <p className="panel__empty">{t('diplomacy.noWars')}</p>
         ) : (
           <ul>
             {view.publicWars.map((war) => (
@@ -1437,11 +1583,17 @@ export function DiplomacyPanel({
                 title: t('diplomacy.treaties', { nation: nameOf(chosenAlive.id) }),
                 actions: actionsFor(chosenAlive.id),
               }}
+              collectReasons
+              confirms={{
+                [`diplomacy-declareWar-${chosenAlive.id}`]: t('diplomacy.declareWarConfirm', { nation: nameOf(chosenAlive.id) }),
+                [`diplomacy-breakAlliance-${chosenAlive.id}`]: t('diplomacy.breakAllianceConfirm', { nation: nameOf(chosenAlive.id) }),
+              }}
             />
           )}
           {passageFor && (
             <ActionGroup
               group={{ id: 'passage', title: t('diplomacy.passageGroup'), actions: passageFor(chosenAlive.id) }}
+              collectReasons
             />
           )}
           {tradeForm && (
@@ -1651,12 +1803,13 @@ export interface EspionagePanelProps {
   moving: string | null
   onCancelMove: () => void
   onJump: (provinceId: string) => void
+  onClose?: (() => void) | undefined
 }
 
-export function EspionagePanel({ rows, summary, moving, onCancelMove, onJump }: EspionagePanelProps) {
+export function EspionagePanel({ rows, summary, moving, onCancelMove, onJump, onClose }: EspionagePanelProps) {
   return (
     <section className="panel" aria-label={t('espionage.overview.title')}>
-      <h2>{t('espionage.overview.title')}</h2>
+      <PanelHead title={t('espionage.overview.title')} onClose={onClose} />
       {summary && <p className="panel__sub">{summary}</p>}
       {moving && (
         <>
@@ -1714,7 +1867,9 @@ export function MarketPanel({
   stock,
   preview,
   prices = {},
+  onClose,
 }: {
+  onClose?: (() => void) | undefined
   resources: readonly ResourceKey[]
   stock: Partial<Record<ResourceKey, number>>
   preview: (give: ResourceKey, giveAmount: number, want: ResourceKey) => { text: string; action: Action }
@@ -1737,7 +1892,7 @@ export function MarketPanel({
 
   return (
     <section className="panel" aria-label={t('market.title')}>
-      <h2>{t('market.title')}</h2>
+      <PanelHead title={t('market.title')} onClose={onClose} />
       <div className="market">
         <label htmlFor="market-give">{t('market.give')}</label>
         {/* Das Zeichen des jeweils GEWAEHLTEN Rohstoffs neben der Liste (T-M23-03,
@@ -1814,6 +1969,27 @@ function QuietRate({ value }: { value: number }) {
 }
 
 /**
+ * Ob die Wirtschaft aufgeklappt ist, gemerkt ueber Panelwechsel und Neustart (T-M44-12).
+ * Vorgabe: eingeklappt - die Kopfleiste zeigt Bestand und Richtung, die Tabelle ist die
+ * Vertiefung. Ein verweigerter Speicher darf nichts verhindern.
+ */
+const ECONOMY_OPEN_KEY = 'worldwar.economyOpen'
+function readEconomyOpen(): boolean {
+  try {
+    return globalThis.localStorage?.getItem(ECONOMY_OPEN_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+function writeEconomyOpen(value: boolean): void {
+  try {
+    globalThis.localStorage?.setItem(ECONOMY_OPEN_KEY, value ? '1' : '0')
+  } catch {
+    // ohne Speicher bleibt der Zustand fuer diese Sitzung
+  }
+}
+
+/**
  * The economy overview (R-ECON-06).
  *
  * Four columns per resource: what is in store, what comes in over a game day, what
@@ -1845,6 +2021,12 @@ export function EconomyPanel({
   expenses?: Partial<Record<string, number>>
 }) {
   const economy = view?.self.economy
+  // Der gemerkte Zustand (T-M44-12): einmal gelesen, beim Umschalten geschrieben.
+  const [open, setOpen] = useState(readEconomyOpen)
+  const rememberEconomyOpen = (value: boolean): void => {
+    setOpen(value)
+    writeEconomyOpen(value)
+  }
   if (!economy) return null
 
   const shortages = new Set(view?.self.shortages ?? [])
@@ -1860,7 +2042,14 @@ export function EconomyPanel({
 
   return (
     <section className="panel" aria-label={t('economy.title')}>
-      <h2>{t('economy.title')}</h2>
+      <details
+        className="panel--economy"
+        open={open}
+        onToggle={(event) => rememberEconomyOpen(event.currentTarget.open)}
+      >
+      <summary>
+        <h2>{t('economy.title')}</h2>
+      </summary>
       <table className="table table--numbers">
         <thead>
           <tr>
@@ -1927,6 +2116,7 @@ export function EconomyPanel({
           ))}
         </tbody>
       </table>
+      </details>
     </section>
   )
 }

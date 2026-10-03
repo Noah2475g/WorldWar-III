@@ -512,6 +512,14 @@ scope:
     R-AI-11:    "M42 — die KI rechnet mit dem Geld, das sie hat (T-M42-03, T-M42-04)"
     R-AI-12:    "M42 — die KI baut Fabriken und fuehrt Artillerie (T-M42-06, T-M42-07)"
     R-DIP-10:   "M43 — Raeumfrist nach Frieden, Buendnisbruch und Kuendigung (T-M43-01)"
+    # UX V2 vom 2026-10-03 (docs/plan/UX-PLAN.md): Bedienbarkeit, Rueckmeldung und Zugang,
+    # gemessen mit scripts/ux-capture.mjs. Keine Regel-, Balancing- oder KI-Aenderung.
+    R-UX-01:    "M44 — alle Mess-Fenstergroessen, Telefon hochkant (T-M44-03a, T-M44-03b)"
+    R-UX-02:    "M44 — Kopfleiste und Spielfeld auf einen Blick (T-M44-04, T-M44-07, T-M44-10, T-M44-20)"
+    R-UX-03:    "M44 — Spielersprache fuer Ablehnungen und Meldungen (T-M44-06, T-M44-18)"
+    R-UX-04:    "M44 — Rueckfrage bei folgenschweren Befehlen, erreichbare Ziele zuerst (T-M44-09a, T-M44-09b, T-M44-11)"
+    R-UX-05:    "M44 — Einstieg und Dialoge erklaeren sich (T-M44-05, T-M44-13, T-M44-14, T-M44-15, T-M44-16)"
+    R-UX-06:    "M44 — WCAG 2.1 AA in der Bedienung (T-M44-08, T-M44-17)"
   v1_partial:                       # nur ein Teil gehört zu V1
     R-GAME-02: "V1 nur Punkte- und Eroberungssieg; das Zeitlimit bleibt im Kern und ist nur über eine Konfiguration erreichbar (M18)"
     R-DIP-01:  "V1 nur die sechs Zustände; ausgehandelte Verträge mit Provinz-, Karten- und Tributterm sind M18"
@@ -941,6 +949,11 @@ Provinzhandel nach M17) und dem Befund beim Planen (`PROBLEME.md`, B1 und B2). E
     > braucht laut `units.json` eine Fabrik. Wer Geld hat, baut keine Fabrik; wer Fabriken
     > baut, kann sie nicht bezahlen. Die Reparatur braucht zugleich Befund M17-S12 und kippt
     > das Turnierband; Entscheid Noah (2026-09-25): beide gehen an M18.
+    >
+    > **Auf dem M42-Stand (2026-10-03) weiter nicht erfüllt.** Mit der Artillerie-Untergrenze
+    > (T-M42-07, Stufe AB) war AK3 erfüllt (Welt 1815: 246 Artillerie, 1703 selbsttätiger
+    > Beschuss), aber T-M42-07 ist zurückgenommen, weil das Band aus R-AI-12/AK3 riss (Befund
+    > M42-07-a, Frage an Noah). Der Vermerk bleibt, bis T-M42-07 übernommen ist.
 - **R-GAME-07 — Spielstände der V1 laufen weiter.** Die neuen Zustandsfelder von M15 —
   **Betroffenheit am Ereignis, Verstimmungen, Feuerleitung** — kommen mit **einer**
   Migration von Version 1 auf 2. *(Spione, Aufklärung und Zeitung standen hier bis zum
@@ -1275,6 +1288,8 @@ wie der Mensch (R-AI-01).
 - **AK1:** WENN zwei eigene Armeen zusammengelegt werden, DANN SOLL sich die Rangfolge der als
   Nächstes auszuhebenden Einheit dadurch nicht ändern. Der Rückstand zur Zielmischung wird in
   Einheiten gemessen, nicht in Stapeln.
+  > **Unerfüllt (2026-10-03): T-M42-05 ist zurückgenommen, siehe M42-07-a** (`PROBLEME.md`; wie bei
+  > R-AI-08/AK3). Die Rangfolge zählt weiterhin Stapel; AK2–AK4 sind durch T-M42-08/-09 erfüllt.
 - **AK2:** WENN die KI zusammenlegt, DANN SOLL eine Armee, deren Einheiten sämtlich Reichweite haben,
   nur mit ebensolchen zusammengelegt werden.
 - **AK3** *(Wortlaut nach Noahs Antwort auf Frage 4, „wie empfohlen"):* WENN am Ende zweier
@@ -1317,11 +1332,13 @@ wie der Mensch (R-AI-01).
   es 2 von 6; Kanada hat keine Stadt und zählt nicht mit.
 - **AK3** *(Band nach Noahs Antwort auf Frage 1, „wie empfohlen", Mischung 60/30/10):* WENN
   dieselben Läufe gespielt werden, DANN SOLL in jedem Lauf selbsttätiger Beschuss vorkommen, und der
-  Anteil der Artillerie an den ausgehobenen Landeinheiten SOLL im Band 15–30 % liegen (gemessen
-  24–28 %). Damit sind R-AI-08/AK3 und R-BAT-08/AK3 auf dem M42-Stand wieder erfüllt.
+  Anteil der Artillerie an den ausgehobenen Landeinheiten SOLL im Band 15–30 % liegen (*„gemessen
+  24–28 %“ ist nicht nachprüfbar: die Plansonde fehlt im Repo; die Zahl stammt aus dem Plan, nicht aus einem eingecheckten Lauf*). Damit sind R-AI-08/AK3 und R-BAT-08/AK3 auf dem M42-Stand wieder erfüllt.
 - **AK4:** WENN die KI eine Einheit mit Ölunterhalt erwägt, DANN SOLL sie sie nur ausheben, wenn die
   Öl-Tagesbilanz danach nicht negativ ist, also geschätzte Förderung − Ölunterhalt aller Armeen
   einschließlich der neuen ≥ 0.
+  *(Befund M42-07-a, Stand 2026-10-03: AK3 und AK4 sind auf der Weltkarte gemeinsam nicht erfüllbar; die Regelfrage ist offen. Noahs Entscheid E1 vom 2026-10-03: Artillerie verbraucht weiter Öl, T-M42-07 bleibt zurückgenommen. Auf dem heutigen Stand hebt die KI keine Einheit mit Ölunterhalt aus, AK4 gilt damit leer. Der abgeschwächte Wortlaut „Vorrats-Horizont H“ (Orchestrator, 61d1477) hatte kein Wort von Noah und gehörte zu T-M42-14, das mit H1–H3 zurückgenommen ist.)*
+<!-- LOESCHVERMERK (Review): abgeschwächte AK4-Fassung vom 2026-10-03 (61d1477), zurückgesetzt auf den alten Wortlaut, weil T-M42-14 (H1–H3, 7bf8f26) zurückgenommen ist und Noah die Abschwächung nicht entschieden hat. Wortlaut: - **AK4** *(Fassung vom 2026-10-03, Orchestrator-Entscheid unter Noahs Vorabfreigabe, revidierbar — `DECISIONS.md`, 2026-10-03, „R-AI-12/AK4 auf den Zweck"):* WENN die KI eine Einheit mit Ölunterhalt erwägt, DANN SOLL sie sie nur ausheben, wenn ihr **Ölbestand dadurch nicht leerläuft**: der Bestand nach den Befehlen desselben Zugs plus die Öl-Tagesbilanz einschließlich der neuen Einheit über einen Vorrats-Horizont von H Spieltagen bleibt ≥ 0 (H ist eine KI-Konstante, keine Spielregel). Gemessen wird der Zweck: kein Ölmangeltag, der auf eine eigene Aushebung zurückgeht. *(Bis 2026-10-03 lautete AK4: „… nur ausheben, wenn die Öl-Tagesbilanz danach nicht negativ ist, also geschätzte Förderung − Ölunterhalt aller Armeen einschließlich der neuen ≥ 0." Diese Fassung ließ den fünf Mächten ohne Ölförderung keine einzige Artillerie und machte AK3 und AK4 auf der Weltkarte gemeinsam unerfüllbar — Befund M42-07-a. Der Wächter mit Horizont ist gebaut und gemessen (T-M42-14, drei Iterationen) und zurückgenommen, weil die Vollpartien rissen; auf dem heutigen Stand hebt die KI keine Einheit mit Ölunterhalt aus, AK4 gilt damit leer.)*  -->
 - **AK5:** WENN diese Anforderung gebaut ist, DANN SOLLEN alle Zusicherungen des Turniers (R-AI-06,
   `tournament.slow.test.ts`) grün sein. Die Aufrüstung darf die Stufen nicht einebnen.
 
@@ -1364,6 +1381,173 @@ gemeinsame Räumfrist für Frieden und Bündnisbruch gibt; die Form nach Noahs A
   zur Armee springen.
 - **AK6:** WENN diese Anforderung gebaut ist, DANN SOLL `SCHEMA_VERSION` 4 bleiben und kein
   Golden-Master sich bewegen.
+
+### 2.20 Bedienbarkeit, Rückmeldung und Zugang (M44 „UX V2", aufgenommen 2026-10-03) — `R-UX`
+
+Aus der UX-Aufnahme vom 2026-10-03 (`docs/plan/UX-PLAN.md`, Bilder und Messwerte in
+`docs/ux/before/`, Messwerkzeug `scripts/ux-capture.mjs`), nach dem Review vom selben Tag berichtigt
+(UX-PLAN §9 „Review-Einarbeitung"). Keine dieser Anforderungen berührt Regeln, Balancing oder KI:
+`packages/core`, `packages/ai` und `data/rules` bleiben unverändert. Gemessen wird mit demselben
+Werkzeug vorher (`docs/ux/before`) und nachher (`docs/ux/after`). **Fenstergrößen:** 375×667
+(Telefon hochkant), 667×375 (Telefon quer, Rückfallprüfung), 1280×800, 1366×768 (häufigster
+Laptop, „unverändert"-Prüfung), 1920×1080; zusätzlich 1024×768, 768×1024 und 320×568 (WCAG 1.4.10,
+Umfließen bei 320 CSS-px). Zeitmessungen am gebauten Bündel (`vite build` + `vite preview`,
+WORKFLOW §4 Falle 18). Entwurf: `02-DESIGN.md` D37.
+
+- **R-UX-01 — Das Spiel ist in allen Mess-Fenstergrößen bedienbar.**
+- **AK1:** WENN das Spiel bei 375×667 (Telefon hochkant) läuft, DANN SOLL die Karte ohne offenes
+  Panel mindestens 45 % und mit offenem Provinz- oder Armeepanel mindestens 30 % der sichtbaren
+  Fläche einnehmen (Messwert `layout.*.mapShareOfViewport`; vorher 0).
+- **AK2:** WENN die Aufnahme in einer der Mess-Fenstergrößen läuft, DANN SOLL weder die Seite noch ein
+  gemessener Bereich (Kopfleiste, Rohstoffleiste, Seitenleiste, Fuß, Dialog, Spielstandraster)
+  waagerecht überlaufen (`pageOverflowX` falsch, `overflowingRegions` leer); ein absichtlich
+  wischbarer Bereich ist ausgenommen, wenn er per Tastatur erreichbar ist (R-UX-06/AK1).
+- **AK3:** WENN die Aufnahme in einer der Mess-Fenstergrößen läuft, DANN SOLL sie ohne Fehlschritt
+  durchlaufen (`failures` leer) — jede Kernhandlung ist in jeder Größe erreichbar. Bei 667×375 und
+  1366×768 SOLL kein Messwert schlechter sein als vorher (Rückfallprüfung).
+
+- **R-UX-02 — Kopfleiste und Spielfeld zeigen den Stand auf einen Blick.**
+- **AK1:** WENN das Fenster mindestens 1280 px breit ist, DANN SOLLEN Kopfleiste und Rohstoffleiste
+  zusammen höchstens 70 px hoch sein — gemessen **im Zustand mit sichtbarem Alarmchip und Siegziel**
+  bei 1280×800 und 1366×768, und ebenso im Mehrspieler-Bau mit fester Rate (`header.fixedSpeed`).
+  Vorher: 65 px am Start, 105–107 px ab Tag 2 bei 1280×800.
+- **AK2:** WENN ein Element das Attribut `hidden` trägt, DANN SOLL es nicht gezeichnet werden; die
+  Kaskade darf `hidden` nicht überstimmen (vorher: leerer roter Alarmrahmen in der Kopfleiste).
+- **AK3:** WENN ein Dialog offen ist oder der Zeiger die Karte verlässt, DANN SOLL kein
+  Kartentooltip sichtbar sein; der Auswahl-Tooltip erscheint nur nach einer Auswahl per Tastatur
+  und nennt dann keine Mausbedienung.
+- **AK4:** WENN das Protokoll eine Zeile zeigt, DANN SOLL ihre Zeitangabe einzeilig stehen, und
+  gleichlautende Gefechtszeilen derselben Provinz und Stunde SOLLEN zu einer Zeile zusammengefasst
+  sein; die Rangliste im Fuß SOLL Platz 1 als erste Zeile zeigen, die eigene Umgebung bleibt darunter.
+- **AK5:** WENN das Spiel auf Tempo 100 läuft, DANN SOLLEN Karte und Panels flüssig bleiben: in drei
+  Sekunden höchstens drei Bilder über 50 ms und keine lange Aufgabe über 60 ms bei 1920×1080, gemessen
+  **am gebauten Bündel** auf ruhiger Maschine gegen einen am selben Tag gemessenen Ausgangswert
+  (am 2026-10-03 unter Last: Bündel 0 lange Aufgaben und 1 Bild über 50 ms — hält schon; der
+  Dev-Server zeigte 16 Bilder und 114 ms).
+
+- **R-UX-03 — Jede Ablehnung und jede Meldung spricht Spielersprache.**
+- **AK1:** WENN der Kern einen Befehl mit einem Grund (`detail.reason`) ablehnt, DANN SOLL die
+  Oberfläche einen deutschen Satz dazu zeigen — nachgeschlagen nach (Befehlstyp, Grund) — und nie das
+  Rohwort des Kerns in Klammern; ein Wächter liest die Gründe aus `packages/core/src/commands` (nur
+  lesend) und prüft, dass jeder einen Schlüssel in `de.ts` hat. Ein Befehl, der an diesem Ort nie
+  gelingen kann (Hauptstadt verlegen in die eigene Hauptstadt), wird nicht angeboten.
+- **AK2:** WENN ein Spielertext eine Armee, Provinz oder Macht nennt, DANN SOLL er ihren Namen
+  tragen und nie eine interne Kennung (vorher: „a68 ist vernichtet."); ein unbekannter Name heißt
+  „eine Armee", nicht „a68".
+- **AK3:** WENN ein Spielstand nicht gelesen werden kann, DANN SOLL die Meldung „aus einer anderen
+  Fassung" genau dann erscheinen, wenn der Kern `UnsupportedSaveVersion` wirft, und sonst
+  „beschädigt" lauten (vorher: „fehlen Version oder Spielstand" galt als andere Fassung).
+- **AK4:** WENN die Oberfläche „Dorthin führt kein Weg" meldet, DANN SOLL der Satz die wahre Ursache
+  nennen (kein Land- oder Seeweg im Kartengraphen) und nicht „feindliches Gebiet".
+
+- **R-UX-04 — Folgenschwere Befehle fragen nach, unmögliche werden gar nicht erst angeboten.**
+- **AK1:** WENN der Spieler Krieg erklärt, ein Bündnis aufkündigt, einen belegten Spielstand
+  überschreibt, die Einstellungen auf Vorgabe zurücksetzt oder aus einer laufenden Partie eine neue
+  beginnt, DANN SOLL ein **zweiter Klick am selben Knopf** nötig sein; der Knopf nennt nach dem ersten
+  Klick die Folge in einem Satz (angesagt über `aria-live`), Escape und Fokusverlust brechen ab, und es
+  gibt **keine Zeitüberschreitung** (R-FREE, Wächter `no-time-pressure`).
+- **AK2:** WENN der Spieler ein Marschziel wählt, DANN SOLLEN erreichbare Ziele mit Ankunftstag
+  zuerst und getrennt von unerreichbaren stehen; ein unerreichbares Ziel ist nicht wählbar. Die
+  Wegsuche läuft nur beim Öffnen und ist je (Armee, Ort, Spieltag) zwischengespeichert; das Öffnen
+  erzeugt keine lange Aufgabe über 50 ms (vorher: 237 Ziele alphabetisch).
+
+- **R-UX-05 — Der Einstieg erklärt sich dort, wo der Spieler hinsieht.**
+- **AK1:** WENN ein Dialog mehr Inhalt hat, als in das Fenster passt, DANN SOLL seine Hauptaktion
+  ohne Rollen sichtbar bleiben (vorher: „Partie beginnen" bei 1280×800 unter dem Dialogrand).
+- **AK2:** WENN die Einführung einen Ort nennt, DANN SOLL er in jeder Fenstergröße stimmen (kein
+  „rechts", wenn die Seitenleiste unten liegt), und die Einführung SOLL das Element, von dem sie
+  spricht, nicht verdecken. Im Hochformat erscheint ein nicht blockierender Hinweis „quer halten
+  empfohlen".
+- **AK3:** WENN eine Erklärung („?") offen ist, DANN SOLL Escape sie schließen und das Raster
+  daneben unverändert bleiben.
+- **AK4:** WENN die Partie entschieden ist, DANN SOLL der Endedialog Sieg oder Niederlage, die
+  erfüllte Siegbedingung und den Weg zur Karte und zu einer neuen Partie nennen — geprüft an einem
+  Spielstand, dessen Zustand die Siegbedingung **wirklich** erfüllt (nicht nur `winner` gesetzt).
+
+- **R-UX-06 — Die Bedienung erfüllt WCAG 2.1 AA.**
+- **AK1:** WENN axe-core mit den Regelsätzen `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa` die
+  Messzustände der Aufnahme prüft, DANN SOLL es keinen Verstoß melden; „unvollständige"
+  Kontrastknoten werden stichprobenartig von Hand nachgemessen und im UX-PLAN festgehalten.
+- **AK2:** WENN ein modaler Dialog offen ist — auch der Endedialog, der gesperrte Vorhang
+  (`.dialog-backdrop--locked`, Mehrspieler-Abweichung) und Beitritt/Lobby —, DANN SOLL Tab den Dialog
+  nicht verlassen und Escape ihn schließen, soweit er schließbar ist.
+- **AK3:** WENN das Spiel per Finger bedient wird oder schmaler als 600 px ist, DANN SOLL kein
+  Bedienelement der Kopfleiste, der Seitenleiste und der Dialoge kleiner als 44×44 px sein; am
+  Schreibtisch keines kleiner als 24×24 px (WCAG 2.5.8 als Untergrenze).
+- **AK4:** WENN ein Element den Tastaturfokus hat, DANN SOLL der Rahmen ein eigenes Fokus-Token
+  tragen (nicht die Signalfarbe für Feind und Alarm) und gegen beide Gründe mindestens 3:1 halten.
+
+<!-- LOESCHVERMERK (Review): erste Fassung von 2.20 (Commit 8e30cfb), ersetzt nach dem Review vom 2026-10-03 (UX-PLAN Paragraf 9). Wortlaut (zitiert, damit die Anforderungsleser es nicht als zweite Fassung zaehlen):
+> ### 2.20 Bedienbarkeit, Rückmeldung und Zugang (M44 „UX V2", aufgenommen 2026-10-03) — `R-UX`
+>
+> Aus der UX-Aufnahme vom 2026-10-03 (`docs/plan/UX-PLAN.md`, Bilder und Messwerte in
+> `docs/ux/before/`, Messwerkzeug `scripts/ux-capture.mjs`). Keine dieser Anforderungen berührt
+> Regeln, Balancing oder KI: `packages/core`, `packages/ai` und `data/rules` bleiben unverändert.
+> Gemessen wird mit demselben Werkzeug vorher (`docs/ux/before`) und nachher (`docs/ux/after`) in
+> den drei Fenstergrößen 375×667, 1280×800 und 1920×1080. Entwurf: `02-DESIGN.md` D36.
+>
+> - **R-UX-01 — Das Spiel ist in drei Fenstergrößen bedienbar.**
+> - **AK1:** WENN das Spiel bei 375×667 (Telefon hochkant) läuft, DANN SOLL die Karte mindestens
+>   45 % der sichtbaren Fläche einnehmen (Messwert `layout.mapStart.mapShareOfViewport`).
+> - **AK2:** WENN die Aufnahme in 375×667, 1280×800 und 1920×1080 läuft, DANN SOLL weder die Seite
+>   noch ein gemessener Bereich (Kopfleiste, Seitenleiste, Fuß, Dialog, Spielstandraster) waagerecht
+>   überlaufen (`pageOverflowX` falsch, `overflowingRegions` leer).
+> - **AK3:** WENN die Aufnahme in einer der drei Größen läuft, DANN SOLL sie ohne Fehlschritt
+>   durchlaufen (`failures` leer) — jede Kernhandlung ist in jeder Größe erreichbar.
+>
+> - **R-UX-02 — Kopfleiste und Spielfeld zeigen den Stand auf einen Blick.**
+> - **AK1:** WENN das Fenster mindestens 1280 px breit ist, DANN SOLL die Kopfleiste samt Siegziel
+>   einzeilig bleiben: Kopfleiste und Rohstoffleiste zusammen höchstens 70 px hoch, auch ab Spieltag 2
+>   (gemessen vorher: 65 px am Start, 105–107 px ab Tag 2 bei 1280×800).
+> - **AK2:** WENN ein Element das Attribut `hidden` trägt, DANN SOLL es nicht gezeichnet werden; die
+>   Kaskade darf `hidden` nicht überstimmen (vorher: leerer roter Alarmrahmen in der Kopfleiste).
+> - **AK3:** WENN ein Dialog offen ist oder der Zeiger die Karte verlässt, DANN SOLL kein
+>   Kartentooltip sichtbar sein.
+> - **AK5:** WENN das Spiel auf Tempo 100 läuft, DANN SOLLEN Karte und Panels flüssig bleiben: in drei
+>   Sekunden höchstens drei Bilder über 50 ms und keine lange Aufgabe über 60 ms bei 1920×1080, gemessen
+>   auf ruhiger Maschine gegen einen am selben Tag gemessenen Ausgangswert (vorher 16 Bilder, 114 ms).
+> - **AK4:** WENN das Protokoll eine Zeile zeigt, DANN SOLL ihre Zeitangabe einzeilig stehen, und die
+>   Rangliste im Fuß SOLL den Ersten immer zeigen.
+>
+> - **R-UX-03 — Jede Ablehnung und jede Meldung spricht Spielersprache.**
+> - **AK1:** WENN der Kern einen Befehl mit einem Grund (`detail.reason`) ablehnt, DANN SOLL die
+>   Oberfläche einen deutschen Satz dazu zeigen und nie das Rohwort des Kerns in Klammern; ein
+>   Wächter prüft, dass jeder Grund, den die Hülle zu sehen bekommt, einen Schlüssel in `de.ts` hat.
+> - **AK2:** WENN ein Spielertext eine Armee, Provinz oder Macht nennt, DANN SOLL er ihren Namen
+>   tragen und nie eine interne Kennung (vorher: „a68 ist vernichtet.").
+> - **AK3:** WENN ein Spielstand nicht gelesen werden kann, DANN SOLL die Meldung sagen, dass er
+>   beschädigt ist, und nicht, dass er aus einer anderen Fassung stamme.
+>
+> - **R-UX-04 — Folgenschwere Befehle fragen nach, unmögliche werden gar nicht erst angeboten.**
+> - **AK1:** WENN der Spieler Krieg erklärt, ein Bündnis aufkündigt, einen belegten Spielstand
+>   überschreibt oder aus einer laufenden Partie eine neue beginnt, DANN SOLL ein zweiter,
+>   ausdrücklicher Schritt nötig sein, der die Folge in einem Satz nennt.
+> - **AK2:** WENN der Spieler ein Marschziel wählt, DANN SOLLEN erreichbare Ziele mit Ankunftstag
+>   zuerst und getrennt von unerreichbaren stehen; ein unerreichbares Ziel ist nicht wählbar
+>   (vorher: 237 Ziele alphabetisch, „Dorthin führt kein Weg" erst nach der Wahl).
+>
+> - **R-UX-05 — Der Einstieg erklärt sich dort, wo der Spieler hinsieht.**
+> - **AK1:** WENN ein Dialog mehr Inhalt hat, als in das Fenster passt, DANN SOLL seine Hauptaktion
+>   ohne Rollen sichtbar bleiben (vorher: „Partie beginnen" bei 1280×800 unter dem Dialogrand).
+> - **AK2:** WENN die Einführung einen Ort nennt, DANN SOLL er in jeder Fenstergröße stimmen (kein
+>   „rechts", wenn die Seitenleiste unten liegt), und die Einführung SOLL das Element, von dem sie
+>   spricht, nicht verdecken.
+> - **AK3:** WENN eine Erklärung („?") offen ist, DANN SOLL Escape sie schließen und das Raster
+>   daneben unverändert bleiben.
+> - **AK4:** WENN die Partie entschieden ist, DANN SOLL der Endedialog Sieg oder Niederlage, die
+>   erfüllte Siegbedingung und den Weg zur Karte und zu einer neuen Partie nennen.
+>
+> - **R-UX-06 — Die Bedienung erfüllt WCAG 2.1 AA.**
+> - **AK1:** WENN axe-core mit den Regelsätzen `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa` die
+>   Messzustände der Aufnahme prüft, DANN SOLL es keinen Verstoß melden.
+> - **AK2:** WENN ein modaler Dialog offen ist (auch der Endedialog), DANN SOLL Tab den Dialog nicht
+>   verlassen und Escape ihn schließen, soweit er schließbar ist.
+> - **AK3:** WENN das Spiel per Finger bedient wird oder schmaler als 600 px ist, DANN SOLL kein
+>   Bedienelement der Kopfleiste, der Seitenleiste und der Dialoge kleiner als 44×44 px sein; am
+>   Schreibtisch keines kleiner als 24×24 px (WCAG 2.5.8 als Untergrenze).
+> - **AK4:** WENN ein Element den Tastaturfokus hat, DANN SOLL der Rahmen ein eigenes Fokus-Token
+>   tragen (nicht die Signalfarbe für Feind und Alarm) und gegen beide Gründe mindestens 3:1 halten.
+-->
 
 ## 3. Abnahmekriterien für V1 (Definition of Done der Version)
 

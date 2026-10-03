@@ -3,6 +3,7 @@ import { firstBlock, guestWithdrawal, ownerOf, predictLandPath, requestPassage, 
 import { compareForces, threatMap, worthAttacking } from './threat'
 import { rateProvinces } from './targeting'
 import type { AiContext, Explanation } from './types'
+import { isBattery } from './army-role'
 
 /**
  * Military decisions (T-M7-03).
@@ -152,9 +153,11 @@ export function militaryCommands(context: AiContext, explanations: Explanation[]
     //
     // Eigene Armeen zeigen ihre Zusammensetzung; fremde nicht — deshalb der Vorbehalt.
     const eigeneEinheiten = army.units ?? []
-    const nurFernwaffen =
-      eigeneEinheiten.length > 0 &&
-      eigeneEinheiten.every((stack) => (context.rules.units[stack.unitKey]?.rangeProvinces ?? 0) > 0)
+    // LOESCHVERMERK (Review): T-M42-08 liest die Bedingung aus `army-role.ts` (verhaltensgleich). Alte Fassung:
+    // const nurFernwaffen =
+    //   eigeneEinheiten.length > 0 &&
+    //   eigeneEinheiten.every((stack) => (context.rules.units[stack.unitKey]?.rangeProvinces ?? 0) > 0)
+    const nurFernwaffen = isBattery(eigeneEinheiten, context.rules)
     if (nurFernwaffen && hasTargetInRange(context, army)) {
       explanations.push({
         action: `${army.id} hält Stellung in ${army.provinceId}`,

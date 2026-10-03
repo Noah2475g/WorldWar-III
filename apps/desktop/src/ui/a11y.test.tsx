@@ -4,7 +4,8 @@ import { join } from 'node:path'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { createInitialState, parseRules, publicView, step, type Army, type GameState, type MapData } from '@worldwar/core'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { Dialog } from './Dialogs.tsx'
+import { Dialog, JoinDialog, LobbyDialog } from './Dialogs.tsx'
+import { VictoryDialog } from './Standings.tsx'
 import { ActionRow, type Action } from './Panels.tsx'
 import {
   armyActions,
@@ -323,5 +324,193 @@ describe('R-UI-06 Jeder Befehlsknopf traegt ein Verb', () => {
     const button = screen.getByRole('button', { name: 'Kaserne bauen' })
     expect(button.textContent, 'sichtbar bleibt die kurze Beschriftung').toBe('Kaserne')
     expect(button.getAttribute('title'), 'die Kosten bleiben im Tooltip').toContain('Material')
+  })
+})
+
+/**
+ * Jeder modale Dialog hält den Fokus (T-M44-08, R-UX-06/AK2, Befund B-09).
+ *
+ * Gemessen am 2026-10-03: im Endedialog verließ Tab den Dialog (er trug kein Gerüst, nur
+ * `aria-modal`), und der gesperrte Vorhang des Mehrspielers war dasselbe Markup von Hand. Ein
+ * Gerüst, drei Fälle: Fokus-Einzug, Fokusfalle, Escape — soweit der Dialog schließbar ist.
+ */
+describe('R-UX-06/AK2 Modale Dialoge halten den Fokus', () => {
+  const sieg = {
+    tick: 240,
+    playerId: 'p1',
+    self: { alive: true, score: 700, name: 'Mensch', nation: 'Nordland' },
+    victory: { condition: 'points', winner: 'p1', pointsShareToWin: 700 },
+    provinces: [],
+    others: [],
+  } as unknown as Parameters<typeof VictoryDialog>[0]['view']
+
+  const zeigeEnde = (extra: Partial<Parameters<typeof VictoryDialog>[0]> = {}) => {
+    const onClose = vi.fn()
+    render(<VictoryDialog view={sieg} nameOf={(id) => id} ticksPerDay={24} onClose={onClose} onNewGame={vi.fn()} {...extra} />)
+    return { onClose, dialog: screen.getByRole('dialog') }
+  }
+
+  it('Endedialog: der Fokus zieht ein, auf die Hauptaktion', () => {
+    const { dialog } = zeigeEnde()
+
+    expect(dialog.contains(document.activeElement)).toBe(true)
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Neue Partie' }))
+  })
+
+  it('Endedialog: Tab springt vom letzten zum ersten und Umschalt+Tab zurück', () => {
+    const { dialog } = zeigeEnde()
+    const knoepfe = [...dialog.querySelectorAll<HTMLElement>('button')]
+    const erster = knoepfe[0]!
+    const letzter = knoepfe[knoepfe.length - 1]!
+
+    letzter.focus()
+    fireEvent.keyDown(letzter, { key: 'Tab' })
+    expect(document.activeElement).toBe(erster)
+
+    erster.focus()
+    fireEvent.keyDown(erster, { key: 'Tab', shiftKey: true })
+    expect(document.activeElement).toBe(letzter)
+  })
+
+  it('Endedialog: Escape schließt (zur Karte), der Hintergrund tut es nicht', () => {
+    const { onClose, dialog } = zeigeEnde()
+
+    fireEvent.click(dialog.parentElement!)
+    expect(onClose, 'ein Klick daneben darf das Spielende nicht wegwischen').not.toHaveBeenCalled()
+
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' })
+    expect(onClose).toHaveBeenCalledOnce()
+  })
+
+  it('Tab von außerhalb des Dialogs führt in den Dialog zurück (Fokus auf der Seite)', () => {
+    // Nach einem Klick auf eine leere Stelle steht der Fokus auf <body>; der Tastendruck
+    // trifft dann nicht den Dialog. Die Falle hört darum auf dem Dokument.
+    const außen = document.createElement('button')
+    document.body.appendChild(außen)
+    const { dialog } = zeigeEnde()
+
+    außen.focus()
+    fireEvent.keyDown(außen, { key: 'Tab' })
+    expect(dialog.contains(document.activeElement)).toBe(true)
+
+    außen.focus()
+    fireEvent.keyDown(außen, { key: 'Tab', shiftKey: true })
+    expect(dialog.contains(document.activeElement)).toBe(true)
+    außen.remove()
+  })
+
+  it('Vorhang ohne onClose: kein Kreuz, Escape und Klick daneben schließen nichts, Tab bleibt drin', () => {
+    // Der gesperrte Vorhang (R-MP-04/AK1): derselbe Rahmen wie jeder Dialog, nur ohne Ausgang.
+    render(
+      <Dialog title="Auseinandergelaufen" locked foot={<button type="button">Stand sichern</button>}>
+        <p>Die Partien laufen auseinander.</p>
+      </Dialog>,
+    )
+    const dialog = screen.getByRole('alertdialog', { name: 'Auseinandergelaufen' })
+
+    expect(dialog.parentElement!.className).toContain('dialog-backdrop--locked')
+    expect(screen.queryByRole('button', { name: 'Schließen' })).toBeNull()
+    expect(dialog.contains(document.activeElement)).toBe(true)
+
+    fireEvent.keyDown(document.activeElement!, { key: 'Escape' })
+    fireEvent.click(dialog.parentElement!)
+    expect(screen.getByRole('alertdialog')).toBeTruthy()
+
+    // Ein einziges Bedienelement: Tab und Umschalt+Tab bleiben darauf.
+    const knopf = screen.getByRole('button', { name: 'Stand sichern' })
+    knopf.focus()
+    fireEvent.keyDown(knopf, { key: 'Tab' })
+    expect(document.activeElement).toBe(knopf)
+    fireEvent.keyDown(knopf, { key: 'Tab', shiftKey: true })
+    expect(document.activeElement).toBe(knopf)
+  })
+
+  it('Escape im Vorhang erreicht die Tastenbelegung der Seite nicht (kein Panel schließt dahinter)', () => {
+    const seite = vi.fn()
+    window.addEventListener('keydown', seite)
+    render(
+      <Dialog title="Auseinandergelaufen" locked>
+        <button type="button">Eins</button>
+      </Dialog>,
+    )
+
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Eins' }), { key: 'Escape' })
+
+    expect(seite).not.toHaveBeenCalled()
+    window.removeEventListener('keydown', seite)
+  })
+
+  it('übereinander gestapelt hält nur der oberste den Fokus und hört auf Escape', () => {
+    const unten = vi.fn()
+    const oben = vi.fn()
+    render(
+      <>
+        <Dialog title="Unten" onClose={unten}>
+          <button type="button">U</button>
+        </Dialog>
+        <Dialog title="Oben" onClose={oben}>
+          <button type="button">O</button>
+        </Dialog>
+      </>,
+    )
+
+    fireEvent.keyDown(screen.getByRole('button', { name: 'O' }), { key: 'Escape' })
+
+    expect(oben).toHaveBeenCalledOnce()
+    expect(unten).not.toHaveBeenCalled()
+  })
+
+  it('Beitritt: Escape verlässt, Tab bleibt im Dialog', () => {
+    const onLeave = vi.fn()
+    render(
+      <JoinDialog
+        terms={{ ownNation: 'Kanada', hostNation: 'Mexiko', aiOpponents: 2, victory: 'points', fixedSpeed: 5 }}
+        mapName="Welt"
+        phase="lobby"
+        reason={null}
+        joined={false}
+        onJoin={vi.fn()}
+        onLeave={onLeave}
+      />,
+    )
+    const dialog = screen.getByRole('dialog')
+    expect(dialog.contains(document.activeElement)).toBe(true)
+
+    const außen = document.createElement('button')
+    document.body.appendChild(außen)
+    außen.focus()
+    fireEvent.keyDown(außen, { key: 'Tab' })
+    expect(dialog.contains(document.activeElement)).toBe(true)
+    außen.remove()
+
+    fireEvent.keyDown(document.activeElement!, { key: 'Escape' })
+    expect(onLeave).toHaveBeenCalledOnce()
+  })
+
+  it('Lobby: Escape verlässt, der Fokus zieht ein', () => {
+    const onLeave = vi.fn()
+    render(
+      <LobbyDialog
+        guestLink="http://x/#/beitreten"
+        guestName={null}
+        offered
+        phase="lobby"
+        reason={null}
+        onBegin={vi.fn()}
+        onLeave={onLeave}
+      />,
+    )
+    expect(screen.getByRole('dialog').contains(document.activeElement)).toBe(true)
+
+    fireEvent.keyDown(document.activeElement!, { key: 'Escape' })
+
+    expect(onLeave).toHaveBeenCalledOnce()
+  })
+
+  it('Quelltext: der gesperrte Vorhang in App.tsx baut kein eigenes Gerüst mehr', () => {
+    // Zwei Gerüste sind der Fehler: das eine bekommt den Fokusfang, das andere vergisst ihn.
+    const app = readFileSync(`${process.cwd()}/apps/desktop/src/App.tsx`, 'utf8')
+    const lebendig = app.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+    expect(lebendig).not.toContain('dialog-backdrop dialog-backdrop--locked')
   })
 })

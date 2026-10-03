@@ -178,3 +178,22 @@ describe('ActionButton im Touch-Betrieb: der Hinweis steht sichtbar da', () => {
     }
   })
 })
+
+/**
+ * R-UX-06/AK3 (T-M44-17): Mindestmasse als Stylesheet-Zusicherung (jsdom rechnet kein Layout; die
+ * Zahlen misst `pnpm ux:check --only R-UX-06/AK3` am laufenden Spiel).
+ */
+describe('R-UX-06/AK3 Mindestmass der Ziele', () => {
+  const css = (file: string) => readFileSync(`${process.cwd()}/apps/desktop/src/ui/${file}`, 'utf8')
+
+  it('am Schreibtisch: Kopf, Seitenleiste und Dialoge haben keine Bedienelemente unter 24 px', () => {
+    const app = css('app.css')
+    expect(app).toMatch(/:where\(\.header, \.side, \.dialog\) :where\(button, select, summary[^{]*\{[^}]*min-height: 24px;[^}]*min-width: 24px;/)
+  })
+
+  it('im Touch-Betrieb: das Fragezeichen ist als Knopf 44 x 44, nicht nur sein unsichtbares Feld', () => {
+    const touch = css('touch.css')
+    const rules = [...touch.matchAll(/:root\[data-input='touch'\] \.explain__toggle \{([^}]*)\}/g)].map((m) => m[1]!)
+    expect(rules.some((body) => /width: 44px;/.test(body) && /height: 44px;/.test(body))).toBe(true)
+  })
+})

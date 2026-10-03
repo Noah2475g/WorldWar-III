@@ -55,6 +55,8 @@ export interface Alert {
   kind: AlertKind
   icon: IconName
   text: string
+  /** Nur Freischaltungen: der Name der Sache, fuer die Sammelzeile (T-M44-12). */
+  thing?: string
   provinceId?: string
   /** Sprung in die Diplomatie statt auf die Karte, mit der Macht des Angebots (T-M17-14, E3). */
   diplomacyWith?: string
@@ -119,6 +121,7 @@ function unlockAlerts(view: PublicView, rules: UnlockRules): Alert[] {
       id: `unlock:building:${key}`,
       kind: 'unlock',
       icon: BUILDING_ICONS[key] ?? 'barracks',
+      thing: t(`buildings.${key}`),
       // Das Pronomen richtet sich nach dem Genus der Sache (T-M23-02, V2-11).
       text: t('alerts.unlockBuilding', {
         building: t(`buildings.${key}`),
@@ -132,6 +135,7 @@ function unlockAlerts(view: PublicView, rules: UnlockRules): Alert[] {
       id: `unlock:unit:${key}`,
       kind: 'unlock',
       icon: UNIT_ICONS[key] ?? 'infantry',
+      thing: t(`units.${key}`),
       text: t('alerts.unlockUnit', {
         unit: t(`units.${key}`),
         pronoun: accusativePronoun('units', key),
@@ -561,10 +565,25 @@ export function Alerts({
 }) {
   if (alerts.length === 0) return null
 
+  // Mehrere Freischaltungen am selben Tag belegten je eine Zeile Panelhoehe (T-M44-12): sie
+  // stehen als eine Sammelzeile an der Stelle der ersten, und ein Klick blendet alle aus.
+  const unlocks = alerts.filter((alert) => alert.kind === 'unlock')
+  const rows: { alert: Alert; ids: string[] }[] = []
+  for (const alert of alerts) {
+    if (alert.kind !== 'unlock' || unlocks.length < 2) {
+      rows.push({ alert, ids: [alert.id] })
+    } else if (alert === unlocks[0]) {
+      rows.push({
+        alert: { ...alert, text: t('alerts.unlockMany', { things: unlocks.map((entry) => entry.thing ?? entry.text).join(', ') }) },
+        ids: unlocks.map((entry) => entry.id),
+      })
+    }
+  }
+
   return (
     <section className="alerts" aria-label={t('alerts.title')}>
       <ul>
-        {alerts.map((alert) => {
+        {rows.map(({ alert, ids }) => {
           const target = targetOf(alert)
           return (
             <li key={alert.id} className={`alert alert--${alert.kind}`}>
@@ -583,7 +602,7 @@ export function Alerts({
                   className="alert__dismiss"
                   aria-label={t('alerts.dismiss', { text: alert.text })}
                   title={t('alerts.dismissTitle')}
-                  onClick={() => onDismiss(alert.id)}
+                  onClick={() => ids.forEach((id) => onDismiss(id))}
                 >
                   <span aria-hidden="true">×</span>
                 </button>

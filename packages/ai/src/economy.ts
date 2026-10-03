@@ -1,7 +1,8 @@
-import { RECRUIT_MIN_MORALE, buildingCostForLevel } from '@worldwar/core'
+import { RECRUIT_MIN_MORALE, buildingCostForLevel, unitCount } from '@worldwar/core'
 import type { BuildingKey, Command, ProvinceId, ResourceKey } from '@worldwar/core'
 import type { Fixed } from '@worldwar/shared'
 import { dailyMoneyLedger, unitsWithinDailyBalance } from './finance'
+import { threatMap } from './threat'
 import type { AiContext, Explanation } from './types'
 
 /**
@@ -94,9 +95,55 @@ function buildingCandidatesFor(
     candidates.push('factory')
   }
   if (available('railway') && level('railway') === 0) candidates.push('railway')
+  // LOESCHVERMERK (Review): bis T-M42-13 stand die Festung fuer **jede** Provinz bis Stufe 2 in der
+  // Liste, gleich hinter der Eisenbahn - in langen Partien standen dadurch alle Staedte auf Festung 2
+  // (Festungspatt, Befund M42-04-a). Alte Zeilen:
+  // if (available('fortress') && level('fortress') < 2) candidates.push('fortress')
+  // if (available('harbour') && province.coastal && level('harbour') === 0) candidates.push('harbour')
+  //
+  // **Festung nur an der Front, sonst zuletzt** (T-M42-13, Review Punkt 10): in einer Grenzprovinz
+  // (ein Landnachbar in fremdem Besitz) oder einer bedrohten Provinz (`threatMap` > 0) wie bisher hinter
+  // der Eisenbahn; im Hinterland erst, wenn kein Wirtschaftsbau (Fabrik, Eisenbahn, Hafen) mehr fehlt.
+  //
+  // LOESCHVERMERK (Review): T-M42-13 ist gebaut, gemessen und zurueckgenommen - mit der Festung nur an der
+  // Front hielten K5 und das Turnier (neun Vollpartien auf dem Endstand 9/9, Festung 2 in Summe 346 statt
+  // 559), aber `ai-integration` R-AI-11/AK3 riss in der Voreinstellung (Indien, ein Geldmangeltag durch
+  // eigene Aushebung; ohne T-M42-13 gruen, Probe P13). Die Zeilen von T-M42-13:
+  // const festungErlaubt = available('fortress') && level('fortress') < 2
+  // const front = frontProvinces(context).has(province.id)
+  // if (festungErlaubt && front) candidates.push('fortress')
+  // if (available('harbour') && province.coastal && level('harbour') === 0) candidates.push('harbour')
+  // if (festungErlaubt && !front && candidates.length === 0) candidates.push('fortress')
   if (available('fortress') && level('fortress') < 2) candidates.push('fortress')
   if (available('harbour') && province.coastal && level('harbour') === 0) candidates.push('harbour')
   return candidates
+}
+
+/** Je Sicht einmal gerechnet: `economyCommands` und `nextBuildingShortfall` fragen dieselbe Lage. */
+const frontCache = new WeakMap<object, ReadonlySet<ProvinceId>>()
+
+/**
+ * Die eigenen Provinzen an der Front (T-M42-13, Review Punkt 10): ein Landnachbar gehoert einer anderen
+ * Macht, oder eine Armee einer Macht im Krieg steht in Reichweite (`threatMap`, `ai.threatRange`).
+ * Herrenloses Land zaehlt nicht als fremder Besitz. Nur aus der Sicht - die KI sieht, was ein Mensch sieht.
+ */
+export function frontProvinces(context: AiContext): ReadonlySet<ProvinceId> {
+  const cached = frontCache.get(context.view)
+  if (cached) return cached
+  const me = context.view.playerId
+  const owners = new Map(context.view.provinces.map((province) => [province.id, province.owner]))
+  const threat = threatMap(context.view, context.rules.ai.threatRange)
+  const front = new Set<ProvinceId>()
+  for (const province of context.view.provinces) {
+    if (province.owner !== me) continue
+    const grenze = province.neighbors.some((id) => {
+      const owner = owners.get(id)
+      return owner !== undefined && owner !== null && owner !== me
+    })
+    if (grenze || (threat.byProvince[province.id] ?? 0) > 0) front.add(province.id)
+  }
+  frontCache.set(context.view, front)
+  return front
 }
 
 /**
@@ -269,16 +316,41 @@ const TARGET_MIX: readonly { unitKey: string; share: number }[] = [
  * Gebaut wird, was in dieser Provinz gebaut werden kann und wovon die Macht gemessen am
  * Zielverhaeltnis am weitesten entfernt ist.
  */
-export function rankedUnitsFor(context: AiContext, province: { buildings?: Record<string, number> }): string[] {
+/** Der eigene Bestand je Einheitenart, in Einheiten (T-M42-05, D32.6). */
+export interface UnitStock {
+  owned: ReadonlyMap<string, number>
+  total: number
+}
+
+/**
+ * Der eigene Bestand in **Einheiten**, nicht in Stapeln (T-M42-05, R-AI-10/AK1, D32.6).
+ *
+ * Bis zum 2026-10-02 zaehlte `rankedUnitsFor` je Stapel eine 1: drei Infanteriearmeen zu je fuenf
+ * und eine Batterie zu eins waren "75 % Infanterie", dieselben Truppen nach dem Zusammenlegen
+ * "50 %" - das Zusammenlegen aenderte, was die KI als Naechstes aushebt (T-M41-10 riss daran).
+ * Gezaehlt wird wie im Kern (`unitCount`, aufgerundet), damit eine angeschlagene Einheit eine
+ * Einheit bleibt.
+ */
+export function unitStockOf(context: AiContext): UnitStock {
   const owned = new Map<string, number>()
   let total = 0
   for (const army of context.view.armies) {
     if (army.owner !== context.view.playerId) continue
     for (const stack of army.units ?? []) {
-      owned.set(stack.unitKey, (owned.get(stack.unitKey) ?? 0) + 1)
-      total += 1
+      const count = unitCount(stack, context.rules)
+      owned.set(stack.unitKey, (owned.get(stack.unitKey) ?? 0) + count)
+      total += count
     }
   }
+  return { owned, total }
+}
+
+export function rankedUnitsFor(
+  context: AiContext,
+  province: { buildings?: Record<string, number> },
+  stock: UnitStock = unitStockOf(context),
+): string[] {
+  const { owned, total } = stock
 
   const day = dayOf(context)
   const buildable = TARGET_MIX.filter(({ unitKey }) => {
@@ -360,6 +432,9 @@ export function recruitCommands(context: AiContext, explanations: Explanation[])
   const vorbehalt = factoryReserve(context)
   let vorbehaltSperrte = false
 
+  // D32.6: der Bestand in Einheiten einmal je Aufruf, nicht je Provinz (T-M42-05).
+  const bestandInEinheiten = unitStockOf(context)
+
   for (const province of nachVielseitigkeit) {
     // **Kein Kasernen-Riegel** (T-M15-08). Hier stand `if (barracks === 0) continue`, und
     // das ist der Grund, warum die KI auf der Weltkarte in 200 Spieltagen **43 Fabriken
@@ -392,7 +467,7 @@ export function recruitCommands(context: AiContext, explanations: Explanation[])
     let begrenzt = false
     let vorbehaltBegrenzt = false
 
-    for (const kandidat of rankedUnitsFor(context, province)) {
+    for (const kandidat of rankedUnitsFor(context, province, bestandInEinheiten)) {
       const regel = context.rules.units[kandidat]
       if (!regel) continue
 

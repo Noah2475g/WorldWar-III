@@ -568,3 +568,218 @@ describe('R-BAT-08/AK3 Die KI laesst Fernwaffen stehen', () => {
     expect(commands.some((command) => command.type === 'MOVE_ARMY')).toBe(true)
   })
 })
+
+/**
+ * T-M42-08 (R-AI-10/AK2, AK4, D32.9): Zusammenlegen nach Rolle und unter dem Deckel.
+ *
+ * Bis hierher zaehlte `consolidateCommands` **Stapel** statt Einheiten (`(army.units ?? []).length`)
+ * gegen den Deckel von 20 und legte jede Armee mit jeder zusammen - gemessen stehende Verbaende bis
+ * 132 Einheiten (Stufe 0, `m42`-Abschnitt), und eine Batterie verschwand in der Infanterie (dann
+ * schiesst sie nicht mehr von selbst, `military.ts`). Die Faelle bauen die Sicht direkt, damit die
+ * Kennungen feststehen.
+ */
+describe('R-AI-10/AK2, AK4 Zusammenlegen nach Rolle und unter dem Deckel (T-M42-08)', () => {
+  const hp = (unitKey: string) => TEST_RULES.units[unitKey]!.hpPerUnit
+  const lage = (armeen: { id: string; unitKey: string; einheiten: number; at?: string; path?: string[] }[]) => {
+    const context = contextFor('p2')
+    context.view.armies = [
+      ...context.view.armies.filter((army) => army.owner !== 'p2'),
+      ...armeen.map(({ id, unitKey, einheiten, at, path }) => ({
+        id,
+        owner: 'p2',
+        provinceId: at ?? 'o1',
+        units: [{ unitKey, hpTotal: einheiten * hp(unitKey) }],
+        strength: 0,
+        ...(path ? { path } : {}),
+      })),
+    ]
+    return context
+  }
+  const gruppen = (context: ReturnType<typeof lage>) =>
+    consolidateCommands(context, []).map((command) => (command.type === 'MERGE_ARMIES' ? [...command.armyIds] : []))
+
+  it('K1: zwei Infanterie und eine Batterie -> Merge nur ueber die zwei Infanterie', () => {
+    const context = lage([
+      { id: 'a1', unitKey: 'infantry', einheiten: 5 },
+      { id: 'a2', unitKey: 'artillery', einheiten: 2 },
+      { id: 'a3', unitKey: 'infantry', einheiten: 5 },
+    ])
+    expect(gruppen(context)).toEqual([['a1', 'a3']])
+  })
+
+  it('K2: zwei Batterien -> Merge', () => {
+    const context = lage([
+      { id: 'a1', unitKey: 'artillery', einheiten: 2 },
+      { id: 'a2', unitKey: 'artillery', einheiten: 3 },
+    ])
+    expect(gruppen(context)).toEqual([['a1', 'a2']])
+  })
+
+  it('K3: drei zu je 15 -> kein Merge (jeder Verband ueber 20 waere ueber dem Deckel)', () => {
+    const context = lage([
+      { id: 'a1', unitKey: 'infantry', einheiten: 15 },
+      { id: 'a2', unitKey: 'infantry', einheiten: 15 },
+      { id: 'a3', unitKey: 'infantry', einheiten: 15 },
+    ])
+    expect(gruppen(context)).toEqual([])
+  })
+
+  it('K4: 15/10/5 -> [a, c] (First-Fit)', () => {
+    const context = lage([
+      { id: 'a', unitKey: 'infantry', einheiten: 15 },
+      { id: 'b', unitKey: 'infantry', einheiten: 10 },
+      { id: 'c', unitKey: 'infantry', einheiten: 5 },
+    ])
+    expect(gruppen(context)).toEqual([['a', 'c']])
+  })
+
+  it('K5: Reihenfolge nach sort() wie im Kern - a10 vor a11 vor a9', () => {
+    // sort(): a10, a11, a9 -> First-Fit [a10 15, a11 5]; numerisch waere es [a9, a11].
+    const context = lage([
+      { id: 'a9', unitKey: 'infantry', einheiten: 10 },
+      { id: 'a10', unitKey: 'infantry', einheiten: 15 },
+      { id: 'a11', unitKey: 'infantry', einheiten: 5 },
+    ])
+    expect(gruppen(context)).toEqual([['a10', 'a11']])
+  })
+
+  it('K6: kein Verband ueber stackFullContribution Einheiten (AK4) - die Gruppen selbst, nicht nur ihre Zahl', () => {
+    const einheitenJe: Record<string, number> = { a1: 8, a2: 8, a3: 8, a4: 8 }
+    const context = lage(Object.entries(einheitenJe).map(([id, einheiten]) => ({ id, unitKey: 'infantry', einheiten })))
+    const cap = TEST_RULES.constants.stackFullContribution
+    const ergebnis = gruppen(context)
+    for (const ids of ergebnis) {
+      const summe = ids.reduce((s, id) => s + einheitenJe[id]!, 0)
+      expect(summe, ids.join(',')).toBeLessThanOrEqual(cap)
+    }
+    // First-Fit: 8+8 = 16, die dritte (24) passt nicht mehr und eroeffnet die zweite Gruppe.
+    expect(ergebnis).toEqual([
+      ['a1', 'a2'],
+      ['a3', 'a4'],
+    ])
+    // Jede Armee steckt in hoechstens einem Befehl.
+    expect(new Set(ergebnis.flat()).size).toBe(ergebnis.flat().length)
+  })
+
+  it('K8: die Reihenfolge von view.armies aendert die Befehle nicht (Determinismus)', () => {
+    const armeen = [
+      { id: 'a9', unitKey: 'infantry', einheiten: 10 },
+      { id: 'a10', unitKey: 'infantry', einheiten: 15 },
+      { id: 'a11', unitKey: 'infantry', einheiten: 5 },
+      { id: 'b1', unitKey: 'artillery', einheiten: 2, at: 'o2' },
+      { id: 'b2', unitKey: 'artillery', einheiten: 3, at: 'o2' },
+      { id: 'c1', unitKey: 'infantry', einheiten: 4, at: 'o3' },
+      { id: 'c2', unitKey: 'infantry', einheiten: 6, at: 'o3' },
+    ]
+    const befehle = (liste: typeof armeen) => consolidateCommands(lage(liste), [])
+    const grundlage = befehle(armeen)
+    expect(grundlage.length).toBeGreaterThan(1) // sonst vergleicht der Test Leeres mit Leerem
+    expect(befehle([...armeen].reverse())).toEqual(grundlage)
+    expect(befehle([armeen[3]!, armeen[6]!, armeen[1]!, armeen[0]!, armeen[5]!, armeen[2]!, armeen[4]!])).toEqual(grundlage)
+  })
+
+  // LOESCHVERMERK (Review): T-M42-17 (Review Punkt 11) teilt einen Verband ueber dem Deckel, bevor der
+  // Merge-Pass laeuft - der Rest legt sich dann mit den uebrigen zusammen. Alte Fassung von K9:
+  // it('K9: ein Verband ueber dem Deckel bleibt allein, die uebrigen legen sich zusammen', () => {
+  //   const cap = TEST_RULES.constants.stackFullContribution
+  //   const context = lage([
+  //     { id: 'a1', unitKey: 'infantry', einheiten: cap + 5 },
+  //     { id: 'a2', unitKey: 'infantry', einheiten: 3 },
+  //     { id: 'a3', unitKey: 'infantry', einheiten: 4 },
+  //   ])
+  //   expect(gruppen(context)).toEqual([['a2', 'a3']])
+  // })
+  it('K9: ein Verband ueber dem Deckel gibt einen vollen Teil ab, sein Rest legt sich mit den uebrigen zusammen (T-M42-17)', () => {
+    const cap = TEST_RULES.constants.stackFullContribution
+    const context = lage([
+      { id: 'a1', unitKey: 'infantry', einheiten: cap + 5 },
+      { id: 'a2', unitKey: 'infantry', einheiten: 3 },
+      { id: 'a3', unitKey: 'infantry', einheiten: 4 },
+    ])
+    const befehle = consolidateCommands(context, [])
+    expect(befehle.map((command) => command.type)).toEqual(['SPLIT_ARMY', 'MERGE_ARMIES'])
+    // Rest 5 + 3 + 4 = 12 <= 20.
+    expect(gruppen(context).filter((ids) => ids.length > 0)).toEqual([['a1', 'a2', 'a3']])
+  })
+
+  it('K10: hpTotal wird je Stapel aufgerundet wie im Kern (zwei Stapel mit 1400 hp = vier Einheiten)', () => {
+    // Infanterie hat 1000 hp je Einheit: ein Stapel mit 1400 hp zaehlt 2 Einheiten (ceil), nicht 1.
+    // Fuenf solche Stapel je Armee = 10 Einheiten; a1 + a2 = 20 passen genau unter den Deckel, a3 (2) nicht mehr.
+    // Abrunden (oder Stapel zaehlen) ergaebe 5+5+1 = 11 und legte alle drei zusammen.
+    const cap = TEST_RULES.constants.stackFullContribution
+    expect(hp('infantry')).toBe(1000)
+    const stapel = (n: number) => Array.from({ length: n }, () => ({ unitKey: 'infantry', hpTotal: 1400 }))
+    const context = lage([])
+    context.view.armies = [
+      ...context.view.armies,
+      ...[
+        { id: 'a1', n: 5 },
+        { id: 'a2', n: 5 },
+        { id: 'a3', n: 1 },
+      ].map(({ id, n }) => ({ id, owner: 'p2', provinceId: 'o1', units: stapel(n), strength: 0 })),
+    ]
+    expect(cap).toBe(20)
+    expect(gruppen(context)).toEqual([['a1', 'a2']])
+  })
+
+  it('K7: eine marschierende Armee bleibt aussen vor; zwei Provinzen werden im selben Denkschritt zusammengelegt', () => {
+    const context = lage([
+      { id: 'a1', unitKey: 'infantry', einheiten: 3 },
+      { id: 'a2', unitKey: 'infantry', einheiten: 3, path: ['o2'] },
+      { id: 'b1', unitKey: 'infantry', einheiten: 3, at: 'o2' },
+      { id: 'b2', unitKey: 'infantry', einheiten: 3, at: 'o2' },
+      { id: 'c1', unitKey: 'infantry', einheiten: 3, at: 'o3' },
+      { id: 'c2', unitKey: 'infantry', einheiten: 3, at: 'o3' },
+    ])
+    // LOESCHVERMERK (Review): T-M42-09 hebt "eine Provinz je Denkschritt" auf. Alte Erwartung:
+    // expect(gruppen(context)).toEqual([['b1', 'b2']])
+    expect(gruppen(context)).toEqual([
+      ['b1', 'b2'],
+      ['c1', 'c2'],
+    ])
+  })
+})
+
+/**
+ * T-M42-09 (R-AI-10/AK3, D32.10): Zusammenlegen ueberall. Der `break` nach der ersten Provinz faellt
+ * weg; `absorbedBy` sammelt schon ueber alle `MERGE_ARMIES`. Gegenlauf: Z1 und Z2 fallen auf Stufe
+ * C1 (T-M42-08 allein).
+ */
+describe('R-AI-10/AK3 Zusammenlegen ueberall (T-M42-09)', () => {
+  it('Z1: zwei Provinzen mit je drei Armeen zu fuenf -> zwei MERGE_ARMIES im selben Denkschritt', () => {
+    for (const at of ['o1', 'o2']) {
+      for (let i = 0; i < 3; i++) placeArmy(state, { owner: 'p2', at, units: [{ unitKey: 'infantry', hpTotal: 5000 }] })
+    }
+    const merges = consolidateCommands(contextFor('p2'), []).filter((command) => command.type === 'MERGE_ARMIES')
+    expect(merges).toHaveLength(2)
+  })
+
+  it('Z2: nach einem Denkschritt bleibt kein freies Paar derselben Rolle mit hoechstens 20 Einheiten', () => {
+    const cap = TEST_RULES.constants.stackFullContribution
+    const einheiten = [7, 4, 12, 9, 3, 15, 6]
+    einheiten.forEach((n, i) =>
+      placeArmy(state, { owner: 'p2', at: ['o1', 'o2', 'o3'][i % 3]!, units: [{ unitKey: 'infantry', hpTotal: n * 1000 }] }),
+    )
+    placeArmy(state, { owner: 'p2', at: 'o1', units: [{ unitKey: 'artillery', hpTotal: 1400 }] })
+    placeArmy(state, { owner: 'p2', at: 'o1', units: [{ unitKey: 'artillery', hpTotal: 2800 }] })
+    const commands = consolidateCommands(contextFor('p2'), [])
+    const after = runTicks(state, 1, ctx, () => commands).state
+    expect(after.armyOrder.length).toBeLessThan(state.armyOrder.length)
+
+    const eigene = after.armyOrder.map((id) => after.armies[id]!).filter((army) => army.owner === 'p2' && army.path.length === 0)
+    const units = (army: (typeof eigene)[number]) =>
+      army.units.reduce((sum, stack) => sum + Math.ceil(stack.hpTotal / TEST_RULES.units[stack.unitKey]!.hpPerUnit), 0)
+    const rolle = (army: (typeof eigene)[number]) =>
+      army.units.every((stack) => (TEST_RULES.units[stack.unitKey]?.rangeProvinces ?? 0) > 0) ? 'battery' : 'line'
+    const paare: string[] = []
+    for (let i = 0; i < eigene.length; i++) {
+      for (let j = i + 1; j < eigene.length; j++) {
+        const a = eigene[i]!
+        const b = eigene[j]!
+        if (a.locationProvinceId !== b.locationProvinceId || a.embarked !== b.embarked || rolle(a) !== rolle(b)) continue
+        if (units(a) + units(b) <= cap) paare.push(`${a.id}+${b.id}`)
+      }
+    }
+    expect(paare).toEqual([])
+  })
+})

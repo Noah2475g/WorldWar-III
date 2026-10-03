@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { Foot, footRows, isDayReport, latestReport, unreadCount } from './Foot.tsx'
+import { readFileSync } from 'node:fs'
+import { Foot, footRows, footRowsWithLeader, isDayReport, latestReport, unreadCount } from './Foot.tsx'
 import type { EventEntry } from './Panels.tsx'
 import type { StandingsRow } from './Standings.tsx'
 
@@ -100,5 +101,53 @@ describe('T-M31-03 Der Fuss', () => {
       <Foot entries={[entry('a', 10)]} ticksPerDay={24} rows={[]} seenTick={0} onJump={() => undefined} onDispatch={() => undefined} onPanel={() => undefined} />,
     )
     expect((screen.getByRole('button', { name: 'Depesche' }) as HTMLButtonElement).disabled).toBe(true)
+  })
+})
+
+/**
+ * R-UX-02/AK4 · Platz 1 steht zuerst, die eigene Umgebung bleibt darunter (T-M44-10, Befund B-15).
+ *
+ * Die Rangliste im Fuss zeigte vier Zeilen um die eigene Macht — wer auf Platz 6 steht, sah den
+ * Ersten nie, also auch nicht, wie weit er vorn liegt (R-UI-13). Platz 1 kommt additiv als erste
+ * Zeile dazu; T-M31-03 (vier Zeilen um die eigene Macht, die eigene immer) bleibt Wort fuer Wort.
+ */
+describe('R-UX-02/AK4 Die Rangliste im Fuss beginnt mit Platz 1', () => {
+  const rows = [row('a', 900), row('b', 800), row('c', 700), row('d', 600), row('e', 500), row('f', 400, true), row('g', 300), row('h', 200)]
+
+  it('stellt Platz 1 vor die vier Zeilen um die eigene Macht, wenn er nicht ohnehin dabei ist (heute fehlt er)', () => {
+    expect(footRowsWithLeader(rows).map((r) => r.id)).toEqual(['a', 'e', 'f', 'g', 'h'])
+  })
+
+  it('zeigt ihn nicht doppelt, wenn das Fenster bei Platz 1 beginnt', () => {
+    const oben = [row('a', 900, true), ...rows.slice(1, 6)]
+    expect(footRowsWithLeader(oben).map((r) => r.id)).toEqual(['a', 'b', 'c', 'd'])
+    expect(footRowsWithLeader(rows.slice(0, 3)).map((r) => r.id)).toEqual(['a', 'b', 'c'])
+  })
+
+  it('haelt die eigene Umgebung wie bisher: dieselben vier Zeilen wie footRows, nur Platz 1 davor', () => {
+    const window = footRows(rows).map((r) => r.id)
+    expect(footRowsWithLeader(rows).map((r) => r.id).slice(1)).toEqual(window)
+    expect(footRowsWithLeader(rows).some((r) => r.own)).toBe(true)
+  })
+
+  it('zeichnet Platz 1 als erste Zeile mit seiner Rangzahl, und die Raenge stimmen', () => {
+    render(
+      <Foot entries={[]} ticksPerDay={24} rows={rows} seenTick={0} onJump={() => undefined} onDispatch={() => undefined} onPanel={() => undefined} />,
+    )
+    const items = within(screen.getByRole('region', { name: 'Rangliste' })).getAllByRole('listitem')
+
+    expect(items).toHaveLength(5)
+    expect(items[0]!.textContent).toContain('Macht a')
+    expect(items[0]!.querySelector('.foot__rank')?.textContent).toBe('1.')
+    expect(items[1]!.querySelector('.foot__rank')?.textContent).toBe('5.')
+    expect(items[2]!.className).toContain('foot__row--own')
+  })
+
+  it('setzt die Zeitspalte des Protokolls einzeilig (white-space: nowrap in app.css)', () => {
+    const css = readFileSync(`${process.cwd()}/apps/desktop/src/ui/app.css`, 'utf8')
+    // Die spaeteste Regel gewinnt: der Block von T-M44-10 steht am Ende von app.css.
+    const rules = [...css.matchAll(/\.log__row time\s*\{([^}]*)\}/g)].map((match) => match[1]!)
+    expect(rules.length).toBeGreaterThan(0)
+    expect(rules.join('\n')).toMatch(/white-space:\s*nowrap/)
   })
 })

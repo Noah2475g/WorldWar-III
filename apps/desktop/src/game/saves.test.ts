@@ -5,6 +5,7 @@ import {
   MemoryStorage,
   SCHEMA_VERSION,
   createInitialState,
+  serialise,
   type GameConfig,
   type GameState,
   type PublicView,
@@ -97,6 +98,97 @@ describe('R-GAME-03 Speichern und Laden aus der Oberflaeche', () => {
     const result = await loadFrom(storage, 'gibt-es-nicht')
 
     expect(result.ok).toBe(false)
+  })
+})
+
+/**
+ * R-UX-03/AK3 (T-M44-06, Review Punkt 1): „aus einer anderen Fassung“ nur bei `UnsupportedSaveVersion`.
+ *
+ * Die fruehere Entscheidung `/Version/i.test(message)` traf auch „Dem Speicherstand fehlen Version
+ * oder Spielstand“ und jede Meldung mit „Formatversion“ — ein beschaedigter Stand wurde als Stand
+ * aus einer neueren Fassung gemeldet, und der Spieler haette auf ein Update gewartet. Jede Meldung,
+ * die `save.ts` und `migrate.ts` werfen, wird hier wirklich erzeugt (nicht nachgeschrieben).
+ */
+describe('R-UX-03/AK3 Beschaedigt oder andere Fassung — nach dem Namen der Ausnahme', () => {
+  const base = () => JSON.parse(serialise(createInitialState(CONFIG, ctx))) as {
+    schemaVersion: number
+    hash?: string
+    state: Record<string, unknown>
+  }
+  const cases: ReadonlyArray<readonly [string, () => string, 'corrupt' | 'wrongVersion']> = [
+    ['keine gueltige JSON-Datei', () => '{ das ist kein Spielstand', 'corrupt'],
+    ['kein gueltiges Format', () => 'null', 'corrupt'],
+    ['fehlen Version oder Spielstand', () => '{}', 'corrupt'],
+    [
+      'fehlt seine Formatversion',
+      () => JSON.stringify({ schemaVersion: SCHEMA_VERSION, savedAtTick: 0, state: {} }),
+      'corrupt',
+    ],
+    [
+      'verschiedene Formatversionen',
+      () => {
+        const raw = base()
+        raw.state.schemaVersion = SCHEMA_VERSION + 0.5
+        return JSON.stringify(raw)
+      },
+      'corrupt',
+    ],
+    [
+      'Pruefsumme stimmt nicht',
+      () => {
+        const raw = base()
+        raw.hash = 'abc'
+        return JSON.stringify(raw)
+      },
+      'corrupt',
+    ],
+    [
+      'fehlt die Pruefsumme',
+      () => {
+        const raw = base()
+        delete raw.hash
+        return JSON.stringify(raw)
+      },
+      'corrupt',
+    ],
+    [
+      'UnsupportedSaveVersion (neuer)',
+      () => JSON.stringify({ schemaVersion: SCHEMA_VERSION + 1, savedAtTick: 0, state: { schemaVersion: SCHEMA_VERSION + 1 } }),
+      'wrongVersion',
+    ],
+    [
+      'UnsupportedSaveVersion (zu alt, ohne Umstellung)',
+      () => JSON.stringify({ schemaVersion: 0, savedAtTick: 0, state: { schemaVersion: 0 } }),
+      'wrongVersion',
+    ],
+  ]
+
+  for (const [label, make, expected] of cases) {
+    it(`${label} → ${expected}`, async () => {
+      await storage.write(manualSlotName(3), make())
+
+      const result = await loadFrom(storage, manualSlotName(3))
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        const wanted = expected === 'wrongVersion' ? 'anderen Fassung' : 'beschädigt'
+        expect(result.message).toContain(wanted)
+        expect(result.message).not.toContain(expected === 'wrongVersion' ? 'beschädigt' : 'anderen Fassung')
+      }
+    })
+  }
+
+  it('die Fassungsmeldung haengt am Namen, nicht am Wortlaut (Gegenprobe: gleiche Worte, anderer Name)', async () => {
+    // Ein Speicher, dessen Lesefehler das Wort „Version“ traegt, ist kein Fassungsfehler.
+    const failing = {
+      ...storage,
+      read: async () => {
+        throw new Error('Version 3 kennt das Spiel nicht')
+      },
+    } as unknown as MemoryStorage
+    const result = await loadFrom(failing, manualSlotName(0))
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.message).toContain('beschädigt')
   })
 })
 

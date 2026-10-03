@@ -9,7 +9,16 @@ import {
 import { TEST_RULES, placeArmy, smallWorld } from '@worldwar/testkit'
 import { describe, expect, it } from 'vitest'
 import { emptyMemory } from './decide'
-import { RESERVE_PERMILLE, economyCommands, factoryReserve, rankedUnitsFor, recruitCommands, tradeCommands } from './economy'
+import {
+  RESERVE_PERMILLE,
+  economyCommands,
+  factoryReserve,
+  frontProvinces,
+  rankedUnitsFor,
+  recruitCommands,
+  tradeCommands,
+  unitStockOf,
+} from './economy'
 import { dailyMoneyIncome } from './finance'
 import type { Explanation } from './types'
 
@@ -34,9 +43,10 @@ const CONFIG: GameConfig = {
  * Waere die Kasse leer, waeren beide Zusicherungen unten gruen, ohne etwas zu belegen —
  * die KI baute dann ja ohnehin nichts.
  */
-function richContext(tick: number) {
+function richContext(tick: number, prepare?: (state: ReturnType<typeof createInitialState>) => void) {
   const state = createInitialState(CONFIG, ctx)
   state.tick = tick
+  prepare?.(state)
   for (const id of state.provinceOrder) {
     const province = state.provinces[id]!
     if (province.owner !== 'p2') continue
@@ -186,6 +196,11 @@ describe('R-PROV-02 Die KI baut die Fabrik ueber Stufe 1 hinaus aus', () => {
       ;(province.buildings as Record<string, number>)[building] = level
     }
   }
+  /** Gibt eine Provinz der Sicht dem Menschen (p1) - ihre eigenen Nachbarn werden Grenzprovinzen (T-M42-13). */
+  const grenzeBei = (context: ReturnType<typeof richContext>, provinceId: string) => {
+    const provinz = context.view.provinces.find((province) => province.id === provinceId)!
+    ;(provinz as { owner: string | null }).owner = 'p1'
+  }
 
   it('befiehlt in einer Stadt mit Fabrik der Stufe 1 und genug Mitteln den Ausbau', () => {
     const context = richContext(tag31)
@@ -289,6 +304,9 @@ describe('R-PROV-02 Die KI baut die Fabrik ueber Stufe 1 hinaus aus', () => {
     ;(context.view as { provinces: typeof context.view.provinces }).provinces = context.view.provinces.filter(
       (province) => province.owner !== 'p2' || province.kind !== 'city',
     )
+    // Seit T-M42-13 (Review Punkt 10) gilt die Ausweichliste mit der Festung nur an der Front: Suedberg
+    // (s2, Nachbar von Sandmark o2) gehoert in dieser Lage dem Menschen.
+    grenzeBei(context, 's2')
     stufe(context, 'railway', 0)
     stufe(context, 'fortress', 0)
     ;(context.view.self.resources as Record<string, number>).coal = 0
@@ -305,6 +323,71 @@ describe('R-PROV-02 Die KI baut die Fabrik ueber Stufe 1 hinaus aus', () => {
     expect(`${bau?.building} in ${provinz?.kind}`).toBe('fortress in rural')
     expect(provinz?.buildings?.barracks).toBe(1)
     expect(provinz?.buildings?.railway).toBe(0)
+  })
+
+  // --- T-M42-13 (Review Punkt 10, Befund M42-04-a): Festung nur an der Front, sonst zuletzt ------------
+
+  // LOESCHVERMERK (Review): T-M42-13 ist zurueckgenommen (`economy.ts`); der Fall beschrieb die Festung nur an
+  // der Front. Alter Fall:
+  // it('FE1: im Hinterland keine Festung, solange die Eisenbahn fehlt (vorher: Festung als Ausweichwunsch)', () => {
+  //   // Dieselbe Lage wie im Test davor, nur ohne fremden Nachbarn: Ostmark grenzt in der Zwei-Spieler-
+  //   // Aufstellung an kein fremdes Land, und keine Armee im Krieg steht in Reichweite.
+  //   const context = richContext(tag31)
+  //   ;(context.view as { provinces: typeof context.view.provinces }).provinces = context.view.provinces.filter(
+  //     (province) => province.owner !== 'p2' || province.kind !== 'city',
+  //   )
+  //   stufe(context, 'railway', 0)
+  //   stufe(context, 'fortress', 0)
+  //   ;(context.view.self.resources as Record<string, number>).coal = 0
+  //   expect(frontProvinces(context).size, 'die Lage hat doch eine Front - der Test saehe nichts').toBe(0)
+  //
+  //   expect(bauten(context).map((command) => command.building)).not.toContain('fortress')
+  // })
+
+  it('FE2: im Hinterland die Festung, sobald kein Wirtschaftsbau mehr fehlt', () => {
+    const context = richContext(tag31)
+    stufe(context, 'factory', TEST_RULES.buildings.factory.maxLevel)
+    stufe(context, 'fortress', 0)
+    expect(frontProvinces(context).size).toBe(0)
+
+    expect(bauten(context).map((command) => command.building)).toEqual(['fortress'])
+  })
+
+  // LOESCHVERMERK (Review): T-M42-13 ist zurueckgenommen (`economy.ts`); der Fall beschrieb die Festung nur an
+  // der Front. Alter Fall:
+  // it('FE3: im Hinterland erst Hafen, dann Festung (an der Front umgekehrt, wie bisher)', () => {
+  //   const hinterland = richContext(tag31)
+  //   stufe(hinterland, 'factory', TEST_RULES.buildings.factory.maxLevel)
+  //   stufe(hinterland, 'fortress', 0)
+  //   stufe(hinterland, 'harbour', 0)
+  //   const [bauHinten] = bauten(hinterland)
+  //   expect(`${bauHinten?.building} in ${bauHinten?.provinceId}`).toBe('harbour in o1')
+  //
+  //   const front = richContext(tag31)
+  //   stufe(front, 'factory', TEST_RULES.buildings.factory.maxLevel)
+  //   stufe(front, 'fortress', 0)
+  //   stufe(front, 'harbour', 0)
+  //   grenzeBei(front, 'm1') // Mittstadt grenzt an Ostburg (o1)
+  //   expect(frontProvinces(front).has('o1')).toBe(true)
+  //   const [bauVorn] = bauten(front)
+  //   expect(`${bauVorn?.building} in ${bauVorn?.provinceId}`).toBe('fortress in o1')
+  // })
+
+  it('FE4: eine bedrohte Provinz zaehlt als Front, auch ohne fremden Nachbarn', () => {
+    // Eine Armee des Menschen in Mittstadt (m1, herrenlos), im Krieg mit Ostmark: Ostburg und Ostfeld
+    // grenzen an m1, Sandmark liegt zwei Schritte entfernt (threatRange 2).
+    const context = richContext(tag31, (state) => {
+      state.diplomacy.relations['p1|p2']!.state = 'war'
+      placeArmy(state, { owner: 'p1', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
+    })
+    expect(context.view.armies.some((army) => army.owner === 'p1'), 'die Armee ist nicht sichtbar').toBe(true)
+
+    expect([...frontProvinces(context)].sort()).toEqual(['o1', 'o2', 'o3'])
+
+    const frieden = richContext(tag31, (state) => {
+      placeArmy(state, { owner: 'p1', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
+    })
+    expect(frontProvinces(frieden).size, 'ohne Krieg keine Bedrohung').toBe(0)
   })
 
   it('HALTETEST: baut Kaserne, Eisenbahn und Hafen nie ueber Stufe 1 aus', () => {
@@ -704,5 +787,86 @@ describe('R-AI-12/AK1 Erst die Fabrik', () => {
   it('A3: mit Fabrik kein Vorbehalt - derselbe Bestand hebt mehr aus (Haltetest)', () => {
     const recruit = aushebung(aushebungsLage(1_005_000, 1))
     expect(recruit?.count, 'mit Fabrik haelt die KI nichts zurueck').toBeGreaterThan(3)
+  })
+})
+
+/**
+ * T-M42-05 (R-AI-10/AK1, D32.6): die Truppenmischung zaehlt Einheiten, nicht Stapel.
+ *
+ * Bis hierher zaehlte `rankedUnitsFor` je Stapel eine 1 (`economy.ts`, vormals Zeile 226-227): drei
+ * Infanteriearmeen zu je fuenf und eine Batterie zu eins waren "75 % Infanterie", nach dem
+ * Verschmelzen derselben Truppen "50 %" - das Zusammenlegen aenderte, was die KI als Naechstes
+ * aushebt. In Einheiten sind es vorher und nachher 15 zu 1.
+ */
+describe('R-AI-10/AK1 Die Truppenmischung zaehlt Einheiten (T-M42-05)', () => {
+  const tpd = TEST_RULES.constants.ticksPerDay
+  const hp = (unitKey: string) => TEST_RULES.units[unitKey]!.hpPerUnit
+
+  function heerLage(armeen: { unitKey: string; einheiten: number }[][]) {
+    const context = richContext(40 * tpd)
+    const eigene = context.view.provinces.find((province) => province.owner === 'p2')!
+    context.view.armies = [
+      ...context.view.armies.filter((army) => army.owner !== 'p2'),
+      ...armeen.map((stapel, index) => ({
+        id: `a${900 + index}`,
+        owner: 'p2',
+        provinceId: eigene.id,
+        units: stapel.map(({ unitKey, einheiten }) => ({ unitKey, hpTotal: einheiten * hp(unitKey) })),
+        strength: 0,
+      })),
+    ]
+    return { context, provinz: eigene }
+  }
+
+  it('M1: drei Infanteriearmeen zu je fuenf plus eine Batterie zu eins - Rangfolge vor und nach dem Verschmelzen gleich', () => {
+    const vorher = heerLage([
+      [{ unitKey: 'infantry', einheiten: 5 }],
+      [{ unitKey: 'infantry', einheiten: 5 }],
+      [{ unitKey: 'infantry', einheiten: 5 }],
+      [{ unitKey: 'artillery', einheiten: 1 }],
+    ])
+    const nachher = heerLage([[{ unitKey: 'infantry', einheiten: 15 }], [{ unitKey: 'artillery', einheiten: 1 }]])
+
+    const rangVorher = rankedUnitsFor(vorher.context, vorher.provinz)
+    expect(rangVorher, 'Vorbedingung: alle drei Arten sind in der Provinz baubar').toHaveLength(3)
+    expect(rankedUnitsFor(nachher.context, nachher.provinz)).toEqual(rangVorher)
+  })
+
+  it('M2: 15 000 HP Infanterie sind 15 Einheiten, nicht ein Stapel', () => {
+    const { context } = heerLage([[{ unitKey: 'infantry', einheiten: 15 }]])
+    expect(hp('infantry')).toBe(1000)
+    const bestand = unitStockOf(context)
+    expect(bestand.owned.get('infantry')).toBe(15)
+    expect(bestand.total).toBe(15)
+  })
+
+  it('M3: angeschlagene Stapel zaehlen wie im Kern (aufgerundet, unitCount)', () => {
+    const { context } = heerLage([[{ unitKey: 'infantry', einheiten: 2 }]])
+    context.view.armies = context.view.armies.map((army) =>
+      army.owner === 'p2' ? { ...army, units: [{ unitKey: 'infantry', hpTotal: 1_001 }] } : army,
+    )
+    expect(unitStockOf(context).owned.get('infantry'), '1001 HP sind zwei angeschlagene Infanteristen').toBe(2)
+  })
+
+  it('M4: fremde Armeen zaehlen nicht mit', () => {
+    const { context } = heerLage([[{ unitKey: 'infantry', einheiten: 3 }]])
+    context.view.armies = [
+      ...context.view.armies,
+      { id: 'a999', owner: 'p1', provinceId: 'n1', units: [{ unitKey: 'artillery', hpTotal: 50 * hp('artillery') }], strength: 0 },
+    ]
+    expect(unitStockOf(context).total).toBe(3)
+  })
+
+  it('M5: der uebergebene Bestand entspricht dem selbst gebildeten', () => {
+    const { context, provinz } = heerLage([
+      [{ unitKey: 'infantry', einheiten: 7 }, { unitKey: 'artillery', einheiten: 2 }],
+      [{ unitKey: 'tank', einheiten: 1 }],
+    ])
+    const bestand = unitStockOf(context)
+    expect(bestand.total).toBe(10)
+    expect(rankedUnitsFor(context, provinz, bestand)).toEqual(rankedUnitsFor(context, provinz))
+    // Und der uebergebene Bestand wird wirklich gelesen, nicht neu gebildet.
+    const nurPanzer = { owned: new Map([['tank', 10]]), total: 10 }
+    expect(rankedUnitsFor(context, provinz, nurPanzer)[0]).toBe('infantry')
   })
 })

@@ -66,6 +66,11 @@ export interface TooltipProps {
   /** Bildschirmposition der Ankerstelle (Zeiger oder Provinzmitte), relativ zur Karte. */
   x: number
   y: number
+  /**
+   * Die Provinz ist schon gewählt (T-M44-07, R-UX-02/AK3): ihr Kasten sagt dann nicht mehr
+   * „Klicken: auswählen" — das hat sie hinter sich, und die Tastatur klickt nie.
+   */
+  selected?: boolean
 }
 
 /** Abstand des Kastens vom Anker, damit der Zeiger ihn nicht verdeckt. */
@@ -118,7 +123,10 @@ const sameMeasure = (a: Measure, b: Measure): boolean =>
   a.area.width === b.area.width &&
   a.area.height === b.area.height
 
-export function Tooltip({ data, x, y }: TooltipProps) {
+// LOESCHVERMERK (Review): bis T-M44-07 hatte der Tooltip keinen Prop `selected` und nannte immer die Mausbedienung:
+//   export function Tooltip({ data, x, y }: TooltipProps) {
+//   <p className="tooltip__hint">{touch ? t('map.tooltipHintTouch') : t('tooltip.hint')}</p>
+export function Tooltip({ data, x, y, selected = false }: TooltipProps) {
   const defence = TERRAIN_DEFENCE_PERMILLE[data.terrain]
   const touch = useInputMode() === 'touch'
   const ref = useRef<HTMLDivElement>(null)
@@ -178,7 +186,12 @@ export function Tooltip({ data, x, y }: TooltipProps) {
           </>
         )}
       </dl>
-      <p className="tooltip__hint">{touch ? t('map.tooltipHintTouch') : t('tooltip.hint')}</p>
+      {/* Eine gewählte Provinz nennt keine Mausbedienung; auf dem Telefon, wo es kein Escape gibt, gar nichts. */}
+      {selected ? (
+        !touch && <p className="tooltip__hint">{t('tooltip.hintSelected')}</p>
+      ) : (
+        <p className="tooltip__hint">{touch ? t('map.tooltipHintTouch') : t('tooltip.hint')}</p>
+      )}
     </div>
   )
 }

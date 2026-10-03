@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import {
   CONTRAST_PAIRS,
@@ -173,5 +174,67 @@ describe('T-M36-03 Die Rohstoffleiste steht unter dem Kontrasttest', () => {
     expect(paar('warn', 'paperSunk')?.large, 'die Reichweite ist Schrift').toBeFalsy()
     expect(contrastRatio(TOKENS.inkSoft, TOKENS.paperSunk)).toBeGreaterThanOrEqual(4.5)
     expect(contrastRatio(TOKENS.warn, TOKENS.paperSunk)).toBeGreaterThanOrEqual(4.5)
+  })
+})
+
+/**
+ * Der Alarmchip (T-M44-08, R-UX-06/AK1, Befund B-09): Zinnober auf `paperSunk` maß 4,28:1 bei
+ * 12 px Schrift und fiel bei axe-core durch. Der Test liest die Regel aus `app.css` — nicht eine
+ * Farbpaarung, die jemand für den Chip nur annimmt.
+ */
+describe('R-UX-06/AK1 Die Schrift des Alarmchips hält 4,5:1', () => {
+  const css = readFileSync(`${process.cwd()}/apps/desktop/src/ui/app.css`, 'utf8')
+
+  /** Der zuletzt gesetzte Wert von `eigenschaft` in den Regeln, deren Wähler genau `.alarm-chip` ist. */
+  const wert = (eigenschaft: string): string => {
+    let letzter = ''
+    for (const regel of css.matchAll(/\.alarm-chip\s*\{([^}]*)\}/g)) {
+      const treffer = new RegExp(`(?:^|[;\\s])${eigenschaft}:\\s*var\\(--([\\w-]+)\\)`).exec(regel[1] ?? '')
+      if (treffer) letzter = treffer[1] ?? ''
+    }
+    return letzter
+  }
+  const token = (name: string): string => {
+    const camel = name.replace(/-(\w)/g, (_, c: string) => c.toUpperCase())
+    return TOKENS[camel as keyof typeof TOKENS]
+  }
+
+  it('Schrift und Grund des Chips sind Token, und das Paar hält 4,5:1', () => {
+    const vorder = wert('color')
+    const grund = wert('background')
+    expect(vorder, 'Schrift des Chips').not.toBe('')
+    expect(grund, 'Grund des Chips').not.toBe('')
+
+    const ratio = contrastRatio(token(vorder), token(grund))
+    expect(ratio, `${vorder} auf ${grund}: ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(AA_TEXT)
+  })
+
+  it('und der Chip sitzt nicht mehr auf paperSunk (dort maß er 4,28)', () => {
+    expect(wert('background')).not.toBe('paper-sunk')
+    expect(contrastRatio(TOKENS.accent, TOKENS.paperSunk)).toBeLessThan(AA_TEXT)
+  })
+})
+
+/**
+ * R-UX-06/AK4 (T-M44-17): der Fokusrahmen hat ein eigenes Token, ist gegen jeden Grund mindestens
+ * 3:1 (WCAG 1.4.11) und ist nicht das Feindrot.
+ */
+describe('R-UX-06/AK4 Fokusrahmen', () => {
+  it('hat gegen ground, paper und paperSunk mindestens 3:1', () => {
+    for (const surface of ['ground', 'paper', 'paperSunk'] as const) {
+      expect(contrastRatio(TOKENS.focus, TOKENS[surface]), `focus auf ${surface}`).toBeGreaterThanOrEqual(3)
+    }
+  })
+
+  it('ist nicht das Feindrot', () => {
+    expect(TOKENS.focus.toLowerCase()).not.toBe(TOKENS.accent.toLowerCase())
+  })
+
+  it('steht in app.css als Umriss des :focus-visible, nicht als accent', () => {
+    const css = readFileSync(`${process.cwd()}/apps/desktop/src/ui/app.css`, 'utf8')
+    const rule = /\n:focus-visible \{([^}]*)\}/.exec(css)
+    expect(rule, 'keine allgemeine :focus-visible-Regel').toBeTruthy()
+    expect(rule![1]).toContain('var(--focus)')
+    expect(rule![1]).not.toContain('var(--accent)')
   })
 })

@@ -229,6 +229,12 @@ Restpfad prüft, gibt es diese Kriege nicht mehr, und die Paarung endet 25-mal u
 `recruitShare` ist damit nicht falsch, aber das Band, in dem 280 gewählt wurde, ist auf diesem
 Stand nicht mehr messbar.
 
+*Nachtrag 2026-10-03 (T-M42-04, zweiter Versuch, Stufe ABS mit Artillerie):* Wahlregel D32.5
+auf dem Stand T-M42-05 + T-M42-07 + Buchung, je volles Turnier: **280** reißt („schwer ist in keiner
+Sitzordnung schlechter als normal"; Frieden 57 %), **320** grün (62 %), **350** grün (63 %),
+**400** grün (67 %). Gewählt wäre 320 — mit 320 reißen aber die Vollpartien (4 von 9 im Patt) und
+R-AI-09/AK3. **Status: gemessen, nicht übernommen**; `ai.json` bleibt bei 280.
+
 Seit 2026-09-25 misst das Turnier drei Mächte reihum (Plan D): mit `recruitShare` 280 **0,76**,
 das Band hält wieder; Vorabmessung und Streuung in PROBLEME.md M17-T4.
 

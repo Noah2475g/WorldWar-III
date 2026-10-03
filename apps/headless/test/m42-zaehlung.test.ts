@@ -1,8 +1,9 @@
-import { readFileSync } from 'node:fs'
+// LOESCHVERMERK (Review): ungenutzt seit B6b durch B6c ersetzt - import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import {
   createInitialState,
   economyOverview,
+  publicView,
   type BuildCompletedEvent,
   type BuildStartedEvent,
   type Command,
@@ -17,6 +18,7 @@ import {
   type ResourceShortageEvent,
   type UnitRecruitedEvent,
 } from '@worldwar/core'
+import { emptyMemory, militaryCommands } from '@worldwar/ai'
 import { hashValue } from '@worldwar/shared'
 import { TEST_RULES, placeArmy, smallWorld } from '@worldwar/testkit'
 import {
@@ -101,18 +103,76 @@ describe('T-M42-01 istBatterie', () => {
     expect(istBatterie({ units: [armeeStapel('unbekannte_einheit', 1000)] }, rules)).toBe(false)
   })
 
-  it('B6: Wortlaut-Waechter gegen military.ts:155-157', () => {
-    const quelle = readFileSync(
-      new URL('../../../packages/ai/src/military.ts', import.meta.url),
-      'utf-8',
-    )
-    expect(quelle.includes('eigeneEinheiten.length > 0 &&'), 'military.ts hat die Batterie-Bedingung geaendert — istBatterie in m42-zaehlung.ts nachziehen (T-M42-08 ersetzt beides durch army-role.ts)').toBe(true)
-    expect(
-      quelle.includes(
-        'eigeneEinheiten.every((stack) => (context.rules.units[stack.unitKey]?.rangeProvinces ?? 0) > 0)',
-      ),
-      'military.ts hat die Batterie-Bedingung geaendert — istBatterie in m42-zaehlung.ts nachziehen (T-M42-08 ersetzt beides durch army-role.ts)',
-    ).toBe(true)
+  // LOESCHVERMERK (Review): T-M42-08 - beide Fundstellen lesen `army-role.ts`, der Wortlaut-Waechter
+  // ist durch B6b (Verhaltensgleichheit und Quelle) ersetzt. Alter Fall:
+  // it('B6: Wortlaut-Waechter gegen military.ts:155-157', () => {
+  //   const quelle = readFileSync(
+  //     new URL('../../../packages/ai/src/military.ts', import.meta.url),
+  //     'utf-8',
+  //   )
+  //   expect(quelle.includes('eigeneEinheiten.length > 0 &&'), 'military.ts hat die Batterie-Bedingung geaendert — istBatterie in m42-zaehlung.ts nachziehen (T-M42-08 ersetzt beides durch army-role.ts)').toBe(true)
+  //   expect(
+  //     quelle.includes(
+  //       'eigeneEinheiten.every((stack) => (context.rules.units[stack.unitKey]?.rangeProvinces ?? 0) > 0)',
+  //     ),
+  //     'military.ts hat die Batterie-Bedingung geaendert — istBatterie in m42-zaehlung.ts nachziehen (T-M42-08 ersetzt beides durch army-role.ts)',
+  //   ).toBe(true)
+  // })
+
+  // LOESCHVERMERK (Review): B6b war ein Quelltext-Grep (`readFileSync` auf military.ts/m42-zaehlung.ts, dann
+  // `includes('isBattery(...)')`) - er prueft Schreibweise, nicht Verhalten, und faellt bei jeder Umbenennung,
+  // ohne dass sich etwas aendert. Ersetzt durch B6c (Verhalten). Alter Fall:
+  // it('B6b: istBatterie und military.ts lesen beide isBattery aus army-role.ts (T-M42-08)', () => {
+  //   const military = readFileSync(new URL('../../../packages/ai/src/military.ts', import.meta.url), 'utf-8')
+  //   const zaehlung = readFileSync(new URL('./m42-zaehlung.ts', import.meta.url), 'utf-8')
+  //   expect(military.includes('isBattery(eigeneEinheiten, context.rules)')).toBe(true)
+  //   expect(zaehlung.includes('return isBattery(army.units, rules)')).toBe(true)
+  // })
+
+  it('B6c: Batterie/Linie - der Zaehler (istBatterie) und militaryCommands (die KI) urteilen gleich', () => {
+    // Verhalten statt Quelltext: eine Armee, die `istBatterie` Batterie nennt, laesst `militaryCommands` mit Ziel
+    // in Reichweite stehen (R-BAT-08/AK3); jede andere marschiert. Laufen die beiden Auslegungen auseinander,
+    // zaehlt der Messlauf andere Verbaende als die KI zusammenlegt oder stehen laesst.
+    const faelle = [
+      { name: 'Artillerie', units: [armeeStapel('artillery', 20_000)], batterie: true },
+      {
+        name: 'zwei Artillerieklassen',
+        units: [armeeStapel('artillery', 10_000), armeeStapel('rocket_artillery', 10_000)],
+        batterie: true,
+      },
+      { name: 'Infanterie', units: [armeeStapel('infantry', 20_000)], batterie: false },
+      {
+        name: 'Infanterie mit einer Haubitze',
+        units: [armeeStapel('infantry', 20_000), armeeStapel('artillery', 1400)],
+        batterie: false,
+      },
+    ]
+    for (const fall of faelle) {
+      const state = baseState()
+      state.diplomacy.relations['p1|p2']!.state = 'war'
+      state.provinces['m1']!.owner = P2
+      const eigene = placeArmy(state, { owner: P2, at: 'm1', units: fall.units, stance: 'defensive' })
+      placeArmy(state, { owner: P1, at: 'n2', units: [armeeStapel('infantry', 50_000)] })
+
+      const explanations: { action: string }[] = []
+      const befehle = militaryCommands(
+        {
+          view: publicView(state, P2),
+          memory: emptyMemory(600),
+          rules,
+          map,
+          difficulty: rules.ai.difficulties.normal,
+        },
+        explanations as never[],
+      )
+      const marschiert = befehle.some((command) => command.type === 'MOVE_ARMY' && command.armyId === eigene.id)
+      expect(istBatterie({ units: fall.units }, rules), `istBatterie: ${fall.name}`).toBe(fall.batterie)
+      expect(marschiert, `militaryCommands marschiert: ${fall.name}`).toBe(!fall.batterie)
+      expect(
+        explanations.some((entry) => entry.action.includes(eigene.id) && /Stellung/.test(entry.action)),
+        `haelt Stellung: ${fall.name}`,
+      ).toBe(fall.batterie)
+    }
   })
 })
 

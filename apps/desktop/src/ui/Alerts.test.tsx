@@ -809,3 +809,44 @@ describe('R-SPY-06/AK2 Spionage meldet sich', () => {
     expect(ersetzt.alerts.get('sabotage:A')!.tick).toBe(72)
   })
 })
+
+/**
+ * Neu-Meldungen kompakt (T-M44-12, R-UX-02): zwei Freischaltungen am selben Spieltag belegten
+ * zwei Zeilen Panelhoehe, solange der Tag lief. Die Sammelzeile nennt beide in einer.
+ */
+describe('R-UX-02 T-M44-12 Neu-Meldungen als eine Sammelzeile', () => {
+  const unlock = (id: string, text: string, thing?: string): Alert => ({ id, kind: 'unlock', icon: 'barracks', text, ...(thing ? { thing } : {}) })
+
+  it('fasst zwei Freischaltungen zu einer Zeile zusammen', () => {
+    const { container } = render(
+      <Alerts
+        alerts={[unlock('unlock:building:barracks', 'Neu ab heute: Kaserne. Sie können sie jetzt bauen.', 'Kaserne'), unlock('unlock:building:harbour', 'Neu ab heute: Hafen. Sie können ihn jetzt bauen.', 'Hafen')]}
+        onJump={() => undefined}
+      />,
+    )
+    expect(container.querySelectorAll('li')).toHaveLength(1)
+    expect(container.textContent).toContain('Neu ab heute: Kaserne, Hafen')
+  })
+
+  it('blendet mit einem Klick beide aus', () => {
+    const onDismiss = vi.fn()
+    render(
+      <Alerts
+        alerts={[unlock('unlock:building:barracks', 'a'), unlock('unlock:building:harbour', 'b')]}
+        onJump={() => undefined}
+        onDismiss={onDismiss}
+      />,
+    )
+    fireEvent.click(screen.getAllByRole('button', { name: /^Ausblenden/ })[0]!)
+    expect(onDismiss).toHaveBeenCalledWith('unlock:building:barracks')
+    expect(onDismiss).toHaveBeenCalledWith('unlock:building:harbour')
+  })
+
+  it('laesst eine einzelne Freischaltung unveraendert stehen', () => {
+    const { container } = render(
+      <Alerts alerts={[unlock('unlock:building:harbour', 'Neu ab heute: Hafen. Sie können ihn jetzt bauen.')]} onJump={() => undefined} />,
+    )
+    expect(container.querySelectorAll('li')).toHaveLength(1)
+    expect(container.textContent).toContain('Neu ab heute: Hafen. Sie können ihn jetzt bauen.')
+  })
+})

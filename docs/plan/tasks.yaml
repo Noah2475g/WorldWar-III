@@ -106,6 +106,9 @@ milestones:
   # Aufgaben in eigenen Worktrees, Ruecklauf in Stufenreihenfolge (Plan Abschnitt 5).
   - { id: M42, title: "Das Heer der KI" }
   - { id: M43, title: "Frieden mit Raeumfrist" }
+  # UX V2 vom 2026-10-03 (docs/plan/UX-PLAN.md): Messung in drei Fenstergroessen, dann
+  # Massnahmen in sechs Paketen. Nur die Huelle; Kern, KI und Regeln bleiben unberuehrt.
+  - { id: M44, title: "UX V2" }
 
 tasks:
   - id: T-M0-01
@@ -3682,22 +3685,22 @@ tasks:
     milestone: M42
     title: Spionage und Boerse gebucht, schwer neu abgestimmt
     status: todo
-    deps: [T-M42-06]
+    deps: [T-M42-07]
     requirements: [R-AI-11, R-AI-06]
     design: [D-32]
     files: [packages/ai/src/economy.ts, packages/ai/src/decide.ts, packages/ai/src/provinceValue.ts, packages/ai/src/espionage.ts, packages/ai/src/economy.test.ts, packages/ai/src/provinceValue.test.ts, apps/headless/test/ai-integration.slow.test.ts, apps/headless/test/tournament.slow.test.ts, data/rules/default/ai.json, docs/plan/BALANCING.md]
     tests: [packages/ai/src/economy.test.ts, packages/ai/src/provinceValue.test.ts, apps/headless/test/ai-integration.slow.test.ts]
-    reopened: "zurueckgestellt auf Noahs Entscheid vom 2026-09-27 Punkt 2 bis nach der Artillerie (T-M42-07), weil das Festungspatt aus Festung 2 in allen Staedten entsteht und die Artillerie die eigentliche Abhilfe ist. Gebaut und als Zwischenstufe gemessen (S12, Commit 9f2a134): die Buchung von Spion, Bau und Boerse in der Aushebung (RECRUIT_SPY, TRADE gebende Seite in ledgerAfter) behebt Befund M17-S12 (0 statt 1 abgelehnte Aushebung Welt 1815). Wahlregel D32.5 waehlt recruitShare 320 (Turnier 19:3:53 = 61 Prozent, 7/7; 280 53 Prozent rot; 350 63 Prozent rot, eine Nation 613 Promille; 400 73 Prozent, 7/7). Zurueckgenommen wegen Festungspatt: K5 riss woertlich (Vollpartie 1815 nach 1500 Spieltagen unentschieden, R Siegtag 663; 1914/2015 an Tag 1053/1184 statt 460/423; sechs weitere Startzahlen 5 von 6 entschieden, 1683 im Patt), K4 riss zusaetzlich bei recruitShare 320 (R-AI-09/AK1: 1914 easy wirbt ohne SPY_REPORT keinen Spion an). Dasselbe Festungspatt wie bei T-M42-06 (Befund M42-06-a) - zwei unabhaengige, fuer sich richtige Reparaturen enden am selben Patt; die Sieglage ist das Empfindliche, nicht die Buchung selbst. data/rules/default/ai.json nie festgeschrieben, Parameterlauf frisch geblieben. Revert 0e85934, Turnier auf dem Ruecknahme-Stand neu gemessen b9ceeff. Befund M42-04-a in PROBLEME.md (offen, hoch)."
+    reopened: "zurueckgestellt auf Noahs Entscheid vom 2026-09-27 Punkt 2 bis nach der Artillerie (T-M42-07), weil das Festungspatt aus Festung 2 in allen Staedten entsteht und die Artillerie die eigentliche Abhilfe ist. Gebaut und als Zwischenstufe gemessen (S12, Commit 9f2a134): die Buchung von Spion, Bau und Boerse in der Aushebung (RECRUIT_SPY, TRADE gebende Seite in ledgerAfter) behebt Befund M17-S12 (0 statt 1 abgelehnte Aushebung Welt 1815). Wahlregel D32.5 waehlt recruitShare 320 (Turnier 19:3:53 = 61 Prozent, 7/7; 280 53 Prozent rot; 350 63 Prozent rot, eine Nation 613 Promille; 400 73 Prozent, 7/7). Zurueckgenommen wegen Festungspatt: K5 riss woertlich (Vollpartie 1815 nach 1500 Spieltagen unentschieden, R Siegtag 663; 1914/2015 an Tag 1053/1184 statt 460/423; sechs weitere Startzahlen 5 von 6 entschieden, 1683 im Patt), K4 riss zusaetzlich bei recruitShare 320 (R-AI-09/AK1: 1914 easy wirbt ohne SPY_REPORT keinen Spion an). Dasselbe Festungspatt wie bei T-M42-06 (Befund M42-06-a) - zwei unabhaengige, fuer sich richtige Reparaturen enden am selben Patt; die Sieglage ist das Empfindliche, nicht die Buchung selbst. data/rules/default/ai.json nie festgeschrieben, Parameterlauf frisch geblieben. Revert 0e85934, Turnier auf dem Ruecknahme-Stand neu gemessen b9ceeff. Befund M42-04-a in PROBLEME.md (offen, hoch). ZWEITER VERSUCH 2026-10-03 (Etappe 2, mit Artillerie, Stufe ABS = T-M42-05 + T-M42-07 + Buchung, Commit 0532029): die Buchung behebt die Wiederholungs-Ablehnungen der Artillerie-Untergrenze (ai-integration 28/28) und R-AI-09/AK1; recruitShare 280 reisst das Turnier (Sitzordnung, Frieden 57 Prozent), Wahlregel D32.5 waehlt 320 (Turnier 62 Prozent, 350 63, 400 67, alle gruen); mit 320 reissen K5 (4 von 9 Startzahlen im Patt: 1939, 1683, 1945, 1789) und K4 (R-AI-09/AK3 mit Antraegen 1 Ueberfall, ohne 0), dazu clearance.test.ts K12 in der schnellen Suite. Zurueckgenommen (Revert 67ec4e0), ai.json nie festgeschrieben. deps von T-M42-06 auf T-M42-07 umgestellt (Noahs Entscheid 2026-09-27 Punkt 2: erst die Artillerie). Wartet auf Befund M42-07-a (Noah). DRITTER VERSUCH 2026-10-03 auf Stufe F (nach Option c fuer T-M42-07, Orchestrator): Buchung ohne Artillerie (Patch FS, Code wie 0532029 ohne T-M42-05/-07). Wahlregel D32.5: 280 reisst das Turnier (Sitzordnung, Frieden 56 Prozent), 320/350/400 gruen (62/63/67) -> 320; progress.slow 0,3835 gruen. Mit 320 reissen K4 (m17 R-AI-09/AK3: mit Antraegen 1 Ueberfall, ohne 0), K5 (Vollpartie 1914 nach 1500 Spieltagen im Patt, Messung danach abgebrochen), clearance.test.ts K12 (verify rot, deshalb nie committet) und das it.fails der Artillerie wird gruen (Buchung allein bringt Welt 1815 Artillerie). Bleibt zurueckgestellt; die Artillerie als Abhilfe gegen das Festungspatt gibt es auf diesem Stand nicht (R-AI-12/AK3 und AK4 gemeinsam nicht erfuellbar, Regelfrage an Noah). VIERTER VERSUCH 2026-10-03 (Review, nach T-M42-13/-05 auf 7e41eda, Buchung wie 0532029 ohne Untergrenze und Oel-Waechter): Wahlregel D32.5 - 280 reisst das Turnier (Sitzordnung, Frieden 57 Prozent), 320/350/400 gruen (83/63/67, 98/63/71, 85/69/79), progress.slow 0,3668 bei allen -> 320. Mit 320: ai-integration 29/29, Vollpartie 1914 an Tag 570, aber m17 rot (R-DIP-10/AK4 Ueberfall aus Frieden in einem mit-Lauf; R-AI-09/AK3 mit Antraegen mehr bewegbare Ueberfaelle als ohne) und clearance.test.ts K12 rot (keine Raeumfrist-Meldung in den ganzen Partien) - verify rot, nie committet. Bleibt zurueckgestellt; abgeloest durch die Regelfrage zu R-AI-12 (Befund M42-07-a) und eine neue Abstimmung von K12, die Noah entscheiden muss. STAND 2026-10-03 (Bahn K): Voraussetzung T-M42-13 nicht gegeben - nicht gemessen, bleibt zurueckgestellt."
   - id: T-M42-05
     milestone: M42
     title: Die Truppenmischung zaehlt Einheiten
-    status: todo
-    deps: [T-M42-04]
+    status: done
+    deps: [T-M42-06]
     requirements: [R-AI-10]
     design: [D-32]
     files: [packages/ai/src/economy.ts]
     tests: [packages/ai/src/economy.test.ts]
-    dod: "Ziel: R-AI-10/AK1 (D32.6). rankedUnitsFor zaehlt unitCount(stack, rules) statt 1 je Stapel (heute economy.ts:226-227); owned/total werden einmal je recruitCommands gebildet und optional uebergeben. Tests zuerst: drei Infanteriearmeen zu je fuenf plus eine Batterie zu eins -> Rangfolge vor und nach dem Verschmelzen gleich (heute rot); 15000 HP Infanterie = 15 Einheiten; der uebergebene Bestand entspricht dem selbst gebildeten. Gemessen erst zusammen mit T-M42-07 auf Stufe AB (Kritik H-5: die Zaehlung aendert die Rangfolge erst, wenn zwei Arten im Bestand sind). Aufwand 1,5 h."
+    dod: "Ziel: R-AI-10/AK1 (D32.6). rankedUnitsFor zaehlt unitCount(stack, rules) statt 1 je Stapel (heute economy.ts:226-227); owned/total werden einmal je recruitCommands gebildet und optional uebergeben. Tests zuerst: drei Infanteriearmeen zu je fuenf plus eine Batterie zu eins -> Rangfolge vor und nach dem Verschmelzen gleich (heute rot); 15000 HP Infanterie = 15 Einheiten; der uebergebene Bestand entspricht dem selbst gebildeten. Gemessen erst zusammen mit T-M42-07 auf Stufe AB (Kritik H-5: die Zaehlung aendert die Rangfolge erst, wenn zwei Arten im Bestand sind). Aufwand 1,5 h. ERLEDIGT am 2026-10-03 (7e41eda, Review Punkt 8c): nach der Ruecknahme von T-M42-14 allein auf Stufe S10 wieder eingespielt (ca375dc) und gemessen - neutral, weil ohne zweite Einheitenart die Rangfolge gleich bleibt: neun Vollpartien wie S10 (671/843/501/1313/412/Patt 1806/430/580/473), Turnier 84/61/63, progress.slow 0,3350, m17 27/27, ai-integration wie S10. Fruehere Geschichte (gebaut ca375dc, zurueckgenommen 5576e47 nach der Entscheidungsregel von T-M42-07, wieder eingespielt 36a965c, zurueckgenommen c8575b1): gebaut am 2026-10-02 (Commit ca375dc, Tests M1-M5, 5 rot vor dem Bau) und nach der Entscheidungsregel aus der DoD von T-M42-07 zurueckgenommen (Revert 5576e47): Stufe AB und der Gegenlauf B ohne A reissen beide das Band R-AI-12/AK3 (AB 9,05/8,31/9,71 Prozent, B ohne A 9,50/12,18/8,89 Prozent) und die Wiederholungsgrenze (7 bzw. 5 statt hoechstens 3). Beobachtung gegen die Regel: ohne T-M42-05 enden 4 von 9 Vollpartien im Patt, mit T-M42-05 keine; R-AI-09/AK1 (Handel 1914) reisst nur mit T-M42-05. Wartet mit T-M42-07 auf Noahs Antwort zu Befund M42-07-a. deps von T-M42-04 auf T-M42-06 umgestellt: T-M42-04 wartet seit Noahs Entscheid vom 2026-09-27 auf die Artillerie, die Kette ist T-M42-06 -> T-M42-05 -> T-M42-07 -> T-M42-04. Am 2026-10-03 mit T-M42-07 wieder eingespielt (Orchestrator: die Regel B ohne A traf die falsche Aufgabe) und mit T-M42-07 nach drei Iterationen auf Stufe F zurueckgenommen (c8575b1) - ohne Artillerie gibt es keine zweite Art, deren Rangfolge die Zaehlung aendert (Kritik H-5)."
   - id: T-M42-07
     milestone: M42
     title: Artillerie, die die KI tragen kann
@@ -3707,43 +3710,355 @@ tasks:
     design: [D-32]
     files: [packages/ai/src/economy.ts, packages/ai/src/finance.ts, apps/headless/test/ai-integration.slow.test.ts, docs/plan/01-REQUIREMENTS.md]
     tests: [packages/ai/src/economy.test.ts, apps/headless/test/ai-integration.slow.test.ts]
+    reopened: "gebaut und gemessen am 2026-10-02/03 (Commit 05e8d3f: Untergrenze, TARGET_MIX 60/30/10, Oel-Waechter ueber dailyOilYield/dailyArmyUpkeep, it.fails zu it(), neue Zusicherung R-AI-12/AK3 in m17-integration; Tests U1-U4, O1-O3, X1-X2, F9-F12) und zurueckgenommen (Revert 82f16bc), weil das Band R-AI-12/AK3 (15-30 Prozent) auf keiner Stufe erreicht wird: AB 9,05/8,31/9,71, B ohne A 9,50/12,18/8,89, ABS280 10,51/12,18/11,14, ABS320 9,53/9,43/10,11 Prozent (Stufe F: 0/0/0,03). Was haelt: Artillerie und selbsttaetiger Beschuss in jedem Lauf (Welt 1815 246 Artillerie, 1703 Beschuss), 0 Oelmangeltage, Turnier 61 Prozent, progress 0,333, mit T-M42-05 9/9 Vollpartien entschieden. Was reisst ausserdem auf AB: Wiederholungsgrenze (China 7x RECRUIT artillery INSUFFICIENT_RESOURCES, behoben erst durch die Buchung aus T-M42-04) und R-AI-09/AK1 (1914 kein Handel). Kein Band bewegt. Frage an Noah in DECISIONS.md (2026-10-03) und Befund M42-07-a in PROBLEME.md; T-M42-08/-09 haengen daran. ZWEITER ANLAUF 2026-10-03 (Orchestrator-Entscheid Option b unter Noahs Vorabfreigabe): Stufe AB wieder eingespielt (Revert der Reverts), Ursache zerlegt - 5 von 8 Maechten foerdern kein Oel, der Oel-Waechter R-AI-12/AK4 laesst ihnen keine Artillerie, die Oelmaechte stehen bei 25 Prozent. Drei Iterationen (I1 Panzeranteil an die Artillerie wenn untragbar 10,0/8,7/14,2; I2 Panzer aus der Mischung 13,2/15,3/14,0; I3 dazu Untergrenze mit ledgerAfter 12,9/14,3/14,5 Prozent, reisst zusaetzlich Hauptstadt, Frieden-in-90 und R-AI-09/AK1), Code in 8bc8756. Danach Option c: Stufe F (Revert c8575b1). R-AI-12/AK3 und AK4 sind auf der Weltkarte gemeinsam nicht erfuellbar, solange Artillerie Oel verbraucht - Regelfrage an Noah (DECISIONS.md 2026-10-03). VIERTER ANLAUF 2026-10-03 (Review Punkt 9, als T-M42-14): Oel-Waechter mit Vorrats-Horizont und Oelkauf bringen das Band (H3 23,79/23,03/28,38 Prozent), aber 3 von 9 Vollpartien enden im Patt und R-AI-09/AK3 reisst - nach drei Iterationen zurueckgenommen (7bf8f26). Abgeloest durch T-M42-14 (todo, reopened) und die Regelfrage an Noah."
     dod: "Ziel: R-AI-12/AK3, AK4, R-AI-10/AK5 (D32.8). In der Kandidatenschleife von recruitCommands gilt eine Untergrenze (moeglich = 1), wenn: moeglich < 1, die Einheit eine Fabrik braucht, vor ihr in der Rangliste nur der unbezahlbare Panzer stand, und der Bestand nach Vorbehalt und Ruecklage die Kosten traegt. TARGET_MIX auf 60/30/10 (Noahs Antwort auf Frage 1, wie empfohlen), Zielband 15-30 Prozent Artillerie (gemessen 24-28 Prozent). Oel-Waechter: Einheiten mit upkeep.oil > 0 nur, wenn die Oel-Tagesbilanz danach nicht negativ ist (dailyOilYield/dailyArmyUpkeep als Zwilling der Foerderformel). ai-integration.slow.test.ts: das it.fails 'laesst die Artillerie feuern' wird im selben Commit zu it() (ein gruen gewordenes it.fails laesst die Suite fallen); 01-REQUIREMENTS.md loest den Vermerk unter R-AI-08/AK3 auf. Tests zuerst: Rangliste mit unbezahlbarem Panzer vorn und Artillerie an zweiter Stelle, Bestand traegt eine -> RECRUIT artillery 1; Infanterie vorn -> keine Untergrenze; Oel-Waechter haelt Einheiten mit Oel zurueck, wenn die Bilanz sie nicht traegt; der Foerderungs-Zwilling entspricht economyOverview. Messung: Stufe AB auf diesem Commit, dazu der Gegenlauf 'B ohne A' (T-M42-05 zurueckgedreht) nach der Entscheidungsregel aus Plan Paragraf 5 - reisst AB und haelt 'B ohne A', ist T-M42-05 die Ursache und der Heer-Teil (T-M42-08/-09) endet; reissen beide, wird T-M42-05 zurueckgenommen. Aufwand 3,5 h, Rechenzeit rund 25 min mit Gegenlauf."
   - id: T-M42-08
     milestone: M42
     title: Zusammenlegen nach Rolle und unter dem Deckel
-    status: todo
-    deps: [T-M42-07]
+    status: done
+    deps: [T-M42-06]
     requirements: [R-AI-10]
     design: [D-32]
     files: [packages/ai/src/army-role.ts, packages/ai/src/consolidate.ts, packages/ai/src/military.ts, apps/headless/test/m42-zaehlung.ts]
     tests: [packages/ai/src/army-role.test.ts, packages/ai/src/decide.test.ts]
-    dod: "Ziel: R-AI-10/AK2, AK4 (D32.9). army-role.ts (neu) bietet isBattery und armyRole (battery | line); military.ts liest isBattery verhaltensgleich. consolidate.ts arbeitet First-Fit je Provinz und Rolle: Kennungen mit sort() wie im Kern und absorbedBy, Einheiten ueber unitCount, eine Gruppe nur solange die Summe <= stackFullContribution bleibt, gleiches embarked und leerer path, weiterhin eine Provinz je Denkschritt. Tests zuerst: army-role.test.ts (leer, Infanterie, Artillerie, gemischt, unbekannt); decide.test.ts (zwei Infanterie + Batterie -> Merge ueber die zwei Infanterie; zwei Batterien -> Merge; drei zu je 15 -> kein Merge; 15/10/5 -> [a,c]; a9/a10 nach sort()); bestehende militaryCommands-Tests bleiben unveraendert. military.ts wird auch von T-M43-01 (Heimweg) angefasst - nacheinander mergen. Aufwand 3 h, Rechenzeit rund 12 min."
+    dod: "Ziel: R-AI-10/AK2, AK4 (D32.9). army-role.ts (neu) bietet isBattery und armyRole (battery | line); military.ts liest isBattery verhaltensgleich. consolidate.ts arbeitet First-Fit je Provinz und Rolle: Kennungen mit sort() wie im Kern und absorbedBy, Einheiten ueber unitCount, eine Gruppe nur solange die Summe <= stackFullContribution bleibt, gleiches embarked und leerer path, weiterhin eine Provinz je Denkschritt. Tests zuerst: army-role.test.ts (leer, Infanterie, Artillerie, gemischt, unbekannt); decide.test.ts (zwei Infanterie + Batterie -> Merge ueber die zwei Infanterie; zwei Batterien -> Merge; drei zu je 15 -> kein Merge; 15/10/5 -> [a,c]; a9/a10 nach sort()); bestehende militaryCommands-Tests bleiben unveraendert. military.ts wird auch von T-M43-01 (Heimweg) angefasst - nacheinander mergen. Aufwand 3 h, Rechenzeit rund 12 min. ERLEDIGT am 2026-10-03 (Commit 3e3f850): army-role.ts (isBattery, armyRole), military.ts und der Zwilling in m42-zaehlung.ts lesen daraus (B6b ersetzt den Wortlaut-Waechter B6 als LOESCHVERMERK); consolidate.ts zaehlt Einheiten (vorher Stapel), First-Fit je Provinz und Rolle nach sort(), Gruppe hoechstens stackFullContribution. Tests zuerst: decide.test.ts K1, K3-K6 rot vor dem Bau, K2/K7 Haltetests, army-role.test.ts R1-R5. Gemessen auf Stufe C1 (ohne Artillerie, Stufe F + T-M42-08): ai-integration gruen, Turnier 84/61/63 Prozent unveraendert, progress 0,3291; m17-integration 1 Riss (R-AI-09/AK3, 1815 ohne Antraege ein Zielwechsel-Ueberfall Indien->Italien Tick 2565, nicht auf Friedensschluss) - auf Stufe C2 (mit T-M42-09) verschwunden, deshalb nicht zurueckgenommen. Einschiffung: die Sicht fuehrt embarked nicht, die KI schifft nie ein. pnpm verify Exit 0."
   - id: T-M42-09
     milestone: M42
     title: Zusammenlegen ueberall, Zusage 7 in haltbarer Fassung
-    status: todo
+    status: done
     deps: [T-M42-08]
     requirements: [R-AI-10]
     design: [D-32]
     files: [packages/ai/src/consolidate.ts, apps/headless/test/ai-integration.slow.test.ts, docs/plan/tasks.yaml, docs/plan/03-TASKS.md]
     tests: [apps/headless/test/ai-integration.slow.test.ts]
-    dod: "Ziel: R-AI-10/AK3, Noahs Antwort auf Frage 4 (wie empfohlen): keine zwei stehenden Verbaende derselben Rolle am selben Ort, die zusammen hoechstens stackFullContribution (20) Einheiten zaehlen (D32.10). Der break nach der ersten Provinz in consolidate.ts faellt weg; absorbedBy sammelt ueber alle MERGE_ARMIES. Tests zuerst: zwei Provinzen mit je drei Armeen zu fuenf -> zwei MERGE_ARMIES im selben Denkschritt; nach einem Denkschritt kein freies Paar <= 20 mehr; Gegenlauf vorgefuehrt - dieselbe Zusicherung faellt auf Stufe C1 (T-M42-08 allein). tasks.yaml: der reopened-Text von T-M41-10 nennt T-M42-05/-08/-09 als Abloesung (in dieser Uebertragung schon eingetragen). 03-TASKS.md: der M18-Absatz 'Vorgemerkt am 2026-09-13' zeigt auf M42 (in dieser Uebertragung schon eingetragen). Aufwand 1,5 h, Rechenzeit rund 15 min."
+    dod: "Ziel: R-AI-10/AK3, Noahs Antwort auf Frage 4 (wie empfohlen): keine zwei stehenden Verbaende derselben Rolle am selben Ort, die zusammen hoechstens stackFullContribution (20) Einheiten zaehlen (D32.10). Der break nach der ersten Provinz in consolidate.ts faellt weg; absorbedBy sammelt ueber alle MERGE_ARMIES. Tests zuerst: zwei Provinzen mit je drei Armeen zu fuenf -> zwei MERGE_ARMIES im selben Denkschritt; nach einem Denkschritt kein freies Paar <= 20 mehr; Gegenlauf vorgefuehrt - dieselbe Zusicherung faellt auf Stufe C1 (T-M42-08 allein). tasks.yaml: der reopened-Text von T-M41-10 nennt T-M42-05/-08/-09 als Abloesung (in dieser Uebertragung schon eingetragen). 03-TASKS.md: der M18-Absatz 'Vorgemerkt am 2026-09-13' zeigt auf M42 (in dieser Uebertragung schon eingetragen). Aufwand 1,5 h, Rechenzeit rund 15 min. ERLEDIGT am 2026-10-03 (Commit b8106df): der break nach der ersten Provinz faellt (LOESCHVERMERK). Tests zuerst: Z1 (zwei Provinzen -> zwei MERGE_ARMIES), Z2 (nach einem Denkschritt kein freies Paar <= 20) - Gegenlauf vorgefuehrt, beide rot auf Stufe C1; K7 auf alle Provinzen umgestellt. Neue Zusicherung R-AI-10/AK3 in ai-integration (Welt 1815, Voreinstellung 200) und m17-integration (drei Startzahlen). Stufe C2 auf b8106df (Berichte sauber, measuredDirty leer): Paare ueber zwei Tagesenden 0 in allen fuenf Laeufen (Stufe F: 28 in m17), groesster stehender Verband 95/95/96 (m17) und 59 (Voreinstellung; Stufe F 132/127/133/124) - ueber 20 nur durch Aushebung in die Gastarmee des Kerns, nicht durch Zusammenlegen (Befund M42-09-a); ai-integration 30/30, m17-integration 26/26, Turnier 84/61/63 Prozent, progress 0,3334, neun Vollpartien 9/9 entschieden (712/816/636/529/522/467/610/391/793). pnpm verify Exit 0."
   - id: T-M42-10
     milestone: M42
     title: "(bedingt) Die Aushebung fragt die Provinz, die bezahlen kann"
-    status: todo
+    status: done
     deps: [T-M42-09]
     requirements: []
     files: []
     tests: []
-    dod: "Bedingung: mindestens 5 verpasste Gelegenheiten (Befund D) ueber drei Startzahlen auf Stufe C2 (nach T-M42-09). Darunter wird die Aufgabe done mit 'Befund D widerlegt, gemessen N' ohne Codeaenderung. Erst bei erfuellter Bedingung: die Aushebung fragt die Provinz, die bezahlen kann, statt der vielseitigsten. Aufwand 0,3 h (widerlegt) oder 2,5 h (gebaut)."
+    dod: "Bedingung: mindestens 5 verpasste Gelegenheiten (Befund D) ueber drei Startzahlen auf Stufe C2 (nach T-M42-09). Darunter wird die Aufgabe done mit 'Befund D widerlegt, gemessen N' ohne Codeaenderung. Erst bei erfuellter Bedingung: die Aushebung fragt die Provinz, die bezahlen kann, statt der vielseitigsten. Aufwand 0,3 h (widerlegt) oder 2,5 h (gebaut). ERLEDIGT am 2026-10-03 ohne Codeaenderung: Befund D widerlegt, gemessen 0 verpasste Gelegenheiten ueber drei Startzahlen auf Stufe C2 (m17-integration.json m42.summe.verpassteGelegenheiten = 0, b8106df); Bedingung (>= 5) nicht erfuellt."
   - id: T-M42-12
     milestone: M42
     title: Abschlussmessung, Abnahme, Uebergabe
-    status: todo
+    status: done
     deps: [T-M42-10, T-M43-02, T-M43-04]
     requirements: []
     design: [D-32, D-34]
     files: [docs/reports/balance-sweep.md, docs/reports/ai-tournament-run.md, docs/reports/progress-measured.json, docs/reports/acceptance.md, docs/reports/stance.json, docs/reports/ai-bench.json, docs/reports/ai-reachability.md, packages/ai/src/economy.ts, packages/ai/src/targeting.ts, docs/plan/BALANCING.md, docs/plan/DECISIONS.md, docs/plan/PROBLEME.md, docs/plan/PROGRESS.md, docs/plan/WORKFLOW.md]
     tests: [apps/headless/test/sweep.slow.test.ts, apps/headless/test/tournament.slow.test.ts, apps/headless/test/progress.slow.test.ts, apps/headless/test/ai-integration.slow.test.ts, apps/headless/test/m17-integration.slow.test.ts, apps/headless/test/stance.slow.test.ts]
-    dod: "Ziel: eine Messung, die fuer den Endstand gilt. Ablauf: Stufe Ende nach Plan Paragraf 9.2; genau ein Parameterlauf, wenn eine Regeldatei sich geaendert hat (Noahs Antwort auf Frage 2 = a); Haltungs-Messlauf zweimal (erst ohne Schreiben, weicht die Kontrolle ab wird sie mit Begruendung neu gesetzt, dann mit WORLDWAR_WRITE_REPORT=1 auf sauberem Baum); reisst AK5, wird die verursachende M42/M43-Aufgabe gesucht (juengste Stufe zuerst) und diese zurueckgenommen, nicht die Automatik; zuletzt pnpm acceptance auf ruhiger Maschine, 12 von 12 (AK-8 darf auf Warnung stehen). 'Frieden in 90 Tagen' (Noahs Antwort auf Frage 7, wie empfohlen): ist das it.fails jetzt gruen, wird es zu it(); sonst gilt die Neufassung 'in 200 Tagen mindestens ein Frieden zwischen KI-Maechten, in jeder der drei Startzahlen'. Aufwand 3 h, Rechenzeit rund 1,5 h ohne und rund 3 h mit Parameterlauf."
+    dod: "Ziel: eine Messung, die fuer den Endstand gilt. Ablauf: Stufe Ende nach Plan Paragraf 9.2; genau ein Parameterlauf, wenn eine Regeldatei sich geaendert hat (Noahs Antwort auf Frage 2 = a); Haltungs-Messlauf zweimal (erst ohne Schreiben, weicht die Kontrolle ab wird sie mit Begruendung neu gesetzt, dann mit WORLDWAR_WRITE_REPORT=1 auf sauberem Baum); reisst AK5, wird die verursachende M42/M43-Aufgabe gesucht (juengste Stufe zuerst) und diese zurueckgenommen, nicht die Automatik; zuletzt pnpm acceptance auf ruhiger Maschine, 12 von 12 (AK-8 darf auf Warnung stehen). 'Frieden in 90 Tagen' (Noahs Antwort auf Frage 7, wie empfohlen): ist das it.fails jetzt gruen, wird es zu it(); sonst gilt die Neufassung 'in 200 Tagen mindestens ein Frieden zwischen KI-Maechten, in jeder der drei Startzahlen'. Aufwand 3 h, Rechenzeit rund 1,5 h ohne und rund 3 h mit Parameterlauf. ERLEDIGT am 2026-10-03 auf dem Endstand Stufe C2 (T-M42-08/-09/-10; T-M42-04/-05/-07 zurueckgenommen bzw. zurueckgestellt): kein Parameterlauf, weil sich keine Regeldatei geaendert hat (Frische-Waechter: seit b8d36e6 kein Commit an data/rules); Haltungs-Messlauf zweimal (ohne Schreiben 35/35, Kontrolle 26/4 trifft, keine Neusetzung noetig; dann mit WORLDWAR_WRITE_REPORT=1 auf sauberem Baum, measuredAtCommit dfaa254, AK5 erfuellt, verletzt leer, Provinz-Tage 89,5 Prozent); Frieden in 90 Tagen ist it() und gruen; Turnier und progress auf b8106df; pnpm acceptance 12 von 12, Exit 0, 7 min 49 s (AK-8 auf Warnung, AK-9 offen). Plansonden aus m18-plan-v2.md (nicht im Repo) durch die Slow-Suites ersetzt."
+  - id: T-M42-13
+    milestone: M42
+    title: Festung nur an der Front, im Hinterland nach den Wirtschaftsbauten
+    status: todo
+    deps: [T-M42-06]
+    requirements: []
+    design: [D-32]
+    files: [packages/ai/src/economy.ts]
+    tests: [packages/ai/src/economy.test.ts]
+    reopened: "gebaut und gemessen am 2026-10-03 (Festung nur an der Front; K5 und Turnier hielten, neun Vollpartien 9/9), aber abgeschaltet per LOESCHVERMERK in economy.ts (Commit 61d1477): ai-integration R-AI-11/AK3 riss in der Voreinstellung (Indien, ein Geldmangeltag durch eigene Aushebung); ohne T-M42-13 gruen (Probe P13). Status vorlaeufig todo, bis die Messung auf dem Merge-Stand (Bahn K, bericht-k1) bestaetigt, dass die Abschaltung haelt."
+    dod: "Review Punkt 10, Befund M42-04-a (Festungspatt). buildingCandidatesFor nahm die Festung fuer jede Provinz bis Stufe 2 in die Wunschliste; jetzt nur in Grenzprovinzen (Landnachbar in fremdem Besitz) und bedrohten Provinzen (threatMap > 0) wie bisher hinter der Eisenbahn, im Hinterland erst, wenn kein Wirtschaftsbau (Fabrik, Eisenbahn, Hafen) mehr fehlt (frontProvinces, je Sicht gecacht). Tests FE1-FE4, FE1/FE3 rot per Mutationsprobe. Ziel K5 (hoechstens ein Patt in neun Startzahlen) und Turnierband. ERLEDIGT am 2026-10-03 (e2fde62): Ausgangswert C2 (bf8af90, neu gefahren und zeilengleich) 9/9 entschieden (712/816/636/529/522/467/610/391/793), Staedte auf Festung 2 in Summe 559, Turnier 84/61/63 Prozent, progress.slow 0,3334. Stufe S10: 8/9 (669/859/501/1139/408/Patt 1806/437/598/473) - ein Patt, nach K5 Befund statt Ruecknahmegrund -, Festung 2 in Summe 502, Turnier 84/61/63 unveraendert, progress.slow 0,3350, m17 27/27. ai-integration auf S10 28/29 (R-AI-11/AK3: Indien 1 Geldmangeltag durch Aushebung in der Voreinstellung); auf dem Endstand gruen (siehe PROGRESS.md)."
+  - id: T-M42-14
+    milestone: M42
+    title: Oel-Waechter mit Vorrats-Horizont, Artillerie ins Band
+    status: todo
+    deps: [T-M42-05]
+    requirements: [R-AI-12]
+    design: [D-32]
+    files: [packages/ai/src/economy.ts, packages/ai/src/finance.ts, apps/headless/test/ai-integration.slow.test.ts, apps/headless/test/m17-integration.slow.test.ts, docs/plan/01-REQUIREMENTS.md]
+    tests: [packages/ai/src/economy.test.ts, packages/ai/src/finance.test.ts, apps/headless/test/m17-integration.slow.test.ts]
+    reopened: "gebaut und gemessen am 2026-10-03 in drei Iterationen auf Stufe AB samt T-M42-13 (Revert der Reverts c8575b1/a395ac8/ba09dff; H1 c4c84bb Vorrats-Horizont OIL_HORIZON_DAYS 30: Artillerie 13,49/15,20/14,95 Prozent, Oelmangel 2/8/5 Tage; H2 e0faffa plus Oelkauf fuer die naechste Artillerie: 30,86/28,73/33,74 Prozent ueber dem Band, R-AI-09/AK3 rot; H3 b856abb Mischung 60/30/10 ohne Umverteilung: 23,79/23,03/28,38 Prozent im Band, Oelmangel 0, ai-integration 29/29, Turnier 84/61/63, aber 3 von 9 Vollpartien im Patt (1806, 1945, 1789) und R-AI-09/AK3 rot (Zielwechsel-Ueberfall 1914 ohne Antraege)). Nach drei Iterationen zurueckgenommen (Revert 7bf8f26), keine Grenze bewegt. Abgeloest wird die Aufgabe durch eine Regelfrage an Noah (Befund M42-07-a): das Band haelt mit Oelkauf und Horizont, die Vollpartien halten es nicht. R-AI-12/AK4 ist auf den Zweck umformuliert (DECISIONS 2026-10-03)."
+    dod: "Review Punkt 9: Einheit mit Oelunterhalt erlaubt, wenn Oelvorrat nach dem Zug plus Oel-Tagesbilanz danach mal H >= 0 (H als KI-Konstante, keine Regeldatei); Basis Stufe AB mit ledgerAfter in der Untergrenze. Ziel R-AI-12/AK3 Band 15-30 Prozent auf allen drei Startzahlen ohne Wiederholungsgrenze, R-AI-09/AK1, Hauptstadt, Frieden, Turnier und 9/9 entschiedene Vollpartien zu reissen. Hoechstens drei Iterationen; haelt es, wird das it.fails 'laesst die Artillerie feuern' zu it() und T-M42-05/-07 done."
+  - id: T-M42-15
+    milestone: M42
+    title: Zusammenlegen sortiert Provinzen nach Codeeinheiten
+    status: done
+    deps: [T-M42-09]
+    requirements: [R-AI-10]
+    design: [D-32]
+    files: [packages/ai/src/consolidate.ts]
+    tests: [packages/ai/src/consolidate.test.ts]
+    dod: "Review Punkt 1, Determinismus: die Provinzen in consolidate.ts werden nach UTF-16-Codeeinheiten sortiert wie sort() im Kern statt mit localeCompare('en') (haengt an der ICU der Laufzeit). Test D1 ('B-prov' vor 'a-prov'), rot auf der alten Fassung. ERLEDIGT am 2026-10-03 (7b14319); auf Testwelt und Weltkarte sind alle Kennungen gleich geschrieben, die Reihenfolge aendert sich dort nicht."
+  - id: T-M42-16
+    milestone: M42
+    title: Keine Armee unter Sperre im Merge-Pass
+    status: todo
+    deps: [T-M42-09]
+    requirements: [R-AI-10]
+    design: [D-32]
+    files: [packages/ai/src/consolidate.ts]
+    tests: [packages/ai/src/consolidate.test.ts]
+    reopened: "gebaut am 2026-10-03 (7b14319, Tests S1/S2) und zurueckgenommen (1de3320): mit der Sperre im Merge-Pass riss das Turnier R-AI-06 - Sitzordnung Ostmark/Sueden/Nordland schwer 1:4 gegen normal (44 Prozent), dazu schwer gegen leicht 93, Frieden 57, Krieg 65 Prozent (auf T-M42-13 84/61/63 gruen). Code und Faelle als LOESCHVERMERK. Abgeloest durch keine Aufgabe: der Kern vererbt beim Zusammenlegen die laengere Sperre (commands/army.ts) - wer das aendern will, braucht eine Kernaenderung (D32.1, M18)."
+    dod: "Review Punkt 3: Armeen mit cannotAttackUntil > tick bleiben aus byPlace in consolidate.ts; an einer Vollpartie gemessen."
+  - id: T-M42-17
+    milestone: M42
+    title: Verbaende ueber dem Deckel teilen
+    status: done
+    deps: [T-M42-09]
+    requirements: [R-AI-10]
+    design: [D-32]
+    files: [packages/ai/src/consolidate.ts, packages/ai/src/decide.test.ts]
+    tests: [packages/ai/src/consolidate.test.ts, packages/ai/src/decide.test.ts]
+    dod: "Review Punkt 11, Befund M42-09-a: stehende Verbaende ueber stackFullContribution geben per SPLIT_ARMY Teile von hoechstens 20 Einheiten ab (ganze Einheiten aus dem groessten Stapel, jedem Stapel bleibt ein Rest mit seinen partiellen hp), danach Merge-Pass mit der neuen Zahl. Test T1: 95 Einheiten -> 20/20/20/20/15, hp-Summe erhalten; K9 in decide.test.ts umgestellt (alte Fassung LOESCHVERMERK). Turnier und Patt neu gemessen. ERLEDIGT am 2026-10-03 (8fcf67d, zweite Fassung nur abseits der Front 3841236 beruhte auf einer falschen Zuordnung und ist zurueckgenommen in 9f4b142): Zahlen in PROGRESS.md."
+  - id: T-M42-18
+    milestone: M42
+    title: Gemischte Armeen mit Reichweiteneinheit zaehlen
+    status: done
+    deps: [T-M42-09]
+    requirements: [R-AI-10]
+    design: [D-32]
+    files: [apps/headless/test/m42-zaehlung.ts]
+    tests: [apps/headless/test/m42-zaehlung-gemischt.test.ts]
+    dod: "Review Punkt 5, minimal: m42-zaehlung zaehlt KI-Armeen mit mindestens einer Reichweiteneinheit und einer anderen (heer.gemischteMitReichweite: hoechstens, amEnde, reichweiteEinheitenAmEnde), gemessen auf dem Endstand. Die Kernaenderung findHostArmy nach Rolle wird nicht gebaut (schriftliche Ausnahme in DECISIONS 2026-10-03, D32.1; M18-Notiz in 03-TASKS). ERLEDIGT am 2026-10-03 (7b14319, Test G1)."
+
+  # M44 "UX V2", geplant am 2026-10-03 (docs/plan/UX-PLAN.md): Bedienbarkeit, Rueckmeldung und
+  # Zugang der Huelle. Keine Aufgabe aendert packages/core, packages/ai oder data/rules.
+  # Pakete: Navigation/Menues, Spielfeld/HUD, Feedback/Hinweise, Onboarding, Barrierefreiheit,
+  # Responsivitaet - Wellen, Bahnen und Dateikonflikte in UX-PLAN.md Paragraf 6; deps nur fachlich.
+  # LOESCHVERMERK (Review): die erste Fassung (Commit 8e30cfb) hatte T-M44-03 und T-M44-09 als je eine
+  # Aufgabe und deps nach Dateikonflikten; ersetzt durch 03a/03b, 09a/09b und 02b nach dem Review vom
+  # 2026-10-03 (UX-PLAN Paragraf 9). Wortlaut der ersten Fassung: git show 8e30cfb:docs/plan/tasks.yaml.
+  - id: T-M44-01
+    milestone: M44
+    title: "UX-Aufnahme: Messwerkzeug und Vorher-Bilder"
+    status: done
+    deps: []
+    requirements: [R-UX-01, R-UX-06]
+    design: [D-37]
+    files: [scripts/ux-capture.mjs, docs/ux/before/messwerte.json, docs/plan/UX-PLAN.md, package.json]
+    tests: []
+    dod: "Paket alle, Prioritaet Basis. Erledigt am 2026-10-03: scripts/ux-capture.mjs (Playwright, vorinstalliertes Chromium, unter Windows Edge; @axe-core/playwright als devDependency, Lockfile nur um diese Eintraege ergaenzt) faehrt 34 Ansichten in 375x667, 667x375, 1280x800, 1366x768, 1920x1080, 1024x768, 768x1024 und 320x568 und schreibt PNGs (verlustfrei optimiert) plus messwerte.json (Ladezeit, lange Aufgaben bei Zoom, Schieben und Tempo 100 am Dev-Server und am gebauten Buendel, axe WCAG 2.1 AA, Tab-Reihenfolge mit Fokusrahmen, Ziele unter 44/24 px, Flaechenanteile, waagerechter Ueberlauf). Spielende ueber einen echten Spielstand der Aufnahme, dessen victory.winner gesetzt und mit serialise des Kerns neu versiegelt wird - keine Spiellogik geaendert; der Stand erfuellt die Siegbedingung nicht wirklich (Befund B-22, behoben in T-M44-02). Befunde, Massnahmen und Review-Einarbeitung in docs/plan/UX-PLAN.md."
+  - id: T-M44-02
+    milestone: M44
+    title: "Pruefmodus, Mehrspielerlauf und echter Siegstand im Messwerkzeug"
+    status: done
+    deps: [T-M44-01]
+    requirements: [R-UX-01, R-UX-06]
+    design: [D-37]
+    files: [scripts/ux-capture.mjs, scripts/ux-thresholds.mjs, scripts/lib/ux-victory.mjs, test/ux-thresholds.test.ts, test/ux-victory.test.ts, package.json, docs/ASSETS.md, docs/plan/UX-PLAN.md]
+    tests: [test/ux-thresholds.test.ts, test/ux-victory.test.ts]
+    dod: "Paket alle (Werkzeug), Prioritaet P1. node scripts/ux-capture.mjs --check [--only <Kriterium>] liest die Schwellen aus scripts/ux-thresholds.mjs, gibt je Kriterium gruen/rot mit Messwert aus und endet mit Exit 1 bei einem roten; pnpm ux:check (nicht in verify: braucht Server und Browser, D14). --mp: Bau mit WORLDWAR_MULTIPLAYER=1, Gastgeber legt an, Gast tritt per Link bei, Bedingungen, Kopfleiste mit fester Rate, gesperrter Vorhang - in 375x667 und 1280x800. Der Siegstand erfuellt die Siegbedingung wirklich (Punkteanteil >= pointsShareToWin durch Besitz, im vorbereiteten Stand, Kern unveraendert), Niederlage ebenso. Bilder fuer docs/ux/after nur 375x667, 1280x800 und die neuen Groessen; 1920x1080 nur als Messwert (Repo-Groesse, Review Punkt 16). Aufwand 5 h. Erledigt am 2026-10-03: pnpm ux:check (= node scripts/ux-capture.mjs --check) faehrt, was die gewaehlten Kriterien brauchen (--only R-UX-02, 06/AK2 ...), und meldet je Kriterium gruen/ROT/offen (offen = noch keine Sonde oder Groesse nicht gefahren, nur mit --strict ein Fehler); --from <messwerte.json> wertet ohne Browser aus; der Dev-Server wird bei Bedarf selbst gestartet und beendet. --bundle baut ohne Mehrspielerflagge, startet vite preview (5322), misst Tempo 100 am Buendel (Falle 18, mit --baseline-bundle gegen den Ausgangswert desselben Tages) und beendet den Server. --mp baut mit WORLDWAR_MULTIPLAYER=1 nach dist-mp (nicht eingecheckt), faehrt den Hostdienst aus apps/party im Prozess und zwei Fenster: Anlegen, Lobby, Beitritt mit Bedingungen, Start, Kopfleiste mit fester Rate, gesperrter Vorhang (der Gast verfaelscht auf der Leitung den Hash seiner Befehle; packages/netplay unveraendert) in 375x667 und 1280x800. Neue Sonden: Alarmchip/Siegziel/hidden im Layout, Zielgroessen je Bereich, Tooltip bei Dialog, Protokollzeilen, Zielwahl (Gruppen, Oeffnen), Erklaerung/Escape, Endedialog, Dialog-Tab/Escape, Hochformat-Hinweis. Der Siegstand erfuellt die Bedingung wirklich: scripts/lib/ux-victory.mjs gibt dem Sieger Besitz, bis checkVictory des Kerns ihn selbst meldet (Anteil >= pointsShareToWin), und versiegelt dann mit serialise; Niederlage ebenso; Test gegen den echten Kern und die Weltkarte, Gegenprobe mit dem bloss gesetzten winner. Befund beim Bau der Sonden: Escape im Menue schliesst auch das Provinzpanel, und danach erzeugt Tempo 100 die Konsolenmeldung 'Maximum update depth exceeded' (Fehler schon im Stand d0c7bb4, nicht von M44; als eigene Aufgabe vorgeschlagen, hier nicht behoben). --measure-only 1920x1080 nimmt nur Messwerte, keine Bilder. Schwellen in scripts/ux-thresholds.mjs mit Test (Vorher-Stand faellt an den Stellen des UX-PLAN, erfundener Sollstand gruen, je Kriterium eine Mutation). Aenderung an docs/ASSETS.md nicht noetig: es entstehen keine Bilddateien im Repo."
+  - id: T-M44-02b
+    milestone: M44
+    title: "Nahtstellen in App.tsx vorbereiten (keine Funktion)"
+    status: done
+    deps: [T-M44-01]
+    requirements: [R-UX-02, R-UX-03]
+    design: [D-37]
+    files: [apps/desktop/src/App.tsx, apps/desktop/src/game/names.ts, apps/desktop/src/game/names.test.ts, apps/desktop/src/ui/Sidebar.tsx, apps/desktop/src/ui/useMapTooltip.ts, apps/desktop/src/ui/menuEntries.ts, apps/desktop/src/ui/Dialogs.tsx]
+    tests: [apps/desktop/src/game/names.test.ts, apps/desktop/src/App.test.tsx]
+    dod: "Paket alle (Vorbereitung), Prioritaet P1. Reines Umziehen ohne Verhaltensaenderung: Namensaufloesung nach game/names.ts, Hover/Tooltip-Zustand in einen eigenen Hook, Seitenleisten-Huelle als Komponente, Menueeintraege als Liste. Wellenplan UX-PLAN Paragraf 6, Welle 0,5. Waechter ui-reachability gruen. Aufwand 1 h. Erledigt am 2026-10-03: game/names.ts (provinceNamer, armyNamer, nationNamer; ersetzen neun Ausdruecke in App.tsx, Rueckfall unveraendert die Kennung, Test mit den alten Ausdruecken als Gegenprobe), ui/useMapTooltip.ts (Hover- und Tooltip-Zustand samt Escape-Ausblendung, derselbe Haken in derselben Reihenfolge), ui/Sidebar.tsx (Huelle mit sechs benannten Plaetzen picker, alerts, notice, panel, economy, debug; gleiche Kinder, gleiches Element), ui/menuEntries.ts (MENU_ENTRIES als Liste, MenuDialog zeichnet sie). Verhaltensgleichheit: apps/desktop und die Waechter unveraendert gruen, pnpm ux:check am Dev-Server mit denselben Zahlen wie vorher (Kopf 65/105/107 px, Karte 0,535/0,464/0,462 bei 1280x800, null Fehlschritte). Alles Ersetzte steht als LOESCHVERMERK in App.tsx und Dialogs.tsx."
+  - id: T-M44-03a
+    milestone: M44
+    title: "Telefon hochkant: CSS-Stapel und Hinweis quer halten"
+    status: done
+    deps: [T-M44-02]
+    requirements: [R-UX-01, R-UX-05]
+    design: [D-37]
+    files: [apps/desktop/src/ui/touch.css, apps/desktop/src/ui/app.css, apps/desktop/src/App.tsx, apps/desktop/src/ui/portrait.touch.test.tsx, apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/ui/portrait.touch.test.tsx, apps/desktop/src/ui/cascade.touch.test.tsx]
+    dod: "Paket Responsivitaet, Prioritaet P1. R-UX-01/AK1 (ohne Panel >= 0,45, mit offenem Panel >= 0,30), AK2, AK3 bei 375x667 und 320x568; 667x375 und 1366x768 nicht schlechter als vorher. Kopfleiste einzeilig wischbar, Karte oben, Seitenleiste darunter rollend, kompakter Fuss; nicht blockierender Hinweis quer halten empfohlen (0,5 h, R-UX-05/AK2, Orchestrator-Entscheid F1). Sichtpruefung am laufenden Spiel (Kaskade). Aufwand 8 h."
+  - id: T-M44-03b
+    milestone: M44
+    title: "Telefon hochkant: Seitenleiste als Blatt mit Rasten"
+    status: done
+    deps: [T-M44-03a]
+    requirements: [R-UX-01]
+    design: [D-37]
+    files: [apps/desktop/src/ui/Sheet.tsx, apps/desktop/src/ui/Sheet.test.tsx, apps/desktop/src/App.tsx, apps/desktop/src/ui/touch.css, apps/desktop/src/map/MapCanvas.tsx]
+    tests: [apps/desktop/src/ui/Sheet.test.tsx, apps/desktop/src/map/MapCanvas.touch.test.tsx]
+    dod: "Paket Responsivitaet, Prioritaet P2. Optional im Plan, wird in Phase 6 gebaut (Orchestrator-Entscheid F1). R-UX-01/AK1 mit offenem Panel >= 0,30 bei 375x667; Auto-Schwenk zur gewaehlten Provinz. Aufwand 10 h."
+  - id: T-M44-04
+    milestone: M44
+    title: "Kopfleiste einzeilig mit Alarmchip und Siegziel, hidden gilt"
+    status: done
+    deps: [T-M44-02]
+    requirements: [R-UX-02]
+    design: [D-37]
+    files: [apps/desktop/src/ui/Header.tsx, apps/desktop/src/ui/app.css, apps/desktop/src/ui/touch.css]
+    tests: [apps/desktop/src/ui/Header.test.tsx, apps/desktop/src/ui/cascade.touch.test.tsx]
+    dod: "Paket Spielfeld/HUD, Prioritaet P1. R-UX-02/AK1 (<= 70 px im Zustand mit Alarmchip und Siegziel, 1280x800 und 1366x768, auch Mehrspieler mit fester Rate; vorher 105-107 px), AK2. Kompaktregeln: Titel unter 1500 px aus, Tempoknoepfe als Gruppe, Kartenmodi unter 1400 px als Auswahl. Kaskade am laufenden Spiel geprueft (Falle aus M36). Aufwand 4 h. Erledigt am 2026-10-03: globale Regel [hidden] { display: none !important } oben in app.css (Suche vorher: in den TSX-Dateien setzt allein Header.tsx das Attribut, in app.css/touch.css trifft es sonst keine Klasse mit eigenem display); Siegziel steht in der Uhrzeile (.clock), ab 1280 px nowrap, Titel unter 1500 px aus, Tempoknoepfe als Gruppe ohne Luecke, Kartenmodi unter 1400 px (ohne Touch) als Auswahl .modes-select; touch.css: ein Selektor (.header__top .meter statt Kindselektor); ux-capture waehlt den Modus bei verborgenen Knoepfen ueber die Auswahl. Gemessen mit pnpm ux:check --only R-UX-02/AK1 (Dev-Server): vorher 107/83/105 px (1280x800, 1366x768, mp), nachher 67 px im Zustand mit Alarmchip (1280x800 battle), sonst 65 px, auch 1400x800 und mp mit fester Rate; Alarmchip per Attrappe bei 1280 bis 1600 px: Zeile bleibt einzeilig (66,5 px, kein Ueberlauf). AK2: vorher 13 Zustaende mit gezeichnetem hidden, nachher 0 von 22. Kaskade am laufenden Spiel gesichtet (Bildschirmfoto 1280x800: einzeilige Leiste, Rohstoffleiste unveraendert)."
+  - id: T-M44-05
+    milestone: M44
+    title: "Dialoge: Hauptaktion in fester Fusszeile, Spielstandraster passt"
+    status: done
+    deps: [T-M44-02]
+    requirements: [R-UX-05, R-UX-01]
+    design: [D-37]
+    files: [apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/ui/app.css, apps/desktop/src/ui/touch.css]
+    tests: [apps/desktop/src/ui/Dialogs.test.tsx]
+    dod: "Paket Navigation/Menues, Prioritaet P1. R-UX-05/AK1 in allen Mess-Fenstergroessen (vorher: Knopf bei y=733 unter dem Dialogrand 720 bei 1280x800); R-UX-01/AK2 fuer .dialog und .slots (vorher 604>518 und 592>494). Aufwand 3 h."
+  - id: T-M44-06
+    milestone: M44
+    title: "Spielersprache: Sperrgruende, Kennungen, beschaedigter Stand, kein Weg"
+    status: done
+    deps: [T-M44-02]
+    requirements: [R-UX-03]
+    design: [D-37]
+    files: [apps/desktop/src/game/rejections.ts, apps/desktop/src/game/rejections.test.ts, apps/desktop/src/game/saves.ts, apps/desktop/src/game/names.ts, apps/desktop/src/game/actions.ts, apps/desktop/src/App.tsx, apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/game/rejections.test.ts, apps/desktop/src/game/saves.test.ts, apps/desktop/src/i18n/text.test.ts]
+    dod: "Paket Feedback/Hinweise, Prioritaet P1. R-UX-03/AK1-AK4. loadFrom entscheidet nach error.name === UnsupportedSaveVersion, sonst corrupt (die Regex /Version/ trifft auch Formatversion). Namensspeicher in game/names.ts fuer die vier Armee-Stellen (App.tsx 840, 1838, 1871, 1910; 773 ist die Provinz), nach dem Laden bewusst leer: unbekannt heisst eine Armee. Hauptstadt verlegen in der eigenen Hauptstadt nicht anbieten. errors.NO_PATH ohne feindliches Gebiet (planRoute kennt nur den Kartengraphen). Kern unveraendert. Aufwand 5 h. Erledigt am 2026-10-03: (Paket D, Spielersprache.) AK3: loadFrom entscheidet nach error.name === 'UnsupportedSaveVersion', sonst corrupt (die Regex /Version/ traf auch 'fehlen Version oder Spielstand' und 'Formatversion'); saves.test.ts erzeugt jede Meldung aus save.ts (JSON, Format, fehlen Version, fehlt Formatversion, verschiedene Formatversionen, Pruefsumme falsch/fehlt) und migrate.ts (neuer, zu alt) wirklich und prueft die Zuordnung, mit Gegenprobe (alter Code: 4 Faelle rot). AK1: game/rejections.ts schlaegt je (Befehlstyp, Grund) einen Satz nach (REASON_KEYS, Saetze in de.ts unter refusal und trade.blocked); rejections.test.ts liest die Freitext-Gruende aus packages/core/src/commands und rules/espionage.ts (nur lesend), verlangt je Grund einen Schluessel unter einem Befehlstyp der Datei, keine Leichen in der Tabelle, keine Klammer, keinen Platzhalter; ein unbekannter Grund zeigt den Allgemeinsatz, nie das Rohwort; Handelsgruende nennen die Provinz mit Namen (describeTradeRejection in actions.ts delegiert jetzt dorthin, alter Block auskommentiert); ON_COOLDOWN mit until (Beschuss) ist kein Waffenstillstand mehr. Hauptstadt verlegen wird in der eigenen Hauptstadt nicht angeboten (capitalActions). AK2: Namensspeicher in game/names.ts (createArmyNameMemory; armyNamer: Stand, dann Speicher, dann 'eine Armee', nie die Kennung) an den vier Armee-Stellen in App.tsx, nach Laden, neuer Partie und Platzuebernahme bewusst geleert. AK4: errors.NO_PATH ohne 'feindliches Gebiet' (planRoute kennt nur den Kartengraphen). Kern unveraendert. Zahl: der Kern nennt 48 verschiedene Freitext-Gruende in commands/*.ts (ohne das Ereignis byPlayer; der Plan sprach von 34 ohne Handelsangebote und Spionage), alle abgedeckt."
+  - id: T-M44-07
+    milestone: M44
+    title: "Kartentooltip: Auswahl-Tooltip nur per Tastatur, nie ueber Dialogen"
+    status: done
+    deps: [T-M44-02]
+    requirements: [R-UX-02]
+    design: [D-37]
+    files: [apps/desktop/src/App.tsx, apps/desktop/src/ui/Tooltip.tsx, apps/desktop/src/ui/app.css, apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/ui/Tooltip.test.tsx, apps/desktop/src/App.test.tsx]
+    dod: "Paket Feedback/Hinweise, Prioritaet P1. R-UX-02/AK3. Ursache: tooltipId = hover?.id ?? ui.selectedProvince (App.tsx, T-M31-01, absichtlich fuer die Tastatur) - die Auswahl haelt den Tooltip auch nach Mausauswahl. Aufwand 2 h. Erledigt am 2026-10-03: ui/useMapTooltip.ts entscheidet (Zeiger zeigt; Auswahl nur, wenn die letzte Eingabe vor der Auswahl ein Tastendruck war; nie bei offenem Dialog, Beitritt/Lobby, Pausenantrag, gesperrtem Vorhang oder Endedialog), Tooltip.tsx nennt bei gewaehlter Provinz nur Escape: schliessen, app.css: user-select none. Gemessen mit pnpm ux:check --only R-UX-02/AK3: vorher Tooltip bei offenem Dialog sichtbar und Mausbedienung im Auswahl-Tooltip (1280x800 und 1366x768), nachher 3 von 3 Groessen ohne Befund (auch 1400x800)."
+  - id: T-M44-08
+    milestone: M44
+    title: "Endedialog und gesperrter Vorhang halten den Fokus, axe ohne Verstoss"
+    status: done
+    deps: [T-M44-05]
+    requirements: [R-UX-06]
+    design: [D-37]
+    files: [apps/desktop/src/ui/Standings.tsx, apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/App.tsx, apps/desktop/src/ui/Header.tsx, apps/desktop/src/ui/app.css, apps/desktop/src/ui/tokens.ts, apps/desktop/src/ui/useScrollableTab.ts]
+    tests: [apps/desktop/src/ui/a11y.test.tsx, apps/desktop/src/ui/Standings.test.tsx, apps/desktop/src/ui/tokens.contrast.test.ts, apps/desktop/src/ui/useScrollableTab.test.tsx]
+    dod: "Paket Barrierefreiheit, Prioritaet P1. R-UX-06/AK1, AK2. Das Abdunkeln existiert schon (.dialog-backdrop, app.css), es fehlen Fokus-Einzug, Fokusfalle und Escape. Rohstoffleiste tabindex=0 mit Namen, wenn sie rollt. Ein Escape im Dialog schliesst nur den Dialog, nicht das Panel dahinter (Escape-Zweig in Dialog ruft stopPropagation; Befund 2026-10-03 aus T-M44-02, im Browser pruefen). Aufwand 2,5 h."
+  - id: T-M44-09a
+    milestone: M44
+    title: "Bestaetigungsknopf und Rueckfrage in Dialogen"
+    status: done
+    deps: [T-M44-02]
+    requirements: [R-UX-04]
+    design: [D-37]
+    files: [apps/desktop/src/ui/ConfirmButton.tsx, apps/desktop/src/ui/ConfirmButton.test.tsx, apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/i18n/de.ts, apps/desktop/src/ui/menuEntries.ts, apps/desktop/src/ui/app.css]
+    tests: [apps/desktop/src/ui/ConfirmButton.test.tsx, apps/desktop/src/ui/Dialogs.test.tsx, apps/desktop/src/App.test.tsx]
+    dod: "Paket Feedback/Hinweise, Prioritaet P1. R-UX-04/AK1 fuer die Dialog-Faelle (Orchestrator-Entscheid F2: kein Dialog, keine Zeitueberschreitung). Aufwand 2,5 h."
+  - id: T-M44-09b
+    milestone: M44
+    title: "Rueckfrage bei Krieg und Buendnisbruch"
+    status: done
+    deps: [T-M44-09a]
+    requirements: [R-UX-04]
+    design: [D-37]
+    files: [apps/desktop/src/ui/Panels.tsx, apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/ui/Panels.test.tsx]
+    dod: "Paket Feedback/Hinweise, Prioritaet P1. R-UX-04/AK1 fuer die Diplomatie. Befehle selbst unveraendert (dieselben Kommandos an den Kern). Aufwand 1,5 h. Erledigt am 2026-10-03: Panels.tsx ActionGroup bekommt `confirms` (Folgesatz je Aktionskennung), ActionButton zeigt dafuer den ConfirmButton aus T-M44-09a; DiplomacyPanel setzt ihn fuer `diplomacy-declareWar-<id>` und `diplomacy-breakAlliance-<id>` (Saetze diplomacy.declareWarConfirm/breakAllianceConfirm nennen die Macht). Frieden und Buendnisangebot fragen nicht nach. Gemessen mit pnpm ux:check --only R-UX-04/AK1 (neue Sonde probes.confirm in ux-capture.mjs): 5 Groessen, Krieg erst nach dem zweiten Klick."
+  - id: T-M44-10
+    milestone: M44
+    title: "Protokoll und Fuss: Zeit einzeilig, Gefechte zusammengefasst, Platz 1 zuerst"
+    status: done
+    deps: [T-M44-02]
+    requirements: [R-UX-02]
+    design: [D-37]
+    files: [apps/desktop/src/ui/Foot.tsx, apps/desktop/src/game/events.ts, apps/desktop/src/ui/app.css]
+    tests: [apps/desktop/src/ui/Foot.test.tsx, apps/desktop/src/game/events.test.ts]
+    dod: "Paket Spielfeld/HUD, Prioritaet P2. R-UX-02/AK4 (Orchestrator-Entscheid F3). Aufwand 3 h. Erledigt am 2026-10-03: Foot.tsx footRowsWithLeader (Platz 1 additiv als erste Zeile, footRows unveraendert), events.ts mergeBattleLines (eine Folge gleichlautender Gefechtszeilen derselben Provinz am selben Spieltag wird eine Zeile mit Anzahl; gleiche Stunde eingeschlossen — das Messwerkzeug zaehlt Nachbarzeilen, nicht nur dieselbe Stunde, deshalb der Spieltag), Zeitspalte nowrap und 88 px. Gemessen mit pnpm ux:check --only R-UX-02/AK4: vorher 28 (1280x800) und 31 (1366x768) umgebrochene Zeitangaben, 6 bzw. 4 gleichlautende Gefechtszeilen, Platz 1 nicht zuerst; nachher ohne Befund in beiden Groessen."
+  - id: T-M44-11
+    milestone: M44
+    title: "Zielwahl: erreichbare Ziele zuerst, gemessen und zwischengespeichert"
+    status: done
+    deps: [T-M44-02]
+    requirements: [R-UX-04]
+    design: [D-37]
+    files: [apps/desktop/src/App.tsx, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/game/actions.ts, apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/game/actions.test.ts, apps/desktop/src/ui/Panels.test.tsx]
+    dod: "Paket Spielfeld/HUD, Prioritaet P2. R-UX-04/AK2. Erst messen: 237 Aufrufe von planRoute (actions.ts) beim Oeffnen auf der Weltkarte als lange Aufgabe am Buendel; dann zwischenspeichern; Oeffnen < 50 ms. Text fuer unerreichbar ohne feindliches Gebiet (siehe T-M44-06). Keine Kernaenderung. Aufwand 4 h. Erledigt am 2026-10-03: (Paket D, Zielwahl.) Erst gemessen (Weltkarte, Vereinigte Staaten, Mittlerer Westen, planRoute einzeln gegen 236 Ziele, Maschine unter Last): Infanterie zu Fuss 33 erreichbar/203 nicht, 10-25 ms warm, erster Durchlauf kalt 55-108 ms; mit Transportschiff alle 236 erreichbar, 93-334 ms kalt. Zwischenspeichern allein hilft dem ersten Oeffnen also nicht; darum eine einzige Suche von der Armee aus (routeCostsFrom, dieselbe Kantenkostenfunktion edgeTravelTicks des Kerns) statt 236 planRoute-Aufrufe, kalt 6-10 ms (Land) bzw. 5-35 ms (Schiffe); der Test vergleicht ueber die ganze Weltkarte fuer Land- und Seearmee jedes einzelne Ziel mit planRoute (gleiche Ankunft, gleiche Erreichbarkeit). Dazu Zwischenspeicher je (Armee, Ort, Spieltag, Seefaehigkeit) (MarchTargetCache, nur beim Oeffnen gerechnet, klein gehalten, bei neuer Partie/Laden geleert). Panel: zwei optgroups, erreichbar mit Ankunftstag zuerst, nicht erreichbar abgetrennt und gesperrt (Nordwestaustralien von Mittlerer Westen aus); Beschuss behaelt die flache Liste; Flugverbaende erreichen nur eigene Flugplaetze. Browser: pnpm ux:check --only R-UX-04/AK2 gruen bei 1280x800 (33 erreichbar, 203 gesperrt, laengste Aufgabe beim Oeffnen 50 ms, also an der Grenze unter Maschinenlast). Kern unveraendert."
+  - id: T-M44-12
+    milestone: M44
+    title: "Seitenleiste: Wirtschaft einklappbar, Panelkopf mit Zurueck, Neu-Meldungen kompakt"
+    status: done
+    deps: [T-M44-03a]
+    requirements: [R-UX-02]
+    design: [D-37]
+    files: [apps/desktop/src/App.tsx, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/Alerts.tsx, apps/desktop/src/ui/app.css]
+    tests: [apps/desktop/src/ui/Panels.test.tsx, apps/desktop/src/ui/Alerts.test.tsx, apps/desktop/src/App.test.tsx]
+    dod: "Paket Spielfeld/HUD, Prioritaet P2. R-UX-02 (Orientierung). Gemessen: Armeepanel 1280x800 zeigt Name und Marschieren ohne Rollen (vorher Kopf ausserhalb des Bildes). Aufwand 4 h."
+  - id: T-M44-13
+    milestone: M44
+    title: "Erklaerung als Popover mit Escape"
+    status: done
+    deps: [T-M44-02]
+    requirements: [R-UX-05]
+    design: [D-37]
+    files: [apps/desktop/src/ui/Explain.tsx, apps/desktop/src/ui/app.css]
+    tests: [apps/desktop/src/ui/Explain.test.tsx]
+    dod: "Paket Onboarding, Prioritaet P2. R-UX-05/AK3. Aufwand 2 h. Erledigt am 2026-10-03: Explain.tsx als Popover (position absolute unter dem Fragezeichen, rechtsbuendig wenn der Rand der Leiste es abschnitte), Escape schliesst nur ihn und gibt den Fokus dem Fragezeichen zurueck (Escape wird im Fangmodus verbraucht, das Provinzpanel bleibt), Druck ausserhalb schliesst auch. Am laufenden Spiel gemessen (1280x800 und 1366x768): 0 von 12 Bauplatz-Kacheln verschoben beim Oeffnen, Escape schliesst, Fokus auf Was ist Kaserne?, Panel bleibt, keine Konsolenfehler."
+  - id: T-M44-14
+    milestone: M44
+    title: "Einfuehrung ortsunabhaengig und nicht verdeckend"
+    status: done
+    deps: [T-M44-02]
+    requirements: [R-UX-05]
+    design: [D-37]
+    files: [apps/desktop/src/game/tutorial.ts, apps/desktop/src/ui/Tutorial.tsx, apps/desktop/src/i18n/de.ts, apps/desktop/src/ui/app.css]
+    tests: [apps/desktop/src/game/tutorial.test.ts, apps/desktop/src/ui/Tutorial.test.tsx]
+    dod: "Paket Onboarding, Prioritaet P2. R-UX-05/AK2. Aufwand 3 h."
+  - id: T-M44-15
+    milestone: M44
+    title: "Startdialog mit Kurzhilfe, Endedialog mit Siegbedingung"
+    status: done
+    deps: [T-M44-08]
+    requirements: [R-UX-05]
+    design: [D-37]
+    files: [apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/ui/Standings.tsx, apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/ui/Dialogs.test.tsx, apps/desktop/src/ui/Standings.test.tsx]
+    dod: "Paket Onboarding, Prioritaet P2. R-UX-05/AK4. Aufwand 3 h."
+  - id: T-M44-16
+    milestone: M44
+    title: "Einstellungen mit Einheiten, Tastenkuerzel im Menue"
+    status: done
+    deps: [T-M44-02]
+    requirements: [R-UX-05]
+    design: [D-37]
+    files: [apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/App.tsx, apps/desktop/src/i18n/de.ts, apps/desktop/src/ui/menuEntries.ts]
+    tests: [apps/desktop/src/ui/Dialogs.test.tsx, apps/desktop/src/keyboard.test.ts]
+    dod: "Paket Navigation/Menues, Prioritaet P2. R-UX-05 (Erkennen statt Erinnern). Aufwand 2 h."
+  - id: T-M44-17
+    milestone: M44
+    title: "Touch-Ziele, eigenes Fokus-Token, Kontrast-Stichprobe"
+    status: done
+    deps: [T-M44-03a, T-M44-08]
+    requirements: [R-UX-06]
+    design: [D-37]
+    files: [apps/desktop/src/ui/touch.css, apps/desktop/src/ui/app.css, apps/desktop/src/ui/tokens.ts, apps/desktop/src/ui/inputMode.ts, docs/plan/UX-PLAN.md]
+    tests: [apps/desktop/src/ui/tokens.contrast.test.ts, apps/desktop/src/ui/ActionButton.touch.test.tsx]
+    dod: "Paket Barrierefreiheit, Prioritaet P2. R-UX-06/AK1 (Stichprobe von mindestens 20 unvollstaendigen Knoten, Ergebnis im UX-PLAN), AK3, AK4. Ausnahmen (Kartenmarker, Uebersichtskarte) im UX-PLAN gelistet. Aufwand 4 h."
+  - id: T-M44-18
+    milestone: M44
+    title: "Sperrgruende gebuendelt, Leerzustaende als Fliesstext"
+    status: done
+    deps: [T-M44-02]
+    requirements: [R-UX-03]
+    design: [D-37]
+    files: [apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/app.css]
+    tests: [apps/desktop/src/ui/Panels.test.tsx]
+    dod: "Paket Feedback/Hinweise, Prioritaet P3. R-UX-03 (Lesbarkeit). Aufwand 3 h. Erledigt am 2026-10-03: (Paket D, Lesbarkeit.) ActionGroup bekommt collectReasons: im Diplomatiepanel (Vertraege und Durchmarsch) steht je Grund einmal eine Sammelzeile (Knoepfe: Grund) statt eines Absatzes unter jedem Knopf, gleiche Gruende zusammengefasst; jeder gesperrte Knopf behaelt seinen Grund ueber aria-describedby (auch im Touch-Betrieb nicht doppelt). Leerzustaende (Derzeit fuehrt niemand Krieg, Noch keine Beziehungen) tragen panel__empty (Satzgroesse 12 px statt Ueberschriftgroesse). Tests in Panels.test.tsx (R-UX-03/AK1)."
+  - id: T-M44-19
+    milestone: M44
+    title: "Favicon ohne 404"
+    status: done
+    deps: [T-M44-02]
+    requirements: [R-UX-01]
+    design: [D-37]
+    files: [apps/desktop/index.html]
+    tests: [apps/desktop/src/ui/viewport.touch.test.tsx]
+    dod: "Paket Navigation/Menues, Prioritaet P3. R-UX-01 (Konsistenz). Favicon als data:-URI im link-Element (die CSP erlaubt img-src self data:, tauri.conf.json) - keine neue Bilddatei, kein ASSETS.md-Eintrag noetig. Aufwand 0,5 h. Erledigt am 2026-10-03: index.html traegt ein link rel=icon als data:-URI (PNG 32x32, 216 Byte; kein SVG, weil dessen Namensraum eine http-Adresse enthielte und no-foreign-assets sie verwirft), CSP erlaubt img-src data:. Am laufenden Spiel: keine Antwort mit Status ab 400 und keine Konsolenfehler beim Start."
+  - id: T-M44-20
+    milestone: M44
+    title: "(bedingt) Tempo 100 ohne Ruckler am Buendel"
+    status: done
+    deps: [T-M44-02]
+    requirements: [R-UX-02]
+    design: [D-37]
+    files: [apps/desktop/src/App.tsx, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/Foot.tsx, apps/desktop/src/map/MapCanvas.tsx]
+    tests: [apps/desktop/src/map/render.bench.slow.test.ts, scripts/ux-capture.mjs]
+    dod: "Paket Spielfeld/HUD, Prioritaet P3. Bedingung wie T-M42-10: haelt R-UX-02/AK5 am Buendel auf ruhiger Maschine, wird die Aufgabe done mit \"B-18 am Buendel widerlegt, gemessen N\" ohne Codeaenderung. Sonst Profil eines Tageswechsels und Memoisierung in der Huelle; kein Kern-Tick wird veraendert, eine Ursache im Kern-step wird Befund statt Aenderung. Laeuft allein, nach Welle 1. Aufwand 0,5 h (widerlegt) oder 4 h (gebaut)."
+  - id: T-M44-21
+    milestone: M44
+    title: "Nachher-Aufnahme und Abnahme UX V2"
+    status: done
+    deps: [T-M44-02b, T-M44-03a, T-M44-03b, T-M44-04, T-M44-05, T-M44-06, T-M44-07, T-M44-08, T-M44-09a, T-M44-09b, T-M44-10, T-M44-11, T-M44-12, T-M44-13, T-M44-14, T-M44-15, T-M44-16, T-M44-17, T-M44-18, T-M44-19, T-M44-20]
+    requirements: [R-UX-01, R-UX-02, R-UX-03, R-UX-04, R-UX-05, R-UX-06]
+    design: [D-37]
+    files: [docs/ux/after/messwerte.json, docs/plan/UX-PLAN.md, docs/plan/PROGRESS.md, docs/ASSETS.md]
+    tests: [scripts/ux-capture.mjs]
+    dod: "Paket alle, Prioritaet P1. Alle R-UX-Kriterien gruen in allen Mess-Fenstergroessen; Tabelle vorher/nachher im UX-PLAN Paragraf 7; Zeiten am Buendel wie vorher (gleicher Buendeltyp); Bilder nur 375x667, 1280x800 und die neuen Groessen, verlustfrei optimiert, in docs/ASSETS.md (R-ASSET-01); pnpm verify Exit 0; Golden-Master unveraendert; packages/core, packages/ai, data/rules ohne Diff gegen den Stand vor M44; coverage:requirements meldet M44: 6 von 6. Aufwand 2 h."

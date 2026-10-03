@@ -166,6 +166,21 @@ select,
   inset: -11px;
 }
 
+/* T-M44-17 (R-UX-06/AK3): das Feld ist der Knopf selbst — 44 x 44, der sichtbare Kreis bleibt
+   22 px (`::before`), der negative Rand haelt die Zeilenhoehe. Gemessen wird die Box des Knopfes;
+   das unsichtbare `::after`-Feld darueber zaehlte nicht. */
+:root[data-input='touch'] .explain__toggle {
+  width: 44px;
+  height: 44px;
+  margin: -11px;
+  border: 0;
+  background: none;
+}
+
+:root[data-input='touch'] .explain__toggle::before {
+  inset: 11px;
+}
+
 /* Abstand, damit das unsichtbare Feld dem Knopf daneben keine Tipps stiehlt. */
 :root[data-input='touch'] .action__head {
   gap: 12px;
@@ -234,6 +249,13 @@ select,
   overflow-y: auto;
 }
 
+/* Weicht die Einfuehrung ihrem Zielelement aus (T-M44-14), sitzt sie oben im Rasterbereich,
+   unter der Kartenknopf-Reihe (44 px + Abstaende). */
+:root[data-input='touch'] .tutorial[data-dodge='top'] {
+  top: calc(44px + 2 * var(--sp-md));
+  bottom: auto;
+}
+
 /* Schmale Karte: Kartenknopf-Reihe (182 px, oben rechts) und Einfuehrung (bis 260 px,
    links) passen nicht mehr nebeneinander, sobald die Karte schmaler ist als
    260 + 182 + 3 x 8 = 466 px. Das ist bei --touch-side 380 unter 846 px Breite der Fall
@@ -296,7 +318,9 @@ select,
   }
 
   :root[data-input='touch'] .header__title,
-  :root[data-input='touch'] .header__top > .meter {
+  /* LOESCHVERMERK (Review): bis T-M44-04 lautete der Selektor `:root[data-input='touch'] .header__top > .meter`
+     (Kindselektor; der Siegbalken steht jetzt in der Uhrzeile, nicht mehr direkt in .header__top). */
+  :root[data-input='touch'] .header__top .meter {
     display: none;
   }
 
@@ -331,6 +355,14 @@ select,
   :root[data-input='touch'] .side .table {
     display: block;
     overflow-x: auto;
+  }
+
+  /* Befund B-25 (T-M44-03a): die Provinzwahl lief bei 667x375 um 35 px ueber die Leiste (252 px) -
+     ein Auswahlfeld mit 16 px Schrift ist so breit wie sein laengster Eintrag, und als Kind einer
+     Flex-Zeile darf es nicht unter diese Breite schrumpfen. */
+  :root[data-input='touch'] .picker select {
+    min-width: 0;
+    flex: 1 1 0;
   }
 
   /* Fuss: eine Zeile — Protokoll links, Knoepfe rechts; die Rangliste steht in der Lage. */
@@ -412,5 +444,265 @@ select,
 
   :root[data-input='touch'] .foot__pair {
     display: contents;
+  }
+}
+
+/* ------------------------------------------------ Telefon hochkant (T-M44-03a, R-UX-01, Befund B-01) */
+
+/*
+ * Bis hierher stapelte nur das Telefon QUER (max-height: 480px, oben) und das nur im
+ * Finger-Betrieb. Im Hochformat blieb app.css' `1fr 380px` stehen: bei 375 px Breite ein
+ * Kartenanteil von 0, Kopfleiste 240 px, Seitenleiste und Fuss fuellten das Bild (UX-PLAN
+ * B-01, gemessen 2026-10-03). Diese Regel haengt an Breite UND Ausrichtung, NICHT an
+ * `data-input`: auch ein schmales Mausfenster oder ein Emulator mit Maus stapelt.
+ *
+ * Der Stapel von oben nach unten: Kopfleiste (eine Zeile, seitlich wischbar), Karte, Seitenleiste
+ * (rollt in sich), Fuss (Protokoll eine Zeile, Knoepfe als wischbare Reihe).
+ *
+ * Kartenanteil (R-UX-01/AK1, die Zahlen stehen in scripts/ux-thresholds.mjs LIMITS): die Karte
+ * ist `--map-h` hoch, und weil sie die volle Breite hat, IST ihre Hoehe als Anteil der Fensterhoehe
+ * ihr Anteil an der Flaeche — 45 dvh ohne Panel (verlangt: 0,45), 31 dvh mit offenem Provinz- oder
+ * Armeepanel (verlangt: 0,30). Die Seitenleiste bekommt den Rest und rollt. `data-panel` setzt
+ * App.tsx an `.app`.
+ *
+ * `:root:root` statt `:root`: die Regeln des Telefons quer weiter oben stehen unter
+ * `:root[data-input='touch']` (dieselbe Spezifitaet), und ein Fenster, das zugleich unter 600 px
+ * breit, hochformatig und unter 481 px hoch ist, soll den Stapel bekommen, nicht die Querregeln.
+ */
+/* Das Blatt (T-M44-03b): der Griff der Seitenleiste ist ausserhalb des Hochformats unsichtbar. */
+.sheet__handle {
+  display: none;
+}
+
+@media (max-width: 599px) and (orientation: portrait) {
+  :root:root .app {
+    --map-h: 45vh;
+    --map-h: 45dvh;
+    position: relative;
+    overflow: hidden;
+    overflow: clip;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  :root:root .app[data-panel="open"] {
+    --map-h: 31vh;
+    --map-h: 31dvh;
+  }
+
+  /* Die Rasten des Blatts (T-M44-03b): Streifen laesst der Karte viel, voll fast nichts; halb ist
+     die Raste, auf der jedes Panel oeffnet (31 dvh Karte, R-UX-01/AK1 mit Panel >= 0,30). */
+  :root:root .app[data-panel="open"][data-sheet='peek'] {
+    --map-h: 58vh;
+    --map-h: 58dvh;
+  }
+
+  :root:root .app[data-panel="open"][data-sheet='full'] {
+    --map-h: 12vh;
+    --map-h: 12dvh;
+  }
+
+  /* Der Griff klebt am oberen Rand der Seitenleiste, 44 px hoch, und nimmt dem Browser das
+     Wischen ab: ein Wisch am Griff schaltet die Raste, er schiebt weder Seite noch Karte. */
+  :root:root .sheet__handle {
+    display: flex;
+    position: sticky;
+    top: calc(-1 * var(--sp-md));
+    z-index: 2;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    gap: var(--sp-sm);
+    min-height: 44px;
+    margin: calc(-1 * var(--sp-md)) calc(-1 * var(--sp-md)) 0;
+    padding: 0 var(--sp-md);
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    background: var(--paper);
+    color: var(--ink-soft);
+    font-size: 11px;
+    touch-action: none;
+  }
+
+  :root:root .sheet__grip {
+    width: 36px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--ink-soft);
+  }
+
+  /* Kopfleiste: eine Zeile, seitlich wischbar; ihre Kinder behalten ihre Breite. */
+  :root:root .header__top {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: var(--sp-md);
+    padding: var(--sp-xs) var(--sp-md);
+    scrollbar-width: none;
+  }
+
+  :root:root .header__top > * {
+    flex: none;
+  }
+
+  /* Der Titel entfaellt; das Siegziel (`.meter`) BLEIBT in der wischbaren Zeile - es ist eine
+     Auskunft, kein Schmuck, und die Aufnahme (--mp) wartet auf sein Erscheinen. */
+  :root:root .header__title {
+    display: none;
+  }
+
+  :root:root .clock {
+    white-space: nowrap;
+  }
+
+  :root:root .header__panels {
+    margin-left: 0;
+  }
+
+  :root:root .resource {
+    padding: 2px 6px;
+  }
+
+  /* Die Rohstoffleiste bricht um statt zu rollen (R-UX-01/AK2, gemessen 2026-10-03: 452 px
+     Inhalt bei 375 px Breite). Sieben Zahlen sind eine Auskunft, die man nicht erst
+     suchen soll; kein Rollbereich heisst auch: nichts, was per Tab erreichbar sein muss. */
+  :root:root .resources {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+
+  /* Die Mitte: oben die Karte, darunter die Seitenleiste. */
+  :root:root .main {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: var(--map-h) minmax(0, 1fr);
+  }
+
+  :root:root .side {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    padding: var(--sp-md);
+    gap: var(--sp-md);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+  }
+
+  /* Tabellen, die breiter sind als die Leiste, rollen in sich statt die Leiste zu weiten. */
+  :root:root .side .table {
+    display: block;
+    overflow-x: auto;
+  }
+
+  :root:root .picker select {
+    min-width: 0;
+    flex: 1 1 0;
+  }
+
+  /* Fuss: das Protokoll eine Zeile hoch, darunter die Knoepfe als wischbare Reihe;
+     die Rangliste steht in der Lage (Knopf „Rangliste / Sieg"). */
+  :root:root .foot {
+    grid-template-columns: minmax(0, 1fr);
+    max-height: none;
+  }
+
+  :root:root .foot .log {
+    max-height: 44px;
+    padding: 0 var(--sp-md);
+  }
+
+  :root:root .foot .log__filters,
+  :root:root .foot__standings {
+    display: none;
+  }
+
+  :root:root .foot__buttons {
+    flex-direction: row;
+    align-items: center;
+    min-width: 0;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    padding: var(--sp-md) var(--sp-md) var(--sp-sm);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  :root:root .foot__buttons > *,
+  :root:root .foot__pair > * {
+    flex: none;
+  }
+
+  :root:root .foot__pair {
+    display: contents;
+  }
+
+  /* Die Uebersichtskarte (132 x 74 px) nahme einem 300 px hohen Kartenstreifen ein Viertel;
+     Zoomknoepfe und „Hauptstadt zentrieren" bleiben. */
+  :root:root .map-overview {
+    display: none;
+  }
+
+  :root:root .legend {
+    left: var(--sp-md);
+    right: auto;
+    bottom: var(--sp-md);
+    max-width: calc(100% - 2 * var(--sp-md));
+  }
+
+  :root:root .legend__items {
+    flex-wrap: wrap;
+    gap: 2px var(--sp-md);
+  }
+
+  /* Die Einfuehrung (R-UX-05/AK2, T-M44-14): ein kurzer Streifen am unteren Rand der KARTE -
+     weder Kopf noch Provinzwahl noch Fuss. Sie endet an der Kartenkante (`--map-h`), hoch
+     genug, dass die Zoomknoepfe oben rechts (44 px + Abstaende) frei bleiben, und rollt in sich.
+     Das Wozu entfaellt: im Hochformat zaehlt jede Zeile. */
+  :root:root .tutorial {
+    grid-row: 2 / 3;
+    grid-column: 1 / 2;
+    left: var(--sp-md);
+    right: var(--sp-md);
+    bottom: auto;
+    width: auto;
+    top: calc(var(--map-h) - var(--sp-md));
+    transform: translateY(-100%);
+    max-height: calc(var(--map-h) - 44px - 3 * var(--sp-md));
+    overflow-y: auto;
+    padding: var(--sp-md);
+  }
+
+  :root:root .tutorial__why {
+    display: none;
+  }
+
+  /* Ausgewichen (T-M44-14): oben auf der Karte, unter den Zoomknoepfen. */
+  :root:root .tutorial[data-dodge='top'] {
+    top: calc(44px + 2 * var(--sp-md));
+    transform: none;
+    max-height: calc(var(--map-h) - 44px - 3 * var(--sp-md));
+  }
+
+  /* Der Hinweis „quer halten empfohlen": oben links auf der Karte, links der Zoomknoepfe
+     (vier a 44 px + 2 px Luecken = 182 px); kein Dialog, nimmt keinen Fokus (OrientationHint.tsx). */
+  :root:root .orient-hint {
+    display: flex;
+    position: absolute;
+    z-index: 2;
+    top: var(--sp-md);
+    left: var(--sp-md);
+    max-width: calc(100% - 182px - 3 * var(--sp-md));
+    min-height: 44px;
+  }
+
+  :root:root .orient-hint button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* ---- T-M44-05 · Dialog-Fußzeile (Paket B) ----
+   Im Telefon-quer-Block schrumpft schon der Kopf (`.dialog__head`); die feste Fußzeile folgt ihm,
+   damit Körper und Hauptaktion zusammen in die sichtbare Höhe passen. */
+@media (max-height: 480px) {
+  .dialog__foot {
+    padding: var(--sp-sm) var(--sp-lg);
   }
 }

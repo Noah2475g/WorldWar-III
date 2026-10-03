@@ -5661,3 +5661,185 @@ Vorspulen); eine Playtest-Frage zu R-DIP-10 im Bogen der Etappe.
 - **Der Bericht** trägt den Abschnitt `wiederholungslauf`; eingecheckt wird er mit der jeweils
   aktuellen Stufenmessung, zuletzt auf dem vereinten Endstand von Kette und Nebenbahn
   (Commit `65a1645`).
+
+---
+
+## 2026-10-02 · Noah · Etappe 2 ohne Playtest-Haltepunkt (F6 ersetzt)
+
+**Entscheidung (Noah, per /goal-Auftrag):** alle offenen geplanten Punkte werden umgesetzt. Der
+Auftrag ersetzt den Playtest-Haltepunkt F6 aus dem Dossier `entscheidungen-etappe1.md` („erst
+nach Noahs Bestätigung beginnt Etappe 2"). Etappe 2 (T-M42-05, T-M42-07, T-M42-04 fortsetzen,
+danach T-M42-08…12) beginnt damit am 2026-10-02 auf dem Zweig
+`claude/game-v2-planned-tasks-tk5rrr` (abgezweigt von `main` = `95441e0`).
+
+**Was unverändert gilt:** jede Aufgabe misst gegen ihre vorab festgelegten Rücknahmekriterien;
+was reißt, wird begründet zurückgenommen und nicht nachgeschärft. Der Playtest selbst entfällt
+nicht, er wandert hinter das Ende von Etappe 2 (T-M42-12) — kein Agent kann ihn erfüllen.
+
+*Nachtrag 2026-10-03, Ergebnis des ersten Blocks:* T-M42-05 und T-M42-07 sind gebaut, gemessen
+und nach ihren Kriterien zurückgenommen; T-M42-04 ist mit Artillerie ein zweites Mal gemessen und
+bleibt zurückgestellt. Volle Zahlen in `PROBLEME.md`, Befund M42-07-a. Frage unten.
+
+---
+
+## 2026-10-03 · Offene Frage an Noah · Das Artillerie-Band (Befund M42-07-a)
+
+**Lage:** Die Untergrenze aus D32.8 bringt Artillerie und selbsttätigen Beschuss in jeden Lauf
+(Stufe F: 0), hält das Turnier, den Öl-Wächter und — zusammen mit der Einheitenzählung
+(T-M42-05) — neun von neun Vollpartien entschieden. Das Band aus R-AI-12/AK3 (15–30 %) reißt auf
+jeder Stufe: 8,3–12,2 % statt der in der Plansonde gemessenen 24–28 %. Nach der Regel ist alles
+zurückgenommen; keine Grenze wurde bewegt.
+
+**Optionen:**
+- **(a) Empfohlen:** AK3 neu fassen — „in jedem Lauf Artillerie und selbsttätiger Beschuss, Anteil
+  mindestens 8 %" — und Stufe AB (`ca375dc` + `05e8d3f`) wieder einspielen. Folge: die
+  Wiederholungsgrenze reißt auf AB (China 7× abgelehnte Artillerie), bis T-M42-04 bucht; mit der
+  Buchung reißt aber das Patt (4 von 9) — T-M42-04 bliebe zurückgestellt, und die
+  Wiederholungsgrenze müsste für AB anders gelöst werden (z. B. die Untergrenze rechnet selbst mit
+  `ledgerAfter`, ohne `recruitShare` neu abzustimmen).
+- **(b)** Die Untergrenze vergrößern (z. B. so viele Artillerien, wie der Bestand über der
+  Rücklage trägt, höchstens der Rückstand zur Mischung) — neuer Entwurf, neue Messung.
+- **(c)** Bei Stufe F bleiben; R-AI-08/AK3 und R-BAT-08/AK3 bleiben auf dem M42-Stand unerfüllt,
+  T-M42-08/-09 entfallen mangels zweiter Rolle.
+
+**Kippbar:** nichts davon ist gebaut; die Commits liegen in der Geschichte des Zweigs
+`claude/game-v2-planned-tasks-tk5rrr`.
+
+---
+
+## 2026-10-03 · Orchestrator-Entscheid unter Noahs Vorabfreigabe, revidierbar · Befund M42-07-a: Option (b), danach (c)
+
+**Entscheidung (Orchestrator, nicht Noah — offen gekennzeichnet; Noah hat per /goal alle weiteren
+Schritte vorab freigegeben, solange nichts gelöscht wird):** Option (a) entfällt — das Band von
+15 % auf 8 % zu senken hieße, eine Grenze anzuheben, damit die Zahl passt (`CLAUDE.md`). Gewählt
+wird **(b)**: die KI soll das Band 15–30 % wirklich erreichen, höchstens drei Iterationen, sonst
+**(c)** Stufe F. T-M42-05 blieb dabei drin: die Regel „B ohne A" hatte die falsche Aufgabe
+getroffen (ohne T-M42-05 4 von 9 Vollpartien im Patt, mit ihr keine).
+
+**Ergebnis (gemessen, Befund M42-07-a):** Die Zerlegung zeigt die Ursache — auf der Weltkarte
+fördern **fünf von acht Mächten kein Öl**; der Öl-Wächter (R-AI-12/AK4) lässt ihnen keine
+Artillerie, und die drei Ölmächte stehen schon am Gleichgewicht ihrer Mischung. Drei Iterationen
+(Panzeranteil an die Artillerie, Panzer ganz aus der Mischung, Untergrenze mit `ledgerAfter`)
+kamen auf höchstens 12,9–15,3 %, nie auf allen drei Startzahlen über 15 %, und die dritte riss
+zusätzlich Hauptstadt-, Friedens- und Spionage-Zusicherungen. **Also (c): Stufe F**, Code
+zurückgenommen (`c8575b1`), nichts gelöscht.
+
+**Was Noah wissen muss:** R-AI-12/AK3 und AK4 sind auf dieser Karte gemeinsam nicht erfüllbar,
+solange Artillerie Öl verbraucht (`units.json`: 60 je Stunde) und die Mehrheit der Mächte keins
+fördert. Wer das Band will, muss eine der beiden Zusagen ändern (z. B. Artillerie ohne
+Ölunterhalt — eine Regeländerung, nur durch Noah) — das ist keine Frage der KI mehr.
+
+---
+
+## 2026-10-03 · Nachtrag · T-M42-08/-09 sind gebaut, obwohl Option (c) sie „entfallen" ließ
+
+Die Entscheidung oben nannte bei Option (c) „T-M42-08/-09 entfallen mangels zweiter Rolle". Gebaut wurden
+sie trotzdem (`3e3f850`, `b8106df`), und die Abhängigkeit von T-M42-08 steht jetzt auf T-M42-06 statt
+T-M42-07 (wie bei T-M42-05). **Grund:** die Rolle (Batterie/Linie) zählt auch für **menschlich gebaute**
+Artillerie, die in einer KI-Macht durch Eroberung oder Verbündete auftauchen kann, und das Zusammenlegen
+ist unabhängig vom Artillerieband — es hängt nicht daran, dass die KI selbst Artillerie aushebt.
+Gemessen auf Stufe C2: Paare über zwei Tagesenden 0, ai-integration 30/30, Turnier unverändert. Die
+Aussage „entfallen" in Option (c) ist damit berichtigt, nicht gelöscht; der Orchestrator hat sie ohne
+Rückfrage bei Noah so entschieden und offen gekennzeichnet — kippbar.
+
+---
+
+## 2026-10-03 · Orchestrator-Entscheid unter Noahs Vorabfreigabe, revidierbar · R-AI-12/AK4 auf den Zweck
+
+**Entscheidung:** R-AI-12/AK4 heißt jetzt „der Ölbestand läuft nicht leer" statt „die Öl-Tagesbilanz nach
+der Aushebung ist nicht negativ" (Wortlaut in `01-REQUIREMENTS.md`, die alte Fassung steht dort als
+Vermerk). Gemessen wird der Zweck — kein Ölmangeltag durch eigene Aushebung —, gebaut wird er mit einem
+Vorrats-Horizont: Bestand nach dem Zug + Öl-Tagesbilanz danach × H ≥ 0. H ist eine **KI-Konstante**
+(`OIL_HORIZON_DAYS` in `packages/ai/src/economy.ts`, Stand T-M42-14: 30), **keine Regeldatei** — Mensch und
+KI spielen nach denselben Regeln, nur die KI rechnet vorsichtig.
+
+**Warum:** die alte Fassung ließ den fünf Mächten ohne Ölförderung (Russland, Deutschland, Frankreich,
+Vereinigtes Königreich, Italien) keine einzige Artillerie. Gemessen auf Stufe C2 (Ölprobe, drei
+Startzahlen, 200 Spieltage): diese fünf halten ihren Startvorrat von 167 000 Öl die ganze Partie
+unberührt, die drei Ölmächte häufen bis zu 13 Mio. an. Die Tagesbilanz schützte also einen Vorrat, den
+niemand anfasste — AK3 und AK4 waren gemeinsam unerfüllbar (Befund M42-07-a). Der Zweck der Zusage war
+nie „keine Artillerie ohne Förderung", sondern „kein Heer im Ölmangel".
+
+**Keine Grenze angehoben:** das Band aus AK3 (15–30 %) bleibt, ebenso jede Zusicherung. Der neue Wächter
+ist gebaut und gemessen (T-M42-14, drei Iterationen) und **zurückgenommen**, weil die Vollpartien rissen
+(siehe den folgenden Eintrag); auf dem heutigen Stand hebt die KI keine Einheit mit Ölunterhalt aus, AK4
+gilt leer. **Kippbar:** Noah kann die alte Fassung jederzeit zurückholen — sie steht wörtlich im Vermerk.
+
+---
+
+## 2026-10-03 · Review-Umsetzung KI (T-M42-13 bis T-M42-18) · Ausnahme: `findHostArmy` nach Rolle wird nicht gebaut
+
+**Entscheidung (Orchestrator, schriftliche Ausnahme vom Review-Punkt 5):** die Kernänderung „die fertige
+Aushebung kommt in eine Gastarmee **derselben Rolle**" (`packages/core/src/phases/recruitment.ts`,
+`findHostArmy`) wird in M42 **nicht** gebaut. Gebaut ist nur die Messung: `m42-zaehlung` zählt gemischte
+KI-Armeen mit Reichweiteneinheit (`heer.gemischteMitReichweite`, T-M42-18).
+
+**Warum:** D32.1 schließt Kernänderungen für M42 aus — M42 ist ein Meilenstein der KI. `findHostArmy` ist
+Kernverhalten und gilt für **jeden** Spieler: ein Mensch, der eine Artillerie aushebt, bekäme sie
+plötzlich in einer anderen Armee; und eine Änderung im Kern verschiebt den Golden-Master und den
+Gleichschritt des Mehrspielers (beide Rechner rechnen den Kern; ein alter und ein neuer Stand dürfen
+sich nicht treffen). Gemessen auf dem Endstand ist die Zahl klein (siehe `PROGRESS.md`, T-M42-18) — der
+Schaden rechtfertigt den Eingriff heute nicht. **Vorgemerkt für M18** (`03-TASKS.md`, Abschnitt „M18").
+
+## 2026-10-03 · UX-Planungs-Agent, kippbar · UX V2: ein Browser-Messwerkzeug, keine E2E-Stufe
+
+**Entscheidung:** `playwright` (1.56.1, passend zum vorinstallierten Chromium) und
+`@axe-core/playwright` stehen als Entwicklungsabhängigkeiten in der Wurzel-`package.json`. Sie
+tragen **ein Messwerkzeug**, `scripts/ux-capture.mjs` (`pnpm ux:capture`), das die zentralen
+Ansichten in drei Fenstergrößen fotografiert und Ladezeit, Ruckler, axe-Verstöße, Tastatur,
+Touch-Ziele und Flächen misst (`docs/ux/before/messwerte.json`, `docs/plan/UX-PLAN.md`).
+
+**Warum das D14 nicht widerruft:** D14 nahm eine **E2E-Teststufe** zurück — eine zweite
+Testlaufzeit mit Browser in der Prüfkette, eigenen Zeitbudgets und eigener Flakiness. Das Werkzeug
+läuft **nicht** in `pnpm verify` und nicht in `pnpm acceptance`; es braucht einen laufenden
+Dev-Server und wird von Hand gefahren, wie der Parameterlauf. Der Prüfmodus aus T-M44-02
+(`pnpm ux:check`) meldet Schwellen als Exit-Code für die Abnahme einer M44-Aufgabe, nicht für
+jeden Commit. Der Wächter `test/withdrawals.test.ts` („der Entwurf kennt keine E2E-Stufe mit
+Playwright") bleibt unverändert und grün: D36 beschreibt das Werkzeug, keine Teststufe. Geändert
+hat sich nur die Tatsache aus D14s Begründung, dass `playwright` in keiner `package.json` steht.
+
+**Kippbar:** Will Noah keinen Browser im Repo, fällt die Abhängigkeit wieder heraus; die Bilder
+und Messwerte der Vorher-Aufnahme bleiben als Beleg, und M44 wird mit Sichtprüfungen abgenommen.
+
+---
+
+## 2026-10-03 · Orchestrator-Entscheid unter Noahs Vorabfreigabe, kippbar · UX V2: Antworten auf die drei Fragen aus UX-PLAN §8
+
+**F1 — Telefon hochkant:** wird gebaut, **gestuft**. T-M44-03a (CSS-Stapel, Regel nach
+`(max-width: 599px) and (orientation: portrait)`, dazu ein nicht blockierender Hinweis „quer halten
+empfohlen", 0,5 h) erfüllt R-UX-01; T-M44-03b (Blatt mit Rasten, Auto-Schwenk, Gestenprüfung gegen
+`MapCanvas`) steht als optional im Plan, wird aber in Phase 6 umgesetzt.
+
+**F2 — Rückfrage:** zweiter Klick **am selben Knopf**; der Folgesatz steht im Knopf und wird über
+`aria-live` angesagt; kein Dialog, **keine Zeitüberschreitung** (Wächter `no-time-pressure`); Escape
+und Fokusverlust brechen ab. Gilt für Krieg erklären, Bündnis aufkündigen, belegten Spielstand
+überschreiben, Einstellungen auf Vorgabe zurücksetzen und neue Partie aus laufender Partie
+(R-UX-04/AK1, T-M44-09a/-09b).
+
+**F3 — Fuß-Rangliste:** Platz 1 kommt **additiv** als erste Zeile dazu; die eigene Umgebung aus
+T-M31-03 (D27.6) bleibt darunter. `Foot.test.tsx` wird angepasst (T-M44-10).
+
+**Dazu aus dem Review (UX-PLAN §9):** D36 heißt D37 (D36 ist „Ampel" in `ROHSTOFFE.md`); die Zeiten
+werden am gebauten Bündel gemessen (WORKFLOW §4 Falle 18); `deps` in M44 nur fachlich, die
+Reihenfolge wegen Dateikonflikten steht in den Paketen (UX-PLAN §6). Die Bilder der Nachher-Aufnahme
+werden nur für 375×667, 1280×800 und die neuen Fenstergrößen eingecheckt, 1920×1080 bleibt Messwert
+(Repo-Größe); die Vorher-Bilder bleiben vollständig (Sitzungsregel „nichts löschen") und sind
+verlustfrei optimiert.
+
+## 2026-10-03 · Noahs Entscheide zum Abschluss von Etappe 2 und M44 (lokale Sitzung)
+
+Noah hat im Chat alle Empfehlungen des Abschlussplans bestaetigt:
+
+- **E1 · M42-07-a:** Artillerie verbraucht weiter Oel. T-M42-07 bleibt zurueckgenommen; T-M42-05 nur
+  in der S10-Fassung (`7e41eda`), Status nach Messung. Keine Spielregel-Aenderung; einzige erlaubte
+  Aenderung unter `data/rules` ist `default/ai.json` (`hard.recruitShare`) durch T-M42-04, dann mit
+  Parameterlauf.
+- **E2 ·** Die kippbaren Orchestrator-Entscheide der Cloud-Sitzung (2026-10-02/03: F6-Playtest
+  verschoben, Option (c), UX F1-F3, Playwright als Messwerkzeug) sind bestaetigt.
+- **E3 ·** Ein Pull Request: alles landet in PR #15; Noah merged nach `main`.
+- **E4 ·** PR #14 (`9ee6ec2`) ist in den Hauptzweig gemergt (`77066de`).
+- **E5 ·** Laeufe, die den Rechner allein brauchen (T-M44-20, `pnpm acceptance`), nur nach
+  Ankuendigung mit Dauer und Noahs Wort.
+- **Bewusste Abweichung von UEBERGABE-LOKAL §4:** `pnpm verify` nicht je Paket, sondern an
+  Integrationspunkten (Noahs Regel „verify je Meilenstein“); je Paket gezielte Tests und `ux:check`.
+
