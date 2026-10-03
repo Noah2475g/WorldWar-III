@@ -96,14 +96,15 @@ describe('R-UX-01/AK1 R-UX-01/AK2 R-UX-01/AK3 ux-thresholds: der Vorher-Stand f�
     expect(r['R-UX-01/AK1']!.value).toContain('0 %')
   })
 
-  it('R-UX-01/AK2: Überlauf in allen acht Größen (Dialog und Spielstandraster überall, Kopf und Rohstoffe bei 375 und 320)', () => {
+  it('R-UX-01/AK2: Überlauf in allen acht Größen (Dialog und Spielstandraster überall, Rohstoffe bei 375 und 320; die Kopfleiste ist seit T-M44-03a als wischbar erklärt)', () => {
     const k = r['R-UX-01/AK2']!
     expect(k.status).toBe('red')
     expect(k.value).toContain('8 von 8')
     const text = k.lines.join('\n')
-    expect(text).toContain('375x667: mapStart: header__top 528>375')
+    expect(text).toContain('375x667: mapStart: resources 478>375')
+    expect(text).not.toContain('header__top')
     expect(text).toContain('1280x800: saves: dialog 604>518')
-    expect(text).toContain('320x568: mapStart: header__top 528>320, mapStart: resources 478>320, mapStart: foot 370>320')
+    expect(text).toContain('320x568: mapStart: resources 478>320, mapStart: foot 370>320')
   })
 
   it('R-UX-01/AK3: Fehlschritte bei 375x667 (9) und 320x568 (10) — sonst keine', () => {

@@ -224,7 +224,7 @@ des Worktrees.
 | T-M44-01 | Basis | alle | UX-Aufnahme: Messwerkzeug und Vorher-Bilder | R-UX-01, R-UX-06 | — | erledigt |
 | T-M44-02 | P1 | alle (Werkzeug) | Prüfmodus, Mehrspielerlauf und echter Siegstand im Messwerkzeug | R-UX-01, R-UX-06 | 01 | 5 h |
 | T-M44-02b | P1 | alle (Vorbereitung) | Nahtstellen in App.tsx vorbereiten (keine Funktion) | R-UX-02, R-UX-03 | 01 | 1 h |
-| T-M44-03a | P1 | Responsivität | Telefon hochkant: CSS-Stapel und Hinweis qür halten | R-UX-01, R-UX-05 | 02 | 8 h |
+| T-M44-03a | P1 | Responsivität | Telefon hochkant: CSS-Stapel und Hinweis quer halten | R-UX-01, R-UX-05 | 02 | 8 h |
 | T-M44-03b | P2 | Responsivität | Telefon hochkant: Seitenleiste als Blatt mit Rasten | R-UX-01 | 03a | 10 h |
 | T-M44-04 | P1 | Spielfeld/HUD | Kopfleiste einzeilig mit Alarmchip und Siegziel, hidden gilt | R-UX-02 | 02 | 4 h |
 | T-M44-05 | P1 | Navigation/Menüs | Dialoge: Hauptaktion in fester Fußzeile, Spielstandraster passt | R-UX-05, R-UX-01 | 02 | 3 h |
@@ -278,12 +278,12 @@ des Worktrees.
 - *Tests:* `apps/desktop/src/game/names.test.ts` (neu) - Namensauflösung verhaltensgleich zu heute (Gegenprobe); `apps/desktop/src/App.test.tsx` unverändert grün.
 - *Abhängigkeiten:* T-M44-01 · *Aufwand:* 1 h
 
-**T-M44-03a · Telefon hochkant: CSS-Stapel und Hinweis qür halten** — Paket Responsivität, Befund B-01, B-25
+**T-M44-03a · Telefon hochkant: CSS-Stapel und Hinweis quer halten** — Paket Responsivität, Befund B-01, B-25
 - *Problem → Ziel:* Bei 375x667 ist die Karte sichtbar und jede Kernhandlung erreichbar (vorher Kartenanteil 0, Seitenleiste und Fuß füllen das Bild).
 - *Lösung:* Medienabfrage `(max-width: 599px) and (orientation: portrait)`: Kopfleiste einzeilig wischbar, Karte oben, Seitenleiste darunter rollend, kompakter Fuß; nicht blockierender Hinweis „quer halten empfohlen" (D37.2).
 - *Dateien:* `apps/desktop/src/ui/touch.css`, `apps/desktop/src/ui/app.css`, `apps/desktop/src/App.tsx`, `apps/desktop/src/ui/portrait.touch.test.tsx`, `apps/desktop/src/i18n/de.ts`
-- *Abnahme (messbar):* R-UX-01/AK1 (ohne Panel >= 0,45, mit offenem Panel >= 0,30), AK2, AK3 bei 375x667 und 320x568; 667x375 und 1366x768 nicht schlechter als vorher. Kopfleiste einzeilig wischbar, Karte oben, Seitenleiste darunter rollend, kompakter Fuß; nicht blockierender Hinweis qür halten empfohlen (0,5 h, R-UX-05/AK2, Orchestrator-Entscheid F1). Sichtprüfung am laufenden Spiel (Kaskade). Aufwand 8 h.
-- *Tests:* `apps/desktop/src/ui/portrait.touch.test.tsx` (neu) - describe(R-UX-01/AK1 ...): die Regel hängt an (max-width: 599px) and (orientation: portrait), nicht an data-input und nicht nur an max-height 480; Kopfleiste nowrap; Hinweis qür halten ist nicht modal; `apps/desktop/src/ui/cascade.touch.test.tsx` grün; Wächter touch-entry, css-mirrors-tokens, no-color-literals, prose-in-code; Browser: `pnpm ux:check --only R-UX-01`.
+- *Abnahme (messbar):* R-UX-01/AK1 (ohne Panel >= 0,45, mit offenem Panel >= 0,30), AK2, AK3 bei 375x667 und 320x568; 667x375 und 1366x768 nicht schlechter als vorher. Kopfleiste einzeilig wischbar, Karte oben, Seitenleiste darunter rollend, kompakter Fuß; nicht blockierender Hinweis quer halten empfohlen (0,5 h, R-UX-05/AK2, Orchestrator-Entscheid F1). Sichtprüfung am laufenden Spiel (Kaskade). Aufwand 8 h.
+- *Tests:* `apps/desktop/src/ui/portrait.touch.test.tsx` (neu) - describe(R-UX-01/AK1 ...): die Regel hängt an (max-width: 599px) and (orientation: portrait), nicht an data-input und nicht nur an max-height 480; Kopfleiste nowrap; Hinweis quer halten ist nicht modal; `apps/desktop/src/ui/cascade.touch.test.tsx` grün; Wächter touch-entry, css-mirrors-tokens, no-color-literals, prose-in-code; Browser: `pnpm ux:check --only R-UX-01`.
 - *Abhängigkeiten:* T-M44-02 · *Aufwand:* 8 h
 
 **T-M44-04 · Kopfleiste einzeilig mit Alarmchip und Siegziel, hidden gilt** — Paket Spielfeld/HUD, Befund B-02, B-25
@@ -377,7 +377,7 @@ des Worktrees.
 - *Abhängigkeiten:* T-M44-02 · *Aufwand:* 4 h
 
 **T-M44-12 · Seitenleiste: Wirtschaft einklappbar, Panelkopf mit Zurück, Neu-Meldungen kompakt** — Paket Spielfeld/HUD, Befund B-16
-- *Problem → Ziel:* Die Wirtschaftstabelle steht nicht mehr unter jedem Panel; jedes Panel hat einen Kopf mit Zurück; die zwei daürhaften "Neu ab heute"-Meldungen belegen keine zwei Zeilen Panelhöhe.
+- *Problem → Ziel:* Die Wirtschaftstabelle steht nicht mehr unter jedem Panel; jedes Panel hat einen Kopf mit Zurück; die zwei dauerhaften "Neu ab heute"-Meldungen belegen keine zwei Zeilen Panelhöhe.
 - *Lösung:* Wirtschaft als `details` mit gemerktem Zustand; Panelkopf mit Zurück (Armee → Provinz) und Schließen; „Neu ab heute"-Meldungen als eine Sammelzeile.
 - *Dateien:* `apps/desktop/src/App.tsx`, `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/ui/Alerts.tsx`, `apps/desktop/src/ui/app.css`
 - *Abnahme (messbar):* R-UX-02 (Orientierung). Gemessen: Armeepanel 1280x800 zeigt Name und Marschieren ohne Rollen (vorher Kopf außerhalb des Bildes). Aufwand 4 h.

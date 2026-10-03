@@ -1254,6 +1254,15 @@ export const de = {
     about: 'Was ist {{subject}}?',
   },
 
+  /**
+   * Der Hinweis im Hochformat (T-M44-03a, R-UX-05/AK2, Orchestrator-Entscheid F1): das Telefon
+   * hochkant ist bedienbar, aber die Karte ist dort ein Streifen. Ein Hinweis, keine Sperre.
+   */
+  orientation: {
+    hint: 'Quer halten empfohlen',
+    dismiss: 'Hinweis ausblenden',
+  },
+
   meter: {
     progress: '{{percent}} %',
     remaining: 'noch {{time}}',

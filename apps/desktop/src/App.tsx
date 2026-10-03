@@ -54,6 +54,7 @@ import { boundsOf, centreOn, clampView, zoomAt, type View } from './map/picking.
 import { Tooltip } from './ui/Tooltip.tsx'
 import { useMapTooltip } from './ui/useMapTooltip.ts'
 import { Sidebar } from './ui/Sidebar.tsx'
+import { OrientationHint } from './ui/OrientationHint.tsx'
 import { MENU_ENTRIES } from './ui/menuEntries.ts'
 import { armyNamer, nationNamer, provinceNamer } from './game/names.ts'
 import { Foot, latestReport } from './ui/Foot.tsx'
@@ -2174,7 +2175,12 @@ export function App(props: AppProps) {
       .sort((a, b) => a.name.localeCompare(b.name, 'de'))
 
   return (
-    <div className="app" style={fontScaleStyle(ui.settings)}>
+    <div
+      className="app"
+      style={fontScaleStyle(ui.settings)}
+      // Ein offenes Panel verkleinert im Hochformat die Karte (T-M44-03a, touch.css `--map-h`).
+      data-panel={ui.panel ? 'open' : 'closed'}
+    >
       <Header
         view={view}
         ticksPerDay={ticksPerDay}
@@ -2274,6 +2280,8 @@ export function App(props: AppProps) {
           {/* Der Schluessel gehoert zu seiner Karte, nicht in die Seitenleiste. */}
           <Legend mode={ui.mode} {...(colorOf(viewerId) ? { ownColor: colorOf(viewerId)! } : {})} />
           {tooltip && tooltipAt && <Tooltip data={tooltip} x={tooltipAt.x} y={tooltipAt.y} />}
+          {/* Nur im Hochformat sichtbar (touch.css); ein Hinweis, keine Sperre (T-M44-03a). */}
+          <OrientationHint />
         </div>
 
         {/* Die Hülle und ihre sechs Plätze: `ui/Sidebar.tsx` (T-M44-02b). Inhalt und Reihenfolge wie vorher. */}

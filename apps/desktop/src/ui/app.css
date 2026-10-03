@@ -2318,3 +2318,32 @@ body {
      verschwindet — und ein dunkles nicht wie ein Loch aussieht. */
   border: 1px solid var(--line);
 }
+
+/* ================================================================ T-M44-03a: Hochformat (Paket A)
+   Der Hinweis „quer halten empfohlen" (OrientationHint.tsx, R-UX-05/AK2). Ausserhalb des
+   Hochformats gezeichnet wird er nicht; die Regel unter
+   `@media (max-width: 599px) and (orientation: portrait)` in touch.css zeigt ihn und legt ihn
+   auf die Karte. Der Stapel selbst (Spalte, Zeilen, Kopf, Fuss) steht in touch.css, damit die
+   Kaskade app.css -> touch.css ihn nach den Schreibtischregeln auswertet. */
+.orient-hint {
+  display: none;
+  align-items: center;
+  gap: var(--sp-sm);
+  padding: 0 0 0 var(--sp-md);
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  color: var(--ink);
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.orient-hint button {
+  flex: none;
+  background: none;
+  border: 0;
+  color: var(--ink-soft);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}

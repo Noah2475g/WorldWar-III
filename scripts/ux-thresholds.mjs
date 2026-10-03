@@ -54,7 +54,11 @@ export const FALLBACK_SIZES = ['667x375', '1366x768']
  * Bereich per Tastatur erreichbar ist (R-UX-06/AK1) — wer hier etwas einträgt, nennt die Aufgabe,
  * die das belegt. Vorgabe: nichts ist ausgenommen.
  */
-export const SWIPEABLE_REGIONS = []
+export const SWIPEABLE_REGIONS = [
+  // T-M44-03a: die Kopfleiste ist im Hochformat (und im Telefon quer) EINE Zeile, die seitlich rollt
+  // (touch.css). Jedes Kind ist ein Knopf und per Tab erreichbar, der Fokus rollt es ins Bild.
+  'header__top',
+]
 
 const ok = (value, lines = []) => ({ status: 'green', value, lines })
 const bad = (value, lines = []) => ({ status: 'red', value, lines })
