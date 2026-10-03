@@ -29,7 +29,7 @@ const savesFiles = () => (existsSync(savesDir) ? readdirSync(savesDir) : [])
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
 if (!existsSync(exe)) { console.error('ABBRUCH: exe fehlt:', exe); process.exit(2) }
-// Vor dem ersten Start — und vor jedem weiteren Lauf erneut (siehe Schleife unten).
+// Nur vor dem ersten Start: spätere Läufe sehen die Autosaves der eigenen Vorläufe (Datei des Messlaufs, nicht Noahs).
 if (savesFiles().length > 0) {
   console.error('ABBRUCH: saves nicht leer — erst parken (umbenennen, SHA-256 notieren), nichts löschen:', savesFiles())
   process.exit(2)
@@ -124,7 +124,6 @@ const stats = (list) => {
 const results = []
 let failed = null
 for (let n = 1; n <= runs; n++) {
-  if (savesFiles().length > 0) { failed = `saves nach Lauf ${n - 1} nicht leer (Autosave?): ${savesFiles().join(', ')} — Abbruch, nichts gelöscht`; break }
   try {
     const r = await oneRun(n)
     results.push(r)
