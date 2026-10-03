@@ -3812,13 +3812,13 @@ tasks:
   - id: T-M44-04
     milestone: M44
     title: "Kopfleiste einzeilig mit Alarmchip und Siegziel, hidden gilt"
-    status: todo
+    status: done
     deps: [T-M44-02]
     requirements: [R-UX-02]
     design: [D-37]
     files: [apps/desktop/src/ui/Header.tsx, apps/desktop/src/ui/app.css, apps/desktop/src/ui/touch.css]
     tests: [apps/desktop/src/ui/Header.test.tsx, apps/desktop/src/ui/cascade.touch.test.tsx]
-    dod: "Paket Spielfeld/HUD, Prioritaet P1. R-UX-02/AK1 (<= 70 px im Zustand mit Alarmchip und Siegziel, 1280x800 und 1366x768, auch Mehrspieler mit fester Rate; vorher 105-107 px), AK2. Kompaktregeln: Titel unter 1500 px aus, Tempoknoepfe als Gruppe, Kartenmodi unter 1400 px als Auswahl. Kaskade am laufenden Spiel geprueft (Falle aus M36). Aufwand 4 h."
+    dod: "Paket Spielfeld/HUD, Prioritaet P1. R-UX-02/AK1 (<= 70 px im Zustand mit Alarmchip und Siegziel, 1280x800 und 1366x768, auch Mehrspieler mit fester Rate; vorher 105-107 px), AK2. Kompaktregeln: Titel unter 1500 px aus, Tempoknoepfe als Gruppe, Kartenmodi unter 1400 px als Auswahl. Kaskade am laufenden Spiel geprueft (Falle aus M36). Aufwand 4 h. Erledigt am 2026-10-03: globale Regel [hidden] { display: none !important } oben in app.css (Suche vorher: in den TSX-Dateien setzt allein Header.tsx das Attribut, in app.css/touch.css trifft es sonst keine Klasse mit eigenem display); Siegziel steht in der Uhrzeile (.clock), ab 1280 px nowrap, Titel unter 1500 px aus, Tempoknoepfe als Gruppe ohne Luecke, Kartenmodi unter 1400 px (ohne Touch) als Auswahl .modes-select; touch.css: ein Selektor (.header__top .meter statt Kindselektor); ux-capture waehlt den Modus bei verborgenen Knoepfen ueber die Auswahl. Gemessen mit pnpm ux:check --only R-UX-02/AK1 (Dev-Server): vorher 107/83/105 px (1280x800, 1366x768, mp), nachher 67 px im Zustand mit Alarmchip (1280x800 battle), sonst 65 px, auch 1400x800 und mp mit fester Rate; Alarmchip per Attrappe bei 1280 bis 1600 px: Zeile bleibt einzeilig (66,5 px, kein Ueberlauf). AK2: vorher 13 Zustaende mit gezeichnetem hidden, nachher 0 von 22. Kaskade am laufenden Spiel gesichtet (Bildschirmfoto 1280x800: einzeilige Leiste, Rohstoffleiste unveraendert)."
   - id: T-M44-05
     milestone: M44
     title: "Dialoge: Hauptaktion in fester Fusszeile, Spielstandraster passt"
@@ -3842,13 +3842,13 @@ tasks:
   - id: T-M44-07
     milestone: M44
     title: "Kartentooltip: Auswahl-Tooltip nur per Tastatur, nie ueber Dialogen"
-    status: todo
+    status: done
     deps: [T-M44-02]
     requirements: [R-UX-02]
     design: [D-37]
     files: [apps/desktop/src/App.tsx, apps/desktop/src/ui/Tooltip.tsx, apps/desktop/src/ui/app.css, apps/desktop/src/i18n/de.ts]
     tests: [apps/desktop/src/ui/Tooltip.test.tsx, apps/desktop/src/App.test.tsx]
-    dod: "Paket Feedback/Hinweise, Prioritaet P1. R-UX-02/AK3. Ursache: tooltipId = hover?.id ?? ui.selectedProvince (App.tsx, T-M31-01, absichtlich fuer die Tastatur) - die Auswahl haelt den Tooltip auch nach Mausauswahl. Aufwand 2 h."
+    dod: "Paket Feedback/Hinweise, Prioritaet P1. R-UX-02/AK3. Ursache: tooltipId = hover?.id ?? ui.selectedProvince (App.tsx, T-M31-01, absichtlich fuer die Tastatur) - die Auswahl haelt den Tooltip auch nach Mausauswahl. Aufwand 2 h. Erledigt am 2026-10-03: ui/useMapTooltip.ts entscheidet (Zeiger zeigt; Auswahl nur, wenn die letzte Eingabe vor der Auswahl ein Tastendruck war; nie bei offenem Dialog, Beitritt/Lobby, Pausenantrag, gesperrtem Vorhang oder Endedialog), Tooltip.tsx nennt bei gewaehlter Provinz nur Escape: schliessen, app.css: user-select none. Gemessen mit pnpm ux:check --only R-UX-02/AK3: vorher Tooltip bei offenem Dialog sichtbar und Mausbedienung im Auswahl-Tooltip (1280x800 und 1366x768), nachher 3 von 3 Groessen ohne Befund (auch 1400x800)."
   - id: T-M44-08
     milestone: M44
     title: "Endedialog und gesperrter Vorhang halten den Fokus, axe ohne Verstoss"
@@ -3882,13 +3882,13 @@ tasks:
   - id: T-M44-10
     milestone: M44
     title: "Protokoll und Fuss: Zeit einzeilig, Gefechte zusammengefasst, Platz 1 zuerst"
-    status: todo
+    status: done
     deps: [T-M44-02]
     requirements: [R-UX-02]
     design: [D-37]
     files: [apps/desktop/src/ui/Foot.tsx, apps/desktop/src/game/events.ts, apps/desktop/src/ui/app.css]
     tests: [apps/desktop/src/ui/Foot.test.tsx, apps/desktop/src/game/events.test.ts]
-    dod: "Paket Spielfeld/HUD, Prioritaet P2. R-UX-02/AK4 (Orchestrator-Entscheid F3). Aufwand 3 h."
+    dod: "Paket Spielfeld/HUD, Prioritaet P2. R-UX-02/AK4 (Orchestrator-Entscheid F3). Aufwand 3 h. Erledigt am 2026-10-03: Foot.tsx footRowsWithLeader (Platz 1 additiv als erste Zeile, footRows unveraendert), events.ts mergeBattleLines (eine Folge gleichlautender Gefechtszeilen derselben Provinz am selben Spieltag wird eine Zeile mit Anzahl; gleiche Stunde eingeschlossen — das Messwerkzeug zaehlt Nachbarzeilen, nicht nur dieselbe Stunde, deshalb der Spieltag), Zeitspalte nowrap und 88 px. Gemessen mit pnpm ux:check --only R-UX-02/AK4: vorher 28 (1280x800) und 31 (1366x768) umgebrochene Zeitangaben, 6 bzw. 4 gleichlautende Gefechtszeilen, Platz 1 nicht zuerst; nachher ohne Befund in beiden Groessen."
   - id: T-M44-11
     milestone: M44
     title: "Zielwahl: erreichbare Ziele zuerst, gemessen und zwischengespeichert"
@@ -3912,13 +3912,13 @@ tasks:
   - id: T-M44-13
     milestone: M44
     title: "Erklaerung als Popover mit Escape"
-    status: todo
+    status: done
     deps: [T-M44-02]
     requirements: [R-UX-05]
     design: [D-37]
     files: [apps/desktop/src/ui/Explain.tsx, apps/desktop/src/ui/app.css]
     tests: [apps/desktop/src/ui/Explain.test.tsx]
-    dod: "Paket Onboarding, Prioritaet P2. R-UX-05/AK3. Aufwand 2 h."
+    dod: "Paket Onboarding, Prioritaet P2. R-UX-05/AK3. Aufwand 2 h. Erledigt am 2026-10-03: Explain.tsx als Popover (position absolute unter dem Fragezeichen, rechtsbuendig wenn der Rand der Leiste es abschnitte), Escape schliesst nur ihn und gibt den Fokus dem Fragezeichen zurueck (Escape wird im Fangmodus verbraucht, das Provinzpanel bleibt), Druck ausserhalb schliesst auch. Am laufenden Spiel gemessen (1280x800 und 1366x768): 0 von 12 Bauplatz-Kacheln verschoben beim Oeffnen, Escape schliesst, Fokus auf Was ist Kaserne?, Panel bleibt, keine Konsolenfehler."
   - id: T-M44-14
     milestone: M44
     title: "Einfuehrung ortsunabhaengig und nicht verdeckend"
@@ -3972,13 +3972,13 @@ tasks:
   - id: T-M44-19
     milestone: M44
     title: "Favicon ohne 404"
-    status: todo
+    status: done
     deps: [T-M44-02]
     requirements: [R-UX-01]
     design: [D-37]
     files: [apps/desktop/index.html]
     tests: [apps/desktop/src/ui/viewport.touch.test.tsx]
-    dod: "Paket Navigation/Menues, Prioritaet P3. R-UX-01 (Konsistenz). Favicon als data:-URI im link-Element (die CSP erlaubt img-src self data:, tauri.conf.json) - keine neue Bilddatei, kein ASSETS.md-Eintrag noetig. Aufwand 0,5 h."
+    dod: "Paket Navigation/Menues, Prioritaet P3. R-UX-01 (Konsistenz). Favicon als data:-URI im link-Element (die CSP erlaubt img-src self data:, tauri.conf.json) - keine neue Bilddatei, kein ASSETS.md-Eintrag noetig. Aufwand 0,5 h. Erledigt am 2026-10-03: index.html traegt ein link rel=icon als data:-URI (PNG 32x32, 216 Byte; kein SVG, weil dessen Namensraum eine http-Adresse enthielte und no-foreign-assets sie verwirft), CSP erlaubt img-src data:. Am laufenden Spiel: keine Antwort mit Status ab 400 und keine Konsolenfehler beim Start."
   - id: T-M44-20
     milestone: M44
     title: "(bedingt) Tempo 100 ohne Ruckler am Buendel"

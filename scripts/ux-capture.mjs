@@ -447,6 +447,16 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
     }
   }
   const btn = (name, exact = true) => page.getByRole('button', { name, exact }).first()
+  /**
+   * Kartenmodus waehlen. Ab T-M44-04 stehen unter 1400 px (ohne Touch) statt der fuenf Knoepfe eine
+   * Auswahl in der Kopfleiste: ist der Knopf nicht gezeichnet, nimmt die Messung die Auswahl —
+   * dieselbe Kernhandlung, derselbe Name.
+   */
+  const mode = async (label) => {
+    const button = btn(label)
+    if (await button.isVisible().catch(() => false)) return button.click({ timeout: 5000 })
+    return page.getByRole('combobox', { name: 'Kartenmodus' }).selectOption({ label }, { timeout: 5000 })
+  }
   const speed = async (label) => btn(label).click({ timeout: 5000 })
   const provincePicker = () => page.locator('aside select').first()
   /**
@@ -571,10 +581,10 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
     await page.waitForTimeout(300)
   })
   await step('kartenmodus-rohstoffe', async () => {
-    await btn('Rohstoffe').click({ timeout: 5000 })
+    await mode('Rohstoffe')
     await page.waitForTimeout(400)
     await shot('kartenmodus-rohstoffe')
-    await btn('Besitz').click({ timeout: 5000 })
+    await mode('Besitz')
   })
 
   // --- 4. Provinz, Bau, Erklaerung --------------------------------------------------
@@ -759,10 +769,10 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
     }
   })
   await step('kartenmodus-beziehungen', async () => {
-    await btn('Beziehungen').click({ timeout: 5000 })
+    await mode('Beziehungen')
     await page.waitForTimeout(300)
     await shot('kartenmodus-beziehungen')
-    await btn('Besitz').click({ timeout: 5000 })
+    await mode('Besitz')
   })
 
   // --- 7. Menue, Einstellungen, Spielstaende ----------------------------------------

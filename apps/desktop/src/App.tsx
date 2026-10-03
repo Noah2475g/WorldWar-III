@@ -112,6 +112,7 @@ import {
   dayReportBody,
   dayReportDeltas,
   describeEvent,
+  mergeBattleLines,
   openIntrusion,
   priceSeries,
 } from './game/events.ts'
@@ -1808,8 +1809,22 @@ export function App(props: AppProps) {
    * dieselbe Auskunft fuer Maus und Tastatur. Escape blendet ihn aus, bis sich
    * Auswahl oder Zeiger aendern. Der Zustand steht seit T-M44-02b in `ui/useMapTooltip.ts`.
    */
-  const { onHover: onMapHover, hide: hideTooltip, tooltip, tooltipAt } = useMapTooltip({
+  const {
+    onHover: onMapHover,
+    hide: hideTooltip,
+    tooltip,
+    tooltipAt,
+    selected: tooltipSelected,
+  } = useMapTooltip({
     selectedProvince: ui.selectedProvince,
+    // Jede Schicht, die ueber der Karte liegt (T-M44-07, R-UX-02/AK3): die Dialoge des Menues, Beitritt
+    // und Lobby, der Pausenantrag, das Auseinanderlaufen (gesperrter Vorhang) und der Endedialog.
+    dialogOpen:
+      dialog !== null ||
+      partyDialog !== null ||
+      Boolean(netplay.pause.request && netplay.pause.request.by !== viewerId) ||
+      Boolean(netplay.desync) ||
+      (view !== null && (view.victory.winner !== null || !view.self.alive) && !victoryAcknowledged),
     mapView: ui.view,
     view,
     centres,
@@ -1876,7 +1891,8 @@ export function App(props: AppProps) {
       province: provinceNamer(activeMap.provinces),
     })
     // Neueste zuerst wie das Protokoll; `sort` ist stabil, bei gleichem Tick stehen die Ereignisse vorn.
-    return [...zeilen, ...maersche.reverse()].sort((a, b) => b.tick - a.tick)
+    // Gleichlautende Gefechtszeilen derselben Provinz und Stunde werden eine Zeile (T-M44-10, R-UX-02/AK4).
+    return mergeBattleLines([...zeilen, ...maersche.reverse()].sort((a, b) => b.tick - a.tick), ticksPerDay)
   }, [state, viewerId, activeMap, nameOf, ticksPerDay, dayBodies, adjutantMarches])
 
   /**
@@ -2273,7 +2289,7 @@ export function App(props: AppProps) {
           />
           {/* Der Schluessel gehoert zu seiner Karte, nicht in die Seitenleiste. */}
           <Legend mode={ui.mode} {...(colorOf(viewerId) ? { ownColor: colorOf(viewerId)! } : {})} />
-          {tooltip && tooltipAt && <Tooltip data={tooltip} x={tooltipAt.x} y={tooltipAt.y} />}
+          {tooltip && tooltipAt && <Tooltip data={tooltip} x={tooltipAt.x} y={tooltipAt.y} selected={tooltipSelected} />}
         </div>
 
         {/* Die Hülle und ihre sechs Plätze: `ui/Sidebar.tsx` (T-M44-02b). Inhalt und Reihenfolge wie vorher. */}

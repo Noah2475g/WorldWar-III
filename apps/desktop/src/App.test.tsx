@@ -2061,12 +2061,56 @@ describe('T-M31-01 Der Tooltip folgt auch der Tastaturauswahl', () => {
     const capital = world.startPositions[0]!.capital
     expect(screen.queryByRole('tooltip')).toBeNull()
 
+    // Seit T-M44-07 gilt der Tooltip der Auswahl nur, wenn die Tastatur gewaehlt hat — also ein Tastendruck davor.
+    fireEvent.keyDown(screen.getByRole('combobox', { name: 'Provinz' }), { key: 'ArrowDown' })
     fireEvent.change(screen.getByRole('combobox', { name: 'Provinz' }), { target: { value: capital } })
     const tip = screen.getByRole('tooltip')
     expect(tip.textContent).toContain(world.provinces.find((p) => p.id === capital)!.name)
     expect(tip.textContent).toMatch(/Moral/)
 
     fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.queryByRole('tooltip')).toBeNull()
+  })
+})
+
+/**
+ * R-UX-02/AK3 · Der Tooltip der Auswahl (T-M44-07, Befund B-06).
+ *
+ * Gemessen am 2026-10-03: „Mittlerer Westen / Moral / Armeen" lag ueber der Depesche und blieb
+ * stehen, obwohl der Zeiger laengst weg war — `tooltipId = hover?.id ?? selectedProvince` haelt
+ * ihn nach jeder Auswahl. Absicht war es nur fuer die Tastatur (T-M31-01).
+ */
+describe('R-UX-02/AK3 Der Auswahl-Tooltip gehoert der Tastatur und nie einem Dialog', () => {
+  const picker = () => screen.getByRole('combobox', { name: 'Provinz' })
+  const waehle = () =>
+    fireEvent.change(picker(), { target: { value: world.startPositions[0]!.capital } })
+
+  it('zeigt nach einer Auswahl per Maus keinen Tooltip, wenn der Zeiger nicht auf der Karte ist (heute rot)', () => {
+    startGame()
+    fireEvent.pointerDown(picker())
+    waehle()
+
+    expect(screen.queryByRole('tooltip')).toBeNull()
+  })
+
+  it('zeigt nach einer Auswahl per Tastatur den Tooltip — ohne „Klicken: auswaehlen"', () => {
+    startGame()
+    fireEvent.keyDown(picker(), { key: 'ArrowDown' })
+    waehle()
+
+    const tip = screen.getByRole('tooltip')
+    expect(tip.textContent).toMatch(/Moral/)
+    expect(tip.textContent).not.toMatch(/Klick|Maus/)
+  })
+
+  it('zeigt bei offenem Dialog keinen Tooltip, auch wenn die Tastatur die Provinz gewaehlt hat (heute rot)', () => {
+    startGame()
+    fireEvent.keyDown(picker(), { key: 'ArrowDown' })
+    waehle()
+    expect(screen.getByRole('tooltip')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Menü' }))
+    expect(screen.getByRole('dialog')).toBeTruthy()
     expect(screen.queryByRole('tooltip')).toBeNull()
   })
 })

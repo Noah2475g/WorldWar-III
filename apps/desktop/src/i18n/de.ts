@@ -911,6 +911,8 @@ export const de = {
     jumpTo: 'Zur Provinz springen',
     // Die Automatik lässt eine Armee marschieren (T-M40-13): eine leise Zeile, kein Alarm.
     adjutantMarch: '{{army}} rückt von selbst nach {{province}} nach.',
+    // Gleichlautende Gefechtszeilen derselben Provinz und Stunde als eine Zeile (T-M44-10, R-UX-02/AK4).
+    repeated: '{{text}} ({{count}} Mal)',
     battleReport: 'Kampfbericht',
     attacker: 'Angreifer',
     defender: 'Verteidiger',
@@ -945,6 +947,8 @@ export const de = {
     battleRound: 'Runde {{round}}',
     stale: 'Sicht',
     hint: 'Klicken: auswählen · Escape: schließen',
+    // Die schon gewählte Provinz (T-M44-07, R-UX-02/AK3): keine Mausbedienung, nur der Weg hinaus.
+    hintSelected: 'Escape: schließen',
   },
 
   foot: {

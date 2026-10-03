@@ -7420,7 +7420,7 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Abhängigkeiten:** T-M44-02
 - **Dateien:** `apps/desktop/src/ui/Header.tsx`, `apps/desktop/src/ui/app.css`, `apps/desktop/src/ui/touch.css`
 - **Tests zuerst:** `apps/desktop/src/ui/cascade.touch.test.tsx` - describe(R-UX-02/AK2 ...): `[hidden]` gewinnt gegen `.header__alarm { display: inline-flex }` (heute rot); vorher alle Stellen gesucht, an denen hidden auf eine Klasse mit eigenem display trifft (app.css, touch.css); `apps/desktop/src/ui/Header.test.tsx` - describe(R-UX-02/AK1 ...): Siegziel in der Uhrzeile, Kompaktregeln, auch mit fixedSpeed; Wächter css-mirrors-tokens, no-color-literals; Browser: `pnpm ux:check --only R-UX-02` in 1280x800 und 1366x768 sowie `--mp`.
-- **Fertig wenn:** R-UX-02/AK1 (<= 70 px im Zustand mit Alarmchip und Siegziel, 1280x800 und 1366x768, auch Mehrspieler mit fester Rate; vorher 105-107 px), AK2. Kompaktregeln: Titel unter 1500 px aus, Tempoknöpfe als Gruppe, Kartenmodi unter 1400 px als Auswahl. Kaskade am laufenden Spiel geprüft (Falle aus M36). Aufwand 4 h.
+- **Fertig wenn:** R-UX-02/AK1 (<= 70 px im Zustand mit Alarmchip und Siegziel, 1280x800 und 1366x768, auch Mehrspieler mit fester Rate; vorher 105-107 px), AK2. Kompaktregeln: Titel unter 1500 px aus, Tempoknöpfe als Gruppe, Kartenmodi unter 1400 px als Auswahl. Kaskade am laufenden Spiel geprüft (Falle aus M36). Aufwand 4 h. Erledigt am 2026-10-03: globale Regel [hidden] { display: none !important } oben in app.css (Suche vorher: in den TSX-Dateien setzt allein Header.tsx das Attribut, in app.css/touch.css trifft es sonst keine Klasse mit eigenem display); Siegziel steht in der Uhrzeile (.clock), ab 1280 px nowrap, Titel unter 1500 px aus, Tempoknöpfe als Gruppe ohne Lücke, Kartenmodi unter 1400 px (ohne Touch) als Auswahl .modes-select; touch.css: ein Selektor (.header__top .meter statt Kindselektor); ux-capture wählt den Modus bei verborgenen Knöpfen über die Auswahl. Gemessen mit pnpm ux:check --only R-UX-02/AK1 (Dev-Server): vorher 107/83/105 px (1280x800, 1366x768, mp), nachher 67 px im Zustand mit Alarmchip (1280x800 battle), sonst 65 px, auch 1400x800 und mp mit fester Rate; Alarmchip per Attrappe bei 1280 bis 1600 px: Zeile bleibt einzeilig (66,5 px, kein Überlauf). AK2: vorher 13 Zustände mit gezeichnetem hidden, nachher 0 von 22. Kaskade am laufenden Spiel gesichtet (Bildschirmfoto 1280x800: einzeilige Leiste, Rohstoffleiste unverändert).
 
 ### T-M44-05 · Dialoge: Hauptaktion in fester Fußzeile, Spielstandraster passt
 - **Ziel:** "Partie beginnen" ist ohne Rollen sichtbar; das Spielstandraster läuft nicht aus dem Dialog; Beitritt und Lobby folgen demselben Gerüst.
@@ -7447,7 +7447,7 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Abhängigkeiten:** T-M44-02
 - **Dateien:** `apps/desktop/src/App.tsx`, `apps/desktop/src/ui/Tooltip.tsx`, `apps/desktop/src/ui/app.css`, `apps/desktop/src/i18n/de.ts`
 - **Tests zuerst:** `apps/desktop/src/App.test.tsx` - describe(R-UX-02/AK3 ...): Provinz per Maus gewählt, Zeiger weg -> kein Tooltip; per Tastatur gewählt -> Tooltip ohne "Klicken: auswählen"; Dialog offen -> kein Tooltip; `apps/desktop/src/ui/Tooltip.test.tsx` - user-select none.
-- **Fertig wenn:** R-UX-02/AK3. Ursache: tooltipId = hover?.id ?? ui.selectedProvince (App.tsx, T-M31-01, absichtlich für die Tastatur) - die Auswahl hält den Tooltip auch nach Mausauswahl. Aufwand 2 h.
+- **Fertig wenn:** R-UX-02/AK3. Ursache: tooltipId = hover?.id ?? ui.selectedProvince (App.tsx, T-M31-01, absichtlich für die Tastatur) - die Auswahl hält den Tooltip auch nach Mausauswahl. Aufwand 2 h. Erledigt am 2026-10-03: ui/useMapTooltip.ts entscheidet (Zeiger zeigt; Auswahl nur, wenn die letzte Eingabe vor der Auswahl ein Tastendruck war; nie bei offenem Dialog, Beitritt/Lobby, Pausenantrag, gesperrtem Vorhang oder Endedialog), Tooltip.tsx nennt bei gewählter Provinz nur Escape: schließen, app.css: user-select none. Gemessen mit pnpm ux:check --only R-UX-02/AK3: vorher Tooltip bei offenem Dialog sichtbar und Mausbedienung im Auswahl-Tooltip (1280x800 und 1366x768), nachher 3 von 3 Größen ohne Befund (auch 1400x800).
 
 ### T-M44-08 · Endedialog und gesperrter Vorhang halten den Fokus, axe ohne Verstoß
 - **Ziel:** Tab verlässt den Endedialog nicht mehr, Escape wirkt; axe meldet keinen Verstoß (vorher Alarmchip 4,27:1 bei 12 px, rollbare Rohstoffleiste ohne Tastaturzugang bei 375 px).
@@ -7483,7 +7483,7 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Abhängigkeiten:** T-M44-02
 - **Dateien:** `apps/desktop/src/ui/Foot.tsx`, `apps/desktop/src/game/events.ts`, `apps/desktop/src/ui/app.css`
 - **Tests zuerst:** `apps/desktop/src/ui/Foot.test.tsx` - describe(R-UX-02/AK4 ...): Platz 1 additiv als erste Zeile, eigene Umgebung bleibt (T-M31-03); Zeitspalte nowrap (Kaskadenwächter); `apps/desktop/src/game/events.test.ts` - gleichlautende Gefechtszeilen derselben Provinz und Stunde werden eine Zeile mit Anzahl.
-- **Fertig wenn:** R-UX-02/AK4 (Orchestrator-Entscheid F3). Aufwand 3 h.
+- **Fertig wenn:** R-UX-02/AK4 (Orchestrator-Entscheid F3). Aufwand 3 h. Erledigt am 2026-10-03: Foot.tsx footRowsWithLeader (Platz 1 additiv als erste Zeile, footRows unverändert), events.ts mergeBattleLines (eine Folge gleichlautender Gefechtszeilen derselben Provinz am selben Spieltag wird eine Zeile mit Anzahl; gleiche Stunde eingeschlossen — das Messwerkzeug zählt Nachbarzeilen, nicht nur dieselbe Stunde, deshalb der Spieltag), Zeitspalte nowrap und 88 px. Gemessen mit pnpm ux:check --only R-UX-02/AK4: vorher 28 (1280x800) und 31 (1366x768) umgebrochene Zeitangaben, 6 bzw. 4 gleichlautende Gefechtszeilen, Platz 1 nicht zuerst; nachher ohne Befund in beiden Größen.
 
 ### T-M44-11 · Zielwahl: erreichbare Ziele zuerst, gemessen und zwischengespeichert
 - **Ziel:** Die Liste der Marschziele zeigt erreichbare Ziele mit Ankunftstag zuerst; unerreichbare sind abgetrennt und nicht wählbar (vorher 237 Ziele alphabetisch).
@@ -7510,7 +7510,7 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Abhängigkeiten:** T-M44-02
 - **Dateien:** `apps/desktop/src/ui/Explain.tsx`, `apps/desktop/src/ui/app.css`
 - **Tests zuerst:** `apps/desktop/src/ui/Explain.test.tsx` - describe(R-UX-05/AK3 ...): Escape schließt, Fokus zurück auf "?" (heute rot); Browser: Bild 10 ohne verschobenes Raster.
-- **Fertig wenn:** R-UX-05/AK3. Aufwand 2 h.
+- **Fertig wenn:** R-UX-05/AK3. Aufwand 2 h. Erledigt am 2026-10-03: Explain.tsx als Popover (position absolute unter dem Fragezeichen, rechtsbündig wenn der Rand der Leiste es abschnitte), Escape schließt nur ihn und gibt den Fokus dem Fragezeichen zurück (Escape wird im Fangmodus verbraucht, das Provinzpanel bleibt), Druck außerhalb schließt auch. Am laufenden Spiel gemessen (1280x800 und 1366x768): 0 von 12 Bauplatz-Kacheln verschoben beim Öffnen, Escape schließt, Fokus auf Was ist Kaserne?, Panel bleibt, keine Konsolenfehler.
 
 ### T-M44-14 · Einführung ortsunabhängig und nicht verdeckend
 - **Ziel:** Die Einführung sagt nicht "rechts", wenn die Seitenleiste unten liegt, und verdeckt bei 375x667 nicht die Provinzwahl.
@@ -7564,7 +7564,7 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Abhängigkeiten:** T-M44-02
 - **Dateien:** `apps/desktop/index.html`
 - **Tests zuerst:** `apps/desktop/src/ui/viewport.touch.test.tsx` - index.html führt ein icon als data:-URI; Browser: consoleErrors leer.
-- **Fertig wenn:** R-UX-01 (Konsistenz). Favicon als data:-URI im link-Element (die CSP erlaubt img-src self data:, tauri.conf.json) - keine neue Bilddatei, kein ASSETS.md-Eintrag nötig. Aufwand 0,5 h.
+- **Fertig wenn:** R-UX-01 (Konsistenz). Favicon als data:-URI im link-Element (die CSP erlaubt img-src self data:, tauri.conf.json) - keine neue Bilddatei, kein ASSETS.md-Eintrag nötig. Aufwand 0,5 h. Erledigt am 2026-10-03: index.html trägt ein link rel=icon als data:-URI (PNG 32x32, 216 Byte; kein SVG, weil dessen Namensraum eine http-Adresse enthielte und no-foreign-assets sie verwirft), CSP erlaubt img-src data:. Am laufenden Spiel: keine Antwort mit Status ab 400 und keine Konsolenfehler beim Start.
 
 ### T-M44-20 · (bedingt) Tempo 100 ohne Ruckler am Bündel
 - **Ziel:** Tempo 100 läuft flüssig. Am Dev-Server ruckelte es (1920x1080: 7 lange Aufgaben in 3 s, längste 114 ms, 16 Bilder > 50 ms), am gebauten Bündel nicht (0 lange Aufgaben, 1 Bild > 50 ms in 1280x800 und 1920x1080) - der Befund B-18 ist am Bündel widerlegt, unter Last gemessen.
