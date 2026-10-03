@@ -98,6 +98,10 @@ Rechner, Langlauf **einzeln**, je 50-Tage-Fenster, nur bis zur Entscheidung.
 ## Schritt 0 · Uhr bei Tempo 100 an der exe (Abschluss der Vorversion — ZUERST)
 
 Offen seit PR #15/#16 („Uhr: nicht neu gemessen“ in `packaging.md`). **Braucht den Rechner allein.**
+**Bekannt und erwartet:** bis zum Neubau in Schritt 3 ist `test/guards/packaging.test.ts` lokal rot
+(„expected 6816768 to be 6827008“) — im Hauptordner liegt noch die exe vom 2026-09-26, `packaging-netfree.json` nennt
+schon die aus PR #16. Kein Befund; nach dem Bau grün. `import-boundaries` kann unter Fremdlast an der Frist reißen
+(einzeln grün) — nur einzeln nachprüfen.
 → Orchestrator fragt Noah nach einem Fenster (~30 min) und wartet. Vorbereitung 1–3 darf vorher laufen;
 P0-A/B/C dürfen parallel starten (keine Zeitmessung), **aber im Fenster läuft nichts anderes** — Agenten pausieren
 (keinen neuen Auftrag geben, laufende Simulationen abwarten).
