@@ -2467,6 +2467,9 @@ body {
 
 .log__row time {
   white-space: nowrap;
+  /* Nicht auf die Zeilenhoehe strecken: bei schmalem Protokoll (667x375) bricht der Text rechts um, und
+     die gestreckte Zelle sah im Messwerkzeug wie eine umgebrochene Zeitangabe aus (gemessen: 26 von 26). */
+  align-self: start;
 }
 
 /* ================================================================ T-M44-13
@@ -2504,6 +2507,8 @@ body {
 .explain__text--end {
   left: auto;
   right: 0;
+}
+
 /* --- T-M44-18 (R-UX-03/AK1): Sperrgründe gebündelt, Leerzustände als Fließtext ------------------------
    Die Sammelzeile steht einmal über den Knöpfen einer Gruppe; jeder Grund ein Stück, mit Abstand dazwischen.
    Leerzustände („Derzeit führt niemand Krieg.“) haben Satzgröße und keine Überschriftgröße (B-16). */
