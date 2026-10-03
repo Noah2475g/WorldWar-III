@@ -2,7 +2,6 @@ import { RECRUIT_MIN_MORALE, buildingCostForLevel, unitCount } from '@worldwar/c
 import type { BuildingKey, Command, ProvinceId, ResourceKey } from '@worldwar/core'
 import type { Fixed } from '@worldwar/shared'
 import { dailyMoneyLedger, unitsWithinDailyBalance } from './finance'
-import { threatMap } from './threat'
 import type { AiContext, Explanation } from './types'
 
 /**
@@ -95,48 +94,9 @@ function buildingCandidatesFor(
     candidates.push('factory')
   }
   if (available('railway') && level('railway') === 0) candidates.push('railway')
-  // LOESCHVERMERK (Review): bis T-M42-13 stand die Festung fuer **jede** Provinz bis Stufe 2 in der
-  // Liste, gleich hinter der Eisenbahn - in langen Partien standen dadurch alle Staedte auf Festung 2
-  // (Festungspatt, Befund M42-04-a). Alte Zeilen:
-  // if (available('fortress') && level('fortress') < 2) candidates.push('fortress')
-  // if (available('harbour') && province.coastal && level('harbour') === 0) candidates.push('harbour')
-  //
-  // **Festung nur an der Front, sonst zuletzt** (T-M42-13, Review Punkt 10): in einer Grenzprovinz
-  // (ein Landnachbar in fremdem Besitz) oder einer bedrohten Provinz (`threatMap` > 0) wie bisher hinter
-  // der Eisenbahn; im Hinterland erst, wenn kein Wirtschaftsbau (Fabrik, Eisenbahn, Hafen) mehr fehlt.
-  const festungErlaubt = available('fortress') && level('fortress') < 2
-  const front = frontProvinces(context).has(province.id)
-  if (festungErlaubt && front) candidates.push('fortress')
+  if (available('fortress') && level('fortress') < 2) candidates.push('fortress')
   if (available('harbour') && province.coastal && level('harbour') === 0) candidates.push('harbour')
-  if (festungErlaubt && !front && candidates.length === 0) candidates.push('fortress')
   return candidates
-}
-
-/** Je Sicht einmal gerechnet: `economyCommands` und `nextBuildingShortfall` fragen dieselbe Lage. */
-const frontCache = new WeakMap<object, ReadonlySet<ProvinceId>>()
-
-/**
- * Die eigenen Provinzen an der Front (T-M42-13, Review Punkt 10): ein Landnachbar gehoert einer anderen
- * Macht, oder eine Armee einer Macht im Krieg steht in Reichweite (`threatMap`, `ai.threatRange`).
- * Herrenloses Land zaehlt nicht als fremder Besitz. Nur aus der Sicht - die KI sieht, was ein Mensch sieht.
- */
-export function frontProvinces(context: AiContext): ReadonlySet<ProvinceId> {
-  const cached = frontCache.get(context.view)
-  if (cached) return cached
-  const me = context.view.playerId
-  const owners = new Map(context.view.provinces.map((province) => [province.id, province.owner]))
-  const threat = threatMap(context.view, context.rules.ai.threatRange)
-  const front = new Set<ProvinceId>()
-  for (const province of context.view.provinces) {
-    if (province.owner !== me) continue
-    const grenze = province.neighbors.some((id) => {
-      const owner = owners.get(id)
-      return owner !== undefined && owner !== null && owner !== me
-    })
-    if (grenze || (threat.byProvince[province.id] ?? 0) > 0) front.add(province.id)
-  }
-  frontCache.set(context.view, front)
-  return front
 }
 
 /**
