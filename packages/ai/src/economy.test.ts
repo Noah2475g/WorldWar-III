@@ -16,6 +16,7 @@ import {
   OIL_HORIZON_DAYS,
   TARGET_MIX,
   frontProvinces,
+  oilShortfallForArtillery,
   rankedUnitsFor,
   recruitCommands,
   tradeCommands,
@@ -1106,6 +1107,34 @@ describe('R-AI-12/AK3, AK4 Artillerie, die die KI tragen kann (T-M42-07)', () =>
     const recruit = aushebung(voll)
     expect(recruit?.unitKey).toBe('artillery')
     expect(recruit?.count).toBe(1)
+  })
+
+  it('H2a: traegt der Vorrats-Horizont keine Artillerie, kauft die KI genau das fehlende Oel (T-M42-14, Iteration H2)', () => {
+    const jeArtillerie = (TEST_RULES.units['artillery']!.upkeep.oil ?? 0) * tpd
+    const context = artillerieLage({ geld: 400_000, heer: [{ unitKey: 'infantry', einheiten: 20 }], ohneOel: true, oel: 0 })
+    expect(context.view.self.shortages, 'Vorbedingung: kein Mangel').toEqual([])
+    const fehlt = oilShortfallForArtillery(context)
+    expect(fehlt).toBe(OIL_HORIZON_DAYS * jeArtillerie)
+
+    const explanations: Explanation[] = []
+    const [handel] = tradeCommands(context, explanations) as Extract<Command, { type: 'TRADE' }>[]
+    expect(handel?.want).toBe('oil')
+    const preise = context.view.marketPrices
+    expect(handel!.giveAmount).toBe(Math.max(1000, Math.ceil((fehlt * preise.oil) / preise[handel!.give])))
+    expect(explanations.some((e) => e.reason.includes('Öl für die nächste Artillerie'))).toBe(true)
+  })
+
+  it('H2b: traegt der Vorrat die naechste Artillerie, oder fehlt die Fabrik, kein Oelkauf', () => {
+    const jeArtillerie = (TEST_RULES.units['artillery']!.upkeep.oil ?? 0) * tpd
+    const genug = artillerieLage({ geld: 400_000, ohneOel: true, oel: OIL_HORIZON_DAYS * jeArtillerie })
+    expect(oilShortfallForArtillery(genug)).toBe(0)
+    expect((tradeCommands(genug, []) as Extract<Command, { type: 'TRADE' }>[]).map((c) => c.want)).not.toContain('oil')
+
+    const ohneFabrik = artillerieLage({ geld: 400_000, ohneOel: true, oel: 0 })
+    for (const province of ohneFabrik.view.provinces) {
+      if (province.buildings) (province.buildings as Record<string, number>)['factory'] = 0
+    }
+    expect(oilShortfallForArtillery(ohneFabrik)).toBe(0)
   })
 
   it('X1: TARGET_MIX ist 60/30/10 (Noahs Antwort auf Frage 1)', () => {

@@ -737,13 +737,41 @@ function missingForNextBuilding(context: AiContext): ResourceKey | null {
   return nextBuildingShortfall(context)?.resource ?? null
 }
 
+/**
+ * Wie viel Oel fehlt, damit der Vorrats-Horizont (`OIL_HORIZON_DAYS`) eine weitere Artillerie traegt
+ * (T-M42-14, Iteration H2, Review Punkt 9)? 0, wenn er sie schon traegt, wenn es noch keine Artillerie gibt
+ * oder wenn die Macht keine Fabrik hat. Gemessen auf Stufe H1: fuenf von acht Maechten foerdern kein Oel
+ * und hielten ihren Startvorrat (167 000) die ganze Partie unberuehrt, waehrend die Oelmaechte Millionen
+ * anhaeuften - der Markt war da, die KI kaufte nur bei eingetretenem Mangel.
+ */
+export function oilShortfallForArtillery(context: AiContext): Fixed {
+  const artillerie = context.rules.units['artillery']
+  if (!artillerie || artillerie.availableFromDay > dayOf(context)) return 0
+  const me = context.view.playerId
+  const fabrik = context.view.provinces.some(
+    (province) => province.owner === me && !province.stale && (province.buildings?.factory ?? 0) > 0,
+  )
+  if (!fabrik) return 0
+  const je = (artillerie.upkeep.oil ?? 0) * context.rules.constants.ticksPerDay
+  if (je <= 0) return 0
+  const spielraum = dailyOilYield(context.view, context.rules) - dailyArmyUpkeep(context.view, context.rules, 'oil')
+  const vorrat = Math.max(0, context.view.self.resources.oil)
+  if (unitsWithinStockHorizon(vorrat, spielraum, je, OIL_HORIZON_DAYS) >= 1) return 0
+  return (je - spielraum) * OIL_HORIZON_DAYS - vorrat
+}
+
 /** Trades away a surplus to cover a shortage — the AI uses the same market as everyone. */
 export function tradeCommands(context: AiContext, explanations: Explanation[]): Command[] {
   const shortages = context.view.self.shortages
 
   // Zwei Anlässe, und der zweite ist neu: ein eingetretener Mangel, **oder** ein
   // Bauvorhaben, das sonst nie zustande kommt.
-  const need = shortages[0] ?? missingForNextBuilding(context)
+  // LOESCHVERMERK (Review): T-M42-14, Iteration H2 - ein dritter Anlass dazwischen. Alte Zeile:
+  // const need = shortages[0] ?? missingForNextBuilding(context)
+  // **Oel fuer die naechste Artillerie** (T-M42-14, H2): kein Mangel, aber der Vorrats-Horizont traegt keine
+  // weitere Artillerie - dann kauft die KI genau die fehlende Menge, vor dem Bauvorhaben.
+  const oelFehlt = shortages.length === 0 ? oilShortfallForArtillery(context) : 0
+  const need: ResourceKey | null = shortages[0] ?? (oelFehlt > 0 ? 'oil' : null) ?? missingForNextBuilding(context)
   if (!need) return []
 
   const resources = context.view.self.resources
@@ -759,12 +787,25 @@ export function tradeCommands(context: AiContext, explanations: Explanation[]): 
       bestAmount = amount
     }
   }
-  const give = Math.trunc(bestAmount / 10)
+  // LOESCHVERMERK (Review): T-M42-14, Iteration H2 - beim Oelkauf nur die fehlende Menge. Alte Zeile:
+  // const give = Math.trunc(bestAmount / 10)
+  const zehntel = Math.trunc(bestAmount / 10)
+  const oelkauf = shortages.length === 0 && oelFehlt > 0 && best !== null
+  const preisOel = context.view.marketPrices?.oil ?? 0
+  const preisGabe = best ? (context.view.marketPrices?.[best] ?? 0) : 0
+  const give =
+    oelkauf && preisOel > 0 && preisGabe > 0
+      ? Math.min(zehntel, Math.max(1000, Math.ceil((oelFehlt * preisOel) / preisGabe)))
+      : zehntel
   if (!best || give < 1000) return []
 
   explanations.push({
     action: `Tauscht ${give} ${best} gegen ${need}`,
-    reason: shortages.length > 0 ? `Mangel an ${need} decken` : `${need} für das nächste Bauvorhaben`,
+    reason: shortages.length > 0
+      ? `Mangel an ${need} decken`
+      : oelkauf
+        ? `Öl für die nächste Artillerie: ${oelFehlt} fehlen über ${OIL_HORIZON_DAYS} Tage`
+        : `${need} für das nächste Bauvorhaben`,
     score: 700,
   })
   return [{ type: 'TRADE', playerId: context.view.playerId, give: best, giveAmount: give, want: need }]
