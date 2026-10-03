@@ -2,6 +2,8 @@
 
 ## Das Wichtigste zuerst
 
+**Übergabe 2026-10-03: zuerst `docs/plan/UEBERGABE-LOKAL-2026-10-03.md` lesen** (unfertige Arbeit auf `wip/…`-Zweigen). Danach:
+
 **Lies `docs/plan/WORKFLOW.md`.** Eine Datei, absichtlich kurz, und sie enthält alles:
 wo du bist, was gilt, welche Fallen es gibt, und den Ablauf bis zu dem Punkt, an dem Noah
 spielt. Fang dort an, nicht bei den Plandateien.
