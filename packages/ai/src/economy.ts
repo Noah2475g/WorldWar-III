@@ -1,4 +1,4 @@
-import { RECRUIT_MIN_MORALE, buildingCostForLevel, unitCount } from '@worldwar/core'
+import { RECRUIT_MIN_MORALE, buildingCostForLevel } from '@worldwar/core'
 import type { BuildingKey, Command, ProvinceId, ResourceKey } from '@worldwar/core'
 import type { Fixed } from '@worldwar/shared'
 import { dailyMoneyLedger, unitsWithinDailyBalance } from './finance'
@@ -269,41 +269,16 @@ const TARGET_MIX: readonly { unitKey: string; share: number }[] = [
  * Gebaut wird, was in dieser Provinz gebaut werden kann und wovon die Macht gemessen am
  * Zielverhaeltnis am weitesten entfernt ist.
  */
-/** Der eigene Bestand je Einheitenart, in Einheiten (T-M42-05, D32.6). */
-export interface UnitStock {
-  owned: ReadonlyMap<string, number>
-  total: number
-}
-
-/**
- * Der eigene Bestand in **Einheiten**, nicht in Stapeln (T-M42-05, R-AI-10/AK1, D32.6).
- *
- * Bis zum 2026-10-02 zaehlte `rankedUnitsFor` je Stapel eine 1: drei Infanteriearmeen zu je fuenf
- * und eine Batterie zu eins waren "75 % Infanterie", dieselben Truppen nach dem Zusammenlegen
- * "50 %" - das Zusammenlegen aenderte, was die KI als Naechstes aushebt (T-M41-10 riss daran).
- * Gezaehlt wird wie im Kern (`unitCount`, aufgerundet), damit eine angeschlagene Einheit eine
- * Einheit bleibt.
- */
-export function unitStockOf(context: AiContext): UnitStock {
+export function rankedUnitsFor(context: AiContext, province: { buildings?: Record<string, number> }): string[] {
   const owned = new Map<string, number>()
   let total = 0
   for (const army of context.view.armies) {
     if (army.owner !== context.view.playerId) continue
     for (const stack of army.units ?? []) {
-      const count = unitCount(stack, context.rules)
-      owned.set(stack.unitKey, (owned.get(stack.unitKey) ?? 0) + count)
-      total += count
+      owned.set(stack.unitKey, (owned.get(stack.unitKey) ?? 0) + 1)
+      total += 1
     }
   }
-  return { owned, total }
-}
-
-export function rankedUnitsFor(
-  context: AiContext,
-  province: { buildings?: Record<string, number> },
-  stock: UnitStock = unitStockOf(context),
-): string[] {
-  const { owned, total } = stock
 
   const day = dayOf(context)
   const buildable = TARGET_MIX.filter(({ unitKey }) => {
@@ -385,9 +360,6 @@ export function recruitCommands(context: AiContext, explanations: Explanation[])
   const vorbehalt = factoryReserve(context)
   let vorbehaltSperrte = false
 
-  // D32.6: der Bestand in Einheiten einmal je Aufruf, nicht je Provinz (T-M42-05).
-  const bestandInEinheiten = unitStockOf(context)
-
   for (const province of nachVielseitigkeit) {
     // **Kein Kasernen-Riegel** (T-M15-08). Hier stand `if (barracks === 0) continue`, und
     // das ist der Grund, warum die KI auf der Weltkarte in 200 Spieltagen **43 Fabriken
@@ -420,7 +392,7 @@ export function recruitCommands(context: AiContext, explanations: Explanation[])
     let begrenzt = false
     let vorbehaltBegrenzt = false
 
-    for (const kandidat of rankedUnitsFor(context, province, bestandInEinheiten)) {
+    for (const kandidat of rankedUnitsFor(context, province)) {
       const regel = context.rules.units[kandidat]
       if (!regel) continue
 
