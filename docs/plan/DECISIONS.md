@@ -5843,3 +5843,10 @@ Noah hat im Chat alle Empfehlungen des Abschlussplans bestaetigt:
 - **Bewusste Abweichung von UEBERGABE-LOKAL §4:** `pnpm verify` nicht je Paket, sondern an
   Integrationspunkten (Noahs Regel „verify je Meilenstein“); je Paket gezielte Tests und `ux:check`.
 
+## 2026-10-03 · Befund M42-09-a · Noahs Entscheid: KI-Teilen genuegt
+
+Aushebungen landen im Kern weiter in der Garnison der Provinz (`findHostArmy`); keine Kernregel fuer
+den Deckel. Den Deckel von `stackFullContribution` (20) haelt die KI selbst ueber T-M42-17
+(`SPLIT_ARMY`). Gemessen nach der Entscheidung: groesster stehender Verband 20 (Welt 1815) bzw. 21 an
+einem einzigen Tagesende (Voreinstellung), vorher 95/59. Befund geschlossen (`PROBLEME.md`).
+

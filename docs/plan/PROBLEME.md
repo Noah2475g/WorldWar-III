@@ -6210,7 +6210,7 @@ Auf Stufe C2 ist der größte stehende Verband einer KI-Macht 95/95/96 Einheiten
 (`phases/recruitment.ts`, `findHostArmy`) — eine Garnison wächst so über den Deckel. Gegenüber Stufe
 F (132/127/133/124) kleiner, aber nicht ≤ 20. AK4 spricht nur vom Zusammenlegen und hält; wer den
 Deckel auch für Garnisonen will, braucht eine Kernänderung (D32.1 schließt sie für M42 aus) oder
-eine KI, die volle Garnisonen abmarschieren lässt. **Status:** offen, an M18.
+eine KI, die volle Garnisonen abmarschieren lässt. **Status:** ~~offen, an M18~~ → **geschlossen am 2026-10-03** (Noahs Entscheid: KI-Teilen genügt, keine Kernänderung). T-M42-17 teilt stehende Verbände über dem Deckel per `SPLIT_ARMY`. Gemessen auf `main` (`d9ff53b`, `ai-integration` 29/29, Bericht `docs/reports/ai-integration.json`): größter stehender Verband an einem Tagesende **20** (Welt 1815, 0 Tage über dem Deckel) und **21** (Voreinstellung, eine Macht an **einem** Tagesende) statt 95/59 auf Stufe C2. Der eine Tag über 20 ist eine Aushebung, die der Kern in die Garnison legt, bevor die KI im nächsten Denkschritt teilt — gewollt und kein Grund für eine Kernänderung.
 
 ## 2026-10-03 · Review · Befund M42-PL-a (mittel, offen): `m18-plan-v2.md` wurde nie eingecheckt
 
