@@ -1,8 +1,45 @@
-# WORKFLOW — Etappe 1 von M42/M43 auf main (PR #13, 2026-09-28); als Nächstes Noahs Playtest, dann Etappe 2
+# WORKFLOW — Etappe 2 von M42/M43 auf `claude/game-v2-planned-tasks-tk5rrr` (2026-10-03); Etappe 1 liegt auf main (PR #13)
 
 > **Diese Datei ist der Einstieg.** Wenn du hier fertig bist, weißt du, wo du bist, was
 > gilt, und was in welcher Reihenfolge zu tun ist.
 >
+> **Stand: 2026-10-03, Etappe 2 von M42/M43 abgeschlossen und gemessen** (Zweig
+> `claude/game-v2-planned-tasks-tk5rrr`, Spitze `bf8af90`, noch nicht gemerged). Von **331 Aufgaben
+> sind 324 erledigt** (gezählt in `docs/plan/tasks.yaml` am 2026-10-03, nicht geschätzt). **Sieben stehen
+> auf `todo`:** **fünf zurückgenommene**, jede mit einem `reopened`-Text, der sagt, wer sie ablöst —
+> T-M10-02, T-M40-04, T-M41-10, **T-M42-05** und **T-M42-07** (beide am Artillerie-Band gerissen, Befund
+> M42-07-a) —, dazu **T-M42-04** (Spionage/Börse gebucht, **zurückgestellt**, Befund M42-04-a) und
+> **T-M39-09** (das ist **AK-9** und braucht Noah *und einen zweiten Menschen in einem anderen Netz*).
+> Je Meilenstein: M42 **9/12**, M43 **4/4**, M17 **16/16**.
+>
+> **Gemessen auf Stufe C2:** `pnpm acceptance` **12 von 12, Exit 0, 7 min 49 s** (Bericht erzeugt gegen
+> `b6e6e80`, eingecheckt mit `bf8af90`), `ai-integration.slow` **30 von 30** (ein Fall steht absichtlich
+> als `it.fails`), `m17-integration` **26 von 26**, Turnier 84/61/63 %, `progress.slow` 0,3334, neun
+> Vollpartien 9/9 entschieden. `pnpm verify` Exit 0, `plan-consistency` und `coverage:requirements`
+> (V1 offen: 0) grün. Volle Zahlen: `PROGRESS.md`, Zeilen T-M42-08 bis T-M42-12.
+>
+> **Was Etappe 1 war (PR #13, am 2026-09-28 auf Noahs Wort in `main` gemerged, `main` = `95441e0`):** Geld der
+> KI (T-M42-03), Räumfrist (T-M43-01/-02/-04), „erst die Fabrik" (T-M42-06), Verteidigungs-Automatik
+> (T-M42-02). **Was Etappe 2 brachte** (Noahs /goal-Auftrag vom 2026-10-02 ersetzte den Playtest-Haltepunkt
+> F6): Zusammenlegen nach Rolle, in Einheiten, unter dem Deckel (T-M42-08) und überall (T-M42-09), der
+> Befund zur Aushebung (T-M42-10, widerlegt), die Abschlussmessung (T-M42-12). Artillerie-Band und
+> Truppenmischung (T-M42-05/-07) sind gebaut, gemessen und **zurückgenommen**: R-AI-12/AK3 (Band) und AK4
+> (Öl-Wächter) sind auf der Weltkarte gemeinsam nicht erfüllbar, weil fünf von acht Mächten kein Öl
+> fördern — eine Regelfrage an Noah (`DECISIONS.md`, 2026-10-03).
+>
+> **Was M17 „Tiefe zwischen den Kriegen" bringt, in drei Sätzen:** die KI wirbt Spione an
+> (Aufklärung, Sabotage, Gegenspionage), macht und beantwortet Handelsangebote, und darf
+> Durchmarsch/Kartenzugriff gezielt gewähren oder verweigern — alles über dieselben
+> Kommandos wie ein Mensch. Der Parameterlauf zeigt weiterhin **0 von 14 tragenden
+> Konstanten**. Drei Befunde (M17-T7, M17-S12, M17-T6) gingen an M18 und wurden mit M42/M43 geholt.
+>
+> **Was jetzt auf Noah wartet:** die Regelfrage zu R-AI-12/AK3+AK4 (Befund M42-07-a), **AK-9** (§2 Punkt 3),
+> der Zweig selbst (Merge nach `main` — **Noah merged, kein Agent**), Befund M42-09-a (Garnisonen über dem
+> Deckel, Kernänderung) und die älteren offenen Fragen in `DECISIONS.md` unter „Offene Fragen an Noah"
+> (2026-09-14). V-1/MP-4/MP-5 sind erledigt (§2 Punkt 4). M18 bleibt die Sammelstelle für alles, was nicht
+> M42/M43 wurde.
+
+<!-- LOESCHVERMERK (Review): bis 2026-10-03 stand hier der Kopf von Etappe 1 (Stand 2026-09-27: 331/320, "es fehlt nur noch pnpm acceptance", "danach Pull Request"). Berichtigt, nicht geloescht - Wortlaut:
 > **Stand: 2026-09-27, nach dem Merge von Kette und Nebenbahn in M42.** Von
 > **331 Aufgaben sind 320 erledigt** (gezählt in `docs/plan/tasks.yaml`, nicht geschätzt).
 > **M17 steht bei 16 von 16** — T-M17-16 (die Abschlussmessung) ist fertig, alle drei
@@ -53,6 +90,7 @@
 > sowie weiterhin **AK-9** (§2 Punkt 2), V-1/MP-4/MP-5 (Spielertexte, §2 Punkt 3) und die
 > älteren offenen Fragen in `DECISIONS.md` unter „Offene Fragen an Noah" (2026-09-14). M18
 > bleibt die Sammelstelle für alles, was nicht M42/M43 wurde (§10 des Plans).
+-->
 >
 > **Wo die Vorgeschichte steht:** die Bauabschnitte V1, LEVEL-UP M22–M24, „Grafik statt
 > Text" M25–M27, der Kriegsrat-Umbau M29–M32, die Bilder M33, die Rohstoffleiste M36, der
@@ -95,11 +133,12 @@ zum Merge …, danach …“ ist ab dem Merge falsch und wird trotzdem gelesen. 
 als erster Zug:** `allFreshness` auf `main` neu prüfen (ein Merge kann die Abstammung ändern)
 und `git log --oneline -1` gegenprüfen.
 
-**`ai-integration.slow.test.ts` ist 22 von 22 grün — zwei der Fälle stehen absichtlich als
-`it.fails`** (Befund M17-T7: 0 Artillerie/0 Beschuss, kein Frieden in 90 Tagen; die Zahl 22
-statt 21 kommt von einer Aufteilung eines vormals dreifachen `it.fails` in einen Fall und
-einen normalen Test, Nacharbeit T-M17-15). Ursache ist zerlegt (`PROBLEME.md`), Entscheid
-Noah (2026-09-25): geht an M18, siehe §2 Punkt 2.
+**`ai-integration.slow.test.ts` ist 30 von 30 grün** (gemessen auf Stufe C2, 2026-10-03). **Ein** Fall steht
+absichtlich als `it.fails`: „laesst die Artillerie feuern" (Befund M17-T7 — auf Stufe F hebt die KI der
+Weltkarte keine Artillerie aus; T-M42-07 hätte das behoben und ist zurückgenommen, Befund M42-07-a,
+Regelfrage an Noah). Wird dieser Fall unbemerkt grün, meldet vitest ihn als fehlgeschlagenes `it.fails` —
+dann hat sich die Aushebung geändert, und das ist meldenswert. *(Bis 2026-10-03 stand hier „22 von 22, zwei
+`it.fails`" — das war der Stand vor M42.)*
 
 Zeigt `git status` mehr als einen leeren Arbeitsbaum, gehört das geklärt, bevor
 irgendetwas gebaut wird. Nach einem Wechsel des Standes:
@@ -113,19 +152,16 @@ pnpm install
 ## 1 · Der Stand in einem Absatz
 
 Das Spiel ist **fertig und abgenommen**, man kann es seit dem 2026-09-14 **zu zweit über
-einen Link spielen**, und seit dem 2026-09-26 ist **M17 „Tiefe zwischen den Kriegen"**
-fertig gebaut und vermessen: Spionage, Handelsangebote, gerichteter Durchmarsch und
-gerichtete Kartenfreigabe — **16 von 16 Aufgaben**, seit PR #12 (2026-09-26) auf `main`.
+einen Link spielen**, seit dem 2026-09-26 ist **M17 „Tiefe zwischen den Kriegen"** fertig gebaut und
+vermessen (16 von 16, seit PR #12 auf `main`), und seit dem 2026-10-03 steht die KI auf **Stufe C2** von
+M42/M43 (Etappe 2, **9 von 12** in M42, **4 von 4** in M43).
 
-`pnpm acceptance` lief am 2026-09-26 auf dem Merge- und F1-Fix-Stand (`00feba3`) mit **12
-von 12, Exit 0, 6 min 42 s** (`docs/reports/acceptance.md`) — erstmals seit dem
-`origin/main`-Merge hält auch die Haltungs-Messlauf-MESSGERAET-Prüfung. `pnpm verify`
-meldet **Exit 0 mit 3376 von 3377 Tests grün** (1 `todo`) in 186 Dateien, Abdeckung Kern
-97,4 %, gesamt 96,96 %. Das Anforderungstor meldet „V1 offen: 0", M17-Anforderungen 12 von
-12 belegt. **AK-7 ist abgenommen** (Noah hat den Playtest per /goal-Auftrag vom 2026-09-07
-ausdrücklich delegiert, Entscheid in `DECISIONS.md`). **AK-8 ist vollständig durchgeführt**
-(7 von 7, `packaging.md`). **AK-9 ist der fünfte Haltepunkt** und das einzige Kriterium
-dieses Projekts, das kein Agent erfüllen kann — es bleibt offen.
+`pnpm acceptance` lief am 2026-10-03 mit **12 von 12, Exit 0, 7 min 49 s** (Bericht erzeugt gegen `b6e6e80`,
+eingecheckt mit `bf8af90`, `docs/reports/acceptance.md`); Abdeckung gesamt 97,1 %. Das Anforderungstor meldet
+„V1 offen: 0". **AK-7 ist abgenommen** (Noah hat den Playtest per /goal-Auftrag vom 2026-09-07 ausdrücklich
+delegiert, Entscheid in `DECISIONS.md`). **AK-8 ist vollständig durchgeführt** (7 von 7, `packaging.md`; der
+Bericht vermerkt seit dem 2026-09-26 geänderte Dateien am Erzeugnis, er zählt nicht gegen V1). **AK-9 ist der
+fünfte Haltepunkt** und das einzige Kriterium dieses Projekts, das kein Agent erfüllen kann — es bleibt offen.
 
 **Was M17 ändert, in drei Sätzen:** die KI wirbt Spione an (Aufklärung, Sabotage,
 Gegenspionage), macht und beantwortet Handelsangebote, und darf Durchmarsch/Kartenzugriff
@@ -147,7 +183,7 @@ Ganzzahl-Festkomma, `hotseat.test.ts`).
 Laufs angewendet (vorher rechnete jeder Klick bei Pause sofort einen ganzen Tick, samt
 KI). Wer an der Befehlskette arbeitet, liest den Entscheid in `DECISIONS.md`.
 
-**Was Etappe 1 von M42/M43 ändert, in drei Sätzen (fertig gebaut und gemessen, 2026-09-27):**
+**Was Etappe 1 von M42/M43 ändert, in drei Sätzen (gebaut und gemessen 2026-09-27, am 2026-09-28 als PR #13 in `main`):**
 die KI hebt nur aus, was ihre Tagesbilanz trägt (T-M42-03, Kanada 44 → 0 Geldmangeltage), baut
 in jeder Startzahl mindestens eine Fabrik, bevor sie anderes baut (T-M42-06, „Erst die
 Fabrik"), und hält die Verteidigungs-Automatik über ein neu gefasstes Tor (T-M42-02,
@@ -156,9 +192,15 @@ Rückzug wird kein Überfall mehr, auf dem kürzesten Weg hinaus (T-M43-01), die
 meldet die Räumfrist (T-M43-02), und ein Wiederholungslauf sichert den Determinismus zu, den
 der Mehrspieler braucht (T-M43-04). Spionage/Börse gebucht (T-M42-04) ist gebaut, gemessen und
 **zurückgestellt** — dasselbe Festungspatt wie bei T-M42-06 trifft dort ein zweites Mal, die
-Artillerie (T-M42-07) ist die eigentliche Abhilfe. `pnpm verify` grün, `plan-consistency` 36/36,
-`coverage:requirements` V1 offen: 0. Fehlt noch: `pnpm acceptance` auf ruhiger Maschine, dann
-Pull Request und Noahs Playtest.
+Artillerie (T-M42-07) ist die eigentliche Abhilfe. `pnpm verify` grün, `coverage:requirements` V1 offen: 0, `pnpm acceptance` 12 von 12.
+
+**Was Etappe 2 ändert, in drei Sätzen (Stand C2, 2026-10-03):** die KI legt stehende Verbände nach Rolle
+(Batterie/Linie) zusammen, zählt Einheiten statt Stapel und bleibt dabei unter dem Deckel von 20
+(T-M42-08), und zwar in allen Provinzen im selben Denkschritt (T-M42-09; Paare über zwei Tagesenden 0).
+Die Aushebung der KI ist dagegen auf **Stufe F** geblieben: T-M42-05 (Einheiten in der Mischung) und
+T-M42-07 (Artillerie-Band) sind zurückgenommen, weil auf der Weltkarte Band und Öl-Wächter gemeinsam nicht
+erfüllbar sind (Befund M42-07-a). Die Abschlussmessung (T-M42-12) ist gelaufen; offen bleiben die Regelfrage
+an Noah, T-M42-04 (Befund M42-04-a) und Befund M42-09-a.
 
 ---
 
@@ -173,34 +215,31 @@ und AK4 (Öl-Wächter) sind auf der Weltkarte gemeinsam nicht erfüllbar, weil f
 kein Öl fördern und Artillerie Öl verbraucht — eine Regelfrage. Abschlussmessung T-M42-12: siehe
 `PROGRESS.md`.
 
-<!-- LOESCHVERMERK (Review): der folgende Absatz ist durch den obigen ueberholt, bleibt fuer die Geschichte. -->
-**Stand 2026-10-03 (Etappe 2, erster Block, Zweig `claude/game-v2-planned-tasks-tk5rrr`):** Noahs
-/goal-Auftrag vom 2026-10-02 ersetzt den Playtest-Haltepunkt F6 (`DECISIONS.md`). T-M42-05 und
-T-M42-07 sind gebaut, gemessen und **zurückgenommen**, T-M42-04 ist mit Artillerie ein zweites
-Mal gemessen und bleibt **zurückgestellt** — das Artillerie-Band R-AI-12/AK3 (15–30 %) reißt auf
-jeder Stufe (8,3–12,2 %). Befund M42-07-a (`PROBLEME.md`), Frage an Noah (`DECISIONS.md`,
-2026-10-03). **T-M42-08/-09 hängen an dieser Antwort.** Der Code liegt in `ca375dc`, `05e8d3f`,
-`0532029` und ist per Revert der Reverts zurück. Der Zweig ist inhaltlich gleich `main` bis auf
-die Plandokumente.
+<!-- LOESCHVERMERK (Review): der folgende Absatz war durch den obigen ueberholt; am 2026-10-03 berichtigt statt geloescht (alt: "T-M42-08/-09 haengen an dieser Antwort", "Zweig inhaltlich gleich main bis auf die Plandokumente"). -->
+**Zwischenstand vom Morgen des 2026-10-03 (Etappe 2, erster Block), berichtigt:** Noahs /goal-Auftrag vom
+2026-10-02 ersetzt den Playtest-Haltepunkt F6 (`DECISIONS.md`). T-M42-05 und T-M42-07 sind gebaut,
+gemessen und **zurückgenommen**, T-M42-04 ist mit Artillerie ein zweites Mal gemessen und bleibt
+**zurückgestellt** — das Artillerie-Band R-AI-12/AK3 (15–30 %) reißt auf jeder Stufe (8,3–12,2 %). Befund
+M42-07-a (`PROBLEME.md`), Frage an Noah (`DECISIONS.md`, 2026-10-03). **T-M42-08/-09 hingen nicht an dieser
+Antwort**: sie sind gebaut (`3e3f850`, `b8106df`, Begründung im Nachtrag in `DECISIONS.md`) und `done`. Der
+Code von T-M42-05/-07 liegt in `ca375dc`, `05e8d3f`, `0532029` und ist per Revert (`c8575b1`) auf Stufe F
+zurückgenommen. **Der Zweig ist nicht gleich `main`:** er trägt zusätzlich den Heer-Code von
+T-M42-08/-09 (`army-role.ts`, `consolidate.ts`, `military.ts`), die Messberichte und die Plandokumente.
 
-**Etappe 1 von M42/M43 ist fertig gebaut und gemessen; es fehlt nur noch `pnpm acceptance`
-auf ruhiger Maschine, dann der Pull Request und Noahs Playtest.** Kein Agent kann das
-Playtest-Kriterium (Entscheid F6) selbst erfüllen.
+**Etappe 1 von M42/M43 ist gemerged (PR #13, 2026-09-28, auf Noahs ausdrückliches Wort).** Den Playtest
+(Entscheid F6) ersetzt Noahs /goal-Auftrag vom 2026-10-02; ob er trotzdem spielen will, ist seine Sache — kein
+Agent kann es für ihn.
 
-1. **Etappe 1 von M42/M43 — fertig gebaut und gemessen am 2026-09-27, nur `pnpm acceptance`
-   steht noch aus.** Drei Stufen rissen ihre Rücknahmekriterien (Räumfrist U/R, Festungspatt
-   F/S, Verteidigungs-Automatik M42-02-a); Noah hat alle drei Fragen **wie empfohlen**
-   beantwortet (`DECISIONS.md`, 2026-09-27, „Noahs Entscheide nach Etappe 1"). Danach gebaut,
-   gemessen und eingecheckt: **T-M42-02, T-M42-03, T-M42-06, T-M43-01, T-M43-02, T-M43-04**
-   stehen auf `done` (volle Zahlen in `PROGRESS.md`, Meilensteine M42/M43). **T-M42-04**
-   (Spionage/Börse gebucht) ist gebaut, gemessen und **zurückgestellt** bis nach der
-   Artillerie (T-M42-07, Noahs Entscheid Punkt 2) — dasselbe Festungspatt wie bei T-M42-06
-   trifft dort ein zweites Mal (Befund M42-04-a, `PROBLEME.md`). `test/plan-consistency.test.ts`
-   36/36, `pnpm coverage:requirements` V1 offen: 0, `pnpm verify` grün (191 Testdateien, 3572+
-   Tests). **Nächster Schritt:** `pnpm acceptance` auf einer Maschine ohne eigene Prozesse
-   (Falle 3, Falle 5), danach der Pull Request von `claude/m42-m43-heer-und-raeumfrist` nach
-   `main` und Noahs Playtest (Entscheid F6, `entscheidungen-etappe1.md`) — erst nach seiner
-   Bestätigung beginnt Etappe 2 (T-M42-04 fortsetzen, T-M42-05…12).
+1. **Etappe 1 von M42/M43 — gebaut und gemessen am 2026-09-27, gemerged am 2026-09-28 (PR #13).**
+   Drei Stufen rissen ihre Rücknahmekriterien (Räumfrist U/R, Festungspatt F/S, Verteidigungs-Automatik
+   M42-02-a); Noah hat alle drei Fragen **wie empfohlen** beantwortet (`DECISIONS.md`, 2026-09-27, „Noahs
+   Entscheide nach Etappe 1"). Gebaut, gemessen und eingecheckt: **T-M42-02, T-M42-03, T-M42-06, T-M43-01,
+   T-M43-02, T-M43-04** stehen auf `done` (volle Zahlen in `PROGRESS.md`). **T-M42-04** (Spionage/Börse
+   gebucht) ist gebaut, gemessen und **zurückgestellt** — dasselbe Festungspatt wie bei T-M42-06 trifft dort
+   wieder ein (Befund M42-04-a, `PROBLEME.md`); die erhoffte Abhilfe, die Artillerie (T-M42-07), ist
+   zurückgenommen. **Etappe 2** (T-M42-08/-09/-10/-12) ist auf demselben Zweig gebaut und gemessen, siehe den
+   Stand oben; die Abnahme auf Stufe C2 steht bei 12 von 12. *(Der Satz „nur `pnpm acceptance` steht noch aus,
+   danach der Pull Request" stand hier bis 2026-10-03; beides ist erledigt.)*
 2. **T-M17-16 (Abschlussmessung M17) — abgeschlossen am 2026-09-26, alle drei Blocker
    erledigt.** Messstand `9a7678f`/`00feba3`, volle Zahlen in `PROGRESS.md` (Zeile
    „T-M17-16"):
@@ -251,17 +290,23 @@ Playtest-Kriterium (Entscheid F6) selbst erfüllen.
    **Billiger Zwischenschritt, der AK-9 nicht erfüllt, aber viel findet:** zwei Fenster auf
    demselben Rechner. Genau das ist am 2026-09-14 gelaufen und hat fünf Befunde ergeben
    (`docs/reports/sichtpruefung-mehrspieler-2026-09-14.md`).
-4. **Elf offene Fragen an Noah** — neun in `DECISIONS.md` unter „Offene Fragen an Noah"
-   (2026-09-14), dazu **MP-4** (fünf `netplay`-Spielertexte werden nirgends gerendert) und
-   **MP-5** (ein veralteter M37-Satz im Anlegedialog). **V-1**: der Wähler „Partieart"
-   bietet **auch im netzfreien Bau** „Zu zweit über einen Link" an, weil die Bauflagge nur
-   `main.tsx` deckt und nicht `ui/Dialogs.tsx`. Gemessen, nicht vermutet: die Partie läuft
-   dann lokal mit fester Rate, ohne Fehler und ohne Verbindungsversuch. **Am M17-Endstand
-   nicht erneut nachgesehen** (2026-09-25) — nur die Netzfreiheit selbst wurde neu
-   gemessen und hält (`packaging.md`); ob V-1 selbst noch unverändert ist, ist offen. Sie sind die
-   einzige Sorte Arbeit, die kein Agent erledigen kann, und mehrere bestimmen, was als
-   Nächstes überhaupt gebaut wird. **Nichts davon hat eine Aufgabe** — ein Plan, der
-   Fragen als Aufgaben führt, wird nie fertig.
+4. **Offene Fragen an Noah** — neun in `DECISIONS.md` unter „Offene Fragen an Noah" (2026-09-14), dazu die
+   Regelfrage zu R-AI-12/AK3+AK4 (`DECISIONS.md`, 2026-10-03, Befund M42-07-a). **Erledigt, nicht mehr
+   offen (am Code nachgeprüft am 2026-10-03):**
+   - **V-1** (Wähler „Partieart" im netzfreien Bau) — erledigt durch **T-M39-11**: `gameModesFor(__MULTIPLAYER__,
+     hostsParty)` in `apps/desktop/src/App.tsx:403`, der Wähler erscheint nur bei `modes.length > 1`
+     (`apps/desktop/src/ui/Dialogs.tsx:185`); Entscheid in `DECISIONS.md` (2026-09-18 und 2026-09-24,
+     „Zu zweit nur mit Raum"). Der M17-Vorbehalt „nicht erneut nachgesehen" ist damit aufgehoben.
+   - **MP-4** (fünf `netplay`-Spielertexte nirgends gerendert) — erledigt durch **T-M39-10**: `pauseSent`,
+     `pauseDeclined`, `pauseExpired` werden in `apps/desktop/src/App.tsx` (um Z. 1101–1121) gerendert;
+     `DECISIONS.md` 2026-09-18.
+   - **MP-5** (veralteter M37-Satz im Anlegedialog) — erledigt durch **T-M39-11**: der Satz fiel ersatzlos
+     (`apps/desktop/src/ui/Dialogs.tsx` um Z. 307 begründet es; `DECISIONS.md` 2026-09-18, Nachtrag
+     2026-09-24).
+
+   Die übrigen Fragen sind die einzige Sorte Arbeit, die kein Agent erledigen kann, und mehrere bestimmen,
+   was als Nächstes überhaupt gebaut wird. **Nichts davon hat eine Aufgabe** — ein Plan, der Fragen als
+   Aufgaben führt, wird nie fertig.
 5. **M17 „Tiefe zwischen den Kriegen" — fertig, 16 von 16** (2026-09-13 geplant,
    2026-09-25 gebaut, 2026-09-26 vermessen, T-M17-01 bis -16 abgenommen). Spionage
    (T-M17-08/09), Handelsangebote (T-M17-05/14), gerichteter Durchmarsch/Kartenfreigabe
@@ -271,18 +316,18 @@ Playtest-Kriterium (Entscheid F6) selbst erfüllen.
    wird der nächste Plan. Die eine Frage, die kein Agent beantworten kann:
    *wollte ich weiterspielen?*
 7. **M18 ist die Sammelstelle für alles, was gemessen und verschoben wurde** — bisher ohne
-   eine einzige Aufgabe, mit Absicht: T-M41-10 (die KI legt Armeen wirklich zusammen; der
-   Deckel zählt Stapel statt Einheiten, die echte Reparatur tötete die Artillerie),
+   eine einzige Aufgabe, mit Absicht: T-M41-10 (die KI legt Armeen wirklich zusammen; **seit
+   T-M42-08/-09 gebaut**, Deckel in Einheiten, die Artillerie bleibt über die Rolle unberührt),
    der Handel der KI (zielt auf den teuersten Bauwunsch), die Kohle-Senke, der
    Vorratsaufbau, die amphibische KI, und die tote KI-Artillerie der Voreinstellung
-   (R-BAT-08/AK3). *(Befund M38-4 stand hier bis 2026-09-26 als offen; er ist seit dem
+   (R-BAT-08/AK3; auf Stufe C2 weiter offen, Befund M42-07-a). *(Befund M38-4 stand hier bis 2026-09-26 als offen; er ist seit dem
    2026-09-18 erledigt — T-M38-11, `isTestFile()` in `test/guards/scan.ts`.)* Die
    M17-Befunde, die Noah an M18 verschoben hat (T-M17-15 und die Durchsicht des
    Zusammenspiels, 2026-09-25), stehen **vollständig und nur noch** in `03-TASKS.md`,
    Abschnitt „Meilenstein M18 — Später" — hier keine Aufzählung mehr, damit es nicht zwei
    Stellen gibt, die auseinanderlaufen können.
-8. **T-M40-04, T-M41-10 und T-M10-02** — zurückgenommen, jede mit Begründung in
-   `tasks.yaml` (`reopened`) und in `DECISIONS.md`. Sie stehen nur der Vollständigkeit
+8. **T-M40-04, T-M41-10, T-M10-02, T-M42-05 und T-M42-07** — zurückgenommen, jede mit Begründung in
+   `tasks.yaml` (`reopened`) und in `DECISIONS.md` (T-M42-04 ist zurückgestellt, ebenfalls mit `reopened`). Sie stehen nur der Vollständigkeit
    halber hier; nichts davon ist Arbeit, die wartet.
 9. **Wer am Mehrspieler weiterbaut, liest `docs/plan/MEHRSPIELER.md`** — Befund, Messung,
    elf Fallen (Falle 11 ist seit Befund M38-1 berichtigt) und die Reihenfolge. Der Entwurf
@@ -297,7 +342,7 @@ Playtest-Kriterium (Entscheid F6) selbst erfüllen.
 
 ## 3 · Was gilt (nicht neu herleiten)
 
-- **Remote seit 2026-09-11** (`origin` = github.com/Noah2475g/WorldWar-III; PR #7 mit M41, M40, M35 und dem Schlussblock ist am 2026-09-14 gemerged, lokales `main` = `8bda869` nach PR #8; `origin/main` lief mit PR #9–#11 auf `30c0b3f` weiter, 45 Commits vor `claude/m17-tiefe-zwischen-den-kriegen` — dieser Vorsprung ist seit `65feab8` konfliktfrei in diesen Zweig gemergt, 2026-09-26); weiterhin keine CI — `pnpm verify` ist die Prüfkette. **Noah merged, kein Agent. Nie mit `--force` pushen.**
+- **Remote seit 2026-09-11** (`origin` = github.com/Noah2475g/WorldWar-III; PR #7 mit M41, M40, M35 und dem Schlussblock am 2026-09-14, PR #12 mit M17 am 2026-09-26, PR #13 mit M42/M43 Etappe 1 am 2026-09-28 gemerged; `main` = `95441e0`. Etappe 2 liegt auf `claude/game-v2-planned-tasks-tk5rrr` und ist **bis zum Merge nicht in `main`**); weiterhin keine CI — `pnpm verify` ist die Prüfkette. **Noah merged, kein Agent. Nie mit `--force` pushen.**
 - **Der Plan-Wächter ist scharf, und er liest seit dem 2026-09-13 beide Aufgabendateien.**
   `npx vitest run test/plan-consistency.test.ts` prüft in einer Sekunde tasks.yaml ↔
   03-TASKS.md, jeden `files:`/`tests:`-Pfad **und** die Zeilen `Dateien` und `Tests zuerst`
@@ -307,8 +352,8 @@ Playtest-Kriterium (Entscheid F6) selbst erfüllen.
   hängte den Wächter).
 - **Eine zurückgenommene Zusage steht auf `todo` mit einem `reopened`-Text, der sagt, wer
   sie ablöst** — und `reopenedWithoutReason` in `test/plan-paths.ts` erzwingt das für jede
-  offene Aufgabe, von der eine erledigte abhängt. Drei gibt es: T-M10-02, T-M40-04,
-  T-M41-10. Gelöscht wird eine Zusage nie; ein Plan, in dem etwas verschwindet, lässt sich
+  offene Aufgabe, von der eine erledigte abhängt. Fünf gibt es (gezählt am 2026-10-03): T-M10-02, T-M40-04,
+  T-M41-10, T-M42-05, T-M42-07; dazu ist T-M42-04 zurückgestellt (ebenfalls `reopened`). Gelöscht wird eine Zusage nie; ein Plan, in dem etwas verschwindet, lässt sich
   nicht mehr gegen die Wirklichkeit halten.
 - **Die Automatik der Haltungen, in einem Satz (D30.4 in der Fassung von T-M40-10):** eine
   Armee auf `defensive` rückt nur dann in eine bedrohte eigene Nachbarprovinz nach, wenn in
@@ -347,7 +392,7 @@ Playtest-Kriterium (Entscheid F6) selbst erfüllen.
 1. **Die Einstiegsdatei zeigt auf den falschen Zweig.** Bis zum 2026-09-11 stand hier,
    `main` sei alt und die Spitze liege auf einem `claude/*`-Zweig — das hat fünf Sitzungen
    in Folge erwischt. **Die Lehre gilt über diesen Fall hinaus: wer merged, richtet §0
-   im selben Zug.** Heute liegt die Spitze auf `main`.
+   im selben Zug.** Welcher Zweig heute die Spitze trägt, steht nur in §0.
 2. **`cmd | tail` verschluckt den Exit-Code.** In eine Datei schreiben, `$?` fragen.
 3. **Benchmarks brauchen die Maschine allein** — und „allein" heißt *jeder* Prozess:
    ```bash
@@ -511,15 +556,16 @@ meldet `Timeout calling "onTaskUpdate"`, obwohl jeder Test grün ist und der Ber
 geschrieben wurde. Eine Zeile behebt es — `await new Promise((r) => setTimeout(r, 0))`
 zwischen zwei Partien.
 
-## 5 · Der Stand in Zahlen (2026-09-27, nach Etappe 1 von M42/M43; der Benchmark-Vorbehalt: 2026-09-08)
+## 5 · Der Stand in Zahlen (Aufgaben und Abnahme 2026-10-03, Stufe C2; übrige Zeilen älter, je Zeile datiert; der Benchmark-Vorbehalt: 2026-09-08)
 
 | | |
 |---|---|
-| Aufgaben | **331, davon 320 erledigt** (gezählt in `tasks.yaml`). Offen: **7** M42/M43-Restaufgaben der Etappe 2 (T-M42-04 zurückgestellt, T-M42-05/-07/-08/-09/-10/-12), **1** — T-M39-09 alias AK-9, der fünfte Haltepunkt —, **3** zurückgenommene: T-M10-02, T-M40-04 (die Verfolgung, abgelöst von T-M40-10), T-M41-10 (am Rücknahmekriterium gerissen). Je Meilenstein: M35 **6/6**, M40 **18/19**, M41 **16/17**, M37 **11/11**, M38 **11/11**, M39 **10/11**, M17 **16/16**, M42 **5/12**, M43 **4/4** |
-| Abnahme | **12 von 12, Exit 0, 6 min 42 s** (`totalSeconds` 402), `docs/reports/acceptance.md`, 2026-09-26 gegen `00feba3`, auf freier Maschine (Last 4 % vor dem Lauf). Erstmals seit dem `origin/main`-Merge hält auch MESSGERAET Haltungs-Messlauf (Befund M17-F1 gelöst). **AK-8 steht auf „vollständig durchgeführt"** — 7 von 7, `packaging.md`. Alle Abnahmekriterien erfüllt |
-| Tests | **3376 grün, 1 todo, 3377 gesamt**, **186 Dateien** · Abdeckung Kern **97,4 %**, gesamt **96,96 %** (`pnpm verify` **Exit 0**, gemessen am 2026-09-26; davor 3180/174 vor dem Merge, 3155/174 nach T-M17-15) |
+| Aufgaben | **331, davon 324 erledigt** (gezählt in `tasks.yaml` am 2026-10-03). Offen: **7** — **5 zurückgenommen** (T-M10-02, T-M40-04, T-M41-10, T-M42-05, T-M42-07), **T-M42-04** zurückgestellt, **T-M39-09** alias AK-9 (der fünfte Haltepunkt). Je Meilenstein: M35 **6/6**, M40 **18/19**, M41 **16/17**, M37 **11/11**, M38 **11/11**, M39 **10/11**, M17 **16/16**, M42 **9/12**, M43 **4/4** |
+| Abnahme | **12 von 12, Exit 0, 7 min 49 s**, `docs/reports/acceptance.md`, 2026-10-03, Bericht erzeugt gegen `b6e6e80`, eingecheckt mit `bf8af90` (Stufe C2). AK-8 steht auf „vollständig durchgeführt“ (2026-09-26), der Bericht vermerkt seither geänderte Dateien am Erzeugnis, zählt nicht gegen V1. Alle Abnahmekriterien erfüllt |
+| Tests | **3591 grün, 192 Dateien** (`pnpm verify` **Exit 0**, gemessen am 2026-10-03 nach dem Review-Block; Abdeckung gesamt 97,1 % laut Abnahme; davor 3376/186 am 2026-09-26) |
 | M17 „Tiefe zwischen den Kriegen" | **16 von 16 Aufgaben — fertig.** Integrationstor R-AI-09/AK1–4 in drei Startzahlen gehalten (`m17-integration.json`, 14/14 grün). Parameterlauf nach der letzten Regeländerung: Anteil des Stärksten **36,8 % → 38,4 %** (unter der doppelten Rauschgrenze — kein Signal), tragende Konstanten weiterhin **0 von 14**. Drei Befunde (M17-T7 KI-Artillerie, M17-S12 `RECRUIT_SPY`-Buchung, M17-T6 Räumfrist) gehen mit Noahs Entscheid an M18 |
-| M42/M43, Etappe 1 | **fertig gebaut und gemessen (2026-09-27), nur `pnpm acceptance` steht aus.** T-M42-02 (Haltungs-Messlauf, AK5 neu gefasst, `erfuellt: true`), T-M42-03 (Tagesbilanz, Kanada 44 → 0 Geldmangeltage), T-M42-06 (Erst die Fabrik, neun Startzahlen 9/9 entschieden, 0 Patts), T-M43-01 (Räumfrist im Kern und KI, 0 Überfälle in den mit-Läufen), T-M43-02 (Oberfläche meldet die Räumfrist, Sichtprüfung V1–V9), T-M43-04 (Wiederholungslauf, −1/−1) sind `done`. T-M42-04 (Spionage/Börse) ist gebaut, gemessen und **zurückgestellt** bis nach der Artillerie (T-M42-07) — dasselbe Festungspatt wie T-M42-06 (Befund M42-04-a). `test/plan-consistency` 36/36, `coverage:requirements` V1 offen: 0, `pnpm verify` grün (191 Testdateien, 3572+ Tests) |
+| M42/M43, Etappe 1 | **gebaut und gemessen (2026-09-27), gemerged als PR #13 (2026-09-28).** T-M42-02 (Haltungs-Messlauf, AK5 neu gefasst, `erfuellt: true`), T-M42-03 (Tagesbilanz, Kanada 44 → 0 Geldmangeltage), T-M42-06 (Erst die Fabrik, neun Startzahlen 9/9 entschieden, 0 Patts), T-M43-01 (Räumfrist im Kern und KI, 0 Überfälle in den mit-Läufen), T-M43-02 (Oberfläche meldet die Räumfrist, Sichtprüfung V1–V9), T-M43-04 (Wiederholungslauf, −1/−1) sind `done`. T-M42-04 (Spionage/Börse) ist gebaut, gemessen und **zurückgestellt** bis nach der Artillerie (T-M42-07) — dasselbe Festungspatt wie T-M42-06 (Befund M42-04-a). `test/plan-consistency` 36/36, `coverage:requirements` V1 offen: 0, `pnpm verify` grün (191 Testdateien, 3572+ Tests) |
+| M42/M43, Etappe 2 | **gebaut und gemessen auf Stufe C2 (2026-10-03).** T-M42-08 (Zusammenlegen nach Rolle, in Einheiten, unter dem Deckel), T-M42-09 (überall, Paare über zwei Tagesenden 0), T-M42-10 (Befund D widerlegt), T-M42-12 (Abschlussmessung) `done`. `ai-integration` 30/30, `m17-integration` 26/26, Turnier 84/61/63 %, `progress.slow` 0,3334, neun Vollpartien 9/9. T-M42-05/-07 zurückgenommen (Band R-AI-12/AK3 und Öl-Wächter gemeinsam nicht erfüllbar, Befund M42-07-a), T-M42-04 zurückgestellt |
 | Mehrspieler | **32 von 33 Aufgaben** (M37 11/11, M38 11/11, M39 10/11). Gleichschritt belegt über **200 Ticks** mit 63 und 56 Befehlen von beiden Seiten, nach *jedem* Tick derselbe Hash (`5ed264a0fea05076`). Determinismus-Probe: **24 Ticks**, kalt 26 ms / warm 6–8 ms (Grenze 100) |
 | Sichtprüfung Mehrspieler | **5 Befunde, 3 repariert** (2026-09-14, zwei sichtbare Brave-Fenster über CDP, 37 Bilder). **MP-1:** `pnpm mp:host` antwortete unter Windows auf *jede* Adresse mit 404 — gemischte Pfadtrenner. **MP-2:** wer seinen Link zuerst öffnete, wartete für immer. **MP-3:** eine Abweisung wurde 77-mal in 20 s wiederholt, ohne den Grund zu nennen. **MP-4 und MP-5 sind Spielertexte und damit Fragen an Noah** |
 | AK-1 | Sieg an Spieltag **675** (Startzahl 1914, `pnpm acceptance` bestätigt zeilengleich zum Vorlauf), 1755 Eroberungen, 20 Kriegserklärungen, Sieger p6/China. Startzahl 1815: Tag **395**, Startzahl 2015: Tag **630** (`docs/reports/fullgame*.json`, gemessen 2026-09-25 gegen `b9b3915`, durch die Abnahme auf `00feba3` zeilengleich bestätigt). Vorher-Werte auf `8bda869`: 1914 **975** (unverändert seit `27eb98e`), 1815 **583**, 2015 **583**. Der Siegtag springt je KI-Änderung in beide Richtungen; das Tor ist 300–1500. Die drei Startzahlen variieren nur den Zufall — Aufstellung, Gegner und Hauptstädte sind identisch |

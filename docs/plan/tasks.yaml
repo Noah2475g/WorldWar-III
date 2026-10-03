@@ -3714,7 +3714,7 @@ tasks:
     milestone: M42
     title: Zusammenlegen nach Rolle und unter dem Deckel
     status: done
-    deps: [T-M42-07]
+    deps: [T-M42-06]
     requirements: [R-AI-10]
     design: [D-32]
     files: [packages/ai/src/army-role.ts, packages/ai/src/consolidate.ts, packages/ai/src/military.ts, apps/headless/test/m42-zaehlung.ts]
