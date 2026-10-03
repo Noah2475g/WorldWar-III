@@ -85,7 +85,7 @@ describe('Abnahmekriterium 6: Langlauf ueber 1000 Spieltage', () => {
     // Zeitreihe (V3, P0-A.4): Rechenzeit je 50-Tage-Fenster, nur Bericht, keine Schranke. Die Atempausen
     // sind herausgerechnet; Fenster nach der Entscheidung sind als solche markiert.
     const WINDOW_TICKS = 50 * rules.constants.ticksPerDay
-    const windows: { fromDay: number; toDay: number; ms: number; ticks: number; afterDecision: boolean }[] = []
+    const windows: { fromDay: number; toDay: number; ms: number; ticks: number; afterDecision: boolean; mixed: boolean }[] = []
     let windowStart = performance.now()
     let windowPaused = 0
     let windowFirstTick = 0
@@ -111,6 +111,7 @@ describe('Abnahmekriterium 6: Langlauf ueber 1000 Spieltage', () => {
           ms: now - windowStart - windowPaused,
           ticks: WINDOW_TICKS,
           afterDecision: ended !== 0 && windowFirstTick >= ended,
+          mixed: ended !== 0 && windowFirstTick < ended && ended <= i + 1,
         })
         windowStart = now
         windowPaused = 0
@@ -159,7 +160,7 @@ describe('Abnahmekriterium 6: Langlauf ueber 1000 Spieltage', () => {
         '',
         '| Tage | ms je Tick inkl. KI | nach der Entscheidung |',
         '|---|---|---|',
-        ...windows.map((w) => `| ${w.fromDay}–${w.toDay} | ${(w.ms / w.ticks).toFixed(3)} | ${w.afterDecision ? 'ja' : 'nein'} |`),
+        ...windows.map((w) => `| ${w.fromDay}–${w.toDay} | ${(w.ms / w.ticks).toFixed(3)} | ${w.afterDecision ? 'ja' : w.mixed ? 'teils (Entscheidung im Fenster)' : 'nein'} |`),
         '',
         `Entscheidungstick: ${ended || 'nicht entschieden'}${ended ? ` (Tag ${Math.floor(ended / rules.constants.ticksPerDay)})` : ''}.`,
         '',
