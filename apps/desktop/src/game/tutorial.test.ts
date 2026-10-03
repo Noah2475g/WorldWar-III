@@ -13,6 +13,7 @@ import {
   progressLabel,
   advanceOnce,
   triggerFor,
+  TUTORIAL_TARGETS,
   type TutorialState,
 } from './tutorial.ts'
 
@@ -212,5 +213,30 @@ describe('R-UI-05 Die Fuehrung folgt dem Spiel, nicht der Knopfleiste (T-M21-02)
     // Und alles andere fuehrt nicht — sonst waere jede Meldung ein Schritt.
     expect(triggerFor('BATTLE_STARTED')).toBeNull()
     expect(triggerFor('COMMAND_REJECTED')).toBeNull()
+  })
+})
+
+/**
+ * Die Einfuehrung nennt keine Himmelsrichtung der Oberflaeche (T-M44-14, R-UX-05/AK2).
+ *
+ * Auf dem Telefon liegt die Seitenleiste unten und die Ereignisleiste anderswo: ein Satz mit
+ * "rechts" oder "unten" stimmt dort nicht. Die Schritte nennen das Ding beim Namen.
+ */
+describe('R-UX-05/AK2 Die Einfuehrung ist ortsunabhaengig', () => {
+  const ORTSWOERTER = /\b(rechts|links|oben|unten|rechte[nrms]?|linke[nrms]?|obere[nrms]?|untere[nrms]?)\b/i
+
+  it('kein Schritttext (Titel, Text, Wozu) nennt rechts, links, oben oder unten', () => {
+    for (const step of TUTORIAL_STEPS) {
+      for (const feld of ['title', 'text', 'why']) {
+        const text = t(`tutorial.steps.${step.id}.${feld}`, { wait: '2 Tage', day: '3', third: '3', penalty: '1' })
+        expect(text, `${step.id}.${feld}`).not.toMatch(ORTSWOERTER)
+      }
+    }
+  })
+
+  it('nennt zu jedem Schritt ein Zielelement, von dem er spricht, oder ausdruecklich keines', () => {
+    for (const step of TUTORIAL_STEPS) {
+      expect(TUTORIAL_TARGETS, step.id).toHaveProperty(step.id)
+    }
   })
 })

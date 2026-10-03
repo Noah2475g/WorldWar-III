@@ -525,6 +525,15 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
   await page.waitForTimeout(500)
   data.perf.startGameMs = Date.now() - tStart
   await shot('karte-start-tutorial')
+  // R-UX-05/AK2 (T-M44-14): die Einfuehrung deckt das Element nicht, von dem ihr erster Schritt spricht (Provinzwahl).
+  data.probes.tutorialCover = await page.evaluate(() => {
+    const tut = document.querySelector('.tutorial')
+    const target = document.querySelector('.picker')
+    if (!tut || !target) return { measured: false }
+    const a = tut.getBoundingClientRect()
+    const b = target.getBoundingClientRect()
+    return { measured: true, coversPicker: a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top, directionWords: /\b(rechts|links|oben|unten)\b/i.test(tut.textContent ?? '') }
+  })
   // R-UX-05/AK2: im Hochformat ein nicht blockierender Hinweis „quer halten empfohlen“.
   if (vp.height > vp.width) {
     data.probes.orientationHint = await page.evaluate(() => /quer halten/i.test(document.body.innerText))

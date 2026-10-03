@@ -1006,12 +1006,12 @@ export const de = {
     steps: {
       select: {
         title: 'Ihre Provinzen',
-        text: 'Klicken Sie eine Ihrer Provinzen an. Rechts stehen Moral, Bevölkerung und was im Boden liegt.',
+        text: 'Klicken Sie eine Ihrer Provinzen an. Das Provinzpanel zeigt dann Moral, Bevölkerung und was im Boden liegt.',
         why: 'Alles in diesem Spiel — Bau, Aushebung, Moral, Punkte — geschieht in Provinzen. Wer seine kennt, kennt seine Lage.',
       },
       build: {
         title: 'Etwas bauen',
-        text: 'Jeder Knopf nennt vorher Kosten und Dauer. Was Sie sich nicht leisten können, ist ausgegraut — mit dem Grund daneben.',
+        text: 'Jeder Knopf nennt vorher Kosten und Dauer. Was Sie sich nicht leisten können, ist ausgegraut — der Grund steht dabei.',
         why: 'Gebäude kommen vor Einheiten: erst die Kaserne macht das Ausheben möglich, und dieselbe Kaserne macht jedes weitere schneller.',
       },
       speed: {
@@ -1060,7 +1060,7 @@ export const de = {
       },
       events: {
         title: 'Was geschieht',
-        text: 'Unten stehen die Ereignisse. Rot heißt hinsehen; ein Klick springt zu der Provinz, um die es geht.',
+        text: 'Das Ereignisprotokoll zeigt, was geschieht. Rot heißt hinsehen; ein Klick springt zu der Provinz, um die es geht.',
         why: 'Was Sie hier übersehen, meldet niemand ein zweites Mal — das Protokoll ist das Gedächtnis der Partie.',
       },
       expansion: {

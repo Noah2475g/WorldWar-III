@@ -1679,6 +1679,13 @@ body {
   color: var(--ink-soft);
 }
 
+/* Die Einfuehrung weicht dem Element aus, von dem sie spricht (T-M44-14, R-UX-05/AK2):
+   Tutorial.tsx setzt data-dodge, sobald sie es decken wuerde. */
+.tutorial[data-dodge='top'] {
+  top: var(--sp-md);
+  bottom: auto;
+}
+
 /* Ein Knopf mit Symbol: das Zeichen sitzt vor dem Wort, nicht darueber. */
 .button {
   display: inline-flex;

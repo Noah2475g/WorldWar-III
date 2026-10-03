@@ -234,6 +234,13 @@ select,
   overflow-y: auto;
 }
 
+/* Weicht die Einfuehrung ihrem Zielelement aus (T-M44-14), sitzt sie oben im Rasterbereich,
+   unter der Kartenknopf-Reihe (44 px + Abstaende). */
+:root[data-input='touch'] .tutorial[data-dodge='top'] {
+  top: calc(44px + 2 * var(--sp-md));
+  bottom: auto;
+}
+
 /* Schmale Karte: Kartenknopf-Reihe (182 px, oben rechts) und Einfuehrung (bis 260 px,
    links) passen nicht mehr nebeneinander, sobald die Karte schmaler ist als
    260 + 182 + 3 x 8 = 466 px. Das ist bei --touch-side 380 unter 846 px Breite der Fall
@@ -601,6 +608,13 @@ select,
 
   :root:root .tutorial__why {
     display: none;
+  }
+
+  /* Ausgewichen (T-M44-14): oben auf der Karte, unter den Zoomknoepfen. */
+  :root:root .tutorial[data-dodge='top'] {
+    top: calc(44px + 2 * var(--sp-md));
+    transform: none;
+    max-height: calc(var(--map-h) - 44px - 3 * var(--sp-md));
   }
 
   /* Der Hinweis „quer halten empfohlen": oben links auf der Karte, links der Zoomknoepfe
