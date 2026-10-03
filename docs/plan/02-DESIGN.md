@@ -3510,6 +3510,77 @@ Wortlaut mit Uhrzeit statt Tagesgrenze: `DECISIONS.md`, 2026-09-27, T-M43-02.)*
 - `breakAlliance` erzeugt weiterhin keine Verstimmung (Befund B7, zweite Hälfte). Das ist nicht Teil
   dieses Plans, siehe M18-Abschnitt in `03-TASKS.md`.
 
+## D37. UX V2 — Bedienbarkeit, Rückmeldung und Zugang (M44 — R-UX-01, R-UX-02, R-UX-03, R-UX-04, R-UX-05, R-UX-06)
+
+*(Die Nummern D35 und D36 sind lokal vergeben — D35 in `FORTSCHRITT.md`, D36 „Ampel" in
+`ROHSTOFFE.md` (M36); dieser Abschnitt heißt deshalb D37. Bis zum Review vom 2026-10-03 stand er
+hier als „D36" — umbenannt, nicht neu vergeben.)* Plan, Befunde, Messwerte und die
+Review-Einarbeitung: `docs/plan/UX-PLAN.md`; Bilder `docs/ux/before/`; Werkzeug
+`scripts/ux-capture.mjs`. **Grenze:** nur die Hülle (`apps/desktop`, `index.html`, Skripte,
+Dokumente). `packages/core`, `packages/ai` und `data/rules` bleiben unverändert; der Golden-Master
+bewegt sich nicht.
+
+### D37.1 Messen statt Meinen (R-UX-01…06)
+
+`scripts/ux-capture.mjs` fährt das laufende Spiel in einem echten Browser (Chromium, ferngesteuert)
+in den Mess-Fenstergrößen aus R-UX 2.20 durch und schreibt Bilder und `messwerte.json` (Ladezeit, lange
+Aufgaben bei Zoom/Schieben/Tempo 100, axe-core WCAG 2.1 AA, Tab-Reihenfolge mit Fokusrahmen, Ziele
+unter 44/24 px, Flächenanteile und waagerechter Überlauf). `--section bundle --perf-only` misst die
+Zeiten am gebauten Bündel (`vite build` + `vite preview`). T-M44-02 ergänzt einen Prüfmodus `--check`,
+einen Mehrspieler-Lauf `--mp` (Bau mit `WORLDWAR_MULTIPLAYER=1`: Gastgeber, Beitritt, Bedingungen,
+Kopfleiste mit fester Rate; 375×667 und 1280×800) und einen Spielstand, der die Siegbedingung
+wirklich erfüllt. Jede M44-Aufgabe nennt den Prüfmodus als Browser-Prüfung neben ihren jsdom-Tests
+(jsdom rechnet kein Layout, WORKFLOW §4 Falle 25); Testblöcke tragen die Kennung `R-UX-0n/AKm` im
+Titel, damit das Anforderungstor sie zählt.
+
+**Keine E2E-Stufe (D14 bleibt):** das Werkzeug ist ein Messgerät wie der Parameterlauf, kein Teil von
+`pnpm verify` und keine Teststufe; es braucht einen laufenden Server und wird von Hand oder in der
+Abnahme einer M44-Aufgabe gefahren. Die Bibliothek ist als Entwicklungsabhängigkeit eingetragen;
+Begründung in `DECISIONS.md`, 2026-10-03 „UX V2: ein Browser-Messwerkzeug, keine E2E-Stufe".
+
+### D37.2 Telefon hochkant, in zwei Stufen (R-UX-01, T-M44-03a, T-M44-03b)
+
+**Stufe a (CSS-Stapel):** eine Medienabfrage `(max-width: 599px) and (orientation: portrait)` —
+unabhängig von `data-input` und nicht nur `max-height: 480px` wie heute — stapelt: Kopfleiste
+einzeilig und wischbar (`nowrap`, per Tastatur erreichbar), Karte oben, Seitenleiste darunter und in
+sich rollend, kompakter Fuß. Dazu ein nicht blockierender Hinweis „quer halten empfohlen".
+**Stufe b (Blatt):** die Seitenleiste als Blatt mit drei Rasten (zu, halb, voll), Auto-Schwenk der
+Karte zur gewählten Provinz, Gesten gegen die Touch-Logik von `MapCanvas` (PR #9–#11) geprüft.
+
+### D37.3 Kopfleiste, Tooltip, Fuß, Seitenleiste (R-UX-02, T-M44-04, T-M44-07, T-M44-10, T-M44-12, T-M44-20)
+
+Vor einer globalen Regel `[hidden] { display: none !important; }` werden alle Stellen gesucht, an
+denen `hidden` auf eine Klasse mit eigenem `display` trifft (`app.css`, `touch.css`), und am laufenden
+Spiel geprüft. Kompaktregeln: Titel unter 1500 px aus, Tempoknöpfe als eine Gruppe, Kartenmodi unter
+1400 px als Auswahl; Messung im Zustand mit Alarmchip und Siegziel, auch mit `fixedSpeed`.
+**Tooltip:** `tooltipId = hover?.id ?? ui.selectedProvince` (`App.tsx`, T-M31-01) ist Absicht — der
+Tooltip folgt der Tastaturauswahl. Er erscheint künftig für die Auswahl nur, wenn sie per Tastatur
+kam, nie bei offenem Dialog, mit `user-select: none`, und ohne den Hinweis „Klicken: auswählen" bei
+einer schon gewählten Provinz. **Fuß:** Zeitspalte `nowrap`; gleichlautende Gefechtszeilen werden
+zusammengefasst; Platz 1 steht als erste Zeile über der eigenen Umgebung (T-M31-03 bleibt).
+
+### D37.4 Spielersprache und Fehlerprävention (R-UX-03, R-UX-04, T-M44-06, T-M44-09a, T-M44-09b, T-M44-11)
+
+`describeRejection` schlägt Sätze nach (Befehlstyp, Grund) nach — 34 Freitext-Gründe in
+`diplomacy.ts`, `army.ts`, `handlers.ts`, `move.ts`, `build.ts`, `bombard.ts`, `trade.ts`,
+`recruit.ts`; der Wächter liest sie aus dem Kern, ohne ihn zu ändern. `loadFrom` entscheidet nach
+`error.name === 'UnsupportedSaveVersion'`. Ein Namensspeicher (`game/names.ts`) hält den letzten
+Namen jeder Armee für die vier Armee-Stellen in `App.tsx`; nach dem Laden beginnt er bewusst leer
+(„eine Armee"). `ConfirmButton`: zweiter Klick am selben Knopf, Folgesatz im Knopf und über
+`aria-live`, Escape/Fokusverlust brechen ab, keine Zeitüberschreitung. Die Zielwahl misst zuerst,
+was 237 Aufrufe von `planRoute` beim Öffnen kosten, und speichert dann je (Armee, Ort, Spieltag).
+
+### D37.5 Einstieg, Dialoge, Zugang (R-UX-05, R-UX-06, T-M44-05, T-M44-08, T-M44-13…T-M44-17)
+
+Dialoge bekommen eine feste Fußzeile für ihre Aktionen; der Körper rollt. Der Endedialog
+(`ui/Standings.tsx`, heute eine Kopie des Gerüsts mit Abdunkeln, aber ohne Fokus-Einzug, Fokusfalle
+und Escape) nutzt das gemeinsame `Dialog` aus `ui/Dialogs.tsx` mit optionalem `onClose`. Die
+Erklärung „?" wird ein Popover über dem Raster und schließt mit Escape. Die Einführung spricht von
+Bereichen statt Richtungen und weicht ihrem Zielelement aus. Ein Token `focus` (Bernstein-Ton, ≥ 3:1
+gegen `ground` und `paper`) ersetzt `accent` im Fokusrahmen. Im Finger-Betrieb und unter 600 px gelten
+44 px als Mindestmaß, sonst 24 px.
+
+<!-- LOESCHVERMERK (Review): bis zum Review vom 2026-10-03 stand hier die erste Fassung als D36 (Commit 8e30cfb); ersetzt durch D37 oben, weil D36 in ROHSTOFFE.md vergeben ist und das Review mehrere Ursachen berichtigt hat (UX-PLAN Paragraf 9). Wortlaut:
 ## D36. UX V2 — Bedienbarkeit, Rückmeldung und Zugang (M44 — R-UX-01, R-UX-02, R-UX-03, R-UX-04, R-UX-05, R-UX-06)
 
 *(Die Nummer D35 ist in `FORTSCHRITT.md` lokal vergeben; dieser Abschnitt heißt deshalb D36.)*
@@ -3523,7 +3594,7 @@ Plan, Befunde und Messwerte: `docs/plan/UX-PLAN.md`; Bilder `docs/ux/before/`; W
 in 375×667, 1280×800 und 1920×1080 durch und schreibt Bilder und `messwerte.json` (Ladezeit, lange
 Aufgaben bei Zoom/Schieben/Tempo 100, axe-core WCAG 2.1 AA, Tab-Reihenfolge mit Fokusrahmen, Ziele
 unter 44/24 px, Flächenanteile und waagerechter Überlauf). T-M44-02 gibt ihm einen Prüfmodus
-`--check`, der die Schwellen der Abnahmekriterien als Exit-Code meldet; jede M44-Aufgabe nennt ihn als
+`- -check`, der die Schwellen der Abnahmekriterien als Exit-Code meldet; jede M44-Aufgabe nennt ihn als
 Browser-Prüfung neben ihren jsdom-Tests (jsdom rechnet kein Layout, WORKFLOW §4 Falle 25).
 
 **Keine E2E-Stufe (D14 bleibt):** das Werkzeug ist ein Messgerät wie der Parameterlauf, kein Teil von
@@ -3563,3 +3634,4 @@ schließt mit Escape. Die Einführung spricht von Bereichen („in der Provinzan
 Richtungen und weicht dem Element aus, auf das sie zeigt. Ein Token `focus` (Bernstein-Ton, ≥ 3:1
 gegen `ground` und `paper`) ersetzt `accent` im Fokusrahmen. Im Finger-Betrieb und unter 600 px
 gelten 44 px als Mindestmaß für Knöpfe, sonst 24 px.
+-->

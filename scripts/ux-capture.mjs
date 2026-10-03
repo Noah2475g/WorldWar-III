@@ -9,7 +9,18 @@
  *
  *   pnpm dev --port 5321 --strictPort        # in einem zweiten Terminal
  *   node scripts/ux-capture.mjs --out docs/ux/before [--url http://localhost:5321/]
- *                               [--viewports 375x667,1280x800,1920x1080] [--no-shots]
+ *                               [--viewports 375x667,1280x800,...] [--no-shots]
+ *                               [--merge] [--section viewports|bundle] [--perf-only]
+ *
+ * --merge       ergaenzt ein vorhandenes messwerte.json, statt es zu ersetzen
+ * --section     unter welchem Schluessel die Groessen stehen (`bundle` fuer den Lauf gegen
+ *               `vite build` + `vite preview`, WORKFLOW Falle 18)
+ * --perf-only   bricht nach der Tempo-100-Messung ab (fuer den Buendellauf; der vorbereitete
+ *               Spielstand braucht den Dev-Server, weil er den Kern per /@fs laedt)
+ *
+ * Browser: UX_CHROMIUM (Pfad zu einer Chromium-Datei) gewinnt; sonst das vorinstallierte
+ * Chromium unter PLAYWRIGHT_BROWSERS_PATH bzw. /opt/pw-browsers; unter Windows, wo beides
+ * fehlt, Edge ueber `channel: 'msedge'` (Chrome ist dort nicht installiert, WORKFLOW Falle 17).
  *
  * Spiellogik wird nicht angefasst. Das Spielende entsteht aus einem echten Spielstand der
  * Aufnahme, dessen Feld `victory.winner` gesetzt und mit dem `serialise` des Kerns neu
@@ -21,7 +32,7 @@
  */
 // Die Funktionen in page.evaluate laufen im Browser; ihre Namen kennt ESLint unter Node nicht.
 /* global document, window, getComputedStyle, innerWidth, innerHeight, HTMLElement, PerformanceObserver, performance, requestAnimationFrame, indexedDB, structuredClone */
-import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright'
@@ -35,7 +46,7 @@ function arg(name, fallback) {
 }
 const OUT = resolve(arg('out', 'docs/ux/before'))
 const BASE_URL = arg('url', 'http://localhost:5321/')
-const VIEWPORTS = arg('viewports', '375x667,1280x800,1920x1080')
+const VIEWPORTS = arg('viewports', '375x667,667x375,1280x800,1366x768,1920x1080,1024x768,768x1024,320x568')
   .split(',')
   .map((v) => {
     const [w, h] = v.split('x').map(Number)
@@ -43,6 +54,9 @@ const VIEWPORTS = arg('viewports', '375x667,1280x800,1920x1080')
   })
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const SHOTS = !process.argv.includes('--no-shots')
+const MERGE = process.argv.includes('--merge')
+const SECTION = arg('section', 'viewports')
+const PERF_ONLY = process.argv.includes('--perf-only')
 
 function findChromium() {
   if (process.env.UX_CHROMIUM) return process.env.UX_CHROMIUM
@@ -51,6 +65,12 @@ function findChromium() {
   const dir = readdirSync(root).find((d) => /^chromium-\d+$/.test(d))
   const exe = dir ? join(root, dir, 'chrome-linux', 'chrome') : undefined
   return exe && existsSync(exe) ? exe : undefined
+}
+
+function launchOptions() {
+  const executablePath = findChromium()
+  if (executablePath) return { executablePath }
+  return process.platform === 'win32' ? { channel: 'msedge' } : {}
 }
 
 /**
@@ -257,8 +277,8 @@ async function runViewport(browser, vp) {
   const context = await browser.newContext({
     viewport: { width: vp.width, height: vp.height },
     deviceScaleFactor: 1,
-    hasTouch: vp.width < 600,
-    isMobile: vp.width < 600,
+    hasTouch: Math.min(vp.width, vp.height) < 600,
+    isMobile: Math.min(vp.width, vp.height) < 600,
     locale: 'de-DE',
   })
   const page = await context.newPage()
@@ -282,7 +302,7 @@ async function runViewport(browser, vp) {
     } catch (e) {
       data.failures.push({ step: label, error: String(e).split('\n')[0].slice(0, 240) })
       // Was der Spieler an dieser Stelle sieht, ist selbst ein Befund.
-      await shot(`${label}-nicht-erreichbar`).catch(() => {})
+      if (!String(e).includes('PERF_ONLY')) await shot(`${label}-nicht-erreichbar`).catch(() => {})
       await page.keyboard.press('Escape').catch(() => {})
     }
   }
@@ -428,9 +448,19 @@ async function runViewport(browser, vp) {
     await shot('tempo-100-laeuft')
     data.perf.running100 = await longTasksDuring(page, () => page.waitForTimeout(3000))
     data.layout.running = await layout(page)
+    if (PERF_ONLY) {
+      await speed('Pause')
+      throw new Error('PERF_ONLY')
+    }
     await page.getByRole('button', { name: 'Infanterie ausheben', exact: true }).and(page.locator(':enabled')).waitFor({ timeout: 60000 })
     await speed('Pause')
   })
+  if (PERF_ONLY) {
+    data.failures = data.failures.filter((f) => !f.error.includes('PERF_ONLY'))
+    data.consoleErrors = errors.slice(0, 20)
+    await context.close()
+    return data
+  }
   await step('ausheben', async () => {
     let clicked = 0
     for (let i = 0; i < 3; i++) {
@@ -611,15 +641,20 @@ async function runViewport(browser, vp) {
   return data
 }
 
-const executablePath = findChromium()
-const browser = await chromium.launch({ ...(executablePath ? { executablePath } : {}) })
+const browser = await chromium.launch(launchOptions())
+const file = join(OUT, 'messwerte.json')
+const target = MERGE && existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : result
+target[SECTION] = target[SECTION] ?? {}
+if (target !== result) target.updatedAt = result.createdAt
 for (const vp of VIEWPORTS) {
   const started = Date.now()
   process.stdout.write(`${vp.tag} ... `)
-  result.viewports[vp.tag] = await runViewport(browser, vp)
-  result.viewports[vp.tag].durationMs = Date.now() - started
-  console.log(`${result.viewports[vp.tag].steps.length} Bilder, ${result.viewports[vp.tag].failures.length} Fehlschritte`)
+  const data = await runViewport(browser, vp)
+  data.durationMs = Date.now() - started
+  data.url = BASE_URL
+  target[SECTION][vp.tag] = data
+  console.log(`${data.steps.length} Bilder, ${data.failures.length} Fehlschritte`)
 }
 await browser.close()
-writeFileSync(join(OUT, 'messwerte.json'), JSON.stringify(result, null, 2) + '\n')
+writeFileSync(file, JSON.stringify(target, null, 2) + '\n')
 console.log(`messwerte.json -> ${OUT}`)

@@ -5763,3 +5763,28 @@ hat sich nur die Tatsache aus D14s Begründung, dass `playwright` in keiner `pac
 
 **Kippbar:** Will Noah keinen Browser im Repo, fällt die Abhängigkeit wieder heraus; die Bilder
 und Messwerte der Vorher-Aufnahme bleiben als Beleg, und M44 wird mit Sichtprüfungen abgenommen.
+
+---
+
+## 2026-10-03 · Orchestrator-Entscheid unter Noahs Vorabfreigabe, kippbar · UX V2: Antworten auf die drei Fragen aus UX-PLAN §8
+
+**F1 — Telefon hochkant:** wird gebaut, **gestuft**. T-M44-03a (CSS-Stapel, Regel nach
+`(max-width: 599px) and (orientation: portrait)`, dazu ein nicht blockierender Hinweis „quer halten
+empfohlen", 0,5 h) erfüllt R-UX-01; T-M44-03b (Blatt mit Rasten, Auto-Schwenk, Gestenprüfung gegen
+`MapCanvas`) steht als optional im Plan, wird aber in Phase 6 umgesetzt.
+
+**F2 — Rückfrage:** zweiter Klick **am selben Knopf**; der Folgesatz steht im Knopf und wird über
+`aria-live` angesagt; kein Dialog, **keine Zeitüberschreitung** (Wächter `no-time-pressure`); Escape
+und Fokusverlust brechen ab. Gilt für Krieg erklären, Bündnis aufkündigen, belegten Spielstand
+überschreiben, Einstellungen auf Vorgabe zurücksetzen und neue Partie aus laufender Partie
+(R-UX-04/AK1, T-M44-09a/-09b).
+
+**F3 — Fuß-Rangliste:** Platz 1 kommt **additiv** als erste Zeile dazu; die eigene Umgebung aus
+T-M31-03 (D27.6) bleibt darunter. `Foot.test.tsx` wird angepasst (T-M44-10).
+
+**Dazu aus dem Review (UX-PLAN §9):** D36 heißt D37 (D36 ist „Ampel" in `ROHSTOFFE.md`); die Zeiten
+werden am gebauten Bündel gemessen (WORKFLOW §4 Falle 18); `deps` in M44 nur fachlich, die
+Reihenfolge wegen Dateikonflikten steht in den Paketen (UX-PLAN §6). Die Bilder der Nachher-Aufnahme
+werden nur für 375×667, 1280×800 und die neuen Fenstergrößen eingecheckt, 1920×1080 bleibt Messwert
+(Repo-Größe); die Vorher-Bilder bleiben vollständig (Sitzungsregel „nichts löschen") und sind
+verlustfrei optimiert.
