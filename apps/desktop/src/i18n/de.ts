@@ -377,7 +377,10 @@ export const de = {
     MISSING_BUILDING: 'Dafür fehlt das Gebäude: {{building}}.',
     NOT_YET_AVAILABLE: 'Das gibt es erst ab Spieltag {{availableFromDay}}.',
     BUILDING_MAX_LEVEL: 'Dieses Gebäude ist bereits voll ausgebaut.',
-    NO_PATH: 'Dorthin führt kein Weg — feindliches Gebiet oder offenes Meer liegt dazwischen.',
+    // T-M44-06 (R-UX-03/AK4): `planRoute` kennt nur den Kartengraphen — NO_PATH heißt „Graph nicht
+    // verbunden“, nie „feindliches Gebiet“.
+    // LOESCHVERMERK (Review): vorher 'Dorthin führt kein Weg — feindliches Gebiet oder offenes Meer liegt dazwischen.'
+    NO_PATH: 'Dorthin führt kein Weg: Zwischen hier und dem Ziel gibt es auf der Karte keine Land- oder Seeverbindung.',
     ARMY_BUSY: 'Die Armee ist noch gebunden und kann jetzt keinen neuen Befehl annehmen.',
     ARMY_NOT_FOUND: 'Diese Armee gibt es nicht mehr.',
     PROVINCE_NOT_FOUND: 'Diese Provinz gibt es nicht.',
@@ -1266,6 +1269,88 @@ export const de = {
   time: {
     hours: '{{hours}} h',
     days: '{{days}} Tage',
+  },
+
+  // --- M44 Paket D (UX V2): Texte und Panels ---------------------------------------------------
+  // Neue Schlüssel nur hier anhängen (Merge-Konflikte klein halten, UX-PLAN §6).
+
+  /** Namen, wenn der Spielstand keinen kennt (T-M44-06, R-UX-03/AK2): nie eine Kennung wie „a68“. */
+  names: {
+    unknownArmy: 'eine Armee',
+  },
+
+  /**
+   * Ein Satz je (Befehlstyp, Grund) des Kerns (T-M44-06, R-UX-03/AK1) — `game/rejections.ts`
+   * `REASON_KEYS` schlägt hier nach. Die Handelsgründe teilen sich die Sätze unter `trade.blocked`.
+   */
+  refusal: {
+    thatPower: 'diese Macht',
+    thatProvince: 'diese Provinz',
+    SPLIT_ARMY: {
+      nothingChosen: 'Wählen Sie aus, was abgespalten werden soll.',
+      wholeStrength: 'So würde die ganze Truppe abgespalten — dann bleibt nichts zurück. Schicken Sie sie stattdessen auf den Marsch.',
+    },
+    MERGE_ARMIES: {
+      needTwo: 'Zum Zusammenlegen braucht es mindestens zwei Armeen.',
+      notTogether: 'Die Armeen stehen nicht am selben Ort.',
+      partlyEmbarked: 'Ein Teil der Armeen ist eingeschifft — an Bord lässt sich nichts zusammenlegen.',
+    },
+    BOMBARD: {
+      embarked: 'Eine eingeschiffte Armee kann nicht beschießen.',
+      noRanged: 'Diese Armee hat keine Fernwaffe.',
+    },
+    BUILD: {
+      needsCoast: '{{building}} lässt sich nur an der Küste bauen.',
+    },
+    SET_STANCE: {
+      unknown: 'Diese Haltung gibt es nicht.',
+    },
+    MOVE_ARMY: {
+      empty: 'In dieser Armee stehen keine Truppen mehr.',
+      alreadyThere: 'Die Armee steht schon dort.',
+      noAirfield: 'Flieger landen nur auf einem eigenen Flugplatz.',
+    },
+    RECRUIT: {
+      lowMorale: 'Die Moral in dieser Provinz ist zu niedrig, um Truppen auszuheben.',
+    },
+    TRADE: {
+      sameResource: 'Tauschen Sie gegen einen anderen Rohstoff.',
+      tooMuch: 'So viel lässt sich nicht auf einmal tauschen.',
+      tooLittle: 'Dafür gäbe es nichts: Die Menge ist zu klein.',
+    },
+    OFFER_TRADE: {
+      self: 'Mit der eigenen Macht lässt sich nicht handeln.',
+    },
+    ACCEPT_TRADE: {
+      noOffer: 'Dieses Angebot gibt es nicht mehr.',
+    },
+    DIPLOMACY: {
+      self: 'Mit der eigenen Macht geht das nicht.',
+      alreadyAtWar: 'Mit {{target}} herrscht schon Krieg.',
+      noOffer: '{{target}} hat Ihnen nichts angeboten, oder das Angebot ist verfallen.',
+      notAtPeace: 'Ein Bündnis mit {{target}} setzt Frieden voraus.',
+      noAlliance: 'Mit {{target}} besteht kein Bündnis.',
+      atWar: 'Mit {{target}} herrscht Krieg — schließen Sie zuerst Frieden.',
+      declarationRunning: 'Eine Kriegserklärung zwischen Ihnen und {{target}} läuft schon.',
+      passageEnding: 'Der Durchmarsch durch das Land von {{target}} ist gekündigt und läuft aus.',
+      passageAlreadyGranted: '{{target}} lässt Sie schon durchmarschieren.',
+      passageNotGranted: 'Sie haben {{target}} keinen Durchmarsch gewährt.',
+      passageAlreadyRevoked: 'Den Durchmarsch für {{target}} haben Sie schon gekündigt.',
+      inAlliance: 'Im Bündnis mit {{target}} lässt sich der Durchmarsch nicht kündigen.',
+    },
+  },
+
+  /** Die Zielwahl des Marsches (T-M44-11, R-UX-04/AK2): erreichbare zuerst, unerreichbare getrennt. */
+  march: {
+    reachable: 'Erreichbar — mit Ankunftstag',
+    unreachable: 'Nicht erreichbar',
+    optionArrival: '{{name}} — Ankunft Tag {{day}}',
+    noneReachable: 'Von hier ist für diese Armee kein Ziel erreichbar: Auf der Karte gibt es keine Land- oder Seeverbindung.',
+  },
+
+  /** Die Sammelzeile der Sperrgründe im Diplomatiepanel (T-M44-18, R-UX-03/AK1): „Knopf, Knopf: Grund“. */
+  collected: {
+    line: '{{labels}}: {{reason}}',
   },
 } as const
 
