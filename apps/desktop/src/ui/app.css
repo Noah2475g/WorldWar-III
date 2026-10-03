@@ -79,6 +79,23 @@
   box-sizing: border-box;
 }
 
+/*
+ * Das Attribut `hidden` gilt (R-UX-02/AK2, T-M44-04, Befund B-02).
+ *
+ * `hidden` ist nur die Regel des Browsers `display: none` und hat die niedrigste Rangstufe:
+ * jede Klasse mit eigenem `display` überstimmt sie. Der Alarmplatz der Kopfleiste
+ * (`.header__alarm { display: inline-flex }`) blieb deshalb als leerer roter Rahmen stehen,
+ * in 13 von 13 gemessenen Zuständen. Die Suche vor dieser Regel (D37.3): in den TSX-Dateien
+ * setzt allein `ui/Header.tsx` das Attribut (`.header__alarm`); in app.css und touch.css
+ * trifft es sonst keine Klasse mit eigenem `display`. Die Regel steht trotzdem global — wer
+ * morgen `hidden` an ein `.panel` hängt, soll nicht denselben Fehler noch einmal finden.
+ * `!important`, weil die Regel gegen jede Spezifität der Klassen gewinnen muss; sichtbar machen
+ * darf ein Element nur, wer `hidden` wegnimmt.
+ */
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
   background: var(--ground);
@@ -2317,6 +2334,179 @@ body {
   /* Ein Rahmen in der Linienfarbe, damit ein helles Feld auf hellem Grund nicht
      verschwindet — und ein dunkles nicht wie ein Loch aussieht. */
   border: 1px solid var(--line);
+}
+
+/* ================================================================ T-M44-04
+ * Kopfleiste einzeilig mit Alarmchip und Siegziel (R-UX-02/AK1, Befund B-02, B-25).
+ *
+ * Gemessen am 2026-10-03 (docs/ux/before): Kopfleiste samt Rohstoffleiste 65 px am Start, dann
+ * 105-107 px bei 1280x800 und 83 px bei 1366x768 — die obere Zeile brach um. Breiten bei 1280 px:
+ * Titel 72, Uhr samt Tempogruppe 457, Siegbalken 222, fünf Kartenmodi 382, zwei Knöpfe 133, dazu
+ * der Alarmchip (rund 190): zusammen mehr als 1450 px in 1280. Drei Kompaktregeln holen das
+ * zurück, und ab 1280 px bricht die Zeile nicht mehr um. Darunter (Schmalfenster) bleibt der
+ * Umbruch wie bisher — dort entscheidet das Paket Layout (R-UX-01).
+ */
+
+/* Der Titel ist Beiwerk: unter 1500 px steht an seinem Platz die Uhr. */
+@media (max-width: 1499px) {
+  .header__title {
+    display: none;
+  }
+}
+
+/* Die Auswahl der Kartenmodi: Grundregel verborgen, unter 1400 px an Stelle der fünf Knöpfe.
+   Im Touch-Betrieb bleiben die Knöpfe (die Zeile wischt dort, touch.css). */
+.modes-select {
+  display: none;
+  font: 600 10.5px var(--font-map);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  height: 26px;
+  padding: 0 6px;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: var(--paper-sunk);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+@media (max-width: 1399px) {
+  :root:not([data-input='touch']) .modes {
+    display: none;
+  }
+
+  :root:not([data-input='touch']) .modes-select {
+    display: inline-block;
+  }
+}
+
+/* Die Tempoknöpfe als eine Gruppe: ohne Lücke, mit gemeinsamem Rand — acht Knöpfe samt
+   Vorspulen sparen so rund siebzig Pixel gegen die einzeln stehenden. */
+.speeds {
+  gap: 0;
+}
+
+.speeds .speed + .speed {
+  margin-left: -1px;
+}
+
+.speeds .speed {
+  min-width: 24px;
+  padding: 0 5px;
+  border-radius: 0;
+}
+
+.speeds .speed:first-child {
+  border-radius: 2px 0 0 2px;
+}
+
+.speeds .speed:last-child {
+  border-radius: 0 2px 2px 0;
+}
+
+.speeds .speed--fast {
+  padding: 0 8px;
+}
+
+/* Der gedrückte Knopf liegt über seinen Nachbarn, sonst frisst deren Rand seinen. */
+.speeds .speed--active,
+.speeds .speed--running,
+.speeds .speed:focus-visible {
+  position: relative;
+  z-index: 1;
+}
+
+/* Siegziel in der Uhrzeile: der Balken sitzt neben der Uhr, ohne Außenabstand der Panels. */
+.clock .meter {
+  margin: 0;
+  min-width: 0;
+}
+
+/* Ab 1280 px bricht die obere Zeile nicht mehr um; was nicht passt, schrumpft (Uhr und Hinweise
+   dürfen kürzer werden, die Knöpfe nicht). */
+@media (min-width: 1280px) {
+  .header__top {
+    flex-wrap: nowrap;
+    gap: var(--sp-md);
+  }
+
+  .header__top > * {
+    min-width: 0;
+  }
+
+  .header__panels,
+  .header__alarm,
+  .modes,
+  .modes-select {
+    flex: none;
+  }
+
+  .clock {
+    flex: 0 1 auto;
+    white-space: nowrap;
+  }
+}
+
+/* ================================================================ T-M44-07
+ * Kartentooltip (R-UX-02/AK3, Befund B-06). Der Kasten ist Auskunft, kein Text zum Mitnehmen:
+ * ein Ziehen über die Karte soll nicht seine Zeilen markieren. (Zeigerereignisse nimmt er
+ * ohnehin nicht an, `pointer-events: none` oben.) Wann er erscheint, regelt ui/useMapTooltip.ts. */
+.tooltip {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ================================================================ T-M44-10
+ * Protokoll und Fuß (R-UX-02/AK4, Befund B-15, B-20). Gemessen am 2026-10-03: alle 28 (1280x800)
+ * und alle 31 (1366x768) Zeitangaben des Protokolls brachen um — „22 · 00:00" braucht bei zwölf
+ * Pixel Plex Mono rund 80 px, die Spalte hatte 72. Die Spalte wächst auf 88 px (dreistelliger Tag
+ * passt), und die Zeitangabe bricht nie um; Platz 1 der Rangliste kommt aus Foot.tsx. */
+.log__row {
+  grid-template-columns: 88px 1fr;
+}
+
+.log__row time {
+  white-space: nowrap;
+  /* Nicht auf die Zeilenhoehe strecken: bei schmalem Protokoll (667x375) bricht der Text rechts um, und
+     die gestreckte Zelle sah im Messwerkzeug wie eine umgebrochene Zeitangabe aus (gemessen: 26 von 26). */
+  align-self: start;
+}
+
+/* ================================================================ T-M44-13
+ * Erklärung als Popover (R-UX-05/AK3, Befund B-13). Der Text lag als Block in der Kachel und schob
+ * das Bauplatzraster auseinander (Bild 10 der Aufnahme). Jetzt schwebt er unter dem Fragezeichen,
+ * über seiner Umgebung, und nimmt keinen Platz. Rechts bündig (`--end`), wenn links bündig der
+ * Rand der Leiste ihn abschnitte — das entscheidet Explain.tsx nach dem Messen. */
+.explain {
+  position: relative;
+}
+
+.explain__text {
+  position: absolute;
+  z-index: 5;
+  top: 100%;
+  left: 0;
+  width: max-content;
+  max-width: min(240px, 70vw);
+  margin: var(--sp-xs) 0 0;
+  padding: var(--sp-sm) var(--sp-md);
+  text-align: left;
+  font-weight: 400;
+  font-size: 11px;
+  line-height: 1.4;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--ink);
+  background: var(--paper-sunk);
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--warn);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--ground) 70%, transparent);
+  white-space: normal;
+}
+
+.explain__text--end {
+  left: auto;
+  right: 0;
 }
 
 /* --- T-M44-18 (R-UX-03/AK1): Sperrgründe gebündelt, Leerzustände als Fließtext ------------------------
