@@ -900,20 +900,42 @@ describe('R-AI-12/AK3, AK4 Artillerie, die die KI tragen kann (T-M42-07)', () =>
     expect(explanations.some((e) => e.reason.includes('Öl-Tagesbilanz'))).toBe(true)
   })
 
-  it('O2: Oel-Waechter - die Oel-Tagesbilanz begrenzt die Zahl der Panzer', () => {
-    const context = artillerieLage({ geld: 50_000_000 })
-    const foerderung = dailyOilYield(context.view, TEST_RULES)
-    const jePanzer = (TEST_RULES.units['tank']!.upkeep.oil ?? 0) * tpd
-    const tragbar = Math.trunc(foerderung / jePanzer)
-    expect(tragbar, 'Vorbedingung: die Foerderung traegt einige, aber nicht 15 Panzer').toBeGreaterThan(0)
-    expect(tragbar).toBeLessThan(15)
+  // LOESCHVERMERK (Review): Befund M42-07-a, zweite Iteration - die KI fuehrt keinen Panzer mehr in
+  // ihrer Mischung (sein Anteil geht an die Artillerie), O2 misst den Oel-Waechter deshalb an der
+  // Artillerie (O2b). Alter Fall:
+  // it('O2: Oel-Waechter - die Oel-Tagesbilanz begrenzt die Zahl der Panzer', () => {
+  //   const context = artillerieLage({ geld: 50_000_000 })
+  //   const foerderung = dailyOilYield(context.view, TEST_RULES)
+  //   const jePanzer = (TEST_RULES.units['tank']!.upkeep.oil ?? 0) * tpd
+  //   const tragbar = Math.trunc(foerderung / jePanzer)
+  //   expect(tragbar, 'Vorbedingung: die Foerderung traegt einige, aber nicht 15 Panzer').toBeGreaterThan(0)
+  //   expect(tragbar).toBeLessThan(15)
+  //
+  //   // Ein leeres Heer: Infanterie (60 %) vorn; ein Heer aus Infanterie stellt den Panzer nach vorn. Zehn
+  //   // Infanteristen lassen der Geld-Tagesbilanz Raum fuer mehr Panzer, als das Oel traegt.
+  //   const mitHeer = artillerieLage({ geld: 50_000_000, heer: [{ unitKey: 'infantry', einheiten: 10 }] })
+  //   expect(rankedUnitsFor(mitHeer, stadt(mitHeer))[0]).toBe('tank')
+  //   const recruit = aushebung(mitHeer)
+  //   expect(recruit?.unitKey).toBe('tank')
+  //   expect(recruit?.count).toBe(tragbar)
+  // })
 
-    // Ein leeres Heer: Infanterie (60 %) vorn; ein Heer aus Infanterie stellt den Panzer nach vorn. Zehn
-    // Infanteristen lassen der Geld-Tagesbilanz Raum fuer mehr Panzer, als das Oel traegt.
-    const mitHeer = artillerieLage({ geld: 50_000_000, heer: [{ unitKey: 'infantry', einheiten: 10 }] })
-    expect(rankedUnitsFor(mitHeer, stadt(mitHeer))[0]).toBe('tank')
-    const recruit = aushebung(mitHeer)
-    expect(recruit?.unitKey).toBe('tank')
+  it('O2b: Oel-Waechter - die Oel-Tagesbilanz begrenzt die Zahl der Artillerien', () => {
+    const jePanzer = (TEST_RULES.units['tank']!.upkeep.oil ?? 0) * tpd
+    const jeArtillerie = (TEST_RULES.units['artillery']!.upkeep.oil ?? 0) * tpd
+    const context = artillerieLage({
+      geld: 50_000_000,
+      heer: [
+        { unitKey: 'infantry', einheiten: 10 },
+        { unitKey: 'tank', einheiten: 7 },
+      ],
+    })
+    const spielraum = dailyOilYield(context.view, TEST_RULES) - 7 * jePanzer
+    const tragbar = Math.trunc(spielraum / jeArtillerie)
+    expect(tragbar, 'Vorbedingung: das Oel traegt einige, aber nicht 15 Artillerien').toBeGreaterThan(0)
+    expect(tragbar).toBeLessThan(5)
+    const recruit = aushebung(context)
+    expect(recruit?.unitKey).toBe('artillery')
     expect(recruit?.count).toBe(tragbar)
   })
 
