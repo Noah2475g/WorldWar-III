@@ -874,6 +874,19 @@ describe('T-M43-04 Der Wiederholungslauf - Startzahl 1914 zweimal von Grund auf'
   })
 })
 
+// R-AI-12/AK3 (T-M42-07, D32.8): in jedem der drei Laeufe selbsttaetiger Beschuss, und der Anteil der
+// Artillerie an den ausgehobenen Landeinheiten im Band 15-30 % (Noahs Antwort auf Frage 1, Mischung
+// 60/30/10). Stufe F: Artillerie 0/0/1, Beschuss 0 in allen drei Laeufen (m17-integration.json auf
+// 669b105). Das Band ist vor der Messung festgelegt und wird nicht nachgezogen.
+describe('R-AI-12/AK3 Artillerie im Band und Beschuss — Weltkarte, drei Startzahlen', () => {
+  it.each(STARTZAHLEN)('Startzahl %i: Artillerieanteil 15-30 %% und selbsttaetiger Beschuss', (startzahl) => {
+    const truppen = mit(startzahl).m42!.truppen
+    expect(truppen.beschuss, `${startzahl}: kein selbsttaetiger Beschuss`).toBeGreaterThan(0)
+    expect(truppen.artillerieAnteil.prozent, `${startzahl}: ${JSON.stringify(truppen.artillerieAnteil)}`).toBeGreaterThanOrEqual(15)
+    expect(truppen.artillerieAnteil.prozent, `${startzahl}: ${JSON.stringify(truppen.artillerieAnteil)}`).toBeLessThanOrEqual(30)
+  })
+})
+
 describe('R-AI-09 Der Bericht', () => {
   it('schreibt m17-integration.json nur auf Verlangen', () => {
     const laeufe: Record<string, { mitAntraegen: ReturnType<typeof kennzahlen>; ohneAntraege: ReturnType<typeof kennzahlen> }> = {}
