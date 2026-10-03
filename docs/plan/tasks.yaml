@@ -4055,7 +4055,7 @@ tasks:
   - id: T-M44-21
     milestone: M44
     title: "Nachher-Aufnahme und Abnahme UX V2"
-    status: todo
+    status: done
     deps: [T-M44-02b, T-M44-03a, T-M44-03b, T-M44-04, T-M44-05, T-M44-06, T-M44-07, T-M44-08, T-M44-09a, T-M44-09b, T-M44-10, T-M44-11, T-M44-12, T-M44-13, T-M44-14, T-M44-15, T-M44-16, T-M44-17, T-M44-18, T-M44-19, T-M44-20]
     requirements: [R-UX-01, R-UX-02, R-UX-03, R-UX-04, R-UX-05, R-UX-06]
     design: [D-37]

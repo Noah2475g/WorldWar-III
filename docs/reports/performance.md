@@ -2,10 +2,10 @@
 
 Lauf: 1000 Spieltage (24000 Ticks), 8 KI-Spieler, Weltkarte (237 Provinzen) — die ausgelieferte Voreinstellung.
 
-- Dauer gesamt: 312673 ms
-- Zeit je Tick inkl. KI: 13.028 ms
+- Dauer gesamt: 446767 ms
+- Zeit je Tick inkl. KI: 18.615 ms
 - Ereignisprotokoll am Ende: 500 Einträge (Ringpuffer greift)
-- Partie entschieden bei Tick: 10224
+- Partie entschieden bei Tick: 9456
 
 ## Bestände nach 1000 Spieltagen (Befund 58)
 
@@ -13,12 +13,12 @@ Summe über alle Mächte der Partie, auch ausgeschiedene; ganze Einheiten (Festk
 
 | Rohstoff | Start | Ende | Verhältnis | größter Endbestand einer Macht | Verhältnis dieser Macht | Lagergrenze je Macht | Lagerüberlauf-Meldungen | Mangel-Beginne |
 |---|---|---|---|---|---|---|---|---|
-| food | 5336 | 2678287 | 501.93 | 1000000 (Argentinien) | 1499.25 | 1000000 | 75 | 0 |
-| wood | 5336 | 1223527 | 229.30 | 843739 (Russland) | 1264.98 | 1000000 | 0 | 0 |
-| iron | 2664 | 872048 | 327.35 | 592666 (Russland) | 1779.78 | 1000000 | 0 | 0 |
-| coal | 2664 | 1320815 | 495.80 | 817704 (Russland) | 2455.57 | 1000000 | 0 | 0 |
-| oil | 1336 | 460923 | 345.00 | 302315 (Argentinien) | 1810.27 | 1000000 | 0 | 1 |
-| rare | 536 | 243052 | 453.46 | 143932 (Russland) | 2148.24 | 500000 | 0 | 0 |
-| money | 13336 | 64028 | 4.80 | 58745 (Russland) | 35.24 | unbegrenzt | 0 | 3 |
+| food | 5336 | 2000467 | 374.90 | 1000000 (Russland) | 1499.25 | 1000000 | 91 | 0 |
+| wood | 5336 | 1311410 | 245.77 | 972041 (Russland) | 1457.33 | 1000000 | 0 | 0 |
+| iron | 2664 | 773129 | 290.21 | 624788 (Russland) | 1876.24 | 1000000 | 0 | 0 |
+| coal | 2664 | 1245260 | 467.44 | 921121 (Russland) | 2766.13 | 1000000 | 0 | 0 |
+| oil | 1336 | 133725 | 100.09 | 124866 (Mexiko) | 747.70 | 1000000 | 0 | 55 |
+| rare | 536 | 192042 | 358.29 | 147532 (Russland) | 2201.98 | 500000 | 0 | 0 |
+| money | 13336 | 68612 | 5.14 | 65229 (Russland) | 39.13 | unbegrenzt | 0 | 3 |
 
 Erzeugt von `apps/headless/test/longrun.slow.test.ts`.
