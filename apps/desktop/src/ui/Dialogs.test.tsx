@@ -10,10 +10,12 @@ import {
   MenuDialog,
   NewGameDialog,
   SavesDialog,
+  KeyboardHelp,
   SettingsDialog,
   localizeDebugText,
 } from './Dialogs.tsx'
 import { MENU_ENTRIES } from './menuEntries.ts'
+import { resolveKey } from '../keyboard.ts'
 import { DEFAULT_SETTINGS } from '../state/uiState.ts'
 import {
   DEFAULT_NEW_GAME,
@@ -853,5 +855,92 @@ describe('R-UX-05/AK4 Der Startdialog trägt zu jedem Feld eine Kurzhilfe', () =
     )
 
     expect(hilfe()).not.toBe(leicht)
+  })
+})
+
+/**
+ * T-M44-16 vollständig (Durchsicht B, Befund 2): die Tastenübersicht nennt jede Taste, die
+ * `keyboard.ts` wirklich belegt — gegengeprüft an der Quelle, nicht an einer zweiten Liste im Test.
+ */
+describe('R-UX-05 Die Tastenübersicht nennt alle echten Tastenbelegungen', () => {
+  const context = { speed: 1, mode: 'political', typing: false, dialogOpen: false, fastForwarding: false } as const
+  /** Je Taste: was `resolveKey` tut und welche Zeile der Übersicht sie nennen muss (Glyphe im Text). */
+  const BELEGUNG: ReadonlyArray<{ key: string; ctrl?: boolean; type: string; glyph: RegExp }> = [
+    { key: ' ', type: 'togglePause', glyph: /Leertaste/ },
+    { key: '+', type: 'speed', glyph: /\+/ },
+    { key: '-', type: 'speed', glyph: /−/ },
+    { key: 'f', type: 'fastForward', glyph: /F — vorspulen/ },
+    { key: 'm', type: 'cycleMode', glyph: /M — / },
+    { key: 'd', type: 'openPanel', glyph: /D — Diplomatie/ },
+    { key: 'h', type: 'openPanel', glyph: /H — Markt/ },
+    { key: 'l', type: 'openPanel', glyph: /L — Lage der Mächte/ },
+    { key: 's', type: 'openPanel', glyph: /S — Spionage/ },
+    { key: 's', ctrl: true, type: 'save', glyph: /Strg\+S/ },
+    { key: 'l', ctrl: true, type: 'load', glyph: /Strg\+L/ },
+    { key: 'F1', type: 'help', glyph: /F1/ },
+    { key: '?', type: 'help', glyph: /\?/ },
+    { key: 'ArrowLeft', type: 'pan', glyph: /Pfeiltasten — Karte verschieben/ },
+    { key: 'ArrowRight', type: 'pan', glyph: /Pfeiltasten/ },
+    { key: 'ArrowUp', type: 'pan', glyph: /Pfeiltasten/ },
+    { key: 'ArrowDown', type: 'pan', glyph: /Pfeiltasten/ },
+    { key: 'PageUp', type: 'zoom', glyph: /Bild↑/ },
+    { key: 'PageDown', type: 'zoom', glyph: /Bild↓/ },
+    { key: 'Home', type: 'centreCapital', glyph: /Pos1/ },
+    { key: 'Escape', type: 'close', glyph: /Escape/ },
+  ]
+
+  it('führt zu jeder belegten Taste eine Zeile (heute rot: L, Pfeiltasten und ? fehlen)', () => {
+    render(<KeyboardHelp onClose={vi.fn()} />)
+    const text = screen.getByRole('dialog').textContent ?? ''
+    for (const { key, ctrl, type, glyph } of BELEGUNG) {
+      const shortcut = resolveKey({ key, ctrlKey: ctrl === true }, context)
+      expect(shortcut?.type, `resolveKey(${ctrl ? 'Strg+' : ''}${key})`).toBe(type)
+      expect(text, `Übersicht nennt ${ctrl ? 'Strg+' : ''}${key}`).toMatch(glyph)
+    }
+  })
+
+  it('deckt jeden `case` in keyboard.ts ab (eine neue Taste ohne Zeile fällt hier auf)', () => {
+    const source = readFileSync(`${process.cwd()}/apps/desktop/src/keyboard.ts`, 'utf8')
+    const cases = [...source.matchAll(/case '([^']+)':/g)].map((match) => match[1]!.toLowerCase())
+    const known = new Set(BELEGUNG.map((entry) => entry.key.toLowerCase()).concat(['=', '−']))
+    for (const key of cases) expect(known.has(key), `keyboard.ts belegt ${key}, die Übersicht nicht`).toBe(true)
+  })
+
+  it('heißt wie der Menüpunkt: Tastenkürzel', () => {
+    render(<KeyboardHelp onClose={vi.fn()} />)
+    expect(screen.getByRole('dialog', { name: 'Tastenkürzel' })).toBeTruthy()
+  })
+})
+
+describe('Durchsicht B · Startdialog: Fokus und Siegschwelle', () => {
+  const zeigeStart = (extra: Record<string, unknown> = {}) =>
+    render(
+      <NewGameDialog
+        options={{ ...DEFAULT_NEW_GAME, victory: 'points' }}
+        nations={['Vereinigte Staaten', 'Kanada']}
+        maps={[{ id: 'world', name: 'Welt', data: { provinces: new Array(237) } }]}
+        modes={gameModesFor(true, true)}
+        aiBonus={0}
+        onChange={vi.fn()}
+        onStart={vi.fn()}
+        onClose={vi.fn()}
+        {...extra}
+      />,
+    )
+
+  it('setzt den Fokus auf „Partie beginnen“, wenn es nichts zum Weiterspielen gibt (heute rot)', () => {
+    zeigeStart()
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Partie beginnen' }))
+  })
+
+  it('lässt „Weiterspielen“ den Fokus, wenn es da ist', () => {
+    zeigeStart({ resume: { day: 3 }, onResume: vi.fn() })
+    expect((document.activeElement as HTMLElement).textContent).toMatch(/Weiterspielen/)
+  })
+
+  it('nennt die Schwelle aus der Konfiguration, nicht eine feste Zahl (heute rot)', () => {
+    zeigeStart({ pointsGoal: 65 })
+    expect(screen.getByText(/65 % aller Siegpunkte/)).toBeTruthy()
+    expect(screen.queryByText(/70 % aller Siegpunkte/)).toBeNull()
   })
 })

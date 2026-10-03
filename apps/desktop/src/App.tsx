@@ -1706,6 +1706,7 @@ export function App(props: AppProps) {
         // Bauflagge UND Raum, siehe `gameModes` oben.
         modes={gameModes}
         aiBonus={aiBonusPercent(props.rules, options.difficulty)}
+        pointsGoal={(toConfig(options, selectedMap).victory.pointsShareToWin ?? 700) / 10}
         onChange={(next) => {
           // Mit der Karte wechseln die Maechte. Bleibt die alte Wahl stehen, zeigt
           // der Dialog "Vereinigte Staaten" und die Partie beginnt als "Nordland" —

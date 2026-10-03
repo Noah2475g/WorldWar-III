@@ -33,3 +33,18 @@
 „nicht nachprüfbar“ bei R-AI-12/AK3), `03-TASKS.md` (T-M42-08: Abhängigkeit auf T-M42-06 umgestellt, M18-Notiz
 zur Einschiffung), `tasks.yaml` (T-M42-08 `deps`), `DECISIONS.md` (Nachtrag 2026-10-03), `PROBLEME.md`
 (Befund M42-PL-a) — das sind Berichtigungen und Ergänzungen, keine Löschkandidaten.
+
+## Nachtrag M44 Paket B (Durchsicht B, 2026-10-03)
+
+Die Durchsicht fand ersetzten Code ohne Vermerk. Der alte Wortlaut steht jetzt als Kommentar an der Stelle; Empfehlung ist
+jeweils **LÖSCHEN**, sobald Noah Paket B abgenommen hat (der Wortlaut bleibt in git).
+
+| # | Datei | Inhalt kurz | Empfehlung | Begründung |
+|---|---|---|---|---|
+| 19 | `apps/desktop/src/ui/Standings.tsx` (`VictoryDialog`) | altes Dialoggerüst des Endedialogs, Tabellenklasse der Rangliste | **LÖSCHEN** | Ersetzt durch `Dialog` (T-M44-08/-15), Test in `a11y.test.tsx`, `Standings.test.tsx`. |
+| 20 | `apps/desktop/src/ui/Panels.tsx` (`ActionButton`, `ActionGroup`, `Targeting`, `DiplomacyPanel`) | Touch-Zeile, Signatur ohne `collectReasons`, flache Zielliste, Leerzustände ohne Klasse | **LÖSCHEN** | T-M44-11/-18, getestet in `Panels.test.tsx`. |
+| 21 | `apps/desktop/src/ui/Explain.tsx` | Erklärung als Block ohne Escape | **LÖSCHEN** | Popover (T-M44-13), `Explain.test.tsx`. |
+| 22 | `apps/desktop/src/ui/Tooltip.tsx` | Tooltip ohne `selected`, immer mit Mausbedienung | **LÖSCHEN** | T-M44-07, `Tooltip.test.tsx`. |
+| 23 | `apps/desktop/src/ui/useMapTooltip.ts` | Regel „Zeiger, sonst Auswahl“ (`tooltipId = hover?.id ?? selectedProvince`) | **LÖSCHEN** | T-M44-07, `useMapTooltip.test.tsx`. |
+| 24 | `apps/desktop/src/ui/touch.css` | Selektor `.header__top > .meter` | **LÖSCHEN** | T-M44-04, `cascade.touch.test.tsx`. |
+| 25 | `apps/desktop/src/i18n/de.ts` | `keys.title` „Tastatur“, `keys.help` „F1 — diese Übersicht“, `victoryPointsHint` mit fester 70 | **LÖSCHEN** | Durchsicht B, Befunde 2 und 5; `Dialogs.test.tsx`. |

@@ -197,6 +197,7 @@ export function NewGameDialog({
   onSaves,
   resume,
   onResume,
+  pointsGoal = 70,
   invitation,
 }: {
   options: NewGameOptions
@@ -241,6 +242,8 @@ export function NewGameDialog({
    */
   resume?: { day: number } | null
   onResume?: () => void
+  /** Die Siegschwelle des Punktesiegs in Prozent, aus der Konfiguration der Partie (Standard 70, wie `toConfig`). */
+  pointsGoal?: number
 }) {
   // Zu zweit ist nur dann eine Frage, wenn dieser Bildschirm es auch herstellen kann
   // (Befund V-1). `effectiveMode` fängt den Fall ab, in dem eine alte Wahl im Formular
@@ -255,7 +258,12 @@ export function NewGameDialog({
       onClose={onClose}
       foot={
         <>
-          <button type="button" className="button button--primary" onClick={() => onStart(art)}>
+          <button
+            type="button"
+            className="button button--primary"
+            data-autofocus={resume && onResume ? undefined : ''}
+            onClick={() => onStart(art)}
+          >
             {t('newGame.start')}
           </button>
           {onSaves && (
@@ -275,7 +283,7 @@ export function NewGameDialog({
       </header>
 
       {resume && onResume && (
-        <button type="button" className="button button--primary" onClick={onResume}>
+        <button type="button" className="button button--primary" data-autofocus="" onClick={onResume}>
           {t('newGame.resume', { day: resume.day })}
         </button>
       )}
@@ -393,7 +401,7 @@ export function NewGameDialog({
         </select>
         <small>
           {options.victory === 'points'
-            ? t('newGame.victoryPointsHint')
+            ? t('newGame.victoryPointsHint', { goal: pointsGoal })
             : t('newGame.victoryConquestHint')}
         </small>
       </label>
@@ -931,6 +939,8 @@ export function KeyboardHelp({ onClose }: { onClose: () => void }) {
     'diplomacy',
     'market',
     'espionage',
+    'standings',
+    'pan',
     'escape',
     'help',
   ] as const

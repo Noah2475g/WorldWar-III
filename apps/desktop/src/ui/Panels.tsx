@@ -170,6 +170,9 @@ export function touchHint(
   return reason || cost ? { reason, cost } : null
 }
 
+// LOESCHVERMERK (Review): bis T-M44-18 lautete die Touch-Zeile in `ActionButton`:
+//   const touchInfo = useInputMode() === 'touch' ? touchHint(action, showReason) : null
+// Jetzt `showReason || reasonInGroup` (der Grund steht schon in der Sammelzeile der Gruppe).
 function ActionButton({
   action,
   showReason,
@@ -294,6 +297,10 @@ function NextUnlockLine({ next }: { next: NextUnlock }) {
   )
 }
 
+// LOESCHVERMERK (Review): bis T-M44-18 lautete die Signatur:
+//   export function ActionGroup({ group, next }: { group: ActionGroupSpec; next?: NextUnlock | null | undefined }) {
+// und die Knoepfe wurden ohne `reasonInGroup` gezeichnet:
+//   <ActionButton key={action.id} action={action} showReason={showsReason(action)} />
 export function ActionGroup({
   group,
   next,
@@ -650,6 +657,10 @@ export function ProvincePanel(props: ProvincePanelProps) {
 }
 
 /** The panel's state while an order still needs a place on the map. */
+// LOESCHVERMERK (Review): bis T-M44-11 war `options` eine flache Liste, im Auswahlfeld so gezeichnet:
+//   options: readonly { id: string; name: string }[]
+//   {targeting.options.map((province) => (<option key={province.id} value={province.id}>{province.name}</option>))}
+// Der Zweig `unreachable === undefined` (Beschuss) zeichnet sie weiter so.
 export interface Targeting {
   kind: 'move' | 'bombard'
   target: { id: string; name: string; arrivalText: string | null } | null
@@ -1361,6 +1372,10 @@ function OfferList({ title, rows }: { title: string; rows: readonly OfferRow[] }
  * Gesteuert (E9): welche Macht gewaehlt ist, steht in `uiState`, nicht in einem lokalen `useState`
  * — nur so kann eine Meldung "Diplomatie mit X" die richtige Macht oeffnen.
  */
+// LOESCHVERMERK (Review): bis T-M44-18 trugen die zwei Leerzustaende keine Klasse:
+//   <p>{t('diplomacy.noRelations')}</p>
+//   <p>{t('diplomacy.noWars')}</p>
+// Jetzt `className="panel__empty"` (Satzgroesse statt Absatz in Ueberschriftgroesse).
 export function DiplomacyPanel({
   view,
   nameOf,

@@ -177,10 +177,10 @@ describe('R-UI-06 Bedienung ohne Maus', () => {
     startGame()
 
     fireEvent.keyDown(window, { key: 'F1' })
-    expect(screen.getByRole('dialog', { name: 'Tastatur' })).toBeTruthy()
+    expect(screen.getByRole('dialog', { name: 'Tastenkürzel' })).toBeTruthy()
 
     fireEvent.keyDown(window, { key: 'Escape' })
-    expect(screen.queryByRole('dialog', { name: 'Tastatur' })).toBeNull()
+    expect(screen.queryByRole('dialog', { name: 'Tastenkürzel' })).toBeNull()
   })
 
   it('oeffnet die Spielstaende mit Strg+S', () => {
@@ -258,7 +258,7 @@ describe('R-TIME-04 Datum und Uhrzeit sind jederzeit sichtbar', () => {
     startGame()
     fireEvent.keyDown(window, { key: 'F1' })
 
-    expect(screen.getByRole('dialog', { name: 'Tastatur' })).toBeTruthy()
+    expect(screen.getByRole('dialog', { name: 'Tastenkürzel' })).toBeTruthy()
     expect(clock()).toBeTruthy()
   })
 

@@ -203,3 +203,20 @@ describe('R-UX-05/AK3 Das Erklaerungsfeld ist ein Popover mit Escape', () => {
     expect(toggle.getAttribute('aria-controls')).toBe(screen.getByRole('note').id)
   })
 })
+
+describe('Durchsicht B · Escape nimmt dem Fokus nichts weg, was nicht zur Erklärung gehört', () => {
+  it('lässt den Fokus in einem Feld daneben, wenn Escape die Erklärung schließt (heute rot)', () => {
+    render(
+      <div>
+        <Explain textKey="explain.buildings.barracks" subject="Kaserne" />
+        <input aria-label="Feld daneben" />
+      </div>,
+    )
+    fireEvent.click(screen.getByRole('button', { name: /Kaserne/ }))
+    const feld = screen.getByLabelText('Feld daneben')
+    feld.focus()
+    fireEvent.keyDown(feld, { key: 'Escape' })
+    expect(screen.queryByRole('note')).toBeNull()
+    expect(document.activeElement).toBe(feld)
+  })
+})
