@@ -58,58 +58,6 @@
 > (2026-09-14). V-1/MP-4/MP-5 sind erledigt (§2 Punkt 4). M18 bleibt die Sammelstelle für alles, was nicht
 > M42/M43 wurde.
 
-<!-- LOESCHVERMERK (Review): bis 2026-10-03 stand hier der Kopf von Etappe 1 (Stand 2026-09-27: 331/320, "es fehlt nur noch pnpm acceptance", "danach Pull Request"). Berichtigt, nicht geloescht - Wortlaut:
-> **Stand: 2026-09-27, nach dem Merge von Kette und Nebenbahn in M42.** Von
-> **331 Aufgaben sind 320 erledigt** (gezählt in `docs/plan/tasks.yaml`, nicht geschätzt).
-> **M17 steht bei 16 von 16** — T-M17-16 (die Abschlussmessung) ist fertig, alle drei
-> Blocker sind erledigt. Daneben **eine** — T-M39-09, das ist **AK-9** und braucht Noah
-> *und einen zweiten Menschen in einem anderen Netz* —, und **drei zurückgenommene**:
-> T-M10-02, T-M40-04 und T-M41-10, jede mit einem `reopened`-Text, der sagt, wer sie ablöst.
->
-> **Was am 2026-09-26 fertig wurde: T-M17-16 abgeschlossen, `origin/main` gemergt.** Die
-> Messkette lief auf dem Stand nach dem konfliktfreien Merge von `origin/main` (Touch-
-> Bedienung, PR #9–#11, in `65feab8`) und dem M17-F1-Fix (`1d893e4`): Haltungs-Messlauf neu
-> geschrieben und **grün** (`stance.json`, `ak5.erfuellt: true`, Kontrolle 41/4 trifft exakt),
-> exe neu gebaut (**6 816 768 B**, Netzfreiheit hält wörtlich), **AK-8 vollständig
-> durchgeführt** (7 von 7, Noahs Spielstände per SHA-256 unangetastet), Uhr innerhalb der
-> eigenen Streuung. `pnpm acceptance` auf freier Maschine: **12 von 12** (402 s, `00feba3`).
-> `pnpm verify`: **Exit 0, 3376 von 3377 Tests grün** (1 `todo`) in 186 Dateien, Abdeckung
-> Kern **97,4 %**, gesamt **96,96 %**. Volle Zahlen in `PROGRESS.md` Zeile „T-M17-16".
->
-> **Was M17 „Tiefe zwischen den Kriegen" bringt, in drei Sätzen:** die KI wirbt Spione an
-> (Aufklärung, Sabotage, Gegenspionage), macht und beantwortet Handelsangebote, und darf
-> Durchmarsch/Kartenzugriff gezielt gewähren oder verweigern — alles über dieselben
-> Kommandos wie ein Mensch. Der Parameterlauf zeigt weiterhin **0 von 14 tragenden
-> Konstanten** — M17 verschiebt die Partie (Anteil des Stärksten 36,8 % → 38,4 %), aber
-> nicht über eine einzelne Zahl. Drei Befunde (M17-T7 KI-Artillerie, M17-S12
-> `RECRUIT_SPY`-Buchung, M17-T6 Räumfrist nach Friedensschluss) gehen mit Noahs Entscheid an
-> M18.
->
-> **Was am 2026-09-26 dazukam: M42 „Das Heer der KI" und M43 „Frieden mit Räumfrist" sind
-> geplant und in die Plandateien übertragen** (`m18-plan-v2.md`, Übertragungs-Checkliste §15).
-> Noah hat alle acht Fragen (§17 des Plans) **wie empfohlen** beantwortet — Entscheid in
-> `DECISIONS.md`, 2026-09-26. 16 neue Aufgaben (T-M42-01…12, T-M43-01…04) wurden im Zweig
-> `claude/m42-m43-heer-und-raeumfrist` gebaut, in zwei parallelen Bahnen (Kette
-> `claude/m42-etappe1`, Nebenbahn `claude/m43-nebenbahn`), inzwischen beide zurückgemergt.
->
-> **Was am 2026-09-27 fertig wurde: Etappe 1 ist fertig gebaut und gemessen.** Drei Stufen
-> rissen ihre vorab festgelegten Rücknahmekriterien (Räumfrist-Fragen U/R, Festungspatt-Fragen
-> F/S, Verteidigungs-Automatik M42-02-a); ein Dossier hat sie gebündelt, und Noah hat alle drei
-> **wie empfohlen** beantwortet (`DECISIONS.md`, 2026-09-27, „Noahs Entscheide nach Etappe 1").
-> Danach gebaut, gemessen und eingecheckt: **T-M42-02, T-M42-03, T-M42-06, T-M43-01, T-M43-02,
-> T-M43-04 stehen auf `done`.** T-M42-04 (Spionage/Börse gebucht) ist **zurückgestellt** bis
-> nach der Artillerie (T-M42-07) — dasselbe Festungspatt wie bei T-M42-06 trifft dort ein
-> zweites Mal (Befund M42-04-a), und die Artillerie ist die eigentliche Abhilfe.
-> `test/plan-consistency.test.ts` (36/36) und `pnpm coverage:requirements` (V1 offen: 0) sind
-> grün. **Es fehlt nur noch `pnpm acceptance` auf ruhiger Maschine.** Danach folgen der Pull
-> Request und Noahs Playtest (Entscheid F6 aus dem Dossier `entscheidungen-etappe1.md`); erst
-> nach seiner Bestätigung beginnt Etappe 2 (T-M42-04 fortsetzen, T-M42-05…12).
->
-> **Was jetzt auf Noah wartet:** der Pull Request und der Playtest von Etappe 1 (siehe oben),
-> sowie weiterhin **AK-9** (§2 Punkt 2), V-1/MP-4/MP-5 (Spielertexte, §2 Punkt 3) und die
-> älteren offenen Fragen in `DECISIONS.md` unter „Offene Fragen an Noah" (2026-09-14). M18
-> bleibt die Sammelstelle für alles, was nicht M42/M43 wurde (§10 des Plans).
--->
 >
 > **Wo die Vorgeschichte steht:** die Bauabschnitte V1, LEVEL-UP M22–M24, „Grafik statt
 > Text" M25–M27, der Kriegsrat-Umbau M29–M32, die Bilder M33, die Rohstoffleiste M36, der
@@ -139,18 +87,9 @@ anlegt, zweigt von `main` ab.
 `claude/game-v2-planned-tasks-tk5rrr` (Etappe 2 von M42/M43, abgezweigt von main = 95441e0, gepusht, noch
 nicht gemerged). Noahs /goal-Auftrag vom 2026-10-02 ersetzt den Playtest-Haltepunkt F6.“ -->
 
-<!-- LOESCHVERMERK (Review): bis 2026-10-03 stand hier:
-**Die Spitze liegt auf `main`.** PR #13 (M42/M43 Etappe 1: Geld der KI, Räumfrist, erst die Fabrik;
-`pnpm acceptance` 12 von 12) ist am 2026-09-28 auf Noahs ausdrückliches Wort gemerged. Etappe 2
-(Artillerie, Heer in Einheiten, Zusammenlegen, Spionagebuchung, Abschlussmessung) folgt nach Noahs
-Playtest (Entscheid F6) auf einem neuen Zweig von `main`. Wer einen Worktree anlegt, zweigt von
-`main` ab.
--->
-
 ```bash
 git switch main && git pull --ff-only
 ```
-<!-- LOESCHVERMERK (Review): bis zum Merge von PR #15 `git switch claude/game-v2-planned-tasks-tk5rrr && git pull --ff-only` -->
 
 **Wer merged, richtet diesen Abschnitt im selben Zug auf `main` und
 den Merge-Commit.** Eine Einstiegsdatei, die auf den falschen Zweig zeigt, hat dieses Projekt
@@ -242,7 +181,6 @@ und AK4 (Öl-Wächter) sind auf der Weltkarte gemeinsam nicht erfüllbar, weil f
 kein Öl fördern und Artillerie Öl verbraucht — eine Regelfrage. Abschlussmessung T-M42-12: siehe
 `PROGRESS.md`.
 
-<!-- LOESCHVERMERK (Review): der folgende Absatz war durch den obigen ueberholt; am 2026-10-03 berichtigt statt geloescht (alt: "T-M42-08/-09 haengen an dieser Antwort", "Zweig inhaltlich gleich main bis auf die Plandokumente"). -->
 **Zwischenstand vom Morgen des 2026-10-03 (Etappe 2, erster Block), berichtigt:** Noahs /goal-Auftrag vom
 2026-10-02 ersetzt den Playtest-Haltepunkt F6 (`DECISIONS.md`). T-M42-05 und T-M42-07 sind gebaut,
 gemessen und **zurückgenommen**, T-M42-04 ist mit Artillerie ein zweites Mal gemessen und bleibt

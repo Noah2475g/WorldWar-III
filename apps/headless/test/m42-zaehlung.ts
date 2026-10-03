@@ -41,8 +41,8 @@ import {
  * - **Befund D**: Spieltag ab Verfuegbarkeit der Artillerie mit einer angenommenen Aushebung in
  *   einer Provinz ohne Fabrik, waehrend die Macht selbst eine Fabrikprovinz besitzt und jeder
  *   Artillerie-Kostenrohstoff die Stufenschwelle erreicht; die Nur-Geld-Fassung daneben.
- * - **`istBatterie`** ist ein Zwilling von `packages/ai/src/military.ts:155-157` (Wortlaut-Waechter
- *   im Test, Fall B6) — bis T-M42-08 `army-role.ts` baut und beide ablegt.
+ * - **`istBatterie`** liest `isBattery` aus `packages/ai/src/army-role.ts`, wie `military.ts`
+ *   (Verhaltenswaechter: Fall B6c in `m42-zaehlung.test.ts`).
  *
  * Determinismus: keine `Map`-Ausgabe, keine `Date`, kein `sort()` auf Zustandsarrays. Ausgabe ueber
  * `state.playerOrder`/`state.armyOrder`, Schluesselobjekte (`befohlen`, `ausgehoben`, `ablehnungen`)
@@ -53,18 +53,9 @@ export type Rolle = 'battery' | 'line'
 export type Stufe = 'easy' | 'normal' | 'hard'
 
 /**
- * Zwilling von `military.ts:155-157` (Wortlaut-Waechter: Fall B6 in `m42-zaehlung.test.ts`
- * bricht, sobald die beiden Fundstellen auseinanderlaufen).
+ * Liest `isBattery` aus `army-role.ts`, wie `military.ts` (Verhaltenswaechter: Fall B6c in
+ * `m42-zaehlung.test.ts`).
  */
-// LOESCHVERMERK (Review): T-M42-08 - der Zwilling liest jetzt `isBattery` aus `packages/ai/src/army-role.ts`.
-// Alte Fassung:
-// export function istBatterie(army: Pick<Army, 'units'>, rules: Rules): boolean {
-//   const eigeneEinheiten = army.units
-//   return (
-//     eigeneEinheiten.length > 0 &&
-//     eigeneEinheiten.every((stack) => (rules.units[stack.unitKey]?.rangeProvinces ?? 0) > 0)
-//   )
-// }
 export function istBatterie(army: Pick<Army, 'units'>, rules: Rules): boolean {
   return isBattery(army.units, rules)
 }

@@ -318,8 +318,6 @@ select,
   }
 
   :root[data-input='touch'] .header__title,
-  /* LOESCHVERMERK (Review): bis T-M44-04 lautete der Selektor `:root[data-input='touch'] .header__top > .meter`
-     (Kindselektor; der Siegbalken steht jetzt in der Uhrzeile, nicht mehr direkt in .header__top). */
   :root[data-input='touch'] .header__top .meter {
     display: none;
   }

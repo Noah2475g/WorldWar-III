@@ -968,53 +968,6 @@ function describeTradeRejection(
     return describeRejection(result, command, { ...ctx, nameOfProvince })
   }
 
-  // LOESCHVERMERK (Review): bis T-M44-06 stand hier der Block `switch (reason)` mit den Handelsgruenden,
-  // wortgleich nach `rejections.ts` gezogen (REASON_KEYS, OFFER_TRADE/ACCEPT_TRADE) — Wortlaut:
-  //   if (result.code === 'INVALID_TARGET' && reason !== undefined) {
-  //     switch (reason) {
-  //       // E1/N2 (Nacharbeit Durchsicht 2026-09-25): scheitert die Annahme an einer Provinz der
-  //       // GEBENDEN (Anbieter-)Seite, traegt schon der Kern nur noch diesen neutralen Grund — ohne
-  //       // Provinz, ohne Ursache. Bis 2026-09-25 stand hier `eigene Armeen`/`fremde Armeen` mit
-  //       // `provinceId`, und nur diese Oberflaeche verdeckte es (Falle 7, Test A7); jetzt weiss
-  //       // auch `COMMAND_REJECTED` selbst nichts mehr davon.
-  //       case 'lapsing':
-  //         return t('trade.blocked.lapsing')
-  //       case 'nicht im Besitz':
-  //         return t('trade.blocked.notOwned', { province: nameOfProvince(provinceId ?? '') })
-  //       case 'Hauptstadt':
-  //         return t('trade.blocked.capital', { province: nameOfProvince(provinceId ?? '') })
-  //       case 'umkämpft':
-  //         return t('trade.blocked.contested', { province: nameOfProvince(provinceId ?? '') })
-  //       case 'eigene Armeen':
-  //         return t('trade.blocked.ownArmies', { province: nameOfProvince(provinceId ?? '') })
-  //       case 'fremde Armeen':
-  //         return t('trade.blocked.foreignArmies', { province: nameOfProvince(provinceId ?? '') })
-  //       case 'doppelte Provinz':
-  //         return t('trade.blocked.duplicate')
-  //       case 'leeres Angebot':
-  //         return t('trade.blocked.empty')
-  //       case 'gleicher Rohstoff auf beiden Seiten':
-  //         return t('trade.blocked.sameResource')
-  //       case 'über der Höchstmenge': {
-  //         const resource = typeof detail.resource === 'string' ? detail.resource : undefined
-  //         const max = resource === 'money' ? ctx.rules.constants.tradeMaxMoney : ctx.rules.constants.tradeMaxResource
-  //         return t('trade.blocked.limit', { max: amount(max), resource: resource ? t(`resources.${resource}`) : '' })
-  //       }
-  //       case 'ungültige Menge':
-  //       case 'unbekannter Rohstoff':
-  //       case 'ungültiges Angebot':
-  //         return t('trade.blocked.invalidAmount')
-  //       case 'im Krieg':
-  //         return t('trade.blocked.war')
-  //       case 'Kriegserklärung läuft':
-  //         return t('trade.blocked.declaration')
-  //       case 'Anbieter ausgeschieden':
-  //         return t('trade.blocked.gone')
-  //       default:
-  //         break
-  //     }
-  //   }
-
   if (result.code === 'PLAYER_ELIMINATED') return t('trade.blocked.gone')
 
   if (result.code === 'QUEUE_FULL') return t('trade.blocked.queueFull', { max: Number(detail.max) })

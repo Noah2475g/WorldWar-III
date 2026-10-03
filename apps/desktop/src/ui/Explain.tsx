@@ -29,11 +29,6 @@ export interface ExplainProps {
   subject: string
 }
 
-// LOESCHVERMERK (Review): bis T-M44-13 war die Erklaerung ein Block in der Kachel, ohne Escape und ohne Fokusrueckgabe:
-//   import { useId, useState } from 'react'
-//   <span className="explain">
-//   <span className="explain__text" id={id} role="note">
-// Jetzt ein Popover (`position: absolute`, app.css) mit Escape, Druck ausserhalb und Fokus zurueck aufs Fragezeichen.
 export function Explain({ textKey, subject }: ExplainProps) {
   const [open, setOpen] = useState(false)
   const [alignEnd, setAlignEnd] = useState(false)

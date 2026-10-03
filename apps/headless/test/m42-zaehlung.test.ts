@@ -1,4 +1,3 @@
-// LOESCHVERMERK (Review): ungenutzt seit B6b durch B6c ersetzt - import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import {
   createInitialState,
@@ -102,32 +101,6 @@ describe('T-M42-01 istBatterie', () => {
   it('B5: unbekannter unitKey ist keine Batterie', () => {
     expect(istBatterie({ units: [armeeStapel('unbekannte_einheit', 1000)] }, rules)).toBe(false)
   })
-
-  // LOESCHVERMERK (Review): T-M42-08 - beide Fundstellen lesen `army-role.ts`, der Wortlaut-Waechter
-  // ist durch B6b (Verhaltensgleichheit und Quelle) ersetzt. Alter Fall:
-  // it('B6: Wortlaut-Waechter gegen military.ts:155-157', () => {
-  //   const quelle = readFileSync(
-  //     new URL('../../../packages/ai/src/military.ts', import.meta.url),
-  //     'utf-8',
-  //   )
-  //   expect(quelle.includes('eigeneEinheiten.length > 0 &&'), 'military.ts hat die Batterie-Bedingung geaendert — istBatterie in m42-zaehlung.ts nachziehen (T-M42-08 ersetzt beides durch army-role.ts)').toBe(true)
-  //   expect(
-  //     quelle.includes(
-  //       'eigeneEinheiten.every((stack) => (context.rules.units[stack.unitKey]?.rangeProvinces ?? 0) > 0)',
-  //     ),
-  //     'military.ts hat die Batterie-Bedingung geaendert — istBatterie in m42-zaehlung.ts nachziehen (T-M42-08 ersetzt beides durch army-role.ts)',
-  //   ).toBe(true)
-  // })
-
-  // LOESCHVERMERK (Review): B6b war ein Quelltext-Grep (`readFileSync` auf military.ts/m42-zaehlung.ts, dann
-  // `includes('isBattery(...)')`) - er prueft Schreibweise, nicht Verhalten, und faellt bei jeder Umbenennung,
-  // ohne dass sich etwas aendert. Ersetzt durch B6c (Verhalten). Alter Fall:
-  // it('B6b: istBatterie und military.ts lesen beide isBattery aus army-role.ts (T-M42-08)', () => {
-  //   const military = readFileSync(new URL('../../../packages/ai/src/military.ts', import.meta.url), 'utf-8')
-  //   const zaehlung = readFileSync(new URL('./m42-zaehlung.ts', import.meta.url), 'utf-8')
-  //   expect(military.includes('isBattery(eigeneEinheiten, context.rules)')).toBe(true)
-  //   expect(zaehlung.includes('return isBattery(army.units, rules)')).toBe(true)
-  // })
 
   it('B6c: Batterie/Linie - der Zaehler (istBatterie) und militaryCommands (die KI) urteilen gleich', () => {
     // Verhalten statt Quelltext: eine Armee, die `istBatterie` Batterie nennt, laesst `militaryCommands` mit Ziel

@@ -123,9 +123,6 @@ const sameMeasure = (a: Measure, b: Measure): boolean =>
   a.area.width === b.area.width &&
   a.area.height === b.area.height
 
-// LOESCHVERMERK (Review): bis T-M44-07 hatte der Tooltip keinen Prop `selected` und nannte immer die Mausbedienung:
-//   export function Tooltip({ data, x, y }: TooltipProps) {
-//   <p className="tooltip__hint">{touch ? t('map.tooltipHintTouch') : t('tooltip.hint')}</p>
 export function Tooltip({ data, x, y, selected = false }: TooltipProps) {
   const defence = TERRAIN_DEFENCE_PERMILLE[data.terrain]
   const touch = useInputMode() === 'touch'

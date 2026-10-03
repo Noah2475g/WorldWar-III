@@ -57,13 +57,6 @@ export interface MapTooltip {
 
 type InputKind = 'keyboard' | 'pointer'
 
-// LOESCHVERMERK (Review): bis T-M44-07 galt die Regel „Zeiger zeigt, sonst die Auswahl“ ohne Rücksicht auf Eingabeart und Dialog:
-//   const { selectedProvince, mapView, view, centres, nameOfProvince, nameOf, ticksPerDay } = input
-//   const tooltipId = hover?.id ?? selectedProvince
-//   const centre = selectedProvince ? centres[selectedProvince] : undefined   // in tooltipAt
-//   }, [hover, selectedProvince, centres, mapView])
-//   return { hover, onHover, hide, tooltip, tooltipAt }
-// Jetzt entscheidet `selectionId` (Tastaturauswahl, nie bei offenem Dialog) statt `selectedProvince`.
 export function useMapTooltip(input: MapTooltipInput): MapTooltip {
   const { selectedProvince, dialogOpen, mapView, view, centres, nameOfProvince, nameOf, ticksPerDay } = input
   const [hover, setHover] = useState<MapHover | null>(null)

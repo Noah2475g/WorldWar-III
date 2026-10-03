@@ -731,8 +731,6 @@ describe('R-AI-10/AK2, AK4 Zusammenlegen nach Rolle und unter dem Deckel (T-M42-
       { id: 'c1', unitKey: 'infantry', einheiten: 3, at: 'o3' },
       { id: 'c2', unitKey: 'infantry', einheiten: 3, at: 'o3' },
     ])
-    // LOESCHVERMERK (Review): T-M42-09 hebt "eine Provinz je Denkschritt" auf. Alte Erwartung:
-    // expect(gruppen(context)).toEqual([['b1', 'b2']])
     expect(gruppen(context)).toEqual([
       ['b1', 'b2'],
       ['c1', 'c2'],

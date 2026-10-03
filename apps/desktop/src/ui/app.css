@@ -106,7 +106,6 @@ body {
 }
 
 /* A focus ring that is actually visible — the whole point of T-M10-12. */
-/* LOESCHVERMERK (Review): bis T-M44-17 trug der Fokusrahmen `var(--accent)`, das Feindrot. */
 :focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
@@ -2346,11 +2345,6 @@ body {
 
 /* Eine neue Meldung blendet einmal auf und ist dann still. Die Regel fuer
    prefers-reduced-motion oben im Stylesheet schaltet auch das ab (R-UI-04). */
-/* LOESCHVERMERK (Review): bis T-M44-17 blendete die Meldung auch ueber `opacity` ein
-   (from { opacity: 0; transform: translateX(-4px) } to { opacity: 1; transform: none }). axe
-   misst den Kontrast mitten im Einblenden (gemessen: 3,71:1 und 4,31:1 bei `.alert--unlock` in
-   der Mehrspieler-Lobby, R-UX-06/AK1) — der Befund haengt dann am Zeitpunkt der Messung. Jetzt
-   nur noch die Bewegung; der Text hat von der ersten Sekunde an seine Farbe. */
 @keyframes alert-in {
   from {
     transform: translateX(-4px);
