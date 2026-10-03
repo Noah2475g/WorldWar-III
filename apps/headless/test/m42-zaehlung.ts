@@ -1,4 +1,4 @@
-import { RESERVE_PERMILLE } from '@worldwar/ai'
+import { RESERVE_PERMILLE, isBattery } from '@worldwar/ai'
 import {
   economyOverview,
   spySalary,
@@ -56,12 +56,17 @@ export type Stufe = 'easy' | 'normal' | 'hard'
  * Zwilling von `military.ts:155-157` (Wortlaut-Waechter: Fall B6 in `m42-zaehlung.test.ts`
  * bricht, sobald die beiden Fundstellen auseinanderlaufen).
  */
+// LOESCHVERMERK (Review): T-M42-08 - der Zwilling liest jetzt `isBattery` aus `packages/ai/src/army-role.ts`.
+// Alte Fassung:
+// export function istBatterie(army: Pick<Army, 'units'>, rules: Rules): boolean {
+//   const eigeneEinheiten = army.units
+//   return (
+//     eigeneEinheiten.length > 0 &&
+//     eigeneEinheiten.every((stack) => (rules.units[stack.unitKey]?.rangeProvinces ?? 0) > 0)
+//   )
+// }
 export function istBatterie(army: Pick<Army, 'units'>, rules: Rules): boolean {
-  const eigeneEinheiten = army.units
-  return (
-    eigeneEinheiten.length > 0 &&
-    eigeneEinheiten.every((stack) => (rules.units[stack.unitKey]?.rangeProvinces ?? 0) > 0)
-  )
+  return isBattery(army.units, rules)
 }
 
 export function armeeRolle(army: Pick<Army, 'units'>, rules: Rules): Rolle {

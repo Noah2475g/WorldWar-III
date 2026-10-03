@@ -568,3 +568,105 @@ describe('R-BAT-08/AK3 Die KI laesst Fernwaffen stehen', () => {
     expect(commands.some((command) => command.type === 'MOVE_ARMY')).toBe(true)
   })
 })
+
+/**
+ * T-M42-08 (R-AI-10/AK2, AK4, D32.9): Zusammenlegen nach Rolle und unter dem Deckel.
+ *
+ * Bis hierher zaehlte `consolidateCommands` **Stapel** statt Einheiten (`(army.units ?? []).length`)
+ * gegen den Deckel von 20 und legte jede Armee mit jeder zusammen - gemessen stehende Verbaende bis
+ * 132 Einheiten (Stufe 0, `m42`-Abschnitt), und eine Batterie verschwand in der Infanterie (dann
+ * schiesst sie nicht mehr von selbst, `military.ts`). Die Faelle bauen die Sicht direkt, damit die
+ * Kennungen feststehen.
+ */
+describe('R-AI-10/AK2, AK4 Zusammenlegen nach Rolle und unter dem Deckel (T-M42-08)', () => {
+  const hp = (unitKey: string) => TEST_RULES.units[unitKey]!.hpPerUnit
+  const lage = (armeen: { id: string; unitKey: string; einheiten: number; at?: string; path?: string[] }[]) => {
+    const context = contextFor('p2')
+    context.view.armies = [
+      ...context.view.armies.filter((army) => army.owner !== 'p2'),
+      ...armeen.map(({ id, unitKey, einheiten, at, path }) => ({
+        id,
+        owner: 'p2',
+        provinceId: at ?? 'o1',
+        units: [{ unitKey, hpTotal: einheiten * hp(unitKey) }],
+        strength: 0,
+        ...(path ? { path } : {}),
+      })),
+    ]
+    return context
+  }
+  const gruppen = (context: ReturnType<typeof lage>) =>
+    consolidateCommands(context, []).map((command) => (command.type === 'MERGE_ARMIES' ? [...command.armyIds] : []))
+
+  it('K1: zwei Infanterie und eine Batterie -> Merge nur ueber die zwei Infanterie', () => {
+    const context = lage([
+      { id: 'a1', unitKey: 'infantry', einheiten: 5 },
+      { id: 'a2', unitKey: 'artillery', einheiten: 2 },
+      { id: 'a3', unitKey: 'infantry', einheiten: 5 },
+    ])
+    expect(gruppen(context)).toEqual([['a1', 'a3']])
+  })
+
+  it('K2: zwei Batterien -> Merge', () => {
+    const context = lage([
+      { id: 'a1', unitKey: 'artillery', einheiten: 2 },
+      { id: 'a2', unitKey: 'artillery', einheiten: 3 },
+    ])
+    expect(gruppen(context)).toEqual([['a1', 'a2']])
+  })
+
+  it('K3: drei zu je 15 -> kein Merge (jeder Verband ueber 20 waere ueber dem Deckel)', () => {
+    const context = lage([
+      { id: 'a1', unitKey: 'infantry', einheiten: 15 },
+      { id: 'a2', unitKey: 'infantry', einheiten: 15 },
+      { id: 'a3', unitKey: 'infantry', einheiten: 15 },
+    ])
+    expect(gruppen(context)).toEqual([])
+  })
+
+  it('K4: 15/10/5 -> [a, c] (First-Fit)', () => {
+    const context = lage([
+      { id: 'a', unitKey: 'infantry', einheiten: 15 },
+      { id: 'b', unitKey: 'infantry', einheiten: 10 },
+      { id: 'c', unitKey: 'infantry', einheiten: 5 },
+    ])
+    expect(gruppen(context)).toEqual([['a', 'c']])
+  })
+
+  it('K5: Reihenfolge nach sort() wie im Kern - a10 vor a11 vor a9', () => {
+    // sort(): a10, a11, a9 -> First-Fit [a10 15, a11 5]; numerisch waere es [a9, a11].
+    const context = lage([
+      { id: 'a9', unitKey: 'infantry', einheiten: 10 },
+      { id: 'a10', unitKey: 'infantry', einheiten: 15 },
+      { id: 'a11', unitKey: 'infantry', einheiten: 5 },
+    ])
+    expect(gruppen(context)).toEqual([['a10', 'a11']])
+  })
+
+  it('K6: kein Verband ueber stackFullContribution Einheiten (AK4)', () => {
+    const context = lage([
+      { id: 'a1', unitKey: 'infantry', einheiten: 8 },
+      { id: 'a2', unitKey: 'infantry', einheiten: 8 },
+      { id: 'a3', unitKey: 'infantry', einheiten: 8 },
+      { id: 'a4', unitKey: 'infantry', einheiten: 8 },
+    ])
+    const cap = TEST_RULES.constants.stackFullContribution
+    for (const ids of gruppen(context)) {
+      const summe = ids.reduce((s, id) => s + (id ? 8 : 0), 0)
+      expect(summe, ids.join(',')).toBeLessThanOrEqual(cap)
+    }
+    expect(gruppen(context).length).toBeGreaterThan(0)
+  })
+
+  it('K7: eine marschierende Armee bleibt aussen vor; weiterhin eine Provinz je Denkschritt', () => {
+    const context = lage([
+      { id: 'a1', unitKey: 'infantry', einheiten: 3 },
+      { id: 'a2', unitKey: 'infantry', einheiten: 3, path: ['o2'] },
+      { id: 'b1', unitKey: 'infantry', einheiten: 3, at: 'o2' },
+      { id: 'b2', unitKey: 'infantry', einheiten: 3, at: 'o2' },
+      { id: 'c1', unitKey: 'infantry', einheiten: 3, at: 'o3' },
+      { id: 'c2', unitKey: 'infantry', einheiten: 3, at: 'o3' },
+    ])
+    expect(gruppen(context)).toEqual([['b1', 'b2']])
+  })
+})

@@ -101,18 +101,27 @@ describe('T-M42-01 istBatterie', () => {
     expect(istBatterie({ units: [armeeStapel('unbekannte_einheit', 1000)] }, rules)).toBe(false)
   })
 
-  it('B6: Wortlaut-Waechter gegen military.ts:155-157', () => {
-    const quelle = readFileSync(
-      new URL('../../../packages/ai/src/military.ts', import.meta.url),
-      'utf-8',
-    )
-    expect(quelle.includes('eigeneEinheiten.length > 0 &&'), 'military.ts hat die Batterie-Bedingung geaendert — istBatterie in m42-zaehlung.ts nachziehen (T-M42-08 ersetzt beides durch army-role.ts)').toBe(true)
-    expect(
-      quelle.includes(
-        'eigeneEinheiten.every((stack) => (context.rules.units[stack.unitKey]?.rangeProvinces ?? 0) > 0)',
-      ),
-      'military.ts hat die Batterie-Bedingung geaendert — istBatterie in m42-zaehlung.ts nachziehen (T-M42-08 ersetzt beides durch army-role.ts)',
-    ).toBe(true)
+  // LOESCHVERMERK (Review): T-M42-08 - beide Fundstellen lesen `army-role.ts`, der Wortlaut-Waechter
+  // ist durch B6b (Verhaltensgleichheit und Quelle) ersetzt. Alter Fall:
+  // it('B6: Wortlaut-Waechter gegen military.ts:155-157', () => {
+  //   const quelle = readFileSync(
+  //     new URL('../../../packages/ai/src/military.ts', import.meta.url),
+  //     'utf-8',
+  //   )
+  //   expect(quelle.includes('eigeneEinheiten.length > 0 &&'), 'military.ts hat die Batterie-Bedingung geaendert — istBatterie in m42-zaehlung.ts nachziehen (T-M42-08 ersetzt beides durch army-role.ts)').toBe(true)
+  //   expect(
+  //     quelle.includes(
+  //       'eigeneEinheiten.every((stack) => (context.rules.units[stack.unitKey]?.rangeProvinces ?? 0) > 0)',
+  //     ),
+  //     'military.ts hat die Batterie-Bedingung geaendert — istBatterie in m42-zaehlung.ts nachziehen (T-M42-08 ersetzt beides durch army-role.ts)',
+  //   ).toBe(true)
+  // })
+
+  it('B6b: istBatterie und military.ts lesen beide isBattery aus army-role.ts (T-M42-08)', () => {
+    const military = readFileSync(new URL('../../../packages/ai/src/military.ts', import.meta.url), 'utf-8')
+    const zaehlung = readFileSync(new URL('./m42-zaehlung.ts', import.meta.url), 'utf-8')
+    expect(military.includes('isBattery(eigeneEinheiten, context.rules)')).toBe(true)
+    expect(zaehlung.includes('return isBattery(army.units, rules)')).toBe(true)
   })
 })
 
