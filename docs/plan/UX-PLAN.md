@@ -71,6 +71,22 @@ Messwerte. (d) Das Spielende ist ein gesetzter `winner` ohne erfüllte Siegbedin
 „7 % von 70 %" neben „Sie haben gewonnen", B-22); T-M44-02 baut einen echten Siegstand. (e) Der
 Mehrspieler-Bau (`WORLDWAR_MULTIPLAYER=1`) ist noch nicht aufgenommen; T-M44-02 ergänzt `--mp`.
 
+**Wiederholen (Phase 6) — seit T-M44-02 in einem Befehl je Teil:**
+
+```bash
+# Prüfmodus: fährt, was die gewählten Kriterien brauchen, und meldet grün/ROT/offen je Kriterium (Exit 1 bei rot).
+pnpm ux:check                                          # alle Kriterien R-UX-01…06; startet den Dev-Server selbst
+node scripts/ux-capture.mjs --check --only R-UX-02     # nur ein Paket; --only kennt Teilketten wie 06/AK2
+node scripts/ux-capture.mjs --check --from docs/ux/before/messwerte.json   # nur auswerten, kein Browser
+# Bilder und Messwerte für docs/ux/after (1920x1080 nur als Messwert, Review Punkt 16):
+node scripts/ux-capture.mjs --out docs/ux/after --viewports 375x667,667x375,1280x800,1366x768,1024x768,768x1024,320x568
+node scripts/ux-capture.mjs --out docs/ux/after --merge --viewports 1920x1080 --measure-only 1920x1080
+# Zeiten am gebauten Bündel (baut, startet vite preview auf 5322, beendet es wieder), Mehrspieler (Bau nach dist-mp, zwei Fenster):
+node scripts/ux-capture.mjs --out docs/ux/after --merge --bundle --bundle-viewports 1280x800,1920x1080,375x667
+node scripts/ux-capture.mjs --out docs/ux/after --merge --mp
+```
+
+<!-- LOESCHVERMERK (Review): Fassung von T-M44-01, ersetzt durch den Prüfmodus von T-M44-02 (T-M44-02 ändert `--viewports`-Vorgaben nicht, ergänzt `--check`, `--bundle`, `--mp`, `--measure-only`). Wortlaut:
 **Wiederholen (Phase 6):**
 
 ```bash
@@ -81,6 +97,8 @@ pnpm desktop:build && (cd apps/desktop && npx vite preview --port 5322 --strictP
 node scripts/ux-capture.mjs --out docs/ux/after --merge --section bundle --perf-only --no-shots \
   --url http://localhost:5322/ --viewports 1280x800,1920x1080,375x667
 ```
+
+-->
 
 ## 2 · Messwerte auf einen Blick
 
@@ -446,6 +464,21 @@ keine Maßnahme eine Browser-Prüfung; jsdom rechnet kein Layout.
 ändern (~1 h): `game/names.ts` (Namensauflösung), ein Hover/Tooltip-Hook, eine Seitenleisten-Hülle,
 die Menüeinträge als Liste. Danach schreiben die Bahnen in getrennte Dateien statt in dieselben
 Zeilen von `App.tsx`.
+
+**Stand der Welle 0 und 0,5 (erledigt 2026-10-03, T-M44-02 und T-M44-02b).** Die Browser-Abnahme jeder
+Aufgabe ist `pnpm ux:check --only <Kennung>` (Paket A: `R-UX-01`, B: `R-UX-05`/`06`, C: `R-UX-02`, D:
+`R-UX-03`/`04`); `--mp` und `--bundle` laufen von selbst, wenn ein gewähltes Kriterium sie braucht.
+Wer eine Messgröße braucht, die es noch nicht gibt, ergänzt die **Sonde** in `scripts/ux-capture.mjs`
+(unter `probes`, `dialogs` oder `layout`) und das **Kriterium** in `scripts/ux-thresholds.mjs` samt
+Mutation in `test/ux-thresholds.test.ts` — nicht eine zweite Messung daneben. Die Nahtstellen in der
+Oberfläche:
+
+| Nahtstelle | Datei | Wer sie benutzt |
+|---|---|---|
+| Namen von Armee, Provinz und Macht (Rückfall heute: die Kennung) | `apps/desktop/src/game/names.ts` (`armyNamer`, `provinceNamer`, `nationNamer`) | D (T-M44-06 ändert den Rückfall auf „eine Armee“, R-UX-03/AK2) |
+| Hover- und Tooltip-Zustand, Escape-Ausblenden | `apps/desktop/src/ui/useMapTooltip.ts` | C (T-M44-07: Auswahl-Tooltip nur per Tastatur, nie bei Dialog) |
+| Seitenleisten-Hülle mit sechs Plätzen (`picker`, `alerts`, `notice`, `panel`, `economy`, `debug`) | `apps/desktop/src/ui/Sidebar.tsx`; den Inhalt von `panel` setzt `App.tsx` | A (Hochformat, Blatt, Wirtschaft: die Hülle), D (die Panels: ihr Inhalt) |
+| Menüeinträge als Liste (`MENU_ENTRIES`, `MenuEntry`) | `apps/desktop/src/ui/menuEntries.ts`, gezeichnet von `MenuDialog` in `Dialogs.tsx` | B (T-M44-09a: zweiter Klick bei „Neue Partie“) |
 
 **Welle 1 — vier parallele Worktrees** (je eigener Dev-Server-Port, WORKFLOW §4 Falle 9):
 

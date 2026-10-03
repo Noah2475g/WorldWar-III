@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { RESOURCE_KEYS } from '@worldwar/core'
 import { t } from '../i18n/text.ts'
+import type { MenuEntry } from './menuEntries.ts'
 import { DEFAULT_SETTINGS, FONT_SCALES, type Settings } from '../state/uiState.ts'
 import {
   MULTIPLAYER_SPEEDS,
@@ -516,32 +517,50 @@ export function LobbyDialog({
  * die Einstellungen — keinen Weg zu einer neuen Partie, keinen zu den Spielstaenden.
  */
 export function MenuDialog({
-  onNewGame,
-  onSaves,
-  onSettings,
+  entries,
+  onSelect,
   onClose,
 }: {
-  onNewGame: () => void
-  onSaves: () => void
-  onSettings: () => void
+  /** Die Einträge in der Reihenfolge des Schirms (`ui/menuEntries.ts`, T-M44-02b). */
+  entries: readonly MenuEntry[]
+  onSelect: (entry: MenuEntry) => void
   onClose: () => void
 }) {
   return (
     <Dialog title={t('menu.title')} onClose={onClose}>
       <div className="menu">
-        <button type="button" className="button button--primary" onClick={onNewGame}>
-          {t('newGame.title')}
-        </button>
-        <button type="button" className="button" onClick={onSaves}>
-          {t('saves.title')}
-        </button>
-        <button type="button" className="button" onClick={onSettings}>
-          {t('settings.title')}
-        </button>
+        {entries.map((entry) => (
+          <button
+            key={entry.id}
+            type="button"
+            className={entry.primary ? 'button button--primary' : 'button'}
+            onClick={() => onSelect(entry)}
+          >
+            {entry.label()}
+          </button>
+        ))}
       </div>
     </Dialog>
   )
 }
+
+/*
+ * LOESCHVERMERK (Review): bis T-M44-02b standen die drei Knöpfe von Hand hier, mit je einem Prop
+ * (`onNewGame`, `onSaves`, `onSettings`). Ersetzt durch die Liste `MENU_ENTRIES` in
+ * `ui/menuEntries.ts` — gleiche Knöpfe, gleiche Reihenfolge, gleiche Klassen. Wortlaut davor:
+ *
+ *   export function MenuDialog({ onNewGame, onSaves, onSettings, onClose }: {...}) {
+ *     return (
+ *       <Dialog title={t('menu.title')} onClose={onClose}>
+ *         <div className="menu">
+ *           <button type="button" className="button button--primary" onClick={onNewGame}>{t('newGame.title')}</button>
+ *           <button type="button" className="button" onClick={onSaves}>{t('saves.title')}</button>
+ *           <button type="button" className="button" onClick={onSettings}>{t('settings.title')}</button>
+ *         </div>
+ *       </Dialog>
+ *     )
+ *   }
+ */
 
 export interface SaveSlot {
   name: string

@@ -32,7 +32,8 @@
     "acceptance": "node scripts/acceptance.mjs",
     "playtest:sheet": "node scripts/playtest-sheet.mjs",
     "android:check": "node scripts/android-check.mjs",
-    "ux:capture": "node scripts/ux-capture.mjs"
+    "ux:capture": "node scripts/ux-capture.mjs",
+    "ux:check": "node scripts/ux-capture.mjs --check"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
