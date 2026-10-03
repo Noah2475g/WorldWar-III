@@ -7039,6 +7039,7 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Anforderungen:** R-AI-11, R-AI-06
 - **Abhängigkeiten:** T-M42-07
   *(Umgestellt am 2026-10-03, vorher die Fabrik-Aufgabe: die Buchung wartet seit Noahs Entscheid vom 2026-09-27 auf die Artillerie.)*
+  *(Stand 2026-10-03, Bahn K: Voraussetzung T-M42-13 nicht gegeben — T-M42-13 bleibt abgeschaltet; T-M42-04 wird nicht gemessen und bleibt zurückgestellt.)*
 - **Dateien:** `packages/ai/src/economy.ts`, `packages/ai/src/decide.ts`,
   `packages/ai/src/provinceValue.ts`, `packages/ai/src/espionage.ts`, `data/rules/default/ai.json`
   (nur wenn ein Kandidat hält), `docs/plan/BALANCING.md`, `apps/headless/test/tournament.slow.test.ts`,
