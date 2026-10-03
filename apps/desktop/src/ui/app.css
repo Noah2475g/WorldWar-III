@@ -2504,4 +2504,22 @@ body {
 .explain__text--end {
   left: auto;
   right: 0;
+/* --- T-M44-18 (R-UX-03/AK1): Sperrgründe gebündelt, Leerzustände als Fließtext ------------------------
+   Die Sammelzeile steht einmal über den Knöpfen einer Gruppe; jeder Grund ein Stück, mit Abstand dazwischen.
+   Leerzustände („Derzeit führt niemand Krieg.“) haben Satzgröße und keine Überschriftgröße (B-16). */
+.group__reasons {
+  font-size: 11px;
+  color: var(--ink-soft);
+  margin: 0 0 var(--sp-sm);
+}
+
+.group__reasons-item {
+  display: inline;
+  margin-right: var(--sp-sm);
+}
+
+.panel__empty {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin: 0;
 }

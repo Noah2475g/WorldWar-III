@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { armyNamer, nationNamer, provinceNamer } from './names.ts'
+import { armyNamer, createArmyNameMemory, nationNamer, provinceNamer } from './names.ts'
 
 /**
  * R-UX-03/AK2, T-M44-02b: die Namensauflösung wurde aus `App.tsx` herausgezogen, ohne dass sich
@@ -24,12 +24,31 @@ describe('R-UX-03/AK2 game/names: Namensauflösung wie vorher (T-M44-02b)', () =
     expect(now('p-unbekannt'), 'unbekannt heißt heute: die Kennung (R-UX-03/AK2 ändert das später, hier nicht)').toBe('p-unbekannt')
   })
 
-  it('armyNamer liefert dasselbe wie der Ausdruck in App.tsx', () => {
-    const old = (id: string): string => (armies as Record<string, { name: string } | undefined>)[id]?.name ?? id
+  it('armyNamer liefert den Namen wie vorher, bei Unbekanntem aber „eine Armee“ statt der Kennung (R-UX-03/AK2)', () => {
+    // LOESCHVERMERK (Review): bis T-M44-06 hieß die Gegenprobe `old(id) = armies[id]?.name ?? id`
+    // und `expect(now('a99')).toBe('a99')` — der Rückfall auf die Kennung ist der Fehler „a68 ist vernichtet.“.
     const now = armyNamer(armies)
-    for (const id of ['a1', 'a68', 'a99', '']) expect(now(id), `Armee ${JSON.stringify(id)}`).toBe(old(id))
     expect(now('a1')).toBe('Erste Armee')
-    expect(now('a99')).toBe('a99')
+    expect(now('a68')).toBe('Achtundsechzigste')
+    for (const id of ['a99', '']) {
+      expect(now(id), `Armee ${JSON.stringify(id)}`).toBe('eine Armee')
+      expect(now(id)).not.toBe(id)
+    }
+  })
+
+  it('der Namensspeicher behält den Namen einer vernichteten Armee, bis er geleert wird (R-UX-03/AK2)', () => {
+    const memory = createArmyNameMemory()
+    expect(armyNamer(armies, memory)('a68')).toBe('Achtundsechzigste')
+    // a68 fällt: der Bestand kennt sie nicht mehr, der Speicher schon.
+    const danach = { a1: { name: 'Erste Armee' } }
+    expect(armyNamer(danach, memory)('a68')).toBe('Achtundsechzigste')
+    expect(armyNamer(danach, memory)('a1')).toBe('Erste Armee')
+    // Nach dem Laden bewusst leer: unbekannt heißt „eine Armee“.
+    memory.reset()
+    expect(armyNamer(danach, memory)('a68')).toBe('eine Armee')
+    expect(armyNamer(danach, memory)('a1')).toBe('Erste Armee')
+    // Ohne Speicher (Aufrufer, die ihn nicht brauchen) bleibt es bei „eine Armee“.
+    expect(armyNamer(danach)('a68')).toBe('eine Armee')
   })
 
   it('nationNamer liefert dasselbe wie der Ausdruck in App.tsx', () => {
@@ -41,7 +60,7 @@ describe('R-UX-03/AK2 game/names: Namensauflösung wie vorher (T-M44-02b)', () =
 
   it('eine leere Liste löst nichts auf und wirft nicht', () => {
     expect(provinceNamer([])('x')).toBe('x')
-    expect(armyNamer({})('x')).toBe('x')
+    expect(armyNamer({})('x')).toBe('eine Armee')
     expect(nationNamer({})('x')).toBe('x')
   })
 })

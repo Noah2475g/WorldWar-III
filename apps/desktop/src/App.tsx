@@ -24,12 +24,15 @@ import {
   armyActions,
   buildActions,
   cancelActions,
-  capitalAction,
+  // capitalAction (T-M44-06: App.tsx braucht nur noch `capitalActions`, das in der eigenen Hauptstadt nichts anbietet)
+  capitalActions,
   diplomacyActions,
   offerListActions,
   ownArmiesIn,
   passageActions,
   planArrival,
+  marchTargets,
+  MarchTargetCache,
   nextUnlock,
   recruitActions,
   spyActions,
@@ -55,12 +58,12 @@ import { Tooltip } from './ui/Tooltip.tsx'
 import { useMapTooltip } from './ui/useMapTooltip.ts'
 import { Sidebar } from './ui/Sidebar.tsx'
 import { MENU_ENTRIES } from './ui/menuEntries.ts'
-import { armyNamer, nationNamer, provinceNamer } from './game/names.ts'
+import { armyNamer, createArmyNameMemory, nationNamer, provinceNamer } from './game/names.ts'
 import { Foot, latestReport } from './ui/Foot.tsx'
 import { standingsRows } from './ui/Standings.tsx'
 import { Dialog } from './ui/Dialogs.tsx'
 import { DeltaBar } from './ui/charts/DeltaBar.tsx'
-import { rate } from './ui/format.ts'
+import { gameTime, rate } from './ui/format.ts'
 import { Header } from './ui/Header.tsx'
 import {
   ArmyPanel,
@@ -289,6 +292,20 @@ export function App(props: AppProps) {
   stateRef.current = state
 
   /**
+   * Der letzte bekannte Name jeder Armee (T-M44-06, R-UX-03/AK2): damit „Achtundsechzigste ist
+   * vernichtet.“ auch dann einen Namen trägt, wenn die Armee schon aus dem Stand ist. Gehört zu einer
+   * Partie — wer eine Partie beginnt oder lädt, leert ihn bewusst (`armyNames.current.reset()`).
+   */
+  const armyNames = useRef(createArmyNameMemory())
+  /** Die Zielliste des Marsches je (Armee, Ort, Spieltag) (T-M44-11, R-UX-04/AK2); gehört ebenfalls zu einer Partie. */
+  const marchCache = useRef(new MarchTargetCache())
+  /** Eine neue Partie oder ein geladener Stand: alles leeren, was Armeekennungen der alten Partie trägt. */
+  const forgetGame = useCallback(() => {
+    armyNames.current.reset()
+    marchCache.current.clear()
+  }, [])
+
+  /**
    * Einen gerechneten Stand zurueckschreiben — Spiegel UND Zustand (T-M41-17).
    *
    * Bis zum 2026-09-14 schrieb `step` nur `setState(result.state)`. `stateRef.current`
@@ -314,8 +331,10 @@ export function App(props: AppProps) {
    */
   const commitState = useCallback((next: GameState | null) => {
     stateRef.current = next
+    // Ohne Partie gibt es keine Armeen, deren Namen man behalten koennte (T-M44-06).
+    if (next === null) forgetGame()
     setState(next)
-  }, [])
+  }, [forgetGame])
 
   /**
    * Die Karte der laufenden Partie (T-M12-08).
@@ -842,7 +861,7 @@ export function App(props: AppProps) {
     // Raeumfrist (T-M43-02, R-DIP-10/AK5): aus der Sicht abgeleitet, nicht aus einem Ereignis (E1).
     const raeumung =
       view && state
-        ? clearanceAlerts(view, clearanceNotices(view, activeMap, props.rules), { army: armyNamer(state.armies) }, ticksPerDay)
+        ? clearanceAlerts(view, clearanceNotices(view, activeMap, props.rules), { army: armyNamer(state.armies, armyNames.current) }, ticksPerDay)
         : []
     const aus = alertsFor(view, props.rules, spionageNews, raeumung).filter((alert) => {
       const weggeklickt = dismissedAlerts.get(alert.id)
@@ -1494,6 +1513,7 @@ export function App(props: AppProps) {
             setParty({ mode: 'single', fixedSpeed: null })
           }
           setSpeed(0)
+          forgetGame() // neue Partie oder geladener Stand: Namensspeicher bewusst leer (T-M44-06), Zielliste neu (T-M44-11)
           commitState(result.state)
           setAutosave({ lastSavedTick: result.state.tick, lastSavedRealTime: now(), nextSlot: 0 })
           setSaveNotice(t('saves.loaded'))
@@ -1552,6 +1572,7 @@ export function App(props: AppProps) {
     // Der Umsetz-Modus und die Spionage-Meldungen gehoeren zur alten Partie (T-M17-13).
     setMovingSpy(null)
     setNews(NO_NEWS)
+    forgetGame() // neue Partie oder geladener Stand: Namensspeicher bewusst leer (T-M44-06), Zielliste neu (T-M44-11)
     commitState(fresh)
     // The autosave clock starts now, not at the epoch — otherwise the
     // real-time half of the rule is satisfied before the first day is played
@@ -1621,6 +1642,7 @@ export function App(props: AppProps) {
     // Der Umsetz-Modus und die Spionage-Meldungen gehoeren zur alten Partie (T-M17-13).
     setMovingSpy(null)
     setNews(NO_NEWS)
+    forgetGame() // neue Partie oder geladener Stand: Namensspeicher bewusst leer (T-M44-06), Zielliste neu (T-M44-11)
     commitState(beginn.state)
     setAutosave({ lastSavedTick: beginn.state.tick, lastSavedRealTime: now(), nextSlot: 0 })
     setDialog(null)
@@ -1768,7 +1790,7 @@ export function App(props: AppProps) {
   // LOESCHVERMERK (Review): bis T-M44-02b stand hier ein useCallback mit demselben Rumpf:
   //   if (!state) return playerId; return state.players[playerId]?.nation ?? playerId
   // Ebenso ersetzt, an vier Stellen, `state.armies[id]?.name ?? id` (Räumfrist, Protokoll, Automatik-Märsche,
-  // Schnellvorlauf-Grund) durch `armyNamer(state.armies)`, und im Alarm die zwei Ausdrücke für
+  // Schnellvorlauf-Grund) durch `armyNamer(state.armies, armyNames.current)`, und im Alarm die zwei Ausdrücke für
   // Provinz und Macht durch `provinceNamer` / `nationNamer`.
 
   /**
@@ -1854,7 +1876,7 @@ export function App(props: AppProps) {
     if (!state || !viewerId) return []
     const naming = {
       player: nameOf,
-      army: armyNamer(state.armies),
+      army: armyNamer(state.armies, armyNames.current),
       ticksPerDay,
       viewer: viewerId,
     }
@@ -1887,7 +1909,7 @@ export function App(props: AppProps) {
     // Die Märsche der Automatik als leise Zeilen (T-M40-13, Befund M3): Rubrik Kampf, Sprung auf das
     // Ziel, keine Alarmfarbe. Sie stammen aus den Befehlen der Schleife, nicht aus dem Protokoll des Kerns.
     const maersche: EventEntry[] = adjutantMarchEntries(adjutantMarches, {
-      army: armyNamer(state.armies),
+      army: armyNamer(state.armies, armyNames.current),
       province: provinceNamer(activeMap.provinces),
     })
     // Neueste zuerst wie das Protokoll; `sort` ist stabil, bei gleichem Tick stehen die Ereignisse vorn.
@@ -1927,7 +1949,7 @@ export function App(props: AppProps) {
     if (!trigger || !state || !viewerId) return t('header.stoppedAlertPlain', { time })
     const beschrieben = describeEvent(trigger, 0, activeMap, {
       player: nameOf,
-      army: armyNamer(state.armies),
+      army: armyNamer(state.armies, armyNames.current),
       ticksPerDay,
       viewer: viewerId,
     })
@@ -2038,7 +2060,9 @@ export function App(props: AppProps) {
 
   const provinceActions: Action[] = useMemo(() => {
     if (!ctx || !selected || selected.owner !== ctx.playerId) return []
-    return [toAction(capitalAction(ctx, selected.id))]
+    // In der eigenen Hauptstadt wird „Hauptstadt verlegen“ nicht angeboten (T-M44-06, R-UX-03/AK1).
+    // LOESCHVERMERK (Review): vorher `return [toAction(capitalAction(ctx, selected.id))]` — dort stand er gesperrt.
+    return capitalActions(ctx, selected.id).map((spec) => toAction(spec))
   }, [ctx, selected, toAction])
 
   const armiesHere = useMemo(() => (ctx && selected ? ownArmiesIn(ctx, selected.id) : []), [ctx, selected])
@@ -2085,11 +2109,18 @@ export function App(props: AppProps) {
     if (!ctx || !targeting || !state || targeting.armyId !== ui.selectedArmy) return null
     const army = state.armies[targeting.armyId]
     if (!army) return null
-    const options = activeMap.provinces
-      .filter((p) => p.id !== army.locationProvinceId)
-      .map((p) => ({ id: p.id, name: p.name }))
-      .sort((a, b) => a.name.localeCompare(b.name, 'de'))
     const delayTicks = targeting.kind === 'move' ? targeting.delayDays * ticksPerDay : 0
+    // Marsch: erreichbare Ziele mit Ankunftstag zuerst, unerreichbare getrennt und gesperrt (T-M44-11,
+    // R-UX-04/AK2). Die Liste kommt aus dem Zwischenspeicher je (Armee, Ort, Spieltag) — gerechnet wird beim Oeffnen.
+    // Beschuss: wie bisher alle Provinzen alphabetisch (er marschiert nicht, es gibt keine Route).
+    // LOESCHVERMERK (Review): vorher stand hier fuer beide Arten die alphabetische Liste aller Provinzen.
+    const lists = targeting.kind === 'move' ? marchTargets(ctx, army.id, nameOfProvince, marchCache.current) : null
+    const options = lists
+      ? lists.reachable.map((p) => ({ id: p.id, name: p.name, arrivalDay: gameTime(p.arrivalTick! + delayTicks, ticksPerDay).day }))
+      : activeMap.provinces
+          .filter((p) => p.id !== army.locationProvinceId)
+          .map((p) => ({ id: p.id, name: p.name }))
+          .sort((a, b) => a.name.localeCompare(b.name, 'de'))
     const target = targeting.target
       ? {
           id: targeting.target,
@@ -2119,6 +2150,7 @@ export function App(props: AppProps) {
       kind: targeting.kind,
       target,
       options,
+      ...(lists ? { unreachable: lists.unreachable.map((p) => ({ id: p.id, name: p.name })) } : {}),
       confirm,
       onChoose: (id) => setTargeting({ ...targeting, target: id }),
       delayDays: targeting.delayDays,
@@ -2558,7 +2590,10 @@ export function App(props: AppProps) {
               onClick={() => {
                 const session = props.netplay
                 const stand = stateRef.current
-                if (session && stand) commitState(takeOverSeat(stand, session.peer))
+                if (session && stand) {
+                  forgetGame()
+                  commitState(takeOverSeat(stand, session.peer))
+                }
                 session?.transport.close('Der Mitspieler wurde uebernommen.')
                 // Ab hier ist es eine Einzelspielerpartie, mit allem, was dazugehoert:
                 // Tempo, Vorspulen, Tastenkuerzel (R-MP-08/AK1).

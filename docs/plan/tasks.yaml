@@ -3832,13 +3832,13 @@ tasks:
   - id: T-M44-06
     milestone: M44
     title: "Spielersprache: Sperrgruende, Kennungen, beschaedigter Stand, kein Weg"
-    status: todo
+    status: done
     deps: [T-M44-02]
     requirements: [R-UX-03]
     design: [D-37]
     files: [apps/desktop/src/game/rejections.ts, apps/desktop/src/game/rejections.test.ts, apps/desktop/src/game/saves.ts, apps/desktop/src/game/names.ts, apps/desktop/src/game/actions.ts, apps/desktop/src/App.tsx, apps/desktop/src/i18n/de.ts]
     tests: [apps/desktop/src/game/rejections.test.ts, apps/desktop/src/game/saves.test.ts, apps/desktop/src/i18n/text.test.ts]
-    dod: "Paket Feedback/Hinweise, Prioritaet P1. R-UX-03/AK1-AK4. loadFrom entscheidet nach error.name === UnsupportedSaveVersion, sonst corrupt (die Regex /Version/ trifft auch Formatversion). Namensspeicher in game/names.ts fuer die vier Armee-Stellen (App.tsx 840, 1838, 1871, 1910; 773 ist die Provinz), nach dem Laden bewusst leer: unbekannt heisst eine Armee. Hauptstadt verlegen in der eigenen Hauptstadt nicht anbieten. errors.NO_PATH ohne feindliches Gebiet (planRoute kennt nur den Kartengraphen). Kern unveraendert. Aufwand 5 h."
+    dod: "Paket Feedback/Hinweise, Prioritaet P1. R-UX-03/AK1-AK4. loadFrom entscheidet nach error.name === UnsupportedSaveVersion, sonst corrupt (die Regex /Version/ trifft auch Formatversion). Namensspeicher in game/names.ts fuer die vier Armee-Stellen (App.tsx 840, 1838, 1871, 1910; 773 ist die Provinz), nach dem Laden bewusst leer: unbekannt heisst eine Armee. Hauptstadt verlegen in der eigenen Hauptstadt nicht anbieten. errors.NO_PATH ohne feindliches Gebiet (planRoute kennt nur den Kartengraphen). Kern unveraendert. Aufwand 5 h. Erledigt am 2026-10-03: (Paket D, Spielersprache.) AK3: loadFrom entscheidet nach error.name === 'UnsupportedSaveVersion', sonst corrupt (die Regex /Version/ traf auch 'fehlen Version oder Spielstand' und 'Formatversion'); saves.test.ts erzeugt jede Meldung aus save.ts (JSON, Format, fehlen Version, fehlt Formatversion, verschiedene Formatversionen, Pruefsumme falsch/fehlt) und migrate.ts (neuer, zu alt) wirklich und prueft die Zuordnung, mit Gegenprobe (alter Code: 4 Faelle rot). AK1: game/rejections.ts schlaegt je (Befehlstyp, Grund) einen Satz nach (REASON_KEYS, Saetze in de.ts unter refusal und trade.blocked); rejections.test.ts liest die Freitext-Gruende aus packages/core/src/commands und rules/espionage.ts (nur lesend), verlangt je Grund einen Schluessel unter einem Befehlstyp der Datei, keine Leichen in der Tabelle, keine Klammer, keinen Platzhalter; ein unbekannter Grund zeigt den Allgemeinsatz, nie das Rohwort; Handelsgruende nennen die Provinz mit Namen (describeTradeRejection in actions.ts delegiert jetzt dorthin, alter Block auskommentiert); ON_COOLDOWN mit until (Beschuss) ist kein Waffenstillstand mehr. Hauptstadt verlegen wird in der eigenen Hauptstadt nicht angeboten (capitalActions). AK2: Namensspeicher in game/names.ts (createArmyNameMemory; armyNamer: Stand, dann Speicher, dann 'eine Armee', nie die Kennung) an den vier Armee-Stellen in App.tsx, nach Laden, neuer Partie und Platzuebernahme bewusst geleert. AK4: errors.NO_PATH ohne 'feindliches Gebiet' (planRoute kennt nur den Kartengraphen). Kern unveraendert. Zahl: der Kern nennt 48 verschiedene Freitext-Gruende in commands/*.ts (ohne das Ereignis byPlayer; der Plan sprach von 34 ohne Handelsangebote und Spionage), alle abgedeckt."
   - id: T-M44-07
     milestone: M44
     title: "Kartentooltip: Auswahl-Tooltip nur per Tastatur, nie ueber Dialogen"
@@ -3892,13 +3892,13 @@ tasks:
   - id: T-M44-11
     milestone: M44
     title: "Zielwahl: erreichbare Ziele zuerst, gemessen und zwischengespeichert"
-    status: todo
+    status: done
     deps: [T-M44-02]
     requirements: [R-UX-04]
     design: [D-37]
     files: [apps/desktop/src/App.tsx, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/game/actions.ts, apps/desktop/src/i18n/de.ts]
     tests: [apps/desktop/src/game/actions.test.ts, apps/desktop/src/ui/Panels.test.tsx]
-    dod: "Paket Spielfeld/HUD, Prioritaet P2. R-UX-04/AK2. Erst messen: 237 Aufrufe von planRoute (actions.ts) beim Oeffnen auf der Weltkarte als lange Aufgabe am Buendel; dann zwischenspeichern; Oeffnen < 50 ms. Text fuer unerreichbar ohne feindliches Gebiet (siehe T-M44-06). Keine Kernaenderung. Aufwand 4 h."
+    dod: "Paket Spielfeld/HUD, Prioritaet P2. R-UX-04/AK2. Erst messen: 237 Aufrufe von planRoute (actions.ts) beim Oeffnen auf der Weltkarte als lange Aufgabe am Buendel; dann zwischenspeichern; Oeffnen < 50 ms. Text fuer unerreichbar ohne feindliches Gebiet (siehe T-M44-06). Keine Kernaenderung. Aufwand 4 h. Erledigt am 2026-10-03: (Paket D, Zielwahl.) Erst gemessen (Weltkarte, Vereinigte Staaten, Mittlerer Westen, planRoute einzeln gegen 236 Ziele, Maschine unter Last): Infanterie zu Fuss 33 erreichbar/203 nicht, 10-25 ms warm, erster Durchlauf kalt 55-108 ms; mit Transportschiff alle 236 erreichbar, 93-334 ms kalt. Zwischenspeichern allein hilft dem ersten Oeffnen also nicht; darum eine einzige Suche von der Armee aus (routeCostsFrom, dieselbe Kantenkostenfunktion edgeTravelTicks des Kerns) statt 236 planRoute-Aufrufe, kalt 6-10 ms (Land) bzw. 5-35 ms (Schiffe); der Test vergleicht ueber die ganze Weltkarte fuer Land- und Seearmee jedes einzelne Ziel mit planRoute (gleiche Ankunft, gleiche Erreichbarkeit). Dazu Zwischenspeicher je (Armee, Ort, Spieltag, Seefaehigkeit) (MarchTargetCache, nur beim Oeffnen gerechnet, klein gehalten, bei neuer Partie/Laden geleert). Panel: zwei optgroups, erreichbar mit Ankunftstag zuerst, nicht erreichbar abgetrennt und gesperrt (Nordwestaustralien von Mittlerer Westen aus); Beschuss behaelt die flache Liste; Flugverbaende erreichen nur eigene Flugplaetze. Browser: pnpm ux:check --only R-UX-04/AK2 gruen bei 1280x800 (33 erreichbar, 203 gesperrt, laengste Aufgabe beim Oeffnen 50 ms, also an der Grenze unter Maschinenlast). Kern unveraendert."
   - id: T-M44-12
     milestone: M44
     title: "Seitenleiste: Wirtschaft einklappbar, Panelkopf mit Zurueck, Neu-Meldungen kompakt"
@@ -3962,13 +3962,13 @@ tasks:
   - id: T-M44-18
     milestone: M44
     title: "Sperrgruende gebuendelt, Leerzustaende als Fliesstext"
-    status: todo
+    status: done
     deps: [T-M44-02]
     requirements: [R-UX-03]
     design: [D-37]
     files: [apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/app.css]
     tests: [apps/desktop/src/ui/Panels.test.tsx]
-    dod: "Paket Feedback/Hinweise, Prioritaet P3. R-UX-03 (Lesbarkeit). Aufwand 3 h."
+    dod: "Paket Feedback/Hinweise, Prioritaet P3. R-UX-03 (Lesbarkeit). Aufwand 3 h. Erledigt am 2026-10-03: (Paket D, Lesbarkeit.) ActionGroup bekommt collectReasons: im Diplomatiepanel (Vertraege und Durchmarsch) steht je Grund einmal eine Sammelzeile (Knoepfe: Grund) statt eines Absatzes unter jedem Knopf, gleiche Gruende zusammengefasst; jeder gesperrte Knopf behaelt seinen Grund ueber aria-describedby (auch im Touch-Betrieb nicht doppelt). Leerzustaende (Derzeit fuehrt niemand Krieg, Noch keine Beziehungen) tragen panel__empty (Satzgroesse 12 px statt Ueberschriftgroesse). Tests in Panels.test.tsx (R-UX-03/AK1)."
   - id: T-M44-19
     milestone: M44
     title: "Favicon ohne 404"

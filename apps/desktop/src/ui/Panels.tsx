@@ -178,9 +178,12 @@ function ActionButton({
   pressed,
   artWidth = 34,
   artTone = 'ink',
+  reasonInGroup = false,
 }: {
   action: Action
   showReason: boolean
+  /** Der Grund steht schon in der Sammelzeile der Gruppe (T-M44-18): auch im Touch-Betrieb nicht noch einmal. */
+  reasonInGroup?: boolean
   /** Breite des Schattenrisses, falls die Aktion einen fuehrt (D33.3). */
   artWidth?: number
   /** Seine Farbe: in der Rekrutierungsliste `ink`, im Bauplatzraster `building` (D33.2). */
@@ -193,7 +196,7 @@ function ActionButton({
   pressed?: boolean
 }) {
   const reasonId = `${action.id}-reason`
-  const touchInfo = useInputMode() === 'touch' ? touchHint(action, showReason) : null
+  const touchInfo = useInputMode() === 'touch' ? touchHint(action, showReason || reasonInGroup) : null
   return (
     <div className={compact ? 'action action--compact' : 'action'}>
       {/* Knopf und Fragezeichen in einer Zeile: untereinander ergaeben die
@@ -291,7 +294,19 @@ function NextUnlockLine({ next }: { next: NextUnlock }) {
   )
 }
 
-export function ActionGroup({ group, next }: { group: ActionGroupSpec; next?: NextUnlock | null | undefined }) {
+export function ActionGroup({
+  group,
+  next,
+  collectReasons = false,
+}: {
+  group: ActionGroupSpec
+  next?: NextUnlock | null | undefined
+  /**
+   * Sperrgründe als **eine** Sammelzeile über den Knöpfen statt als Absatz unter jedem (T-M44-18,
+   * R-UX-03/AK1); jeder gesperrte Knopf behält seinen Grund über `aria-describedby`.
+   */
+  collectReasons?: boolean
+}) {
   const reasons = new Set(group.actions.map((action) => action.disabledReason))
   const shared =
     group.actions.length > 0 && reasons.size === 1 && !reasons.has(null) ? group.actions[0]!.disabledReason : null
@@ -306,10 +321,20 @@ export function ActionGroup({ group, next }: { group: ActionGroupSpec; next?: Ne
    */
   const alreadyShown = new Set<string>()
   const showsReason = (action: Action): boolean => {
+    if (collectReasons) return false
     if (shared !== null || action.disabledReason === null) return false
     if (alreadyShown.has(action.disabledReason)) return false
     alreadyShown.add(action.disabledReason)
     return true
+  }
+
+  // Die Sammelzeile (T-M44-18): je Grund einmal, mit den Knöpfen davor, die er sperrt.
+  const collected = new Map<string, string[]>()
+  if (collectReasons && shared === null) {
+    for (const action of group.actions) {
+      if (action.disabledReason === null) continue
+      collected.set(action.disabledReason, [...(collected.get(action.disabledReason) ?? []), action.label])
+    }
   }
 
   return (
@@ -317,9 +342,18 @@ export function ActionGroup({ group, next }: { group: ActionGroupSpec; next?: Ne
       <h3 className="group__title">{group.title}</h3>
       {next && <NextUnlockLine next={next} />}
       {shared && <p className="group__reason">{shared}</p>}
+      {collected.size > 0 && (
+        <p className="group__reasons">
+          {[...collected].map(([reason, labels]) => (
+            <span key={reason} className="group__reasons-item">
+              {t('collected.line', { labels: labels.join(', '), reason })}
+            </span>
+          ))}
+        </p>
+      )}
       <div className="actions">
         {group.actions.map((action) => (
-          <ActionButton key={action.id} action={action} showReason={showsReason(action)} />
+          <ActionButton key={action.id} action={action} showReason={showsReason(action)} reasonInGroup={collectReasons} />
         ))}
       </div>
     </section>
@@ -619,7 +653,12 @@ export function ProvincePanel(props: ProvincePanelProps) {
 export interface Targeting {
   kind: 'move' | 'bombard'
   target: { id: string; name: string; arrivalText: string | null } | null
-  options: readonly { id: string; name: string }[]
+  options: readonly { id: string; name: string; arrivalDay?: number | undefined }[]
+  /**
+   * Beim Marsch: die unerreichbaren Ziele, getrennt und gesperrt (T-M44-11, R-UX-04/AK2). Fehlt es (Beschuss),
+   * ist `options` die eine flache Liste wie bisher; sonst sind `options` die erreichbaren, mit Ankunftstag.
+   */
+  unreachable?: readonly { id: string; name: string }[] | undefined
   /** The order for the chosen target, checked — null until a target is chosen. */
   confirm: Action | null
   onChoose: (id: string | null) => void
@@ -811,13 +850,41 @@ export function ArmyPanel(props: ArmyPanelProps) {
               onChange={(event) => targeting.onChoose(event.target.value || null)}
             >
               <option value="">{t('province.pickNone')}</option>
-              {targeting.options.map((province) => (
-                <option key={province.id} value={province.id}>
-                  {province.name}
-                </option>
-              ))}
+              {targeting.unreachable === undefined ? (
+                targeting.options.map((province) => (
+                  <option key={province.id} value={province.id}>
+                    {province.name}
+                  </option>
+                ))
+              ) : (
+                <>
+                  {targeting.options.length > 0 && (
+                    <optgroup label={t('march.reachable')}>
+                      {targeting.options.map((province) => (
+                        <option key={province.id} value={province.id}>
+                          {province.arrivalDay === undefined
+                            ? province.name
+                            : t('march.optionArrival', { name: province.name, day: province.arrivalDay })}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {targeting.unreachable.length > 0 && (
+                    <optgroup label={t('march.unreachable')}>
+                      {targeting.unreachable.map((province) => (
+                        <option key={province.id} value={province.id} disabled>
+                          {province.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                </>
+              )}
             </select>
           </label>
+          {targeting.unreachable !== undefined && targeting.options.length === 0 && (
+            <p className="notice notice--info">{t('march.noneReachable')}</p>
+          )}
           {targeting.kind === 'move' && targeting.onDelay && (
             <DepartStepper days={targeting.delayDays ?? 0} onDelay={targeting.onDelay} />
           )}
@@ -1324,7 +1391,7 @@ export function DiplomacyPanel({
   if (!view || view.others.length === 0) {
     return (
       <section className="panel" aria-label={t('diplomacy.title')}>
-        <p>{t('diplomacy.noRelations')}</p>
+        <p className="panel__empty">{t('diplomacy.noRelations')}</p>
       </section>
     )
   }
@@ -1419,7 +1486,7 @@ export function DiplomacyPanel({
       <section className="group wars" aria-label={t('diplomacy.wars')}>
         <h3 className="group__title">{t('diplomacy.wars')}</h3>
         {view.publicWars.length === 0 ? (
-          <p>{t('diplomacy.noWars')}</p>
+          <p className="panel__empty">{t('diplomacy.noWars')}</p>
         ) : (
           <ul>
             {view.publicWars.map((war) => (
@@ -1437,11 +1504,13 @@ export function DiplomacyPanel({
                 title: t('diplomacy.treaties', { nation: nameOf(chosenAlive.id) }),
                 actions: actionsFor(chosenAlive.id),
               }}
+              collectReasons
             />
           )}
           {passageFor && (
             <ActionGroup
               group={{ id: 'passage', title: t('diplomacy.passageGroup'), actions: passageFor(chosenAlive.id) }}
+              collectReasons
             />
           )}
           {tradeForm && (

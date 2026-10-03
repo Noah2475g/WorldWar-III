@@ -145,9 +145,15 @@ export async function loadFrom(storage: StoragePort, name: string): Promise<Load
     const text = await storage.read(name)
     return { ok: true, state: deserialise(text) }
   } catch (error) {
-    const message = error instanceof Error ? error.message : ''
-    if (/Version/i.test(message)) return { ok: false, message: t('saves.wrongVersion') }
-    if (/Prüfsumme|beschädigt|JSON|Format/i.test(message)) return { ok: false, message: t('saves.corrupt') }
+    // T-M44-06 (R-UX-03/AK3, Review Punkt 1): die Entscheidung faellt nach dem Namen, den der Kern
+    // seiner Ausnahme gibt, nicht nach einem Wort in der Meldung. /Version/ traf auch „Dem
+    // Speicherstand fehlen Version oder Spielstand“ und „Formatversion“ — beides ein beschaedigter
+    // Stand, nicht ein Stand aus einer anderen Fassung.
+    // LOESCHVERMERK (Review): vorher `if (/Version/i.test(message)) … wrongVersion` und eine zweite
+    // Regex `/Prüfsumme|beschädigt|JSON|Format/i`, deren Zweig dieselbe Meldung wie der Rueckfall gab.
+    if (error instanceof Error && error.name === 'UnsupportedSaveVersion') {
+      return { ok: false, message: t('saves.wrongVersion') }
+    }
     return { ok: false, message: t('saves.corrupt') }
   }
 }
