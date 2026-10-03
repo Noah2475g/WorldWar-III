@@ -7054,6 +7054,10 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   `recruitShare` 280 reißt das Turnier, D32.5 wählt 320 (320/350/400: 62/63/67 %, alle grün).
   Mit 320 reißen K5 (**4 von 9 Startzahlen im Patt**) und K4 (R-AI-09/AK3, 1 > 0), dazu
   `clearance.test.ts` K12. Zurückgenommen (`67ec4e0`); wartet auf Befund M42-07-a.
+- **Dritter Versuch am 2026-10-03** auf Stufe F (die Artillerie ist nach Option c zurückgenommen):
+  320 gewählt (280 reißt das Turnier); K4 (R-AI-09/AK3 1 > 0), K5 (1914 im Patt), `clearance.test.ts`
+  K12 reißen — nie committet, bleibt zurückgestellt. Nebenbefund: die Buchung allein bringt Welt
+  1815 Artillerie (das `it.fails` der Artillerie wird grün).
 
 ### T-M42-05 · Die Truppenmischung zählt Einheiten
 - **Ziel:** R-AI-10/AK1.
@@ -7119,6 +7123,10 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   `unitCount`, eine Gruppe nur solange die Summe ≤ `stackFullContribution` bleibt, gleiches
   `embarked` und leerer `path`, weiterhin eine Provinz je Denkschritt). `military.ts` wird auch
   von T-M43-01 (Heimweg) angefasst — nacheinander mergen. Aufwand 3 h, Rechenzeit rund 12 min.
+- **Erledigt am 2026-10-03** (`3e3f850`): Rolle aus `army-role.ts`, Einheiten statt Stapel,
+  First-Fit je Provinz und Rolle. Stufe C1: Turnier unverändert, `progress.slow` 0,3291; ein
+  `m17`-Riss (R-AI-09/AK3, ein Zielwechsel-Überfall), auf C2 verschwunden.
+
 
 ### T-M42-09 · Zusammenlegen in allen Provinzen: Zusage 7 in haltbarer Fassung
 - **Ziel:** R-AI-10/AK3, nach Noahs Antwort auf Frage 4 (wie empfohlen).
@@ -7136,6 +7144,11 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   den `reopened`-Text von T-M41-10 mit dieser Aufgabe als Ablösung (schon eingetragen); der
   M18-Absatz „Vorgemerkt am 2026-09-13" in `03-TASKS.md` zeigt auf M42 (schon eingetragen).
   Aufwand 1,5 h, Rechenzeit rund 15 min.
+- **Erledigt am 2026-10-03** (`b8106df`): kein `break` mehr; Z1/Z2 rot auf C1. Stufe C2: Paare über
+  zwei Tagesenden **0** in allen fünf Läufen (Stufe F 28), größter stehender Verband 95/95/96/59
+  (vorher 132/127/133/124; über 20 nur durch Aushebung in die Gastarmee, Befund M42-09-a),
+  Turnier 84/61/63 %, `progress.slow` 0,3334, neun Vollpartien 9/9 entschieden.
+
 
 ### T-M42-10 · (bedingt) Die Aushebung fragt die Provinz, die bezahlen kann
 - **Ziel:** Befund D (die Aushebung fragt die vielseitigste statt der bezahlenden Provinz).
@@ -7147,6 +7160,9 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   Stufe C2 (nach T-M42-09). Darunter wird die Aufgabe `done` mit „Befund D widerlegt, gemessen
   N", ohne Codeänderung. Erst bei erfüllter Bedingung wird die Aushebung umgebaut. Aufwand 0,3 h
   (widerlegt) oder 2,5 h (gebaut).
+- **Erledigt am 2026-10-03 ohne Codeänderung:** Befund D widerlegt, gemessen **0** über drei
+  Startzahlen auf Stufe C2.
+
 
 ### T-M42-11 · Der Langlauf sagt, was er prüft
 - **Ziel:** der Testname wird ehrlich (Befund 58), keine neue Schranke. Jederzeit baubar, keine

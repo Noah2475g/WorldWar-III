@@ -1,6 +1,6 @@
 {
-  "gemessenAm": "2026-09-27",
-  "measuredAtCommit": "8aba750234f3452384e7195b2d02f9ce1ca5858b",
+  "gemessenAm": "2026-10-03",
+  "measuredAtCommit": "b8106df5745d3f4ddb5585f04ed1bc17d822bbdb",
   "measuredDirty": [],
   "aufgabe": "T-M17-15",
   "partie": {
@@ -391,57 +391,57 @@
       "mitAntraegen": {
         "spieltage": 200,
         "maechte": 8,
-        "ereignisse": 29338,
-        "kiBefehle": 16670,
+        "ereignisse": 30584,
+        "kiBefehle": 16955,
         "spyReportJeStufe": {
-          "hard": 578,
-          "normal": 299,
-          "easy": 200
+          "hard": 419,
+          "normal": 496,
+          "easy": 197
         },
         "spyReportJeStufeUndAusgang": {
-          "hard:success": 372,
-          "normal:success": 184,
-          "normal:failure": 98,
-          "hard:failure": 185,
-          "normal:targetChanged": 17,
-          "easy:success": 117,
-          "easy:failure": 65,
-          "easy:targetChanged": 18,
-          "hard:targetChanged": 21
+          "hard:success": 258,
+          "normal:success": 301,
+          "normal:failure": 140,
+          "hard:failure": 135,
+          "normal:targetChanged": 55,
+          "hard:targetChanged": 26,
+          "easy:success": 111,
+          "easy:targetChanged": 20,
+          "easy:failure": 66
         },
         "recruitSpyJeStufeUndAuftrag": {
-          "hard:counter": 2,
-          "normal:counter": 5,
-          "hard:intel": 27,
-          "normal:intel": 4,
-          "normal:economicSabotage": 11,
-          "hard:economicSabotage": 22,
+          "hard:counter": 3,
+          "normal:counter": 3,
+          "hard:intel": 23,
+          "normal:intel": 6,
+          "normal:economicSabotage": 14,
+          "hard:economicSabotage": 13,
           "easy:counter": 1,
           "easy:intel": 1,
           "easy:economicSabotage": 1
         },
-        "spyDetected": 43,
-        "sabotage": 213,
+        "spyDetected": 35,
+        "sabotage": 196,
         "spyLost": 0,
-        "tradeAgreed": 18,
+        "tradeAgreed": 20,
         "tradeClosedJeGrund": {
           "declined": 85,
-          "accepted": 18
+          "accepted": 20
         },
-        "offerTrade": 103,
+        "offerTrade": 105,
         "offerTradeMitProvinz": 0,
-        "acceptTrade": 18,
+        "acceptTrade": 20,
         "declineTrade": 85,
         "provinceCeded": 0,
         "durchmarschKiKi": 9,
         "kuendigungen": 0,
         "diplomatieJeAktion": {
           "declareWar": 8,
-          "offerPeace": 874,
+          "offerPeace": 649,
           "requestRightOfWay": 9,
           "acceptRightOfWay": 5,
           "grantRightOfWay": 4,
-          "acceptPeace": 2
+          "acceptPeace": 3
         },
         "kriege": 8,
         "foermlich": 8,
@@ -453,78 +453,78 @@
         "ueberfaelleNachAbtretung": 0,
         "ueberfaelleNachRueckzug": 0,
         "ueberfaelleZielwechsel": 0,
-        "frieden": 2,
-        "friedenZwischenKi": 2,
+        "frieden": 3,
+        "friedenZwischenKi": 3,
         "geldmangelKi": 0,
         "ablehnungen": {
-          "RECRUIT:INSUFFICIENT_RESOURCES": 2
+          "RECRUIT:INSUFFICIENT_RESOURCES": 1
         },
         "ablehnungenAk2": 0,
         "ak4": {
-          "befehle": 289,
-          "gedeckt": 289,
+          "befehle": 284,
+          "gedeckt": 284,
           "luecken": []
         },
         "zurueckgehalten": 0,
         "artillerie": 0,
         "beschuss": 0,
         "ausgeschieden": [],
-        "zustandOhneKi": "fd33b00b1ff9fb75"
+        "zustandOhneKi": "d0fd944e014a46bc"
       },
       "ohneAntraege": {
         "spieltage": 200,
         "maechte": 8,
-        "ereignisse": 28342,
-        "kiBefehle": 16648,
+        "ereignisse": 28556,
+        "kiBefehle": 16894,
         "spyReportJeStufe": {
-          "hard": 415,
-          "normal": 327,
-          "easy": 236
+          "hard": 590,
+          "normal": 294,
+          "easy": 231
         },
         "spyReportJeStufeUndAusgang": {
-          "hard:success": 265,
-          "normal:success": 210,
-          "normal:failure": 97,
-          "hard:failure": 136,
-          "normal:targetChanged": 20,
-          "easy:success": 143,
-          "easy:failure": 68,
-          "easy:targetChanged": 25,
-          "hard:targetChanged": 14
+          "hard:success": 380,
+          "normal:success": 190,
+          "normal:failure": 88,
+          "hard:failure": 185,
+          "normal:targetChanged": 16,
+          "easy:success": 129,
+          "easy:failure": 78,
+          "easy:targetChanged": 24,
+          "hard:targetChanged": 25
         },
         "recruitSpyJeStufeUndAuftrag": {
           "hard:counter": 2,
-          "normal:counter": 5,
-          "hard:intel": 46,
-          "normal:intel": 7,
-          "normal:economicSabotage": 10,
-          "hard:economicSabotage": 35,
+          "normal:counter": 3,
+          "hard:intel": 21,
+          "normal:intel": 8,
+          "normal:economicSabotage": 12,
+          "hard:economicSabotage": 22,
           "easy:counter": 1,
           "easy:intel": 1,
           "easy:economicSabotage": 1
         },
-        "spyDetected": 73,
-        "sabotage": 190,
+        "spyDetected": 46,
+        "sabotage": 227,
         "spyLost": 0,
-        "tradeAgreed": 12,
+        "tradeAgreed": 6,
         "tradeClosedJeGrund": {
-          "declined": 100,
-          "accepted": 12
+          "declined": 98,
+          "accepted": 6
         },
-        "offerTrade": 112,
+        "offerTrade": 104,
         "offerTradeMitProvinz": 0,
-        "acceptTrade": 12,
-        "declineTrade": 100,
+        "acceptTrade": 6,
+        "declineTrade": 98,
         "provinceCeded": 0,
         "durchmarschKiKi": 0,
         "kuendigungen": 0,
         "diplomatieJeAktion": {
-          "declareWar": 10,
-          "offerPeace": 745,
+          "declareWar": 12,
+          "offerPeace": 803,
           "acceptPeace": 4
         },
-        "kriege": 10,
-        "foermlich": 10,
+        "kriege": 12,
+        "foermlich": 12,
         "ueberfaelle": 0,
         "ueberfaelleEinzeln": [],
         "ueberfaelleJeArt": {},
@@ -541,75 +541,75 @@
         },
         "ablehnungenAk2": 0,
         "ak4": {
-          "befehle": 332,
-          "gedeckt": 332,
+          "befehle": 279,
+          "gedeckt": 279,
           "luecken": []
         },
-        "zurueckgehalten": 69,
-        "artillerie": 0,
-        "beschuss": 0,
+        "zurueckgehalten": 32,
+        "artillerie": 2,
+        "beschuss": 33,
         "ausgeschieden": [],
-        "zustandOhneKi": "4b8260516914c19f"
+        "zustandOhneKi": "4411f0baf54d9a20"
       }
     },
     "1914": {
       "mitAntraegen": {
         "spieltage": 200,
         "maechte": 8,
-        "ereignisse": 30440,
-        "kiBefehle": 17334,
+        "ereignisse": 29101,
+        "kiBefehle": 17083,
         "spyReportJeStufe": {
-          "hard": 470,
-          "normal": 492,
-          "easy": 207
+          "hard": 524,
+          "normal": 282,
+          "easy": 41
         },
         "spyReportJeStufeUndAusgang": {
-          "hard:success": 294,
-          "normal:failure": 151,
-          "normal:success": 287,
-          "hard:failure": 157,
-          "normal:targetChanged": 54,
-          "easy:success": 132,
-          "easy:failure": 53,
-          "easy:targetChanged": 22,
-          "hard:targetChanged": 19
+          "hard:success": 334,
+          "normal:failure": 83,
+          "normal:success": 176,
+          "hard:failure": 162,
+          "normal:targetChanged": 23,
+          "hard:targetChanged": 28,
+          "easy:success": 26,
+          "easy:failure": 11,
+          "easy:targetChanged": 4
         },
         "recruitSpyJeStufeUndAuftrag": {
           "hard:counter": 2,
-          "normal:counter": 3,
-          "hard:intel": 40,
-          "normal:intel": 10,
+          "normal:counter": 5,
+          "hard:intel": 31,
+          "normal:intel": 12,
           "normal:economicSabotage": 11,
-          "hard:economicSabotage": 30,
+          "hard:economicSabotage": 35,
           "easy:counter": 1,
           "easy:intel": 1,
           "easy:economicSabotage": 1
         },
-        "spyDetected": 59,
-        "sabotage": 224,
+        "spyDetected": 64,
+        "sabotage": 165,
         "spyLost": 0,
-        "tradeAgreed": 6,
+        "tradeAgreed": 18,
         "tradeClosedJeGrund": {
-          "accepted": 6,
-          "declined": 74
+          "accepted": 18,
+          "declined": 70
         },
-        "offerTrade": 80,
+        "offerTrade": 88,
         "offerTradeMitProvinz": 0,
-        "acceptTrade": 6,
-        "declineTrade": 74,
+        "acceptTrade": 18,
+        "declineTrade": 70,
         "provinceCeded": 0,
-        "durchmarschKiKi": 8,
+        "durchmarschKiKi": 6,
         "kuendigungen": 0,
         "diplomatieJeAktion": {
-          "declareWar": 14,
-          "offerPeace": 724,
-          "requestRightOfWay": 48,
-          "acceptRightOfWay": 4,
-          "grantRightOfWay": 4,
-          "acceptPeace": 7
+          "declareWar": 13,
+          "offerPeace": 754,
+          "requestRightOfWay": 41,
+          "acceptRightOfWay": 3,
+          "grantRightOfWay": 3,
+          "acceptPeace": 6
         },
-        "kriege": 14,
-        "foermlich": 14,
+        "kriege": 13,
+        "foermlich": 13,
         "ueberfaelle": 0,
         "ueberfaelleEinzeln": [],
         "ueberfaelleJeArt": {},
@@ -618,78 +618,78 @@
         "ueberfaelleNachAbtretung": 0,
         "ueberfaelleNachRueckzug": 0,
         "ueberfaelleZielwechsel": 0,
-        "frieden": 7,
-        "friedenZwischenKi": 7,
+        "frieden": 6,
+        "friedenZwischenKi": 6,
         "geldmangelKi": 0,
         "ablehnungen": {
           "RECRUIT:INSUFFICIENT_RESOURCES": 3
         },
         "ablehnungenAk2": 0,
         "ak4": {
-          "befehle": 307,
-          "gedeckt": 307,
+          "befehle": 316,
+          "gedeckt": 316,
           "luecken": []
         },
         "zurueckgehalten": 0,
-        "artillerie": 0,
+        "artillerie": 13,
         "beschuss": 0,
         "ausgeschieden": [],
-        "zustandOhneKi": "eac76683d5513f05"
+        "zustandOhneKi": "d2c842ca2bbfd148"
       },
       "ohneAntraege": {
         "spieltage": 200,
         "maechte": 8,
-        "ereignisse": 28578,
-        "kiBefehle": 16446,
+        "ereignisse": 27399,
+        "kiBefehle": 16436,
         "spyReportJeStufe": {
-          "hard": 397,
-          "normal": 512,
-          "easy": 230
+          "hard": 338,
+          "normal": 420,
+          "easy": 237
         },
         "spyReportJeStufeUndAusgang": {
-          "hard:success": 258,
-          "normal:failure": 176,
-          "normal:success": 318,
-          "hard:failure": 135,
-          "normal:targetChanged": 18,
-          "easy:success": 136,
-          "easy:failure": 77,
-          "hard:targetChanged": 4,
-          "easy:targetChanged": 17
+          "hard:success": 203,
+          "normal:failure": 121,
+          "normal:success": 277,
+          "hard:failure": 119,
+          "normal:targetChanged": 22,
+          "hard:targetChanged": 16,
+          "easy:failure": 69,
+          "easy:success": 139,
+          "easy:targetChanged": 29
         },
         "recruitSpyJeStufeUndAuftrag": {
           "hard:counter": 2,
           "normal:counter": 3,
-          "hard:intel": 26,
-          "normal:intel": 4,
-          "normal:economicSabotage": 6,
-          "hard:economicSabotage": 18,
+          "hard:intel": 23,
+          "normal:intel": 6,
+          "normal:economicSabotage": 10,
+          "hard:economicSabotage": 24,
           "easy:counter": 1,
           "easy:intel": 1,
           "easy:economicSabotage": 1
         },
-        "spyDetected": 37,
-        "sabotage": 239,
+        "spyDetected": 42,
+        "sabotage": 195,
         "spyLost": 0,
-        "tradeAgreed": 13,
+        "tradeAgreed": 10,
         "tradeClosedJeGrund": {
-          "accepted": 13,
-          "declined": 77
+          "accepted": 10,
+          "declined": 86
         },
-        "offerTrade": 90,
+        "offerTrade": 96,
         "offerTradeMitProvinz": 0,
-        "acceptTrade": 13,
-        "declineTrade": 77,
+        "acceptTrade": 10,
+        "declineTrade": 86,
         "provinceCeded": 0,
         "durchmarschKiKi": 0,
         "kuendigungen": 0,
         "diplomatieJeAktion": {
-          "declareWar": 9,
-          "offerPeace": 811,
-          "acceptPeace": 4
+          "declareWar": 11,
+          "offerPeace": 712,
+          "acceptPeace": 6
         },
-        "kriege": 9,
-        "foermlich": 9,
+        "kriege": 11,
+        "foermlich": 11,
         "ueberfaelle": 0,
         "ueberfaelleEinzeln": [],
         "ueberfaelleJeArt": {},
@@ -698,160 +698,79 @@
         "ueberfaelleNachAbtretung": 0,
         "ueberfaelleNachRueckzug": 0,
         "ueberfaelleZielwechsel": 0,
-        "frieden": 4,
-        "friedenZwischenKi": 4,
+        "frieden": 6,
+        "friedenZwischenKi": 6,
         "geldmangelKi": 0,
         "ablehnungen": {
           "RECRUIT:INSUFFICIENT_RESOURCES": 1
         },
         "ablehnungenAk2": 0,
         "ak4": {
-          "befehle": 242,
-          "gedeckt": 242,
+          "befehle": 263,
+          "gedeckt": 263,
           "luecken": []
         },
-        "zurueckgehalten": 48,
-        "artillerie": 1,
-        "beschuss": 2,
+        "zurueckgehalten": 81,
+        "artillerie": 0,
+        "beschuss": 0,
         "ausgeschieden": [],
-        "zustandOhneKi": "e5b8a114e4d2687a"
+        "zustandOhneKi": "ad37e26c836a669a"
       }
     },
     "2015": {
       "mitAntraegen": {
         "spieltage": 200,
         "maechte": 8,
-        "ereignisse": 30942,
-        "kiBefehle": 17432,
+        "ereignisse": 30985,
+        "kiBefehle": 17347,
         "spyReportJeStufe": {
-          "hard": 521,
+          "hard": 542,
           "normal": 255,
           "easy": 203
         },
         "spyReportJeStufeUndAusgang": {
-          "hard:success": 357,
-          "normal:success": 163,
-          "normal:failure": 76,
-          "hard:failure": 158,
-          "normal:targetChanged": 16,
-          "easy:success": 123,
-          "easy:failure": 70,
-          "easy:targetChanged": 10,
-          "hard:targetChanged": 6
-        },
-        "recruitSpyJeStufeUndAuftrag": {
-          "hard:counter": 2,
-          "normal:counter": 3,
-          "hard:intel": 36,
-          "normal:intel": 16,
-          "normal:economicSabotage": 14,
-          "hard:economicSabotage": 30,
-          "easy:counter": 1,
-          "easy:intel": 4,
-          "easy:economicSabotage": 2
-        },
-        "spyDetected": 91,
-        "sabotage": 212,
-        "spyLost": 0,
-        "tradeAgreed": 17,
-        "tradeClosedJeGrund": {
-          "declined": 79,
-          "accepted": 17
-        },
-        "offerTrade": 96,
-        "offerTradeMitProvinz": 0,
-        "acceptTrade": 17,
-        "declineTrade": 79,
-        "provinceCeded": 0,
-        "durchmarschKiKi": 4,
-        "kuendigungen": 1,
-        "diplomatieJeAktion": {
-          "declareWar": 7,
-          "offerPeace": 854,
-          "requestRightOfWay": 4,
-          "acceptRightOfWay": 2,
-          "grantRightOfWay": 2,
-          "acceptPeace": 1,
-          "revokeRightOfWay": 1
-        },
-        "kriege": 7,
-        "foermlich": 7,
-        "ueberfaelle": 0,
-        "ueberfaelleEinzeln": [],
-        "ueberfaelleJeArt": {},
-        "ueberfaelleMitFriedensschluss": 0,
-        "ueberfaelleNachKuendigung": 0,
-        "ueberfaelleNachAbtretung": 0,
-        "ueberfaelleNachRueckzug": 0,
-        "ueberfaelleZielwechsel": 0,
-        "frieden": 1,
-        "friedenZwischenKi": 1,
-        "geldmangelKi": 0,
-        "ablehnungen": {
-          "RECRUIT:INSUFFICIENT_RESOURCES": 4
-        },
-        "ablehnungenAk2": 0,
-        "ak4": {
-          "befehle": 304,
-          "gedeckt": 304,
-          "luecken": []
-        },
-        "zurueckgehalten": 0,
-        "artillerie": 1,
-        "beschuss": 0,
-        "ausgeschieden": [],
-        "zustandOhneKi": "07e08e74cd476c82"
-      },
-      "ohneAntraege": {
-        "spieltage": 200,
-        "maechte": 8,
-        "ereignisse": 28981,
-        "kiBefehle": 16789,
-        "spyReportJeStufe": {
-          "hard": 521,
-          "normal": 291,
-          "easy": 231
-        },
-        "spyReportJeStufeUndAusgang": {
-          "hard:success": 343,
-          "normal:success": 178,
-          "normal:failure": 96,
-          "hard:failure": 163,
-          "normal:targetChanged": 17,
-          "easy:success": 125,
-          "easy:failure": 79,
-          "easy:targetChanged": 27,
-          "hard:targetChanged": 15
+          "hard:success": 345,
+          "normal:success": 154,
+          "normal:failure": 79,
+          "hard:failure": 178,
+          "normal:targetChanged": 22,
+          "easy:success": 117,
+          "easy:failure": 71,
+          "easy:targetChanged": 15,
+          "hard:targetChanged": 19
         },
         "recruitSpyJeStufeUndAuftrag": {
           "hard:counter": 2,
           "normal:counter": 4,
-          "hard:intel": 36,
-          "normal:intel": 3,
-          "normal:economicSabotage": 5,
-          "hard:economicSabotage": 37,
+          "hard:intel": 42,
+          "normal:intel": 17,
+          "normal:economicSabotage": 23,
+          "hard:economicSabotage": 29,
           "easy:counter": 1,
           "easy:intel": 1,
           "easy:economicSabotage": 1
         },
-        "spyDetected": 70,
-        "sabotage": 205,
+        "spyDetected": 94,
+        "sabotage": 203,
         "spyLost": 0,
-        "tradeAgreed": 19,
+        "tradeAgreed": 14,
         "tradeClosedJeGrund": {
-          "declined": 88,
-          "accepted": 19
+          "declined": 76,
+          "accepted": 14
         },
-        "offerTrade": 107,
+        "offerTrade": 90,
         "offerTradeMitProvinz": 0,
-        "acceptTrade": 19,
-        "declineTrade": 88,
+        "acceptTrade": 14,
+        "declineTrade": 76,
         "provinceCeded": 0,
-        "durchmarschKiKi": 0,
+        "durchmarschKiKi": 6,
         "kuendigungen": 0,
         "diplomatieJeAktion": {
           "declareWar": 7,
-          "offerPeace": 916
+          "offerPeace": 898,
+          "requestRightOfWay": 4,
+          "acceptRightOfWay": 3,
+          "grantRightOfWay": 3
         },
         "kriege": 7,
         "foermlich": 7,
@@ -867,7 +786,7 @@
         "friedenZwischenKi": 0,
         "geldmangelKi": 0,
         "ablehnungen": {
-          "RECRUIT:INSUFFICIENT_RESOURCES": 4
+          "RECRUIT:INSUFFICIENT_RESOURCES": 3
         },
         "ablehnungenAk2": 0,
         "ak4": {
@@ -875,11 +794,91 @@
           "gedeckt": 304,
           "luecken": []
         },
-        "zurueckgehalten": 19,
-        "artillerie": 1,
-        "beschuss": 1,
+        "zurueckgehalten": 0,
+        "artillerie": 0,
+        "beschuss": 0,
         "ausgeschieden": [],
-        "zustandOhneKi": "64ffbf9ac409c520"
+        "zustandOhneKi": "231c8097651dc735"
+      },
+      "ohneAntraege": {
+        "spieltage": 200,
+        "maechte": 8,
+        "ereignisse": 28570,
+        "kiBefehle": 16819,
+        "spyReportJeStufe": {
+          "hard": 517,
+          "normal": 314,
+          "easy": 234
+        },
+        "spyReportJeStufeUndAusgang": {
+          "hard:success": 336,
+          "normal:success": 196,
+          "normal:failure": 99,
+          "hard:failure": 163,
+          "normal:targetChanged": 19,
+          "easy:success": 123,
+          "easy:failure": 77,
+          "easy:targetChanged": 34,
+          "hard:targetChanged": 18
+        },
+        "recruitSpyJeStufeUndAuftrag": {
+          "hard:counter": 2,
+          "normal:counter": 3,
+          "hard:intel": 46,
+          "normal:intel": 5,
+          "normal:economicSabotage": 4,
+          "hard:economicSabotage": 30,
+          "easy:counter": 1,
+          "easy:intel": 1,
+          "easy:economicSabotage": 1
+        },
+        "spyDetected": 75,
+        "sabotage": 214,
+        "spyLost": 0,
+        "tradeAgreed": 8,
+        "tradeClosedJeGrund": {
+          "declined": 94,
+          "accepted": 8
+        },
+        "offerTrade": 102,
+        "offerTradeMitProvinz": 0,
+        "acceptTrade": 8,
+        "declineTrade": 94,
+        "provinceCeded": 0,
+        "durchmarschKiKi": 0,
+        "kuendigungen": 0,
+        "diplomatieJeAktion": {
+          "declareWar": 8,
+          "offerPeace": 884,
+          "acceptPeace": 1
+        },
+        "kriege": 8,
+        "foermlich": 8,
+        "ueberfaelle": 0,
+        "ueberfaelleEinzeln": [],
+        "ueberfaelleJeArt": {},
+        "ueberfaelleMitFriedensschluss": 0,
+        "ueberfaelleNachKuendigung": 0,
+        "ueberfaelleNachAbtretung": 0,
+        "ueberfaelleNachRueckzug": 0,
+        "ueberfaelleZielwechsel": 0,
+        "frieden": 1,
+        "friedenZwischenKi": 1,
+        "geldmangelKi": 0,
+        "ablehnungen": {
+          "RECRUIT:INSUFFICIENT_RESOURCES": 3
+        },
+        "ablehnungenAk2": 0,
+        "ak4": {
+          "befehle": 297,
+          "gedeckt": 297,
+          "luecken": []
+        },
+        "zurueckgehalten": 14,
+        "artillerie": 0,
+        "beschuss": 0,
+        "ausgeschieden": [],
+        "zustandOhneKi": "a1bd13027e735778"
       }
     }
   },
@@ -893,10 +892,10 @@
     "spieltage": 200,
     "ersteAbweichungZustand": -1,
     "ersteAbweichungEreignisse": -1,
-    "zustandsHashLetzterTag": "666e7edc358ae6ce"
+    "zustandsHashLetzterTag": "87308f5554d51c43"
   },
   "m42": {
-    "stufe": "F",
+    "stufe": "C2",
     "aufgabe": "T-M42-01",
     "laeufe": {
       "1815": {
@@ -905,35 +904,35 @@
           "p1": {
             "stufe": "easy",
             "nation": "Vereinigte Staaten",
-            "fabrikenBegonnen": 30,
-            "fabrikenFertig": 17,
-            "tageFabrikBezahlbar": 106,
-            "tageStadtOhneFabrik": 174,
+            "fabrikenBegonnen": 20,
+            "fabrikenFertig": 16,
+            "tageFabrikBezahlbar": 108,
+            "tageStadtOhneFabrik": 180,
             "geldmangelTage": 0,
             "geldmangelTageDurchAushebung": 0,
             "geldmangelTageNachProvinzverlust": 0,
             "oelmangelTage": 0,
             "oelmangelTageDurchAushebung": 0,
-            "geldHoechststand": 1917209,
+            "geldHoechststand": 1771063,
             "spioneAngeworben": 0,
             "spioneHoechstens": 0,
             "soldHoechstensJeTag": 0,
-            "aushebungsTage": 123,
-            "tagesbilanzGeldBeiLetzterAushebung": 531192,
+            "aushebungsTage": 125,
+            "tagesbilanzGeldBeiLetzterAushebung": 537502,
             "befohlen": {
-              "infantry": 232
+              "infantry": 241
             },
             "ausgehoben": {
-              "infantry": 231
+              "infantry": 240
             },
             "beschuss": 0,
             "kriegeErklaert": 0,
             "ueberfaelle": 0,
-            "eroberungen": 102,
+            "eroberungen": 85,
             "provinzenVerloren": 0,
             "ausgeschieden": false,
-            "groessterStehenderVerband": 39,
-            "tageUeberDeckel": 46,
+            "groessterStehenderVerband": 20,
+            "tageUeberDeckel": 0,
             "batterienHoechstens": 0,
             "verpassteGelegenheiten": 0,
             "verpassteGelegenheitenNurGeld": 0
@@ -952,23 +951,23 @@
             "oelmangelTageDurchAushebung": 0,
             "geldHoechststand": 1429897,
             "spioneAngeworben": 3,
-            "spioneHoechstens": 2,
-            "soldHoechstensJeTag": 15229,
-            "aushebungsTage": 164,
-            "tagesbilanzGeldBeiLetzterAushebung": 71071,
+            "spioneHoechstens": 3,
+            "soldHoechstensJeTag": 35535,
+            "aushebungsTage": 190,
+            "tagesbilanzGeldBeiLetzterAushebung": 196752,
             "befohlen": {
-              "infantry": 375
+              "infantry": 454
             },
             "ausgehoben": {
-              "infantry": 374
+              "infantry": 453
             },
             "beschuss": 0,
-            "kriegeErklaert": 1,
+            "kriegeErklaert": 0,
             "ueberfaelle": 0,
-            "eroberungen": 55,
-            "provinzenVerloren": 12,
+            "eroberungen": 59,
+            "provinzenVerloren": 6,
             "ausgeschieden": false,
-            "groessterStehenderVerband": 3,
+            "groessterStehenderVerband": 10,
             "tageUeberDeckel": 0,
             "batterienHoechstens": 0,
             "verpassteGelegenheiten": 0,
@@ -987,22 +986,22 @@
             "oelmangelTage": 0,
             "oelmangelTageDurchAushebung": 0,
             "geldHoechststand": 1590096,
-            "spioneAngeworben": 6,
+            "spioneAngeworben": 5,
             "spioneHoechstens": 3,
             "soldHoechstensJeTag": 35535,
             "aushebungsTage": 195,
-            "tagesbilanzGeldBeiLetzterAushebung": 194145,
+            "tagesbilanzGeldBeiLetzterAushebung": 186817,
             "befohlen": {
-              "infantry": 686
+              "infantry": 690
             },
             "ausgehoben": {
-              "infantry": 681
+              "infantry": 686
             },
             "beschuss": 0,
             "kriegeErklaert": 1,
             "ueberfaelle": 0,
-            "eroberungen": 45,
-            "provinzenVerloren": 10,
+            "eroberungen": 23,
+            "provinzenVerloren": 9,
             "ausgeschieden": false,
             "groessterStehenderVerband": 5,
             "tageUeberDeckel": 0,
@@ -1013,10 +1012,10 @@
           "p4": {
             "stufe": "easy",
             "nation": "Indien",
-            "fabrikenBegonnen": 51,
-            "fabrikenFertig": 33,
-            "tageFabrikBezahlbar": 133,
-            "tageStadtOhneFabrik": 168,
+            "fabrikenBegonnen": 52,
+            "fabrikenFertig": 34,
+            "tageFabrikBezahlbar": 128,
+            "tageStadtOhneFabrik": 157,
             "geldmangelTage": 0,
             "geldmangelTageDurchAushebung": 0,
             "geldmangelTageNachProvinzverlust": 0,
@@ -1026,22 +1025,22 @@
             "spioneAngeworben": 3,
             "spioneHoechstens": 3,
             "soldHoechstensJeTag": 35535,
-            "aushebungsTage": 175,
-            "tagesbilanzGeldBeiLetzterAushebung": 653732,
+            "aushebungsTage": 174,
+            "tagesbilanzGeldBeiLetzterAushebung": 668765,
             "befohlen": {
-              "infantry": 388
+              "infantry": 389
             },
             "ausgehoben": {
-              "infantry": 387
+              "infantry": 388
             },
             "beschuss": 0,
             "kriegeErklaert": 1,
             "ueberfaelle": 0,
-            "eroberungen": 102,
-            "provinzenVerloren": 7,
+            "eroberungen": 76,
+            "provinzenVerloren": 10,
             "ausgeschieden": false,
-            "groessterStehenderVerband": 91,
-            "tageUeberDeckel": 3,
+            "groessterStehenderVerband": 20,
+            "tageUeberDeckel": 0,
             "batterienHoechstens": 0,
             "verpassteGelegenheiten": 0,
             "verpassteGelegenheitenNurGeld": 0
@@ -1049,35 +1048,35 @@
           "p5": {
             "stufe": "normal",
             "nation": "Deutschland",
-            "fabrikenBegonnen": 3,
-            "fabrikenFertig": 2,
-            "tageFabrikBezahlbar": 2,
-            "tageStadtOhneFabrik": 72,
+            "fabrikenBegonnen": 1,
+            "fabrikenFertig": 1,
+            "tageFabrikBezahlbar": 1,
+            "tageStadtOhneFabrik": 133,
             "geldmangelTage": 0,
             "geldmangelTageDurchAushebung": 0,
             "geldmangelTageNachProvinzverlust": 0,
             "oelmangelTage": 0,
             "oelmangelTageDurchAushebung": 0,
             "geldHoechststand": 1378280,
-            "spioneAngeworben": 9,
+            "spioneAngeworben": 8,
             "spioneHoechstens": 3,
             "soldHoechstensJeTag": 35535,
-            "aushebungsTage": 149,
-            "tagesbilanzGeldBeiLetzterAushebung": 10372,
+            "aushebungsTage": 192,
+            "tagesbilanzGeldBeiLetzterAushebung": 381249,
             "befohlen": {
-              "infantry": 255
+              "infantry": 445
             },
             "ausgehoben": {
-              "infantry": 248
+              "infantry": 444
             },
             "beschuss": 0,
-            "kriegeErklaert": 3,
+            "kriegeErklaert": 2,
             "ueberfaelle": 0,
-            "eroberungen": 134,
-            "provinzenVerloren": 51,
+            "eroberungen": 150,
+            "provinzenVerloren": 62,
             "ausgeschieden": false,
-            "groessterStehenderVerband": 25,
-            "tageUeberDeckel": 2,
+            "groessterStehenderVerband": 10,
+            "tageUeberDeckel": 0,
             "batterienHoechstens": 0,
             "verpassteGelegenheiten": 0,
             "verpassteGelegenheitenNurGeld": 0
@@ -1085,9 +1084,9 @@
           "p6": {
             "stufe": "hard",
             "nation": "Frankreich",
-            "fabrikenBegonnen": 2,
-            "fabrikenFertig": 1,
-            "tageFabrikBezahlbar": 2,
+            "fabrikenBegonnen": 4,
+            "fabrikenFertig": 3,
+            "tageFabrikBezahlbar": 5,
             "tageStadtOhneFabrik": 200,
             "geldmangelTage": 0,
             "geldmangelTageDurchAushebung": 0,
@@ -1095,21 +1094,21 @@
             "oelmangelTage": 0,
             "oelmangelTageDurchAushebung": 0,
             "geldHoechststand": 1518832,
-            "spioneAngeworben": 45,
+            "spioneAngeworben": 34,
             "spioneHoechstens": 3,
             "soldHoechstensJeTag": 35535,
-            "aushebungsTage": 193,
-            "tagesbilanzGeldBeiLetzterAushebung": 158837,
+            "aushebungsTage": 167,
+            "tagesbilanzGeldBeiLetzterAushebung": 215636,
             "befohlen": {
-              "infantry": 617
+              "infantry": 431
             },
             "ausgehoben": {
-              "infantry": 615
+              "infantry": 421
             },
             "beschuss": 0,
-            "kriegeErklaert": 2,
+            "kriegeErklaert": 4,
             "ueberfaelle": 0,
-            "eroberungen": 196,
+            "eroberungen": 101,
             "provinzenVerloren": 33,
             "ausgeschieden": false,
             "groessterStehenderVerband": 18,
@@ -1123,18 +1122,18 @@
             "nation": "Vereinigtes Königreich",
             "fabrikenBegonnen": 3,
             "fabrikenFertig": 3,
-            "tageFabrikBezahlbar": 77,
+            "tageFabrikBezahlbar": 74,
             "tageStadtOhneFabrik": 29,
             "geldmangelTage": 0,
             "geldmangelTageDurchAushebung": 0,
             "geldmangelTageNachProvinzverlust": 0,
             "oelmangelTage": 0,
             "oelmangelTageDurchAushebung": 0,
-            "geldHoechststand": 2732621,
+            "geldHoechststand": 2705063,
             "spioneAngeworben": 0,
             "spioneHoechstens": 0,
             "soldHoechstensJeTag": 0,
-            "aushebungsTage": 57,
+            "aushebungsTage": 56,
             "tagesbilanzGeldBeiLetzterAushebung": 456,
             "befohlen": {
               "infantry": 101
@@ -1167,22 +1166,22 @@
             "oelmangelTage": 0,
             "oelmangelTageDurchAushebung": 0,
             "geldHoechststand": 1350608,
-            "spioneAngeworben": 8,
+            "spioneAngeworben": 12,
             "spioneHoechstens": 3,
             "soldHoechstensJeTag": 35535,
-            "aushebungsTage": 186,
-            "tagesbilanzGeldBeiLetzterAushebung": 188195,
+            "aushebungsTage": 188,
+            "tagesbilanzGeldBeiLetzterAushebung": 136886,
             "befohlen": {
-              "infantry": 396
+              "infantry": 400
             },
             "ausgehoben": {
-              "infantry": 394
+              "infantry": 397
             },
             "beschuss": 0,
             "kriegeErklaert": 0,
             "ueberfaelle": 0,
-            "eroberungen": 163,
-            "provinzenVerloren": 64,
+            "eroberungen": 169,
+            "provinzenVerloren": 80,
             "ausgeschieden": false,
             "groessterStehenderVerband": 10,
             "tageUeberDeckel": 0,
@@ -1194,10 +1193,10 @@
         "jeStufe": {
           "easy": {
             "maechte": 3,
-            "fabrikenBegonnen": 84,
+            "fabrikenBegonnen": 75,
             "fabrikenFertig": 53,
-            "tageFabrikBezahlbar": 316,
-            "tageStadtOhneFabrik": 371,
+            "tageFabrikBezahlbar": 310,
+            "tageStadtOhneFabrik": 366,
             "geldmangelTage": 0,
             "geldmangelTageDurchAushebung": 0,
             "geldmangelTageNachProvinzverlust": 0,
@@ -1208,74 +1207,74 @@
             "beschuss": 0,
             "kriegeErklaert": 1,
             "ueberfaelle": 0,
-            "eroberungen": 205,
-            "provinzenVerloren": 7,
-            "tageUeberDeckel": 192,
+            "eroberungen": 162,
+            "provinzenVerloren": 10,
+            "tageUeberDeckel": 143,
             "verpassteGelegenheiten": 0,
             "verpassteGelegenheitenNurGeld": 0,
-            "geldHoechststand": 2732621,
+            "geldHoechststand": 2705063,
             "spioneHoechstens": 3,
             "soldHoechstensJeTag": 35535,
             "groessterStehenderVerband": 95,
             "batterienHoechstens": 0,
             "befohlen": {
-              "infantry": 721
+              "infantry": 731
             },
             "ausgehoben": {
-              "infantry": 719
+              "infantry": 729
             }
           },
           "normal": {
             "maechte": 3,
-            "fabrikenBegonnen": 5,
-            "fabrikenFertig": 4,
-            "tageFabrikBezahlbar": 4,
-            "tageStadtOhneFabrik": 472,
+            "fabrikenBegonnen": 3,
+            "fabrikenFertig": 3,
+            "tageFabrikBezahlbar": 3,
+            "tageStadtOhneFabrik": 533,
             "geldmangelTage": 0,
             "geldmangelTageDurchAushebung": 0,
             "geldmangelTageNachProvinzverlust": 0,
             "oelmangelTage": 0,
             "oelmangelTageDurchAushebung": 0,
-            "spioneAngeworben": 20,
-            "aushebungsTage": 499,
+            "spioneAngeworben": 23,
+            "aushebungsTage": 570,
             "beschuss": 0,
-            "kriegeErklaert": 4,
+            "kriegeErklaert": 2,
             "ueberfaelle": 0,
-            "eroberungen": 352,
-            "provinzenVerloren": 127,
-            "tageUeberDeckel": 2,
+            "eroberungen": 378,
+            "provinzenVerloren": 148,
+            "tageUeberDeckel": 0,
             "verpassteGelegenheiten": 0,
             "verpassteGelegenheitenNurGeld": 0,
             "geldHoechststand": 1429897,
             "spioneHoechstens": 3,
             "soldHoechstensJeTag": 35535,
-            "groessterStehenderVerband": 25,
+            "groessterStehenderVerband": 10,
             "batterienHoechstens": 0,
             "befohlen": {
-              "infantry": 1026
+              "infantry": 1299
             },
             "ausgehoben": {
-              "infantry": 1016
+              "infantry": 1294
             }
           },
           "hard": {
             "maechte": 2,
-            "fabrikenBegonnen": 3,
-            "fabrikenFertig": 2,
-            "tageFabrikBezahlbar": 3,
+            "fabrikenBegonnen": 5,
+            "fabrikenFertig": 4,
+            "tageFabrikBezahlbar": 6,
             "tageStadtOhneFabrik": 400,
             "geldmangelTage": 0,
             "geldmangelTageDurchAushebung": 0,
             "geldmangelTageNachProvinzverlust": 0,
             "oelmangelTage": 0,
             "oelmangelTageDurchAushebung": 0,
-            "spioneAngeworben": 51,
-            "aushebungsTage": 388,
+            "spioneAngeworben": 39,
+            "aushebungsTage": 362,
             "beschuss": 0,
-            "kriegeErklaert": 3,
+            "kriegeErklaert": 5,
             "ueberfaelle": 0,
-            "eroberungen": 241,
-            "provinzenVerloren": 43,
+            "eroberungen": 124,
+            "provinzenVerloren": 42,
             "tageUeberDeckel": 0,
             "verpassteGelegenheiten": 0,
             "verpassteGelegenheitenNurGeld": 0,
@@ -1285,55 +1284,55 @@
             "groessterStehenderVerband": 18,
             "batterienHoechstens": 0,
             "befohlen": {
-              "infantry": 1303
+              "infantry": 1121
             },
             "ausgehoben": {
-              "infantry": 1296
+              "infantry": 1107
             }
           }
         },
         "truppen": {
           "befohlen": {
-            "infantry": 3050
+            "infantry": 3151
           },
           "ausgehoben": {
-            "infantry": 3031
+            "infantry": 3130
           },
           "beschuss": 0,
           "artillerieAnteil": {
             "artillerie": 0,
-            "landeinheiten": 3031,
+            "landeinheiten": 3130,
             "prozent": 0
           }
         },
         "krieg": {
           "kriege": 8,
           "ohneErklaerung": 0,
-          "frieden": 2,
-          "friedenZwischenKi": 2,
-          "eroberungen": 798
+          "frieden": 3,
+          "friedenZwischenKi": 3,
+          "eroberungen": 664
         },
         "heer": {
           "groessterStehenderVerband": 95,
           "tageUeberDeckel": 143,
-          "tageMitPaar": 79,
-          "provinzenMitPaarHoechstens": 5,
-          "paareHoechstens": 351,
-          "paareUeberZweiTagesenden": 24,
-          "tageMitPaarUeberZweiTagesenden": 2,
-          "orteMitPaarUeberZweiTagesenden": 30,
+          "tageMitPaar": 82,
+          "provinzenMitPaarHoechstens": 3,
+          "paareHoechstens": 121,
+          "paareUeberZweiTagesenden": 0,
+          "tageMitPaarUeberZweiTagesenden": 0,
+          "orteMitPaarUeberZweiTagesenden": 33,
           "alteZusage7": {
-            "stehendHoechstens": 25,
-            "stehendTageUeberDrei": 13
+            "stehendHoechstens": 16,
+            "stehendTageUeberDrei": 19
           },
           "batterienHoechstens": 0
         },
         "fehler": {
-          "marschbefehle": 6386,
+          "marschbefehle": 6593,
           "noPath": 0,
           "noPathAnteilProzent": 0,
           "ablehnungen": {
-            "RECRUIT:INSUFFICIENT_RESOURCES": 2
+            "RECRUIT:INSUFFICIENT_RESOURCES": 1
           }
         },
         "ueberfaelleMerkmale": {
@@ -1352,35 +1351,35 @@
           "p1": {
             "stufe": "easy",
             "nation": "Vereinigte Staaten",
-            "fabrikenBegonnen": 39,
-            "fabrikenFertig": 13,
-            "tageFabrikBezahlbar": 105,
-            "tageStadtOhneFabrik": 176,
+            "fabrikenBegonnen": 32,
+            "fabrikenFertig": 20,
+            "tageFabrikBezahlbar": 109,
+            "tageStadtOhneFabrik": 173,
             "geldmangelTage": 0,
             "geldmangelTageDurchAushebung": 0,
             "geldmangelTageNachProvinzverlust": 0,
             "oelmangelTage": 0,
             "oelmangelTageDurchAushebung": 0,
-            "geldHoechststand": 1613056,
+            "geldHoechststand": 1699752,
             "spioneAngeworben": 0,
             "spioneHoechstens": 0,
             "soldHoechstensJeTag": 0,
-            "aushebungsTage": 121,
-            "tagesbilanzGeldBeiLetzterAushebung": 496060,
+            "aushebungsTage": 124,
+            "tagesbilanzGeldBeiLetzterAushebung": 518112,
             "befohlen": {
-              "infantry": 226
+              "infantry": 217
             },
             "ausgehoben": {
-              "infantry": 226
+              "infantry": 217
             },
             "beschuss": 0,
             "kriegeErklaert": 0,
             "ueberfaelle": 0,
-            "eroberungen": 148,
+            "eroberungen": 107,
             "provinzenVerloren": 0,
             "ausgeschieden": false,
-            "groessterStehenderVerband": 24,
-            "tageUeberDeckel": 62,
+            "groessterStehenderVerband": 20,
+            "tageUeberDeckel": 0,
             "batterienHoechstens": 0,
             "verpassteGelegenheiten": 0,
             "verpassteGelegenheitenNurGeld": 0
@@ -1398,25 +1397,25 @@
             "oelmangelTage": 0,
             "oelmangelTageDurchAushebung": 0,
             "geldHoechststand": 1429897,
-            "spioneAngeworben": 5,
+            "spioneAngeworben": 4,
             "spioneHoechstens": 3,
             "soldHoechstensJeTag": 35535,
-            "aushebungsTage": 187,
-            "tagesbilanzGeldBeiLetzterAushebung": 177898,
+            "aushebungsTage": 178,
+            "tagesbilanzGeldBeiLetzterAushebung": -11110,
             "befohlen": {
-              "infantry": 445
+              "infantry": 411
             },
             "ausgehoben": {
-              "infantry": 445
+              "infantry": 411
             },
             "beschuss": 0,
             "kriegeErklaert": 1,
             "ueberfaelle": 0,
-            "eroberungen": 47,
-            "provinzenVerloren": 11,
+            "eroberungen": 56,
+            "provinzenVerloren": 9,
             "ausgeschieden": false,
-            "groessterStehenderVerband": 3,
-            "tageUeberDeckel": 0,
+            "groessterStehenderVerband": 28,
+            "tageUeberDeckel": 4,
             "batterienHoechstens": 0,
             "verpassteGelegenheiten": 0,
             "verpassteGelegenheitenNurGeld": 0
@@ -1437,22 +1436,22 @@
             "spioneAngeworben": 3,
             "spioneHoechstens": 3,
             "soldHoechstensJeTag": 35535,
-            "aushebungsTage": 192,
-            "tagesbilanzGeldBeiLetzterAushebung": 65499,
+            "aushebungsTage": 195,
+            "tagesbilanzGeldBeiLetzterAushebung": 69327,
             "befohlen": {
-              "infantry": 634
+              "infantry": 656
             },
             "ausgehoben": {
-              "infantry": 627
+              "infantry": 650
             },
             "beschuss": 0,
-            "kriegeErklaert": 1,
+            "kriegeErklaert": 3,
             "ueberfaelle": 0,
-            "eroberungen": 55,
+            "eroberungen": 27,
             "provinzenVerloren": 9,
             "ausgeschieden": false,
-            "groessterStehenderVerband": 5,
-            "tageUeberDeckel": 0,
+            "groessterStehenderVerband": 22,
+            "tageUeberDeckel": 1,
             "batterienHoechstens": 0,
             "verpassteGelegenheiten": 0,
             "verpassteGelegenheitenNurGeld": 0
@@ -1460,71 +1459,73 @@
           "p4": {
             "stufe": "easy",
             "nation": "Indien",
-            "fabrikenBegonnen": 45,
-            "fabrikenFertig": 35,
-            "tageFabrikBezahlbar": 131,
-            "tageStadtOhneFabrik": 158,
+            "fabrikenBegonnen": 30,
+            "fabrikenFertig": 30,
+            "tageFabrikBezahlbar": 134,
+            "tageStadtOhneFabrik": 124,
             "geldmangelTage": 0,
             "geldmangelTageDurchAushebung": 0,
             "geldmangelTageNachProvinzverlust": 0,
             "oelmangelTage": 0,
             "oelmangelTageDurchAushebung": 0,
-            "geldHoechststand": 2373745,
+            "geldHoechststand": 2641152,
             "spioneAngeworben": 3,
             "spioneHoechstens": 3,
             "soldHoechstensJeTag": 35535,
-            "aushebungsTage": 176,
-            "tagesbilanzGeldBeiLetzterAushebung": 721218,
+            "aushebungsTage": 179,
+            "tagesbilanzGeldBeiLetzterAushebung": 334453,
             "befohlen": {
-              "infantry": 445
+              "artillery": 16,
+              "infantry": 471
             },
             "ausgehoben": {
-              "infantry": 443
+              "artillery": 13,
+              "infantry": 471
             },
             "beschuss": 0,
-            "kriegeErklaert": 0,
+            "kriegeErklaert": 1,
             "ueberfaelle": 0,
-            "eroberungen": 124,
-            "provinzenVerloren": 7,
+            "eroberungen": 34,
+            "provinzenVerloren": 0,
             "ausgeschieden": false,
-            "groessterStehenderVerband": 15,
+            "groessterStehenderVerband": 19,
             "tageUeberDeckel": 0,
-            "batterienHoechstens": 0,
+            "batterienHoechstens": 6,
             "verpassteGelegenheiten": 0,
             "verpassteGelegenheitenNurGeld": 0
           },
           "p5": {
             "stufe": "normal",
             "nation": "Deutschland",
-            "fabrikenBegonnen": 1,
-            "fabrikenFertig": 1,
+            "fabrikenBegonnen": 2,
+            "fabrikenFertig": 2,
             "tageFabrikBezahlbar": 1,
-            "tageStadtOhneFabrik": 150,
+            "tageStadtOhneFabrik": 156,
             "geldmangelTage": 0,
             "geldmangelTageDurchAushebung": 0,
             "geldmangelTageNachProvinzverlust": 0,
             "oelmangelTage": 0,
             "oelmangelTageDurchAushebung": 0,
             "geldHoechststand": 1378280,
-            "spioneAngeworben": 9,
+            "spioneAngeworben": 14,
             "spioneHoechstens": 3,
             "soldHoechstensJeTag": 35535,
-            "aushebungsTage": 197,
-            "tagesbilanzGeldBeiLetzterAushebung": 306841,
+            "aushebungsTage": 190,
+            "tagesbilanzGeldBeiLetzterAushebung": 66627,
             "befohlen": {
-              "infantry": 454
+              "infantry": 415
             },
             "ausgehoben": {
-              "infantry": 453
+              "infantry": 408
             },
             "beschuss": 0,
-            "kriegeErklaert": 4,
+            "kriegeErklaert": 2,
             "ueberfaelle": 0,
-            "eroberungen": 112,
-            "provinzenVerloren": 48,
+            "eroberungen": 217,
+            "provinzenVerloren": 68,
             "ausgeschieden": false,
-            "groessterStehenderVerband": 24,
-            "tageUeberDeckel": 2,
+            "groessterStehenderVerband": 10,
+            "tageUeberDeckel": 0,
             "batterienHoechstens": 0,
             "verpassteGelegenheiten": 0,
             "verpassteGelegenheitenNurGeld": 0
@@ -1542,22 +1543,22 @@
             "oelmangelTage": 0,
             "oelmangelTageDurchAushebung": 0,
             "geldHoechststand": 1518832,
-            "spioneAngeworben": 69,
+            "spioneAngeworben": 65,
             "spioneHoechstens": 3,
             "soldHoechstensJeTag": 35535,
-            "aushebungsTage": 184,
-            "tagesbilanzGeldBeiLetzterAushebung": -9074,
+            "aushebungsTage": 167,
+            "tagesbilanzGeldBeiLetzterAushebung": 326034,
             "befohlen": {
-              "infantry": 532
+              "infantry": 452
             },
             "ausgehoben": {
-              "infantry": 526
+              "infantry": 449
             },
             "beschuss": 0,
-            "kriegeErklaert": 5,
+            "kriegeErklaert": 3,
             "ueberfaelle": 0,
-            "eroberungen": 114,
-            "provinzenVerloren": 38,
+            "eroberungen": 190,
+            "provinzenVerloren": 34,
             "ausgeschieden": false,
             "groessterStehenderVerband": 18,
             "tageUeberDeckel": 0,
@@ -1570,18 +1571,18 @@
             "nation": "Vereinigtes Königreich",
             "fabrikenBegonnen": 3,
             "fabrikenFertig": 3,
-            "tageFabrikBezahlbar": 79,
+            "tageFabrikBezahlbar": 74,
             "tageStadtOhneFabrik": 29,
             "geldmangelTage": 0,
             "geldmangelTageDurchAushebung": 0,
             "geldmangelTageNachProvinzverlust": 0,
             "oelmangelTage": 0,
             "oelmangelTageDurchAushebung": 0,
-            "geldHoechststand": 2713842,
+            "geldHoechststand": 2703184,
             "spioneAngeworben": 0,
             "spioneHoechstens": 0,
             "soldHoechstensJeTag": 0,
-            "aushebungsTage": 55,
+            "aushebungsTage": 56,
             "tagesbilanzGeldBeiLetzterAushebung": 456,
             "befohlen": {
               "infantry": 101
@@ -1617,21 +1618,21 @@
             "spioneAngeworben": 10,
             "spioneHoechstens": 3,
             "soldHoechstensJeTag": 35535,
-            "aushebungsTage": 181,
-            "tagesbilanzGeldBeiLetzterAushebung": 96603,
+            "aushebungsTage": 185,
+            "tagesbilanzGeldBeiLetzterAushebung": 275649,
             "befohlen": {
-              "infantry": 341
+              "infantry": 396
             },
             "ausgehoben": {
-              "infantry": 340
+              "infantry": 394
             },
             "beschuss": 0,
             "kriegeErklaert": 3,
             "ueberfaelle": 0,
-            "eroberungen": 182,
-            "provinzenVerloren": 52,
+            "eroberungen": 144,
+            "provinzenVerloren": 57,
             "ausgeschieden": false,
-            "groessterStehenderVerband": 18,
+            "groessterStehenderVerband": 20,
             "tageUeberDeckel": 0,
             "batterienHoechstens": 0,
             "verpassteGelegenheiten": 0,
@@ -1641,68 +1642,70 @@
         "jeStufe": {
           "easy": {
             "maechte": 3,
-            "fabrikenBegonnen": 87,
-            "fabrikenFertig": 51,
-            "tageFabrikBezahlbar": 315,
-            "tageStadtOhneFabrik": 363,
+            "fabrikenBegonnen": 65,
+            "fabrikenFertig": 53,
+            "tageFabrikBezahlbar": 317,
+            "tageStadtOhneFabrik": 326,
             "geldmangelTage": 0,
             "geldmangelTageDurchAushebung": 0,
             "geldmangelTageNachProvinzverlust": 0,
             "oelmangelTage": 0,
             "oelmangelTageDurchAushebung": 0,
             "spioneAngeworben": 3,
-            "aushebungsTage": 352,
+            "aushebungsTage": 359,
             "beschuss": 0,
-            "kriegeErklaert": 0,
+            "kriegeErklaert": 1,
             "ueberfaelle": 0,
-            "eroberungen": 273,
-            "provinzenVerloren": 7,
-            "tageUeberDeckel": 213,
+            "eroberungen": 142,
+            "provinzenVerloren": 0,
+            "tageUeberDeckel": 151,
             "verpassteGelegenheiten": 0,
             "verpassteGelegenheitenNurGeld": 0,
-            "geldHoechststand": 2713842,
+            "geldHoechststand": 2703184,
             "spioneHoechstens": 3,
             "soldHoechstensJeTag": 35535,
             "groessterStehenderVerband": 95,
-            "batterienHoechstens": 0,
+            "batterienHoechstens": 6,
             "befohlen": {
-              "infantry": 772
+              "artillery": 16,
+              "infantry": 789
             },
             "ausgehoben": {
-              "infantry": 770
+              "artillery": 13,
+              "infantry": 789
             }
           },
           "normal": {
             "maechte": 3,
-            "fabrikenBegonnen": 3,
-            "fabrikenFertig": 3,
+            "fabrikenBegonnen": 4,
+            "fabrikenFertig": 4,
             "tageFabrikBezahlbar": 3,
-            "tageStadtOhneFabrik": 550,
+            "tageStadtOhneFabrik": 556,
             "geldmangelTage": 0,
             "geldmangelTageDurchAushebung": 0,
             "geldmangelTageNachProvinzverlust": 0,
             "oelmangelTage": 0,
             "oelmangelTageDurchAushebung": 0,
-            "spioneAngeworben": 24,
-            "aushebungsTage": 565,
+            "spioneAngeworben": 28,
+            "aushebungsTage": 553,
             "beschuss": 0,
-            "kriegeErklaert": 8,
+            "kriegeErklaert": 6,
             "ueberfaelle": 0,
-            "eroberungen": 341,
-            "provinzenVerloren": 111,
-            "tageUeberDeckel": 2,
+            "eroberungen": 417,
+            "provinzenVerloren": 134,
+            "tageUeberDeckel": 4,
             "verpassteGelegenheiten": 0,
             "verpassteGelegenheitenNurGeld": 0,
             "geldHoechststand": 1429897,
             "spioneHoechstens": 3,
             "soldHoechstensJeTag": 35535,
-            "groessterStehenderVerband": 24,
+            "groessterStehenderVerband": 28,
             "batterienHoechstens": 0,
             "befohlen": {
-              "infantry": 1240
+              "infantry": 1222
             },
             "ausgehoben": {
-              "infantry": 1238
+              "infantry": 1213
             }
           },
           "hard": {
@@ -1716,67 +1719,69 @@
             "geldmangelTageNachProvinzverlust": 0,
             "oelmangelTage": 0,
             "oelmangelTageDurchAushebung": 0,
-            "spioneAngeworben": 72,
-            "aushebungsTage": 376,
+            "spioneAngeworben": 68,
+            "aushebungsTage": 362,
             "beschuss": 0,
             "kriegeErklaert": 6,
             "ueberfaelle": 0,
-            "eroberungen": 169,
-            "provinzenVerloren": 47,
-            "tageUeberDeckel": 0,
+            "eroberungen": 217,
+            "provinzenVerloren": 43,
+            "tageUeberDeckel": 1,
             "verpassteGelegenheiten": 0,
             "verpassteGelegenheitenNurGeld": 0,
             "geldHoechststand": 1590096,
             "spioneHoechstens": 3,
             "soldHoechstensJeTag": 35535,
-            "groessterStehenderVerband": 18,
+            "groessterStehenderVerband": 22,
             "batterienHoechstens": 0,
             "befohlen": {
-              "infantry": 1166
+              "infantry": 1108
             },
             "ausgehoben": {
-              "infantry": 1153
+              "infantry": 1099
             }
           }
         },
         "truppen": {
           "befohlen": {
-            "infantry": 3178
+            "artillery": 16,
+            "infantry": 3119
           },
           "ausgehoben": {
-            "infantry": 3161
+            "artillery": 13,
+            "infantry": 3101
           },
           "beschuss": 0,
           "artillerieAnteil": {
-            "artillerie": 0,
-            "landeinheiten": 3161,
-            "prozent": 0
+            "artillerie": 13,
+            "landeinheiten": 3114,
+            "prozent": 0.42
           }
         },
         "krieg": {
-          "kriege": 14,
+          "kriege": 13,
           "ohneErklaerung": 0,
-          "frieden": 7,
-          "friedenZwischenKi": 7,
-          "eroberungen": 783
+          "frieden": 6,
+          "friedenZwischenKi": 6,
+          "eroberungen": 776
         },
         "heer": {
           "groessterStehenderVerband": 95,
           "tageUeberDeckel": 151,
-          "tageMitPaar": 93,
-          "provinzenMitPaarHoechstens": 4,
-          "paareHoechstens": 79,
+          "tageMitPaar": 78,
+          "provinzenMitPaarHoechstens": 3,
+          "paareHoechstens": 137,
           "paareUeberZweiTagesenden": 0,
           "tageMitPaarUeberZweiTagesenden": 0,
-          "orteMitPaarUeberZweiTagesenden": 30,
+          "orteMitPaarUeberZweiTagesenden": 31,
           "alteZusage7": {
-            "stehendHoechstens": 13,
-            "stehendTageUeberDrei": 15
+            "stehendHoechstens": 17,
+            "stehendTageUeberDrei": 12
           },
-          "batterienHoechstens": 0
+          "batterienHoechstens": 6
         },
         "fehler": {
-          "marschbefehle": 6787,
+          "marschbefehle": 6508,
           "noPath": 0,
           "noPathAnteilProzent": 0,
           "ablehnungen": {
@@ -1799,35 +1804,35 @@
           "p1": {
             "stufe": "easy",
             "nation": "Vereinigte Staaten",
-            "fabrikenBegonnen": 32,
-            "fabrikenFertig": 20,
-            "tageFabrikBezahlbar": 102,
-            "tageStadtOhneFabrik": 177,
+            "fabrikenBegonnen": 31,
+            "fabrikenFertig": 14,
+            "tageFabrikBezahlbar": 104,
+            "tageStadtOhneFabrik": 173,
             "geldmangelTage": 0,
             "geldmangelTageDurchAushebung": 0,
             "geldmangelTageNachProvinzverlust": 0,
             "oelmangelTage": 0,
             "oelmangelTageDurchAushebung": 0,
-            "geldHoechststand": 1774484,
+            "geldHoechststand": 1757898,
             "spioneAngeworben": 0,
             "spioneHoechstens": 0,
             "soldHoechstensJeTag": 0,
-            "aushebungsTage": 122,
-            "tagesbilanzGeldBeiLetzterAushebung": 535474,
+            "aushebungsTage": 120,
+            "tagesbilanzGeldBeiLetzterAushebung": 519088,
             "befohlen": {
-              "infantry": 221
+              "infantry": 224
             },
             "ausgehoben": {
-              "infantry": 221
+              "infantry": 224
             },
             "beschuss": 0,
             "kriegeErklaert": 0,
             "ueberfaelle": 0,
-            "eroberungen": 99,
+            "eroberungen": 96,
             "provinzenVerloren": 0,
             "ausgeschieden": false,
-            "groessterStehenderVerband": 23,
-            "tageUeberDeckel": 64,
+            "groessterStehenderVerband": 20,
+            "tageUeberDeckel": 0,
             "batterienHoechstens": 0,
             "verpassteGelegenheiten": 0,
             "verpassteGelegenheitenNurGeld": 0
@@ -1848,21 +1853,21 @@
             "spioneAngeworben": 1,
             "spioneHoechstens": 1,
             "soldHoechstensJeTag": 5076,
-            "aushebungsTage": 190,
-            "tagesbilanzGeldBeiLetzterAushebung": 173300,
+            "aushebungsTage": 185,
+            "tagesbilanzGeldBeiLetzterAushebung": 153208,
             "befohlen": {
-              "infantry": 473
+              "infantry": 437
             },
             "ausgehoben": {
-              "infantry": 473
+              "infantry": 437
             },
             "beschuss": 0,
-            "kriegeErklaert": 0,
+            "kriegeErklaert": 1,
             "ueberfaelle": 0,
-            "eroberungen": 31,
-            "provinzenVerloren": 8,
+            "eroberungen": 55,
+            "provinzenVerloren": 11,
             "ausgeschieden": false,
-            "groessterStehenderVerband": 3,
+            "groessterStehenderVerband": 7,
             "tageUeberDeckel": 0,
             "batterienHoechstens": 0,
             "verpassteGelegenheiten": 0,
@@ -1885,20 +1890,20 @@
             "spioneHoechstens": 3,
             "soldHoechstensJeTag": 35535,
             "aushebungsTage": 195,
-            "tagesbilanzGeldBeiLetzterAushebung": 49625,
+            "tagesbilanzGeldBeiLetzterAushebung": 77024,
             "befohlen": {
-              "infantry": 617
+              "infantry": 659
             },
             "ausgehoben": {
-              "infantry": 608
+              "infantry": 652
             },
             "beschuss": 0,
-            "kriegeErklaert": 1,
+            "kriegeErklaert": 2,
             "ueberfaelle": 0,
-            "eroberungen": 34,
+            "eroberungen": 33,
             "provinzenVerloren": 8,
             "ausgeschieden": false,
-            "groessterStehenderVerband": 6,
+            "groessterStehenderVerband": 5,
             "tageUeberDeckel": 0,
             "batterienHoechstens": 0,
             "verpassteGelegenheiten": 0,
@@ -1907,37 +1912,35 @@
           "p4": {
             "stufe": "easy",
             "nation": "Indien",
-            "fabrikenBegonnen": 53,
-            "fabrikenFertig": 36,
-            "tageFabrikBezahlbar": 128,
-            "tageStadtOhneFabrik": 171,
+            "fabrikenBegonnen": 45,
+            "fabrikenFertig": 32,
+            "tageFabrikBezahlbar": 121,
+            "tageStadtOhneFabrik": 152,
             "geldmangelTage": 0,
             "geldmangelTageDurchAushebung": 0,
             "geldmangelTageNachProvinzverlust": 0,
             "oelmangelTage": 0,
             "oelmangelTageDurchAushebung": 0,
-            "geldHoechststand": 2430176,
-            "spioneAngeworben": 7,
+            "geldHoechststand": 2266299,
+            "spioneAngeworben": 3,
             "spioneHoechstens": 3,
             "soldHoechstensJeTag": 35535,
-            "aushebungsTage": 178,
-            "tagesbilanzGeldBeiLetzterAushebung": 663378,
+            "aushebungsTage": 173,
+            "tagesbilanzGeldBeiLetzterAushebung": 593946,
             "befohlen": {
-              "artillery": 1,
-              "infantry": 438
+              "infantry": 389
             },
             "ausgehoben": {
-              "artillery": 1,
-              "infantry": 436
+              "infantry": 387
             },
             "beschuss": 0,
             "kriegeErklaert": 1,
             "ueberfaelle": 0,
-            "eroberungen": 125,
+            "eroberungen": 78,
             "provinzenVerloren": 3,
             "ausgeschieden": false,
-            "groessterStehenderVerband": 89,
-            "tageUeberDeckel": 1,
+            "groessterStehenderVerband": 20,
+            "tageUeberDeckel": 0,
             "batterienHoechstens": 0,
             "verpassteGelegenheiten": 0,
             "verpassteGelegenheitenNurGeld": 0
@@ -1945,32 +1948,32 @@
           "p5": {
             "stufe": "normal",
             "nation": "Deutschland",
-            "fabrikenBegonnen": 1,
-            "fabrikenFertig": 1,
-            "tageFabrikBezahlbar": 1,
-            "tageStadtOhneFabrik": 184,
+            "fabrikenBegonnen": 2,
+            "fabrikenFertig": 2,
+            "tageFabrikBezahlbar": 2,
+            "tageStadtOhneFabrik": 140,
             "geldmangelTage": 0,
             "geldmangelTageDurchAushebung": 0,
             "geldmangelTageNachProvinzverlust": 0,
             "oelmangelTage": 0,
             "oelmangelTageDurchAushebung": 0,
             "geldHoechststand": 1378280,
-            "spioneAngeworben": 30,
+            "spioneAngeworben": 6,
             "spioneHoechstens": 3,
             "soldHoechstensJeTag": 35535,
-            "aushebungsTage": 197,
-            "tagesbilanzGeldBeiLetzterAushebung": 303367,
+            "aushebungsTage": 188,
+            "tagesbilanzGeldBeiLetzterAushebung": 49088,
             "befohlen": {
-              "infantry": 463
+              "infantry": 406
             },
             "ausgehoben": {
-              "infantry": 462
+              "infantry": 399
             },
             "beschuss": 0,
             "kriegeErklaert": 1,
             "ueberfaelle": 0,
-            "eroberungen": 149,
-            "provinzenVerloren": 68,
+            "eroberungen": 145,
+            "provinzenVerloren": 70,
             "ausgeschieden": false,
             "groessterStehenderVerband": 7,
             "tageUeberDeckel": 0,
@@ -1983,7 +1986,7 @@
             "nation": "Frankreich",
             "fabrikenBegonnen": 4,
             "fabrikenFertig": 2,
-            "tageFabrikBezahlbar": 4,
+            "tageFabrikBezahlbar": 3,
             "tageStadtOhneFabrik": 200,
             "geldmangelTage": 0,
             "geldmangelTageDurchAushebung": 0,
@@ -1991,22 +1994,22 @@
             "oelmangelTage": 0,
             "oelmangelTageDurchAushebung": 0,
             "geldHoechststand": 1518832,
-            "spioneAngeworben": 65,
+            "spioneAngeworben": 70,
             "spioneHoechstens": 3,
             "soldHoechstensJeTag": 35535,
-            "aushebungsTage": 188,
-            "tagesbilanzGeldBeiLetzterAushebung": 294436,
+            "aushebungsTage": 186,
+            "tagesbilanzGeldBeiLetzterAushebung": 195731,
             "befohlen": {
-              "infantry": 508
+              "infantry": 550
             },
             "ausgehoben": {
-              "infantry": 499
+              "infantry": 544
             },
             "beschuss": 0,
-            "kriegeErklaert": 3,
+            "kriegeErklaert": 2,
             "ueberfaelle": 0,
-            "eroberungen": 100,
-            "provinzenVerloren": 33,
+            "eroberungen": 189,
+            "provinzenVerloren": 54,
             "ausgeschieden": false,
             "groessterStehenderVerband": 19,
             "tageUeberDeckel": 0,
@@ -2019,24 +2022,24 @@
             "nation": "Vereinigtes Königreich",
             "fabrikenBegonnen": 3,
             "fabrikenFertig": 3,
-            "tageFabrikBezahlbar": 88,
+            "tageFabrikBezahlbar": 80,
             "tageStadtOhneFabrik": 29,
             "geldmangelTage": 0,
             "geldmangelTageDurchAushebung": 0,
             "geldmangelTageNachProvinzverlust": 0,
             "oelmangelTage": 0,
             "oelmangelTageDurchAushebung": 0,
-            "geldHoechststand": 2709779,
+            "geldHoechststand": 2719531,
             "spioneAngeworben": 0,
             "spioneHoechstens": 0,
             "soldHoechstensJeTag": 0,
-            "aushebungsTage": 55,
-            "tagesbilanzGeldBeiLetzterAushebung": 456,
+            "aushebungsTage": 56,
+            "tagesbilanzGeldBeiLetzterAushebung": -984,
             "befohlen": {
-              "infantry": 101
+              "infantry": 102
             },
             "ausgehoben": {
-              "infantry": 101
+              "infantry": 102
             },
             "beschuss": 0,
             "kriegeErklaert": 0,
@@ -2044,7 +2047,7 @@
             "eroberungen": 1,
             "provinzenVerloren": 0,
             "ausgeschieden": false,
-            "groessterStehenderVerband": 95,
+            "groessterStehenderVerband": 96,
             "tageUeberDeckel": 142,
             "batterienHoechstens": 0,
             "verpassteGelegenheiten": 0,
@@ -2063,22 +2066,22 @@
             "oelmangelTage": 0,
             "oelmangelTageDurchAushebung": 0,
             "geldHoechststand": 1350608,
-            "spioneAngeworben": 2,
-            "spioneHoechstens": 2,
-            "soldHoechstensJeTag": 15229,
+            "spioneAngeworben": 37,
+            "spioneHoechstens": 3,
+            "soldHoechstensJeTag": 35535,
             "aushebungsTage": 187,
-            "tagesbilanzGeldBeiLetzterAushebung": 103471,
+            "tagesbilanzGeldBeiLetzterAushebung": 211522,
             "befohlen": {
-              "infantry": 385
+              "infantry": 399
             },
             "ausgehoben": {
-              "infantry": 383
+              "infantry": 397
             },
             "beschuss": 0,
-            "kriegeErklaert": 1,
+            "kriegeErklaert": 0,
             "ueberfaelle": 0,
-            "eroberungen": 119,
-            "provinzenVerloren": 75,
+            "eroberungen": 137,
+            "provinzenVerloren": 56,
             "ausgeschieden": false,
             "groessterStehenderVerband": 10,
             "tageUeberDeckel": 0,
@@ -2090,57 +2093,55 @@
         "jeStufe": {
           "easy": {
             "maechte": 3,
-            "fabrikenBegonnen": 88,
-            "fabrikenFertig": 59,
-            "tageFabrikBezahlbar": 318,
-            "tageStadtOhneFabrik": 377,
+            "fabrikenBegonnen": 79,
+            "fabrikenFertig": 49,
+            "tageFabrikBezahlbar": 305,
+            "tageStadtOhneFabrik": 354,
             "geldmangelTage": 0,
             "geldmangelTageDurchAushebung": 0,
             "geldmangelTageNachProvinzverlust": 0,
             "oelmangelTage": 0,
             "oelmangelTageDurchAushebung": 0,
-            "spioneAngeworben": 7,
-            "aushebungsTage": 355,
+            "spioneAngeworben": 3,
+            "aushebungsTage": 349,
             "beschuss": 0,
             "kriegeErklaert": 1,
             "ueberfaelle": 0,
-            "eroberungen": 225,
+            "eroberungen": 175,
             "provinzenVerloren": 3,
-            "tageUeberDeckel": 207,
+            "tageUeberDeckel": 142,
             "verpassteGelegenheiten": 0,
             "verpassteGelegenheitenNurGeld": 0,
-            "geldHoechststand": 2709779,
+            "geldHoechststand": 2719531,
             "spioneHoechstens": 3,
             "soldHoechstensJeTag": 35535,
-            "groessterStehenderVerband": 95,
+            "groessterStehenderVerband": 96,
             "batterienHoechstens": 0,
             "befohlen": {
-              "artillery": 1,
-              "infantry": 760
+              "infantry": 715
             },
             "ausgehoben": {
-              "artillery": 1,
-              "infantry": 758
+              "infantry": 713
             }
           },
           "normal": {
             "maechte": 3,
-            "fabrikenBegonnen": 3,
-            "fabrikenFertig": 3,
-            "tageFabrikBezahlbar": 3,
-            "tageStadtOhneFabrik": 584,
+            "fabrikenBegonnen": 4,
+            "fabrikenFertig": 4,
+            "tageFabrikBezahlbar": 4,
+            "tageStadtOhneFabrik": 540,
             "geldmangelTage": 0,
             "geldmangelTageDurchAushebung": 0,
             "geldmangelTageNachProvinzverlust": 0,
             "oelmangelTage": 0,
             "oelmangelTageDurchAushebung": 0,
-            "spioneAngeworben": 33,
-            "aushebungsTage": 574,
+            "spioneAngeworben": 44,
+            "aushebungsTage": 560,
             "beschuss": 0,
             "kriegeErklaert": 2,
             "ueberfaelle": 0,
-            "eroberungen": 299,
-            "provinzenVerloren": 151,
+            "eroberungen": 337,
+            "provinzenVerloren": 137,
             "tageUeberDeckel": 0,
             "verpassteGelegenheiten": 0,
             "verpassteGelegenheitenNurGeld": 0,
@@ -2150,30 +2151,30 @@
             "groessterStehenderVerband": 10,
             "batterienHoechstens": 0,
             "befohlen": {
-              "infantry": 1321
+              "infantry": 1242
             },
             "ausgehoben": {
-              "infantry": 1318
+              "infantry": 1233
             }
           },
           "hard": {
             "maechte": 2,
             "fabrikenBegonnen": 5,
             "fabrikenFertig": 3,
-            "tageFabrikBezahlbar": 5,
+            "tageFabrikBezahlbar": 4,
             "tageStadtOhneFabrik": 400,
             "geldmangelTage": 0,
             "geldmangelTageDurchAushebung": 0,
             "geldmangelTageNachProvinzverlust": 0,
             "oelmangelTage": 0,
             "oelmangelTageDurchAushebung": 0,
-            "spioneAngeworben": 68,
-            "aushebungsTage": 383,
+            "spioneAngeworben": 73,
+            "aushebungsTage": 381,
             "beschuss": 0,
             "kriegeErklaert": 4,
             "ueberfaelle": 0,
-            "eroberungen": 134,
-            "provinzenVerloren": 41,
+            "eroberungen": 222,
+            "provinzenVerloren": 62,
             "tageUeberDeckel": 0,
             "verpassteGelegenheiten": 0,
             "verpassteGelegenheitenNurGeld": 0,
@@ -2183,57 +2184,55 @@
             "groessterStehenderVerband": 19,
             "batterienHoechstens": 0,
             "befohlen": {
-              "infantry": 1125
+              "infantry": 1209
             },
             "ausgehoben": {
-              "infantry": 1107
+              "infantry": 1196
             }
           }
         },
         "truppen": {
           "befohlen": {
-            "artillery": 1,
-            "infantry": 3206
+            "infantry": 3166
           },
           "ausgehoben": {
-            "artillery": 1,
-            "infantry": 3183
+            "infantry": 3142
           },
           "beschuss": 0,
           "artillerieAnteil": {
-            "artillerie": 1,
-            "landeinheiten": 3184,
-            "prozent": 0.03
+            "artillerie": 0,
+            "landeinheiten": 3142,
+            "prozent": 0
           }
         },
         "krieg": {
           "kriege": 7,
           "ohneErklaerung": 0,
-          "frieden": 1,
-          "friedenZwischenKi": 1,
-          "eroberungen": 658
+          "frieden": 0,
+          "friedenZwischenKi": 0,
+          "eroberungen": 734
         },
         "heer": {
-          "groessterStehenderVerband": 95,
+          "groessterStehenderVerband": 96,
           "tageUeberDeckel": 142,
-          "tageMitPaar": 92,
-          "provinzenMitPaarHoechstens": 5,
-          "paareHoechstens": 69,
-          "paareUeberZweiTagesenden": 4,
-          "tageMitPaarUeberZweiTagesenden": 2,
-          "orteMitPaarUeberZweiTagesenden": 38,
+          "tageMitPaar": 95,
+          "provinzenMitPaarHoechstens": 4,
+          "paareHoechstens": 28,
+          "paareUeberZweiTagesenden": 0,
+          "tageMitPaarUeberZweiTagesenden": 0,
+          "orteMitPaarUeberZweiTagesenden": 36,
           "alteZusage7": {
-            "stehendHoechstens": 12,
+            "stehendHoechstens": 8,
             "stehendTageUeberDrei": 10
           },
           "batterienHoechstens": 0
         },
         "fehler": {
-          "marschbefehle": 6860,
+          "marschbefehle": 6818,
           "noPath": 0,
           "noPathAnteilProzent": 0,
           "ablehnungen": {
-            "RECRUIT:INSUFFICIENT_RESOURCES": 4
+            "RECRUIT:INSUFFICIENT_RESOURCES": 3
           }
         },
         "ueberfaelleMerkmale": {
@@ -2248,20 +2247,20 @@
       }
     },
     "summe": {
-      "artillerieAusgehoben": 1,
+      "artillerieAusgehoben": 13,
       "beschuss": 0,
-      "fabrikenBegonnen": 282,
+      "fabrikenBegonnen": 244,
       "geldmangelTage": 0,
       "geldmangelTageDurchAushebung": 0,
       "geldmangelTageNachProvinzverlust": 0,
       "oelmangelTage": 0,
       "verpassteGelegenheiten": 0,
-      "paareUeberZweiTagesenden": 28,
+      "paareUeberZweiTagesenden": 0,
       "ueberfaelleFriedensschlussOderKuendigung": 0,
       "maechteMitArtillerieJeLauf": {
         "1815": 0,
-        "1914": 0,
-        "2015": 1
+        "1914": 1,
+        "2015": 0
       }
     }
   }

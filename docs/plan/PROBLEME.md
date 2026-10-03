@@ -6201,3 +6201,14 @@ Abnahmelauf in 5 s: **12 von 12, Exit 0**). Die 1-MB-Grenze von `execSync` war e
 Lehre vom 2026-09-25 ein Befund, keine Last (Laufzeit gegen den Ausgangswert messen).
 
 **Status:** beobachten.
+
+## 2026-10-03 · T-M42-09 · Befund M42-09-a (niedrig, offen): Verbände über 20 entstehen durch Aushebung, nicht durch Zusammenlegen
+
+Auf Stufe C2 ist der größte stehende Verband einer KI-Macht 95/95/96 Einheiten (Weltkarte) und 59
+(Voreinstellung), obwohl `consolidate.ts` keine Gruppe über `stackFullContribution` (20) bildet
+(R-AI-10/AK4, Fall K6). Ursache: der Kern legt jede fertige Aushebung in die Gastarmee der Provinz
+(`phases/recruitment.ts`, `findHostArmy`) — eine Garnison wächst so über den Deckel. Gegenüber Stufe
+F (132/127/133/124) kleiner, aber nicht ≤ 20. AK4 spricht nur vom Zusammenlegen und hält; wer den
+Deckel auch für Garnisonen will, braucht eine Kernänderung (D32.1 schließt sie für M42 aus) oder
+eine KI, die volle Garnisonen abmarschieren lässt. **Status:** offen, an M18.
+
