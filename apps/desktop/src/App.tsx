@@ -1787,15 +1787,21 @@ export function App(props: AppProps) {
    * `news.upTo`, nicht seit der letzten Laenge: der Ring haelt nur 500 Ereignisse fuer
    * alle Maechte, und `own.slice(soundedUpTo)` verstummte, sobald er voll ist.
    */
+  //
+  // Gesetzt wird nur, was sich geaendert hat (Befund aus T-M44-02): `setNews(old => …)`
+  // lief bei JEDEM Tick, auch wenn der Updater `old` zurueckgab. Waehrend das Bild der Uhr
+  // schon wartet, kann React so einen Aufruf nicht vorab verwerfen und zaehlt ihn als
+  // Update aus einem Effekt — nach 50 Bildern in Folge meldete es "Maximum update depth
+  // exceeded". Sichtbar wurde das erst, wenn der Tooltip ausgeblendet war (Escape): seine
+  // Messung schob sonst Commits ohne Update dazwischen, die den Zaehler zuruecksetzten.
   useEffect(() => {
     if (!state || !viewerId) return
-    setNews((old) =>
-      collectEspionageNews(old, eventsFor(state.eventLog, viewerId), state.tick, viewerId, {
-        province: nameOfProvince,
-        player: nameOf,
-      }),
-    )
-  }, [state, viewerId, nameOfProvince, nameOf])
+    const next = collectEspionageNews(news, eventsFor(state.eventLog, viewerId), state.tick, viewerId, {
+      province: nameOfProvince,
+      player: nameOf,
+    })
+    if (next !== news) setNews(next)
+  }, [state, viewerId, nameOfProvince, nameOf, news])
 
   /**
    * Der Provinz-Tooltip (T-M31-01, D27.6): folgt dem Zeiger, sonst der Auswahl —

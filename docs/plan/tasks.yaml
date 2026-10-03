@@ -3858,7 +3858,7 @@ tasks:
     design: [D-37]
     files: [apps/desktop/src/ui/Standings.tsx, apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/App.tsx, apps/desktop/src/ui/Header.tsx, apps/desktop/src/ui/app.css, apps/desktop/src/ui/tokens.ts]
     tests: [apps/desktop/src/ui/a11y.test.tsx, apps/desktop/src/ui/Standings.test.tsx, apps/desktop/src/ui/tokens.contrast.test.ts]
-    dod: "Paket Barrierefreiheit, Prioritaet P1. R-UX-06/AK1, AK2. Das Abdunkeln existiert schon (.dialog-backdrop, app.css), es fehlen Fokus-Einzug, Fokusfalle und Escape. Rohstoffleiste tabindex=0 mit Namen, wenn sie rollt. Aufwand 2,5 h."
+    dod: "Paket Barrierefreiheit, Prioritaet P1. R-UX-06/AK1, AK2. Das Abdunkeln existiert schon (.dialog-backdrop, app.css), es fehlen Fokus-Einzug, Fokusfalle und Escape. Rohstoffleiste tabindex=0 mit Namen, wenn sie rollt. Ein Escape im Dialog schliesst nur den Dialog, nicht das Panel dahinter (Escape-Zweig in Dialog ruft stopPropagation; Befund 2026-10-03 aus T-M44-02, im Browser pruefen). Aufwand 2,5 h."
   - id: T-M44-09a
     milestone: M44
     title: "Bestaetigungsknopf und Rueckfrage in Dialogen"
