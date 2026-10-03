@@ -6212,3 +6212,14 @@ F (132/127/133/124) kleiner, aber nicht ≤ 20. AK4 spricht nur vom Zusammenlege
 Deckel auch für Garnisonen will, braucht eine Kernänderung (D32.1 schließt sie für M42 aus) oder
 eine KI, die volle Garnisonen abmarschieren lässt. **Status:** offen, an M18.
 
+## 2026-10-03 · Review · Befund M42-PL-a (mittel, offen): `m18-plan-v2.md` wurde nie eingecheckt
+
+Der Plan `m18-plan-v2.md` (samt `m18-plan-v2-kritik.md`), aus dem M42/M43 übertragen wurden, liegt nicht im
+Repository und war nie darin (`git log --all -- '*m18-plan-v2*'` ist leer). **23 Verweise in 10 Dateien** nennen
+ihn als Quelle, darunter die Herkunft der Zahl „gemessen 24–28 %" in R-AI-12/AK3, die damit nicht
+nachprüfbar ist (`01-REQUIREMENTS.md` trägt jetzt einen Vermerk). Die Verweise (Datei:Zeile, Stand 2026-10-03):
+docs/research/_raw/probe/economy-I1.ts:123, docs/plan/01-REQUIREMENTS.md:508, docs/plan/01-REQUIREMENTS.md:1274, docs/plan/DECISIONS.md:5421, docs/plan/DECISIONS.md:5423, docs/plan/DECISIONS.md:5424, docs/plan/DECISIONS.md:5460, docs/plan/DECISIONS.md:5500, docs/plan/WORKFLOW.md:33, docs/plan/PROBLEME.md:6036, docs/plan/PROBLEME.md:6130, docs/plan/PROGRESS.md:803, docs/plan/tasks.yaml:103, docs/plan/tasks.yaml:3394, docs/plan/tasks.yaml:3590, docs/plan/tasks.yaml:3670, docs/plan/tasks.yaml:3751, docs/plan/03-TASKS.md:3865, docs/plan/03-TASKS.md:6844, docs/plan/03-TASKS.md:6896, docs/plan/03-TASKS.md:7214, packages/ai/src/economy.ts:123, apps/headless/test/m42-zaehlung.ts:16.
+Die Code-Kommentare (`packages/ai/src/economy.ts:123`, `apps/headless/test/m42-zaehlung.ts:16`,
+`docs/research/_raw/probe/economy-I1.ts:123`) bleiben unberührt. Die Übertragungen in `01-REQUIREMENTS.md`,
+`02-DESIGN.md` D32/D34 und `03-TASKS.md` sind die einzige Quelle, die es gibt. **Status:** offen; entweder reicht
+Noah die Datei nach, oder die Verweise gelten als Herkunftsangabe ohne Beleg.

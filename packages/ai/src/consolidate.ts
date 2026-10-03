@@ -39,6 +39,7 @@ export function consolidateCommands(context: AiContext, explanations: Explanatio
   const playerId = view.playerId
   const cap = rules.constants.stackFullContribution
 
+  // embarked steht nicht im Schluessel: die View fuehrt es nicht, heute tot, weil die KI nie einschifft (amphibische KI: M18).
   /** Eigene stehende Armeen je Provinz und Rolle. */
   const byPlace = new Map<string, { id: string; units: number }[]>()
   for (const army of view.armies) {

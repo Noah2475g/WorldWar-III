@@ -1280,6 +1280,8 @@ wie der Mensch (R-AI-01).
 - **AK1:** WENN zwei eigene Armeen zusammengelegt werden, DANN SOLL sich die Rangfolge der als
   Nächstes auszuhebenden Einheit dadurch nicht ändern. Der Rückstand zur Zielmischung wird in
   Einheiten gemessen, nicht in Stapeln.
+  > **Unerfüllt (2026-10-03): T-M42-05 ist zurückgenommen, siehe M42-07-a** (`PROBLEME.md`; wie bei
+  > R-AI-08/AK3). Die Rangfolge zählt weiterhin Stapel; AK2–AK4 sind durch T-M42-08/-09 erfüllt.
 - **AK2:** WENN die KI zusammenlegt, DANN SOLL eine Armee, deren Einheiten sämtlich Reichweite haben,
   nur mit ebensolchen zusammengelegt werden.
 - **AK3** *(Wortlaut nach Noahs Antwort auf Frage 4, „wie empfohlen"):* WENN am Ende zweier
@@ -1322,8 +1324,8 @@ wie der Mensch (R-AI-01).
   es 2 von 6; Kanada hat keine Stadt und zählt nicht mit.
 - **AK3** *(Band nach Noahs Antwort auf Frage 1, „wie empfohlen", Mischung 60/30/10):* WENN
   dieselben Läufe gespielt werden, DANN SOLL in jedem Lauf selbsttätiger Beschuss vorkommen, und der
-  Anteil der Artillerie an den ausgehobenen Landeinheiten SOLL im Band 15–30 % liegen (gemessen
-  24–28 %). Damit sind R-AI-08/AK3 und R-BAT-08/AK3 auf dem M42-Stand wieder erfüllt.
+  Anteil der Artillerie an den ausgehobenen Landeinheiten SOLL im Band 15–30 % liegen (*„gemessen
+  24–28 %“ ist nicht nachprüfbar: die Plansonde fehlt im Repo; die Zahl stammt aus dem Plan, nicht aus einem eingecheckten Lauf*). Damit sind R-AI-08/AK3 und R-BAT-08/AK3 auf dem M42-Stand wieder erfüllt.
 - **AK4:** WENN die KI eine Einheit mit Ölunterhalt erwägt, DANN SOLL sie sie nur ausheben, wenn die
   Öl-Tagesbilanz danach nicht negativ ist, also geschätzte Förderung − Ölunterhalt aller Armeen
   einschließlich der neuen ≥ 0.

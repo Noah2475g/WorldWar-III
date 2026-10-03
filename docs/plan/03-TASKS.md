@@ -3869,6 +3869,13 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
 > **M42 „Das Heer der KI"** und **M43 „Frieden mit Räumfrist"** geholt (Abschnitt weiter unten).
 > Sie stehen hier zur Vollständigkeit weiter, weil diese Liste nichts löscht — der Bau läuft
 > unter M42/M43, nicht hier. M18 bleibt für den Rest dieser Liste die Sammelstelle.
+>
+> **Vorgemerkt am 2026-10-03 (Review von M42) — Test zur Einschiffung beim Zusammenlegen.** Sobald
+> die KI einschifft (amphibische KI, siehe oben), führt die Sicht `embarked` noch nicht, und
+> `consolidate.ts` gruppiert heute nur nach Provinz und Rolle (Kommentar dort). Dann braucht
+> `decide.test.ts` einen Fall: zwei Armeen gleicher Rolle in derselben Provinz, eine eingeschifft,
+> eine an Land → **kein** `MERGE_ARMIES` (das Kommando selbst verlangt gleiches `embarked`). Heute ist
+> der Fall nicht herstellbar, weil die KI nie einschifft; deshalb kein Test, sondern diese Notiz.
 
 ---
 
@@ -7110,7 +7117,8 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 ### T-M42-08 · Zusammenlegen nach Rolle und unter dem Deckel
 - **Ziel:** R-AI-10/AK2, AK4.
 - **Anforderungen:** R-AI-10
-- **Abhängigkeiten:** T-M42-07
+- **Abhängigkeiten:** T-M42-06
+  *(Umgestellt am 2026-10-03: die Aufgabe ist gebaut, obwohl Option (c) sie „entfallen“ ließ; sie hängt nicht an der Artillerie, siehe `DECISIONS.md`, Nachtrag.)*
 - **Dateien:** `packages/ai/src/army-role.ts` (neu), `packages/ai/src/consolidate.ts`,
   `packages/ai/src/military.ts`, `apps/headless/test/m42-zaehlung.ts`
 - **Tests zuerst:** `army-role.test.ts` — leer, Infanterie, Artillerie, gemischt, unbekannt.

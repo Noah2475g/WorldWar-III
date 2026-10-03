@@ -5728,3 +5728,16 @@ zurückgenommen (`c8575b1`), nichts gelöscht.
 solange Artillerie Öl verbraucht (`units.json`: 60 je Stunde) und die Mehrheit der Mächte keins
 fördert. Wer das Band will, muss eine der beiden Zusagen ändern (z. B. Artillerie ohne
 Ölunterhalt — eine Regeländerung, nur durch Noah) — das ist keine Frage der KI mehr.
+
+---
+
+## 2026-10-03 · Nachtrag · T-M42-08/-09 sind gebaut, obwohl Option (c) sie „entfallen" ließ
+
+Die Entscheidung oben nannte bei Option (c) „T-M42-08/-09 entfallen mangels zweiter Rolle". Gebaut wurden
+sie trotzdem (`3e3f850`, `b8106df`), und die Abhängigkeit von T-M42-08 steht jetzt auf T-M42-06 statt
+T-M42-07 (wie bei T-M42-05). **Grund:** die Rolle (Batterie/Linie) zählt auch für **menschlich gebaute**
+Artillerie, die in einer KI-Macht durch Eroberung oder Verbündete auftauchen kann, und das Zusammenlegen
+ist unabhängig vom Artillerieband — es hängt nicht daran, dass die KI selbst Artillerie aushebt.
+Gemessen auf Stufe C2: Paare über zwei Tagesenden 0, ai-integration 30/30, Turnier unverändert. Die
+Aussage „entfallen" in Option (c) ist damit berichtigt, nicht gelöscht; der Orchestrator hat sie ohne
+Rückfrage bei Noah so entschieden und offen gekennzeichnet — kippbar.

@@ -643,22 +643,72 @@ describe('R-AI-10/AK2, AK4 Zusammenlegen nach Rolle und unter dem Deckel (T-M42-
     expect(gruppen(context)).toEqual([['a10', 'a11']])
   })
 
-  it('K6: kein Verband ueber stackFullContribution Einheiten (AK4)', () => {
-    const context = lage([
-      { id: 'a1', unitKey: 'infantry', einheiten: 8 },
-      { id: 'a2', unitKey: 'infantry', einheiten: 8 },
-      { id: 'a3', unitKey: 'infantry', einheiten: 8 },
-      { id: 'a4', unitKey: 'infantry', einheiten: 8 },
-    ])
+  it('K6: kein Verband ueber stackFullContribution Einheiten (AK4) - die Gruppen selbst, nicht nur ihre Zahl', () => {
+    const einheitenJe: Record<string, number> = { a1: 8, a2: 8, a3: 8, a4: 8 }
+    const context = lage(Object.entries(einheitenJe).map(([id, einheiten]) => ({ id, unitKey: 'infantry', einheiten })))
     const cap = TEST_RULES.constants.stackFullContribution
-    for (const ids of gruppen(context)) {
-      const summe = ids.reduce((s, id) => s + (id ? 8 : 0), 0)
+    const ergebnis = gruppen(context)
+    for (const ids of ergebnis) {
+      const summe = ids.reduce((s, id) => s + einheitenJe[id]!, 0)
       expect(summe, ids.join(',')).toBeLessThanOrEqual(cap)
     }
-    expect(gruppen(context).length).toBeGreaterThan(0)
+    // First-Fit: 8+8 = 16, die dritte (24) passt nicht mehr und eroeffnet die zweite Gruppe.
+    expect(ergebnis).toEqual([
+      ['a1', 'a2'],
+      ['a3', 'a4'],
+    ])
+    // Jede Armee steckt in hoechstens einem Befehl.
+    expect(new Set(ergebnis.flat()).size).toBe(ergebnis.flat().length)
   })
 
-  it('K7: eine marschierende Armee bleibt aussen vor; weiterhin eine Provinz je Denkschritt', () => {
+  it('K8: die Reihenfolge von view.armies aendert die Befehle nicht (Determinismus)', () => {
+    const armeen = [
+      { id: 'a9', unitKey: 'infantry', einheiten: 10 },
+      { id: 'a10', unitKey: 'infantry', einheiten: 15 },
+      { id: 'a11', unitKey: 'infantry', einheiten: 5 },
+      { id: 'b1', unitKey: 'artillery', einheiten: 2, at: 'o2' },
+      { id: 'b2', unitKey: 'artillery', einheiten: 3, at: 'o2' },
+      { id: 'c1', unitKey: 'infantry', einheiten: 4, at: 'o3' },
+      { id: 'c2', unitKey: 'infantry', einheiten: 6, at: 'o3' },
+    ]
+    const befehle = (liste: typeof armeen) => consolidateCommands(lage(liste), [])
+    const grundlage = befehle(armeen)
+    expect(grundlage.length).toBeGreaterThan(1) // sonst vergleicht der Test Leeres mit Leerem
+    expect(befehle([...armeen].reverse())).toEqual(grundlage)
+    expect(befehle([armeen[3]!, armeen[6]!, armeen[1]!, armeen[0]!, armeen[5]!, armeen[2]!, armeen[4]!])).toEqual(grundlage)
+  })
+
+  it('K9: ein Verband ueber dem Deckel bleibt allein, die uebrigen legen sich zusammen', () => {
+    const cap = TEST_RULES.constants.stackFullContribution
+    const context = lage([
+      { id: 'a1', unitKey: 'infantry', einheiten: cap + 5 },
+      { id: 'a2', unitKey: 'infantry', einheiten: 3 },
+      { id: 'a3', unitKey: 'infantry', einheiten: 4 },
+    ])
+    expect(gruppen(context)).toEqual([['a2', 'a3']])
+  })
+
+  it('K10: hpTotal wird je Stapel aufgerundet wie im Kern (zwei Stapel mit 1400 hp = vier Einheiten)', () => {
+    // Infanterie hat 1000 hp je Einheit: ein Stapel mit 1400 hp zaehlt 2 Einheiten (ceil), nicht 1.
+    // Fuenf solche Stapel je Armee = 10 Einheiten; a1 + a2 = 20 passen genau unter den Deckel, a3 (2) nicht mehr.
+    // Abrunden (oder Stapel zaehlen) ergaebe 5+5+1 = 11 und legte alle drei zusammen.
+    const cap = TEST_RULES.constants.stackFullContribution
+    expect(hp('infantry')).toBe(1000)
+    const stapel = (n: number) => Array.from({ length: n }, () => ({ unitKey: 'infantry', hpTotal: 1400 }))
+    const context = lage([])
+    context.view.armies = [
+      ...context.view.armies,
+      ...[
+        { id: 'a1', n: 5 },
+        { id: 'a2', n: 5 },
+        { id: 'a3', n: 1 },
+      ].map(({ id, n }) => ({ id, owner: 'p2', provinceId: 'o1', units: stapel(n), strength: 0 })),
+    ]
+    expect(cap).toBe(20)
+    expect(gruppen(context)).toEqual([['a1', 'a2']])
+  })
+
+  it('K7: eine marschierende Armee bleibt aussen vor; zwei Provinzen werden im selben Denkschritt zusammengelegt', () => {
     const context = lage([
       { id: 'a1', unitKey: 'infantry', einheiten: 3 },
       { id: 'a2', unitKey: 'infantry', einheiten: 3, path: ['o2'] },
