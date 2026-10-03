@@ -539,6 +539,42 @@ export function adjutantMarchEntries(
   )
 }
 
+/**
+ * Gleichlautende Gefechtszeilen werden eine Zeile mit Anzahl (T-M44-10, R-UX-02/AK4, Befund B-20).
+ *
+ * Aufnahme vom 2026-10-03: „Myanmar: Gefecht entschieden — niemand behauptet das Feld." stand
+ * Stunde um Stunde mehrfach untereinander. Zusammengefasst wird eine **Folge** von Zeilen, die Wort
+ * für Wort gleich sind, in derselben Provinz, am selben Spieltag und in der Rubrik Kampf (die
+ * Messung des Werkzeugs zählt genau solche Nachbarn). Gleiche Stunde ist darin enthalten; eine
+ * Zeile dazwischen, die etwas anderes sagt, trennt die Folge — die Reihenfolge der Ereignisse
+ * bleibt lesbar. Die Sammelzeile steht, wo die erste (jüngste) stand, behält deren Kennung und
+ * Stunde und nennt die Anzahl. Das Protokoll des Kerns bleibt unberührt — gemischt wird nur, was
+ * gezeigt wird.
+ */
+export function mergeBattleLines(entries: readonly EventEntry[], ticksPerDay = 24): EventEntry[] {
+  const perDay = Math.max(1, ticksPerDay)
+  const merged: EventEntry[] = []
+  const counts: number[] = []
+  const sameRun = (a: EventEntry, b: EventEntry): boolean =>
+    a.category === 'combat' &&
+    b.category === 'combat' &&
+    a.text === b.text &&
+    (a.provinceId ?? '') === (b.provinceId ?? '') &&
+    Math.floor(a.tick / perDay) === Math.floor(b.tick / perDay)
+  for (const entry of entries) {
+    const last = merged[merged.length - 1]
+    if (last && sameRun(last, entry)) {
+      counts[counts.length - 1] = (counts[counts.length - 1] ?? 1) + 1
+    } else {
+      merged.push(entry)
+      counts.push(1)
+    }
+  }
+  return merged.map((entry, i) =>
+    (counts[i] ?? 1) > 1 ? { ...entry, text: t('events_ui.repeated', { text: entry.text, count: counts[i] ?? 1 }) } : entry,
+  )
+}
+
 export function describeEvent(event: GameEvent, index: number, map: MapData, naming: EventNaming = {}): EventEntry {
   const province = provinceOf(event)
 

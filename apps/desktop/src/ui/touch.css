@@ -303,7 +303,9 @@ select,
   }
 
   :root[data-input='touch'] .header__title,
-  :root[data-input='touch'] .header__top > .meter {
+  /* LOESCHVERMERK (Review): bis T-M44-04 lautete der Selektor `:root[data-input='touch'] .header__top > .meter`
+     (Kindselektor; der Siegbalken steht jetzt in der Uhrzeile, nicht mehr direkt in .header__top). */
+  :root[data-input='touch'] .header__top .meter {
     display: none;
   }
 
@@ -632,5 +634,14 @@ select,
   :root:root .orient-hint button {
     min-width: 44px;
     min-height: 44px;
+  }
+}
+
+/* ---- T-M44-05 · Dialog-Fußzeile (Paket B) ----
+   Im Telefon-quer-Block schrumpft schon der Kopf (`.dialog__head`); die feste Fußzeile folgt ihm,
+   damit Körper und Hauptaktion zusammen in die sichtbare Höhe passen. */
+@media (max-height: 480px) {
+  .dialog__foot {
+    padding: var(--sp-sm) var(--sp-lg);
   }
 }

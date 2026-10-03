@@ -562,3 +562,119 @@ describe('R-GAME-08/AK3 Die Rangliste zeigt die eigenen Zwischenziele', () => {
     expect(quelle).not.toMatch(/['"]p1['"]/)
   })
 })
+
+/**
+ * Der Endedialog nennt Ausgang und Grund (T-M44-15, R-UX-05/AK4, Befund B-22).
+ *
+ * Vorher stand über Sieg und Niederlage dieselbe Überschrift und darunter eine Zeile; wer
+ * verloren hatte, las „Die Partie ist entschieden“ und musste raten, woran. Jetzt trägt der
+ * Dialog die Überschrift „Sieg“ oder „Niederlage“, die Siegbedingung der Partie mit der Zahl
+ * aus der Sicht (`pointsShareToWin`) — und für den Sieg den Anteil, der sie wirklich erfüllt —
+ * und die zwei Wege hinaus: zur Karte und zu einer neuen Partie.
+ */
+describe('R-UX-05/AK4 Der Endedialog nennt Sieg oder Niederlage und die Siegbedingung', () => {
+  const stand = (options: {
+    winner: string | null
+    self: number
+    other: number
+    alive?: boolean
+    condition?: 'points' | 'conquest'
+    goal?: number
+  }): PublicView =>
+    ({
+      tick: 240,
+      playerId: 'p1',
+      self: { name: 'Mensch', nation: 'Nordland', alive: options.alive ?? true, score: options.self },
+      others: [{ id: 'p2', name: 'p2', nation: 'Ostmark', alive: true, score: options.other }],
+      provinces: [],
+      victory: {
+        condition: options.condition ?? 'points',
+        winner: options.winner,
+        pointsShareToWin: options.goal ?? 700,
+      },
+    }) as unknown as PublicView
+
+  const zeige = (v: PublicView) =>
+    render(<VictoryDialog view={v} nameOf={nameOf} ticksPerDay={24} onClose={() => undefined} onNewGame={() => undefined} />)
+
+  it('Sieg: Überschrift „Sieg“ und der Anteil, der die Bedingung erfüllt', () => {
+    zeige(stand({ winner: 'p1', self: 800, other: 200 }))
+
+    expect(screen.getByRole('heading', { name: 'Sieg' })).toBeTruthy()
+    const dialog = screen.getByRole('dialog').textContent ?? ''
+    expect(dialog).toContain('Siegbedingung erfüllt')
+    expect(dialog).toContain('80 %')
+    expect(dialog).toContain('70 %')
+  })
+
+  it('Niederlage: eigene Überschrift, nennt die Bedingung und den, der sie erreicht hat', () => {
+    zeige(stand({ winner: 'p2', self: 200, other: 800 }))
+
+    expect(screen.queryByRole('heading', { name: 'Sieg' })).toBeNull()
+    expect(screen.getByRole('heading', { name: 'Niederlage' })).toBeTruthy()
+    const dialog = screen.getByRole('dialog').textContent ?? ''
+    expect(dialog).toContain('Siegbedingung')
+    expect(dialog).toContain('70 %')
+    expect(dialog).toContain('Ostmark')
+  })
+
+  it('Ausgeschieden ohne Sieger ist ebenfalls eine Niederlage, mit der Bedingung der Partie', () => {
+    zeige(stand({ winner: null, alive: false, self: 0, other: 500 }))
+
+    expect(screen.getByRole('heading', { name: 'Niederlage' })).toBeTruthy()
+    expect(screen.getByRole('dialog').textContent).toContain('Siegbedingung der Partie')
+  })
+
+  it('Eroberung: nennt, dass alles gehören muss, statt einer Prozentzahl', () => {
+    zeige(stand({ winner: 'p1', self: 1000, other: 0, condition: 'conquest', goal: 1000 }))
+
+    const dialog = screen.getByRole('dialog').textContent ?? ''
+    expect(dialog).toContain('Eroberung')
+    expect(dialog).toContain('alles')
+  })
+
+  it('führt zur Karte und zu einer neuen Partie', () => {
+    zeige(stand({ winner: 'p1', self: 800, other: 200 }))
+
+    expect(screen.getByRole('button', { name: 'Karte ansehen' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Neue Partie' })).toBeTruthy()
+  })
+
+  it('der Name des Dialogs bleibt „Die Partie ist entschieden“ — daran findet ihn die Hülle', () => {
+    zeige(stand({ winner: 'p2', self: 200, other: 800 }))
+
+    expect(screen.getByRole('dialog', { name: 'Die Partie ist entschieden' })).toBeTruthy()
+  })
+})
+
+/**
+ * Die Lage-Tabelle rollt in sich, wo die Seitenleiste schmal ist (touch.css, Telefon quer) — und
+ * bekommt dann einen Tabstopp (T-M44-08, R-UX-06/AK1, axe `scrollable-region-focusable`,
+ * gemessen am 2026-10-03 bei 667×375: `section[aria-label="Lage"] > table`).
+ */
+describe('R-UX-06/AK1 Die Lage-Tabelle ist mit der Tastatur erreichbar, wenn sie rollt', () => {
+  afterEach(() => {
+    delete (HTMLElement.prototype as { scrollWidth?: number }).scrollWidth
+    delete (HTMLElement.prototype as { clientWidth?: number }).clientWidth
+  })
+
+  const zeige = () =>
+    render(<StandingsPanel view={view({ self: 100, others: [{ id: 'p2', score: 300 }] })} nameOf={nameOf} />)
+
+  it('trägt einen Namen und, wenn sie breiter ist als ihr Platz, tabindex 0', () => {
+    Object.defineProperty(HTMLElement.prototype, 'scrollWidth', { configurable: true, get: () => 400 })
+    Object.defineProperty(HTMLElement.prototype, 'clientWidth', { configurable: true, get: () => 252 })
+    zeige()
+
+    const tabelle = screen.getByRole('table', { name: 'Lage' })
+    expect(tabelle.getAttribute('tabindex')).toBe('0')
+  })
+
+  it('bleibt ohne Tabstopp, wenn alles hineinpasst', () => {
+    Object.defineProperty(HTMLElement.prototype, 'scrollWidth', { configurable: true, get: () => 252 })
+    Object.defineProperty(HTMLElement.prototype, 'clientWidth', { configurable: true, get: () => 252 })
+    zeige()
+
+    expect(screen.getByRole('table', { name: 'Lage' }).hasAttribute('tabindex')).toBe(false)
+  })
+})

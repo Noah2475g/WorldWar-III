@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import {
   canApply,
+  planRoute,
   createInitialState,
   exchangeAmount,
   parseRules,
@@ -21,11 +22,15 @@ import {
   armyActions,
   buildActions,
   capitalAction,
+  capitalActions,
   diplomacyActions,
   offerListActions,
   ownArmiesIn,
   passageActions,
   planArrival,
+  marchTargets,
+  routeCostsFrom,
+  MarchTargetCache,
   cancelActions,
   nextUnlock,
   recruitActions,
@@ -384,7 +389,8 @@ describe('R-UNIT-03/04 Armeebefehle (Fortsetzung)', () => {
     withArmy(ctx.state, capital)
 
     const confirm = targetAction(ctx, 'a1', 'move', capital)
-    expect(confirm.disabledReason).toContain('bereits dort')
+    // R-UX-03/AK1 (T-M44-06): ein Satz statt des Kernworts. LOESCHVERMERK (Review): vorher toContain('bereits dort').
+    expect(confirm.disabledReason).toBe('Die Armee steht schon dort.')
   })
 
   it('zaehlt die Einheiten einer Armee in Worten und findet die Armeen einer Provinz', () => {
@@ -407,7 +413,8 @@ describe('R-DIP-01 Diplomatie und R-ECON-05 Markt', () => {
 
     expect(byId['diplomacy-declareWar-p2']!.disabledReason).toBeNull()
     expect(byId['diplomacy-offerPeace-p2']!.disabledReason).toContain('nur im Krieg')
-    expect(byId['diplomacy-acceptPeace-p2']!.disabledReason).toContain('kein Angebot')
+    // R-UX-03/AK1 (T-M44-06). LOESCHVERMERK (Review): vorher toContain('kein Angebot') — das Rohwort des Kerns.
+    expect(byId['diplomacy-acceptPeace-p2']!.disabledReason).toBe('Polen hat Ihnen nichts angeboten, oder das Angebot ist verfallen.')
     for (const action of Object.values(byId)) {
       if (action.disabledReason) expect(action.disabledReason).not.toMatch(RAW_KEY)
     }
@@ -423,12 +430,23 @@ describe('R-DIP-01 Diplomatie und R-ECON-05 Markt', () => {
 
     const same = tradePreview(ctx, 'wood', 100_000, 'wood')
     expect(same.text).toBe('Dafür gibt es nichts.')
-    expect(same.action.disabledReason).toContain('gleiche Ressource')
+    // R-UX-03/AK1 (T-M44-06). LOESCHVERMERK (Review): vorher toContain('gleiche Ressource').
+    expect(same.action.disabledReason).toBe('Tauschen Sie gegen einen anderen Rohstoff.')
   })
 
   it('macht aus der Hauptstadt keinen Knopf fuer die Hauptstadt', () => {
     const { ctx, capital } = fresh()
     expect(capitalAction(ctx, capital).disabledReason).not.toBeNull()
+  })
+
+  it('R-UX-03/AK1: Hauptstadt verlegen wird in der eigenen Hauptstadt nicht angeboten, anderswo schon', () => {
+    const { ctx, capital } = fresh()
+    expect(capitalActions(ctx, capital)).toEqual([])
+    const other = Object.values(ctx.state.provinces).find(
+      (p) => p.owner === ctx.playerId && p.id !== capital && p.kind === 'city',
+    )
+    expect(other, 'die Probe braucht eine zweite eigene Stadt').toBeDefined()
+    expect(capitalActions(ctx, other!.id).map((spec) => spec.id)).toEqual(['set-capital'])
   })
 })
 
@@ -1063,7 +1081,9 @@ describe('R-UI-07 Spionage-Ablehnungen in Worten', () => {
       { type: 'MOVE_ARMY' } as Command,
       ctx,
     )
-    expect(text).toBe('Dieses Ziel ist für den Befehl nicht zulässig. (herrenlos)')
+    // R-UX-03/AK1 (T-M44-06): auch ein Grund, den die Tabelle dort nicht kennt, steht nie als Rohwort in
+    // Klammern. LOESCHVERMERK (Review): vorher '… nicht zulässig. (herrenlos)'.
+    expect(text).toBe('Dieses Ziel ist für den Befehl nicht zulässig.')
   })
 })
 
@@ -1112,8 +1132,9 @@ describe('R-DIP-07 Handel und Durchmarsch als Knoepfe (T-M17-14)', () => {
 
       let row = byId(passageActions(ctx, 'p2'))
       expect(row['diplomacy-requestRightOfWay-p2']!.disabledReason).toBeNull()
-      expect(row['diplomacy-acceptRightOfWay-p2']!.disabledReason).toContain('kein Angebot')
-      expect(row['diplomacy-revokeRightOfWay-p2']!.disabledReason).toContain('nicht gewährt')
+      // R-UX-03/AK1 (T-M44-06). LOESCHVERMERK (Review): vorher toContain('kein Angebot') und toContain('nicht gewährt').
+      expect(row['diplomacy-acceptRightOfWay-p2']!.disabledReason).toBe('Polen hat Ihnen nichts angeboten, oder das Angebot ist verfallen.')
+      expect(row['diplomacy-revokeRightOfWay-p2']!.disabledReason).toBe('Sie haben Polen keinen Durchmarsch gewährt.')
       for (const spec of Object.values(row)) if (spec.disabledReason) expect(spec.disabledReason).not.toMatch(RAW_KEY)
 
       // p1 gewaehrt p2 den Durchmarsch.
@@ -1124,7 +1145,8 @@ describe('R-DIP-07 Handel und Durchmarsch als Knoepfe (T-M17-14)', () => {
       // p1 kuendigt wieder.
       const gekuendigt = applied(gewaehrt, [{ type: 'DIPLOMACY', playerId: 'p1', targetPlayerId: 'p2', action: 'revokeRightOfWay' }])
       row = byId(passageActions(gekuendigt, 'p2'))
-      expect(row['diplomacy-revokeRightOfWay-p2']!.disabledReason).toContain('bereits gekündigt')
+      // LOESCHVERMERK (Review): vorher toContain('bereits gekündigt') (T-M44-06, R-UX-03/AK1).
+      expect(row['diplomacy-revokeRightOfWay-p2']!.disabledReason).toBe('Den Durchmarsch für Polen haben Sie schon gekündigt.')
 
       // Getrennt: p2 beantragt bei p1 — p1 sieht "annehmen" frei.
       const p2ctx: ActionContext = { ...ctx, playerId: 'p2' }
@@ -1511,5 +1533,127 @@ describe('R-DIP-07 Handel und Durchmarsch als Knoepfe (T-M17-14)', () => {
     // Derselbe Weg im Marktpanel (Panels.tsx MarketPanel -> tradePreview): dieselbe Menge, ohne
     // dass p1 sie besitzt — die Vorschau rechnet vor jeder Bestandspruefung.
     expect(() => tradePreview(ctx, 'rare', riesig, 'money')).not.toThrow()
+  })
+})
+
+
+/**
+ * R-UX-04/AK2 (T-M44-11): die Zielwahl zeigt erreichbare Ziele mit Ankunft zuerst, unerreichbare getrennt;
+ * die Wegsuche läuft nur beim Öffnen und ist je (Armee, Ort, Spieltag) zwischengespeichert.
+ *
+ * Gemessen vor dem Bau (Weltkarte, Mittlerer Westen, Infanterie): 33 von 236 Zielen erreichbar, 203 nicht;
+ * `planRoute` gegen alle 236 kostete 10–25 ms warm und rund 80 ms kalt, die unerreichbaren am meisten.
+ */
+describe('R-UX-04/AK2 Zielwahl: erreichbare zuerst, unerreichbare getrennt, gemessen und zwischengespeichert', () => {
+  function usGame(): { ctx: ActionContext; west: string } {
+    const state = createInitialState(toConfig({ ...DEFAULT_NEW_GAME, nation: 'Vereinigte Staaten', opponents: 3 }, map), { map, rules })
+    const west = map.provinces.find((p) => p.name === 'Mittlerer Westen')!.id
+    const ctx: ActionContext = { state, map, rules, playerId: 'p1', ticksPerDay: rules.constants.ticksPerDay }
+    return { ctx, west }
+  }
+  const name = (id: string) => map.provinces.find((p) => p.id === id)!.name
+
+  it('sortiert nach Erreichbarkeit und Ankunft; Nordwestaustralien ist von Mittlerer Westen aus gesperrt', () => {
+    const { ctx, west } = usGame()
+    const army = withArmy(ctx.state, west)
+    const lists = marchTargets(ctx, army.id, name)
+
+    expect(lists.reachable.length, 'die Probe braucht erreichbare Ziele').toBeGreaterThan(5)
+    expect(lists.unreachable.length).toBeGreaterThan(100)
+    expect(lists.reachable.length + lists.unreachable.length).toBe(map.provinces.length - 1)
+    const ticks = lists.reachable.map((target) => target.arrivalTick!)
+    expect(ticks, 'erreichbare Ziele nach Ankunft aufsteigend').toEqual([...ticks].sort((a, b) => a - b))
+    expect(lists.unreachable.map((target) => target.name)).toContain('Nordwestaustralien')
+    expect(lists.reachable.map((target) => target.name)).not.toContain('Nordwestaustralien')
+    expect(lists.reachable.every((target) => target.arrivalTick! > ctx.state.tick)).toBe(true)
+    // Die Zahl in der Liste ist die, die der Kern beim Befehl meldet.
+    const first = lists.reachable[0]!
+    expect(first.arrivalTick).toBe(planRoute(ctx.state, army, first.id, map, rules)!.arrivalTick)
+    // Und der Befehl an ein unerreichbares Ziel wird vom Kern wirklich abgelehnt (NO_PATH).
+    const blocked = targetAction(ctx, army.id, 'move', lists.unreachable[0]!.id)
+    expect(blocked.disabledReason).not.toBeNull()
+  })
+
+  it('eine Suche für alle Ziele liefert über die ganze Weltkarte für jedes Ziel dieselbe Ankunft wie planRoute (Land, Schiffe)', () => {
+    const { ctx, west } = usGame()
+    const landArmy = withArmy(ctx.state, west)
+    const ships: Army = withArmy(ctx.state, west)
+    ships.units = [
+      { unitKey: 'infantry', hpTotal: rules.units.infantry!.hpPerUnit },
+      { unitKey: 'transport', hpTotal: rules.units.transport!.hpPerUnit * 3 },
+    ]
+    const sizes: number[] = []
+    for (const army of [landArmy, ships]) {
+      const costs = routeCostsFrom(ctx.state, army, map, rules)
+      let compared = 0
+      for (const province of map.provinces) {
+        if (province.id === army.locationProvinceId) continue
+        const route = planRoute(ctx.state, army, province.id, map, rules)
+        const cost = costs.get(province.id)
+        if (route === null) expect(cost, `${province.name}: planRoute null, die Suche nicht`).toBeUndefined()
+        else expect(ctx.state.tick + cost!, `${province.name}: Ankunft`).toBe(route.arrivalTick)
+        compared += 1
+      }
+      expect(compared).toBe(map.provinces.length - 1)
+      sizes.push(costs.size)
+    }
+    // Schiffe öffnen die Seekanten: mit Transport ist mehr erreichbar als zu Fuß.
+    expect(sizes[1]).toBeGreaterThan(sizes[0]!)
+  })
+
+  it('Flugverbände erreichen nur eigene Flugplätze', () => {
+    const { ctx, west } = usGame()
+    const air = withArmy(ctx.state, west)
+    air.units = [{ unitKey: 'fighter', hpTotal: rules.units.fighter!.hpPerUnit }]
+    const lists = marchTargets(ctx, air.id, name)
+    for (const target of lists.reachable) {
+      const province = ctx.state.provinces[target.id]!
+      expect(province.owner).toBe('p1')
+      expect(province.buildings.airfield ?? 0).toBeGreaterThan(0)
+    }
+  })
+
+  it('Zwischenspeicher je (Armee, Ort, Spieltag): beim Öffnen gerechnet, danach nicht mehr', () => {
+    const { ctx, west } = usGame()
+    const army = withArmy(ctx.state, west)
+    const cache = new MarchTargetCache()
+
+    const first = marchTargets(ctx, army.id, name, cache)
+    expect(cache.computed).toBe(1)
+    // Der Stand läuft weiter (Ticks), der Tag bleibt: keine neue Rechnung, dieselbe Liste.
+    ctx.state.tick += 5
+    expect(marchTargets(ctx, army.id, name, cache)).toBe(first)
+    expect(cache.computed).toBe(1)
+    // Anderer Spieltag → neu.
+    ctx.state.tick += ctx.ticksPerDay
+    marchTargets(ctx, army.id, name, cache)
+    expect(cache.computed).toBe(2)
+    // Anderer Ort → neu.
+    const landEdge = map.edgesByProvince[west]!.map((i) => map.edges[i]!).find((e) => e.kind === 'land')!
+    army.locationProvinceId = landEdge.a === west ? landEdge.b : landEdge.a
+    marchTargets(ctx, army.id, name, cache)
+    expect(cache.computed).toBe(3)
+    // Andere Armee → neu.
+    const other = withArmy(ctx.state, army.locationProvinceId)
+    marchTargets(ctx, other.id, name, cache)
+    expect(cache.computed).toBe(4)
+    // Neue Partie: Speicher leer.
+    cache.clear()
+    marchTargets(ctx, other.id, name, cache)
+    expect(cache.computed).toBe(5)
+  })
+
+  it('der Zwischenspeicher bleibt klein', () => {
+    const { ctx, west } = usGame()
+    const cache = new MarchTargetCache(2)
+    for (let i = 0; i < 5; i++) marchTargets(ctx, withArmy(ctx.state, west).id, name, cache)
+    expect(cache.computed).toBe(5)
+    // Die jüngste Armee ist noch drin, die erste nicht.
+    const newest = ctx.state.armyOrder[ctx.state.armyOrder.length - 1]!
+    const before = cache.computed
+    marchTargets(ctx, newest, name, cache)
+    expect(cache.computed).toBe(before)
+    marchTargets(ctx, ctx.state.armyOrder[0]!, name, cache)
+    expect(cache.computed).toBe(before + 1)
   })
 })

@@ -103,6 +103,10 @@
 
 ## 0 · Ankommen (ein Befehl, keine Suche)
 
+> **ÜBERGABE 2026-10-03 (zuerst lesen):** Die Cloud-Sitzung wurde mitten in der Arbeit
+> angehalten. Unfertige Stände liegen auf `wip/…`-Zweigen. Wo was liegt und wie es
+> weitergeht, steht in **`docs/plan/UEBERGABE-LOKAL-2026-10-03.md`**.
+
 ```bash
 git log --oneline -1 && git status --short
 ```

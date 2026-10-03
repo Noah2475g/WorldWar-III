@@ -45,6 +45,18 @@ export function footRows(rows: readonly StandingsRow[], count = 4): StandingsRow
   return rows.slice(start, start + count)
 }
 
+/**
+ * Platz 1 zuerst (T-M44-10, R-UX-02/AK4, Befund B-15): die vier Zeilen um die eigene Macht, und —
+ * steht der Erste nicht ohnehin darunter — der Erste als erste Zeile davor. Additiv: `footRows`
+ * und mit ihm T-M31-03 bleiben, wie sie waren; wer auf Platz 6 steht, sieht jetzt auch, wie weit der
+ * Erste vorn liegt (R-UI-13).
+ */
+export function footRowsWithLeader(rows: readonly StandingsRow[], count = 4): StandingsRow[] {
+  const around = footRows(rows, count)
+  const leader = rows[0]
+  return leader && around[0] !== leader ? [leader, ...around] : around
+}
+
 export interface FootProps {
   entries: readonly EventEntry[]
   ticksPerDay: number
@@ -58,7 +70,7 @@ export interface FootProps {
 
 export function Foot(props: FootProps) {
   const unread = unreadCount(props.entries, props.seenTick)
-  const ranked = footRows(props.rows)
+  const ranked = footRowsWithLeader(props.rows)
   const report = latestReport(props.entries)
 
   return (

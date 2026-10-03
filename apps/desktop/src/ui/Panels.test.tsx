@@ -766,6 +766,61 @@ describe('R-UI-10/R-UI-11 Beziehung und Gelaende stehen als Zeichen auf dem Bild
   })
 })
 
+/**
+ * R-UX-03/AK1 (T-M44-18): im Diplomatiepanel stehen die Sperrgründe der Vertragsbefehle nicht mehr als
+ * fünf Absätze unter fünf Knöpfen, sondern einmal als Sammelzeile; jeder gesperrte Knopf trägt seinen
+ * Grund weiter über `aria-describedby`. Leerzustände sind Fließtext, keine Überschriftgröße.
+ */
+describe('R-UX-03/AK1 Sperrgründe der Verträge gebündelt, Leerzustände als Fließtext', () => {
+  const view = diplomacyView({ others: [{ id: 'p2', nation: 'Ostmark' }] })
+  const blocked = (id: string, label: string, reason: string): Action => ({ id, label, disabledReason: reason, onRun: () => undefined })
+  const treaties: Action[] = [
+    blocked('t1', 'Frieden anbieten', 'Das geht nur im Krieg.'),
+    blocked('t2', 'Frieden annehmen', 'Ostmark hat Ihnen nichts angeboten.'),
+    blocked('t3', 'Bündnis anbieten', 'Ein Bündnis setzt Frieden voraus.'),
+    blocked('t4', 'Bündnis annehmen', 'Ostmark hat Ihnen nichts angeboten.'),
+    blocked('t5', 'Bündnis aufkündigen', 'Mit Ostmark besteht kein Bündnis.'),
+    { id: 't6', label: 'Krieg erklären', disabledReason: null, onRun: () => undefined },
+  ]
+  const open = () =>
+    render(<DiplomacyPanel view={view} nameOf={() => 'Ostmark'} chosen="p2" onChoose={() => undefined} actionsFor={() => treaties} />)
+
+  it('zeigt die Gründe einmal als Sammelzeile statt als Absatz unter jedem Knopf', () => {
+    const { container } = open()
+    const group = container.querySelector('section.group[aria-label^="Verträge"]') ?? container.querySelectorAll('section.group')[1]!
+
+    expect(group.querySelectorAll('.action__reason').length, 'kein Absatz je Knopf').toBe(0)
+    const lines = group.querySelectorAll('.group__reasons')
+    expect(lines.length, 'genau eine Sammelzeile').toBe(1)
+    expect(lines[0]!.textContent).toContain('Das geht nur im Krieg.')
+    expect(lines[0]!.textContent).toContain('Ein Bündnis setzt Frieden voraus.')
+    expect(lines[0]!.textContent).toContain('Mit Ostmark besteht kein Bündnis.')
+    // Derselbe Grund steht einmal, mit beiden Knöpfen davor.
+    expect((lines[0]!.textContent!.match(/hat Ihnen nichts angeboten/g) ?? []).length).toBe(1)
+    expect(lines[0]!.textContent).toContain('Frieden annehmen, Bündnis annehmen')
+  })
+
+  it('jeder gesperrte Knopf trägt seinen Grund über aria-describedby', () => {
+    open()
+    for (const action of treaties.filter((a) => a.disabledReason)) {
+      const button = screen.getByRole('button', { name: action.label })
+      const id = button.getAttribute('aria-describedby')
+      expect(id, action.label).toBeTruthy()
+      expect(document.getElementById(id!)?.textContent).toBe(action.disabledReason)
+    }
+    expect(screen.getByRole('button', { name: 'Krieg erklären' }).hasAttribute('aria-describedby')).toBe(false)
+  })
+
+  it('die Leerzustände sind Fließtext und keine Überschrift', () => {
+    const { container } = render(<DiplomacyPanel view={view} nameOf={() => 'Ostmark'} />)
+    const empty = [...container.querySelectorAll('p')].find((p) => p.textContent === 'Derzeit führt niemand Krieg.')
+
+    expect(empty, 'Leerzustand fehlt').toBeTruthy()
+    expect(empty!.classList.contains('panel__empty')).toBe(true)
+    expect(empty!.closest('h1,h2,h3,h4')).toBeNull()
+  })
+})
+
 describe('R-DIP-07 Das Diplomatiepanel (T-M17-14)', () => {
   it('zeigt das Ansehen jeder Macht als Balken', () => {
     const view = diplomacyView({
@@ -1947,6 +2002,69 @@ describe('T-M32-01 Die Zielwahl kennt den verzoegerten Abmarsch', () => {
 })
 
 /**
+ * R-UX-04/AK2 (T-M44-11): die Zielwahl trennt erreichbare von unerreichbaren Zielen.
+ * Vorher standen 237 Ziele alphabetisch in einer Liste, und „Dorthin führt kein Weg“ kam erst nach der Wahl.
+ */
+describe('R-UX-04/AK2 Die Zielwahl hat zwei Gruppen: erreichbar mit Ankunftstag, nicht erreichbar gesperrt', () => {
+  const army = { id: 'a1', owner: 'p1', provinceId: 'USA-MW', strength: 12_400, stance: 'defensive' } as VisibleArmy
+  const noop = (): void => undefined
+  const base: Targeting = {
+    kind: 'move',
+    target: null,
+    options: [
+      { id: 'USA-NE', name: 'Nordosten', arrivalDay: 3 },
+      { id: 'MEX-N', name: 'Nordostmexiko', arrivalDay: 5 },
+    ],
+    unreachable: [
+      { id: 'AUS-NW', name: 'Nordwestaustralien' },
+      { id: 'AFG', name: 'Afghanistan' },
+    ],
+    confirm: null,
+    onChoose: noop,
+    onCancel: noop,
+    delayDays: 0,
+    onDelay: noop,
+  }
+  const open = (targeting: Targeting) =>
+    render(<ArmyPanel army={army} actions={[]} targeting={targeting} ticksPerDay={24} currentTick={0} />)
+
+  it('zeigt zwei optgroups, die erreichbare zuerst und mit Ankunftstag', () => {
+    const { container } = open(base)
+    const groups = [...container.querySelectorAll('select optgroup')]
+
+    expect(groups.map((g) => g.getAttribute('label'))).toEqual(['Erreichbar — mit Ankunftstag', 'Nicht erreichbar'])
+    expect([...groups[0]!.querySelectorAll('option')].map((o) => o.textContent)).toEqual([
+      'Nordosten — Ankunft Tag 3',
+      'Nordostmexiko — Ankunft Tag 5',
+    ])
+    expect([...groups[0]!.querySelectorAll('option')].every((o) => !o.disabled)).toBe(true)
+  })
+
+  it('sperrt jedes unerreichbare Ziel — es ist nicht wählbar', () => {
+    const { container } = open(base)
+    const blocked = [...container.querySelectorAll('select optgroup')[1]!.querySelectorAll('option')]
+
+    expect(blocked.map((o) => o.textContent)).toEqual(['Nordwestaustralien', 'Afghanistan'])
+    expect(blocked.every((o) => o.disabled)).toBe(true)
+  })
+
+  it('der Beschuss behält die eine flache Liste', () => {
+    const { container } = open({ ...base, kind: 'bombard', unreachable: undefined, options: [{ id: 'X', name: 'Ziel X' }] })
+
+    expect(container.querySelectorAll('select optgroup').length).toBe(0)
+    expect([...container.querySelectorAll('select option')].map((o) => o.textContent)).toEqual(['— keine —', 'Ziel X'])
+  })
+
+  it('sagt es, wenn von hier nichts erreichbar ist, ohne „feindliches Gebiet“ zu behaupten', () => {
+    const { container } = open({ ...base, options: [] })
+
+    expect(container.querySelectorAll('select optgroup').length).toBe(1)
+    expect(container.textContent).toContain('kein Ziel erreichbar')
+    expect(container.textContent).not.toMatch(/feindlich/i)
+  })
+})
+
+/**
  * T-M32-02 · Der Markt zeigt den Preisverlauf.
  *
  * Die Reihe kommt aus `priceSeries` (game/events.ts); hier zählt nur, dass das
@@ -2447,5 +2565,49 @@ describe('R-UX-02 T-M44-12 Wirtschaft einklappbar, Panelkopf mit Zurueck', () =>
   it('ohne onBack steht kein Zurueck-Knopf', () => {
     render(<ArmyPanel army={{ id: 'a1', owner: 'p1', provinceId: 'X', strength: 1000 } as never} actions={[]} ticksPerDay={24} currentTick={0} />)
     expect(screen.queryByRole('button', { name: t('panel.back') })).toBeNull()
+  })
+})
+
+/**
+ * R-UX-04/AK1 für die Diplomatie (T-M44-09b): Krieg erklären und Bündnis aufkündigen sind nicht
+ * rückgängig zu machen; sie brauchen einen zweiten Klick am selben Knopf, und der Folgesatz nennt die Macht.
+ * Die Befehle selbst bleiben dieselben (`onRun`).
+ */
+describe('R-UX-04/AK1 Krieg und Bündnisbruch fragen nach', () => {
+  const view = diplomacyView({ others: [{ id: 'p2', nation: 'Ostmark' }] })
+  const make = () => {
+    const war = vi.fn()
+    const brk = vi.fn()
+    const peace = vi.fn()
+    const treaties: Action[] = [
+      { id: 'diplomacy-declareWar-p2', label: 'Krieg erklären', disabledReason: null, onRun: war },
+      { id: 'diplomacy-offerPeace-p2', label: 'Frieden anbieten', disabledReason: null, onRun: peace },
+      { id: 'diplomacy-breakAlliance-p2', label: 'Bündnis aufkündigen', disabledReason: null, onRun: brk },
+    ]
+    render(<DiplomacyPanel view={view} nameOf={() => 'Ostmark'} chosen="p2" onChoose={() => undefined} actionsFor={() => treaties} />)
+    return { war, brk, peace }
+  }
+
+  it('sendet „Krieg erklären“ erst nach dem zweiten Klick, und der Folgesatz nennt die Macht (heute rot)', () => {
+    const { war } = make()
+    fireEvent.click(screen.getByRole('button', { name: 'Krieg erklären' }))
+    expect(war).not.toHaveBeenCalled()
+    const knopf = screen.getByRole('button', { name: /Ostmark.*noch einmal klicken/ })
+    fireEvent.click(knopf)
+    expect(war).toHaveBeenCalledTimes(1)
+  })
+
+  it('fragt auch beim Aufkündigen des Bündnisses nach (heute rot)', () => {
+    const { brk } = make()
+    fireEvent.click(screen.getByRole('button', { name: 'Bündnis aufkündigen' }))
+    expect(brk).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: /Ostmark.*noch einmal klicken/ }))
+    expect(brk).toHaveBeenCalledTimes(1)
+  })
+
+  it('fragt bei Frieden nicht nach: dort geht nichts verloren', () => {
+    const { peace } = make()
+    fireEvent.click(screen.getByRole('button', { name: 'Frieden anbieten' }))
+    expect(peace).toHaveBeenCalledTimes(1)
   })
 })

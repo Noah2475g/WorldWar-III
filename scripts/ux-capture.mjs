@@ -104,6 +104,8 @@ const parseViewports = (list) =>
 
 const CHECK = flag('check')
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+// Vite liefert Dateien ausserhalb des Wurzelordners unter /@fs/<Pfad>; unter Windows heisst der Pfad C:/..., ohne Schraegstrich davor fehlt das Trennzeichen.
+const fsRoot = (path) => { const p = path.split(String.fromCharCode(92)).join('/'); return p.startsWith('/') ? p : `/${p}` }
 /** Die fuenf Groessen der Anforderungen (R-UX-01); 1920x1080 als Messwert, nicht als Bild. */
 const CHECK_VIEWPORTS = '375x667,667x375,1280x800,1366x768,1920x1080'
 const DEFAULT_VIEWPORTS = '375x667,667x375,1280x800,1366x768,1920x1080,1024x768,768x1024,320x568'
@@ -447,6 +449,16 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
     }
   }
   const btn = (name, exact = true) => page.getByRole('button', { name, exact }).first()
+  /**
+   * Kartenmodus waehlen. Ab T-M44-04 stehen unter 1400 px (ohne Touch) statt der fuenf Knoepfe eine
+   * Auswahl in der Kopfleiste: ist der Knopf nicht gezeichnet, nimmt die Messung die Auswahl —
+   * dieselbe Kernhandlung, derselbe Name.
+   */
+  const mode = async (label) => {
+    const button = btn(label)
+    if (await button.isVisible().catch(() => false)) return button.click({ timeout: 5000 })
+    return page.getByRole('combobox', { name: 'Kartenmodus' }).selectOption({ label }, { timeout: 5000 })
+  }
   const speed = async (label) => btn(label).click({ timeout: 5000 })
   const provincePicker = () => page.locator('aside select').first()
   /**
@@ -580,10 +592,10 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
     await page.waitForTimeout(300)
   })
   await step('kartenmodus-rohstoffe', async () => {
-    await btn('Rohstoffe').click({ timeout: 5000 })
+    await mode('Rohstoffe')
     await page.waitForTimeout(400)
     await shot('kartenmodus-rohstoffe')
-    await btn('Besitz').click({ timeout: 5000 })
+    await mode('Besitz')
   })
 
   // --- 4. Provinz, Bau, Erklaerung --------------------------------------------------
@@ -731,7 +743,16 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
     await axe(page, 'diplomacy', data.axe)
     await btn('Mexiko').click({ timeout: 5000 })
     await page.waitForTimeout(300)
+    // R-UX-04/AK1 (T-M44-09b): der erste Klick fragt nur; erst der zweite sendet den Befehl.
     await btn('Krieg erklären').click({ timeout: 5000 })
+    await page.waitForTimeout(300)
+    data.probes.confirm = await page.evaluate(() => {
+      const asks = [...document.querySelectorAll('button')].some((b) => /noch einmal klicken/.test(b.textContent ?? ''))
+      const sent = document.querySelectorAll('.action__pending').length > 0
+      return { asksOnFirstClick: asks, warOnFirstClick: sent }
+    })
+    await shot('krieg-fragt-nach')
+    await page.getByRole('button', { name: /noch einmal klicken/ }).click({ timeout: 5000 }).catch(() => {})
     await page.waitForTimeout(300)
     await shot('krieg-erklaert-ohne-rueckfrage')
   })
@@ -779,10 +800,10 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
     }
   })
   await step('kartenmodus-beziehungen', async () => {
-    await btn('Beziehungen').click({ timeout: 5000 })
+    await mode('Beziehungen')
     await page.waitForTimeout(300)
     await shot('kartenmodus-beziehungen')
-    await btn('Besitz').click({ timeout: 5000 })
+    await mode('Besitz')
   })
 
   // --- 7. Menue, Einstellungen, Spielstaende ----------------------------------------
@@ -812,8 +833,8 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
     // B-22: der Sieger bekommt den Besitz, den die Siegbedingung verlangt — `checkVictory` des Kerns
     // muss ihn selbst melden, bevor `victory.winner` gesetzt wird. Nichts davon aendert den Kern.
     const prepared = await page.evaluate(async ({ origin, root, grantSource }) => {
-      const core = await import(/* @vite-ignore */ `${origin}/@fs/${root.replace(/^[/]/, "")}/packages/core/src/index.ts`)
-      const json = async (name) => (await fetch(`${origin}/@fs/${root.replace(/^[/]/, "")}/data/rules/default/${name}.json`)).json()
+      const core = await import(/* @vite-ignore */ `${origin}/@fs${root}/packages/core/src/index.ts`)
+      const json = async (name) => (await fetch(`${origin}/@fs${root}/data/rules/default/${name}.json`)).json()
       const rules = core.parseRules(
         { constants: await json('constants'), resources: await json('resources'), buildings: await json('buildings'), units: await json('units'), ai: await json('ai') },
         'default',
@@ -845,7 +866,7 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
       await put('stand-3', JSON.stringify({ schemaVersion: state.schemaVersion, savedAtTick: state.tick, kaputt: true }))
       const brief = (r) => ({ real: r.real, moved: r.moved, share: r.share, goal: r.goal, condition: r.condition })
       return { ok: true, win: brief(win), lose: brief(lose) }
-    }, { origin: new URL(run.url).origin, root: ROOT, grantSource: grantUntilVictory.toString() })
+    }, { origin: new URL(run.url).origin, root: fsRoot(ROOT), grantSource: grantUntilVictory.toString() })
     data.notes.push({ preparedSaves: prepared.ok ? 'ok' : prepared.error })
     if (prepared.ok) {
       data.notes.push({ victoryState: prepared.win })

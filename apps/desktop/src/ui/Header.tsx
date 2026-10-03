@@ -4,6 +4,7 @@ import { t } from '../i18n/text.ts'
 import { SHORT_REACH_DAYS, amount, formatTime, rate, reachInDays, reachShort, reachText } from './format.ts'
 import { Icon, RESOURCE_ICONS } from './icons.tsx'
 import { Meter } from './Meter.tsx'
+import { useScrollableTab } from './useScrollableTab.ts'
 import { MAP_MODES, MAP_MODE_NAMES, type MapMode } from '../map/modes.ts'
 
 /**
@@ -190,6 +191,8 @@ export function Header(props: HeaderProps) {
   const resources = props.view?.self.resources
   const shortages = new Set(props.view?.self.shortages ?? [])
   const victory = victoryProgress(props.view)
+  // Rollt die Rohstoffleiste (schmales Fenster), bekommt sie einen Tabstopp (T-M44-08, R-UX-06/AK1).
+  const resourcesScroll = useScrollableTab<HTMLUListElement>()
 
   return (
     <header className="header">
@@ -336,19 +339,21 @@ export function Header(props: HeaderProps) {
               {props.fastForwardNotice}
             </span>
           )}
-        </div>
 
-        {/* Wie weit ist der Sieg? Der Punkteanteil als Balken — eine Zahl, die man
-            gegen das Ziel vergleichen kann, ohne sie auszurechnen (R-UI-13). */}
-        {victory && (
-          <Meter
-            label={t('meter.victoryGoal')}
-            value={victory.share}
-            max={victory.goal}
-            text={t('meter.victoryShare', { percent: Math.round(victory.share), goal: Math.round(victory.goal) })}
-            tone={victory.share >= victory.goal ? 'good' : 'neutral'}
-          />
-        )}
+          {/* Wie weit ist der Sieg? Der Punkteanteil als Balken — eine Zahl, die man
+              gegen das Ziel vergleichen kann, ohne sie auszurechnen (R-UI-13). Seit T-M44-04
+              steht er in der Uhrzeile neben der Uhr (R-UX-02/AK1) und nicht mehr als eigenes
+              Kind der oberen Zeile: so bricht die Zeile mit Siegziel nicht mehr um. */}
+          {victory && (
+            <Meter
+              label={t('meter.victoryGoal')}
+              value={victory.share}
+              max={victory.goal}
+              text={t('meter.victoryShare', { percent: Math.round(victory.share), goal: Math.round(victory.goal) })}
+              tone={victory.share >= victory.goal ? 'good' : 'neutral'}
+            />
+          )}
+        </div>
 
         <div className="modes" role="group" aria-label={t('mapModes.title')}>
           {MAP_MODES.map((mode) => (
@@ -363,6 +368,23 @@ export function Header(props: HeaderProps) {
             </button>
           ))}
         </div>
+
+        {/* Dieselben Modi als Auswahl (T-M44-04, Kompaktregel): unter 1400 px stehen fuenf Knoepfe
+            (382 px) nicht mehr neben Uhr, Siegziel und Alarmchip. Welche der beiden Fassungen
+            gezeichnet wird, entscheidet allein app.css — die andere ist `display: none` und damit
+            auch fuers Ohr fort. */}
+        <select
+          className="modes-select"
+          aria-label={t('mapModes.title')}
+          value={props.mode}
+          onChange={(event) => props.onMode(event.target.value as MapMode)}
+        >
+          {MAP_MODES.map((mode) => (
+            <option key={mode} value={mode}>
+              {MAP_MODE_NAMES[mode]}
+            </option>
+          ))}
+        </select>
 
         {/* Diplomatie, Markt und Lage wohnen seit T-M31-03 im Fuss (D27.6); hier
             bleiben nur Spielstaende und Menue. `onPanel` bleibt fuer die Tastatur. */}
@@ -395,7 +417,7 @@ export function Header(props: HeaderProps) {
         </div>
       </div>
 
-      <ul className="resources" aria-label="Rohstoffe">
+      <ul className="resources" aria-label="Rohstoffe" ref={resourcesScroll.ref} tabIndex={resourcesScroll.tabIndex}>
         {RESOURCE_KEYS.map((key) => {
           const flow = props.view?.self.economy?.[key]
           // Wie lange der Vorrat noch reicht — nur wenn er schrumpft (T-M13-14).
