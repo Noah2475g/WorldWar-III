@@ -104,6 +104,8 @@ const parseViewports = (list) =>
 
 const CHECK = flag('check')
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+// Vite liefert Dateien ausserhalb des Wurzelordners unter /@fs/<Pfad>; unter Windows heisst der Pfad C:/..., ohne Schraegstrich davor fehlt das Trennzeichen.
+const fsRoot = (path) => { const p = path.split(String.fromCharCode(92)).join('/'); return p.startsWith('/') ? p : `/${p}` }
 /** Die fuenf Groessen der Anforderungen (R-UX-01); 1920x1080 als Messwert, nicht als Bild. */
 const CHECK_VIEWPORTS = '375x667,667x375,1280x800,1366x768,1920x1080'
 const DEFAULT_VIEWPORTS = '375x667,667x375,1280x800,1366x768,1920x1080,1024x768,768x1024,320x568'
@@ -835,7 +837,7 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
       await put('stand-3', JSON.stringify({ schemaVersion: state.schemaVersion, savedAtTick: state.tick, kaputt: true }))
       const brief = (r) => ({ real: r.real, moved: r.moved, share: r.share, goal: r.goal, condition: r.condition })
       return { ok: true, win: brief(win), lose: brief(lose) }
-    }, { origin: new URL(run.url).origin, root: ROOT, grantSource: grantUntilVictory.toString() })
+    }, { origin: new URL(run.url).origin, root: fsRoot(ROOT), grantSource: grantUntilVictory.toString() })
     data.notes.push({ preparedSaves: prepared.ok ? 'ok' : prepared.error })
     if (prepared.ok) {
       data.notes.push({ victoryState: prepared.win })
