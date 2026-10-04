@@ -130,6 +130,26 @@ describe('R-ASSET-01 Kein Asset ohne Herkunfts- und Lizenzeintrag', () => {
     expect(assets).toMatch(/Open Font License/)
   })
 
+  it('nennt jedes npm-Paket der Oberflaeche, das Bilder oder Zeichen liefert (T-M46-13)', () => {
+    // Symbole aus milsymbol und Lucide stehen als Pakete im Bundle, nicht als Dateien — der
+    // Dateiwaechter oben sieht sie nie. Hier gilt die Gegenrichtung: jede Abhaengigkeit von
+    // apps/desktop, die nicht zum eigenen Haus oder zum Geruest gehoert, steht in ASSETS.md
+    // samt Lizenz.
+    const manifest = JSON.parse(readFileSync(join(ROOT, 'apps/desktop/package.json'), 'utf8')) as {
+      dependencies: Record<string, string>
+    }
+    const scaffold = /^(@worldwar\/|@tauri-apps\/|react$|react-dom$)/
+    const foreign = Object.keys(manifest.dependencies).filter((name) => !scaffold.test(name))
+
+    expect(foreign, 'Keine Fremdpakete geprueft — der Waechter misst das Nichts').toContain('milsymbol')
+    for (const name of foreign) {
+      expect(assets, `Paket "${name}" fehlt in ASSETS.md`).toContain(`\`${name}\``)
+    }
+    expect(assets).toMatch(/milsymbol[\s\S]*MIT/)
+    expect(assets).toMatch(/Lucide[\s\S]*ISC/)
+    expect(assets).toMatch(/Creative Commons Attribution 3\.0/)
+  })
+
   it('laedt in der Anwendung kein Asset von aussen nach', () => {
     // Kein <img src>, kein CSS url(), kein new Audio(): was nicht im Programm steht,
     // muesste zur Laufzeit geholt werden — und das ginge nur uebers Netz (R-FREE-04).

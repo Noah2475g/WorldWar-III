@@ -13,12 +13,12 @@ import { IconRow, type IconItem } from './IconRow.tsx'
 import {
   BUILDING_ICONS,
   BUILDING_ORDER,
-  Icon,
   RELATION_ICONS,
   RESOURCE_ICONS,
   TERRAIN_ICONS,
   type IconName,
 } from './icons.tsx'
+import { Icon } from './Icon.tsx'
 import { Meter, toneForShare, trendOf } from './Meter.tsx'
 import { NationName } from './Nation.tsx'
 import { ART_FOR_ICON, BUILDING_ART, UnitArt, type ArtName, type ArtTone } from './art.tsx'

@@ -2750,3 +2750,13 @@ body {
 .alarm-chip {
   background: var(--ground);
 }
+
+/* Mitwirkende (T-M46-13): Namensnennung der Symbole und Klaenge von Dritten. */
+.credits {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6em;
+  overflow-wrap: anywhere;
+}
