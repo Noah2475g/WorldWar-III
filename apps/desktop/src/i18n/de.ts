@@ -992,6 +992,9 @@ export const de = {
     unread: '{{count}} neu',
     none: 'Noch keine Depesche.',
     espionage: 'Spionage',
+    // Das Protokoll auf dem Telefon (T-M46-10): eine Zeile, auf Knopfdruck das ganze Blatt mit Filtern.
+    logOpen: 'Protokoll öffnen',
+    logClose: 'Protokoll schließen',
   },
 
   map: {

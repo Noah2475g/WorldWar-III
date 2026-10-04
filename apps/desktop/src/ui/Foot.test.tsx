@@ -151,3 +151,17 @@ describe('R-UX-02/AK4 Die Rangliste im Fuss beginnt mit Platz 1', () => {
     expect(rules.join('\n')).toMatch(/white-space:\s*nowrap/)
   })
 })
+
+describe('T-M46-10 Das Protokoll klappt auf dem Telefon als Blatt auf', () => {
+  it('schaltet data-log und die Beschriftung des Knopfes um', () => {
+    const { container } = render(
+      <Foot entries={[]} ticksPerDay={24} rows={[]} seenTick={0} onJump={() => undefined} onDispatch={() => undefined} onPanel={() => undefined} />,
+    )
+    const footer = container.querySelector('footer')!
+    expect(footer.getAttribute('data-log')).toBe('closed')
+    fireEvent.click(screen.getByRole('button', { name: 'Protokoll öffnen' }))
+    expect(footer.getAttribute('data-log')).toBe('open')
+    const close = screen.getByRole('button', { name: 'Protokoll schließen' })
+    expect(close.getAttribute('aria-expanded')).toBe('true')
+  })
+})

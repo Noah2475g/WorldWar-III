@@ -323,12 +323,12 @@ export function Header(props: HeaderProps) {
             {props.fastForwarding ? (
               <button type="button" className="speed speed--fast speed--running" onClick={props.onAbort}>
                 <Icon name="fastForward" size={11} />
-                {t('header.abort')}
+                <span className="speed__label">{t('header.abort')}</span>
               </button>
             ) : (
               <button type="button" className="speed speed--fast" onClick={props.onFastForward}>
                 <Icon name="fastForward" size={11} />
-                {t('header.fastForward')}
+                <span className="speed__label">{t('header.fastForward')}</span>
               </button>
             )}
           </div>

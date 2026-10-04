@@ -1568,6 +1568,11 @@ body {
   max-height: 168px;
 }
 
+/* Der Aufklappknopf des Protokolls gehoert dem Telefon im Hochformat (touch.css, T-M46-10). */
+.foot__logtoggle {
+  display: none;
+}
+
 .foot__standings {
   border-left: 1px solid var(--line);
   padding: var(--sp-sm) var(--sp-md);
