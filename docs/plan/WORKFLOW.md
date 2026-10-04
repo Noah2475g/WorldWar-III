@@ -82,9 +82,13 @@ unfertigen wip/-Zweige der Cloud-Sitzung — erledigt mit PR #15. -->
 git log --oneline -1 && git status --short
 ```
 
-**Die Spitze liegt auf `main`.** PR #15 (Etappe 2 von M42/M43 und M44 „UX V2“, `pnpm acceptance`
-12 von 12 gegen `3ec9a62`) ist am 2026-10-03 auf Noahs ausdrückliches Wort gemerged. Wer einen Worktree
-anlegt, zweigt von `main` ab.
+**Die Spitze liegt auf `main`** (`b80b236`, PR #20 „Uhr bei Tempo 100 an der neuen exe“, gemerged
+2026-10-04 auf Noahs Wort; davor PR #15–#19). Wer einen Worktree anlegt, zweigt von `main` ab.
+**V3 läuft** auf dem Versionszweig `claude/v3-leistung-ux` (PLAN-V3: Schritt 0 und P0-W fertig,
+P0-B läuft, dann Gate G1) — er ist nicht die Spitze, bis Noah ihn merged.
+<!-- LOESCHVERMERK (Review): vorher: „Die Spitze liegt auf `main`. PR #15 (Etappe 2 von M42/M43 und M44 „UX V2“,
+`pnpm acceptance` 12 von 12 gegen `3ec9a62`) ist am 2026-10-03 auf Noahs ausdrückliches Wort gemerged.“ -->
+
 
 <!-- LOESCHVERMERK (Review): bis zum Merge von PR #15 stand hier: „Die Spitze liegt auf
 `claude/game-v2-planned-tasks-tk5rrr` (Etappe 2 von M42/M43, abgezweigt von main = 95441e0, gepusht, noch
