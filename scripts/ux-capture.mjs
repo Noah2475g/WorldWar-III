@@ -700,14 +700,14 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
     }
     data.notes.push({ recruitClicks: clicked })
     if (clicked === 0) throw new Error('Infanterie ausheben nicht klickbar')
-    await runUntil(() => [...document.querySelectorAll('aside button')].some((b) => b.textContent?.trim() === 'Auswählen'), null)
+    await runUntil(() => [...document.querySelectorAll('aside button')].some((b) => /^Auswählen/.test((b.getAttribute('aria-label') || b.textContent || '').trim())), null)
     await page.waitForTimeout(300)
     await shot('pause-armee-ausgehoben')
   })
 
   // --- 5. Armee und Marsch ----------------------------------------------------------
   await step('armee-auswahl', async () => {
-    await btn('Auswählen').click({ timeout: 5000 })
+    await btn('Auswählen', false).click({ timeout: 5000 })
     await page.waitForTimeout(300)
     await shot('armee-auswahl')
     data.layout.armyPanel = await layout(page)
@@ -719,7 +719,7 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
         const r = el.getBoundingClientRect()
         return r.top >= 0 && r.bottom <= innerHeight && r.height > 0
       }
-      const march = [...document.querySelectorAll('aside.side button')].find((b) => b.textContent?.includes('Marschieren'))
+      const march = [...document.querySelectorAll('aside.side button')].find((b) => (b.getAttribute('aria-label') || b.textContent || '').includes('Marschieren'))
       return { nameVisible: inView(panel?.querySelector('h2')), marchVisible: inView(march), sideScrollTop: document.querySelector('aside.side')?.scrollTop ?? null }
     })
     await axe(page, 'armyPanel', data.axe)
@@ -771,7 +771,7 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
     await btn('Krieg erklären').click({ timeout: 5000 })
     await page.waitForTimeout(300)
     data.probes.confirm = await page.evaluate(() => {
-      const asks = [...document.querySelectorAll('button')].some((b) => /noch einmal klicken/.test(b.textContent ?? ''))
+      const asks = [...document.querySelectorAll('button')].some((b) => /noch einmal klicken/.test((b.getAttribute('aria-label') || '') + ' ' + (b.textContent ?? '')))
       const sent = document.querySelectorAll('.action__pending').length > 0
       return { asksOnFirstClick: asks, warOnFirstClick: sent }
     })
@@ -781,9 +781,9 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
     await shot('krieg-erklaert-ohne-rueckfrage')
   })
   await step('kampf', async () => {
-    await runUntil(() => /Gefecht (bei|entschieden)|: Gefecht entschieden/.test(document.querySelector('footer, .foot')?.textContent ?? document.body.innerText), null, 90000)
+    await runUntil(() => /Gefecht (bei|entschieden)|: Gefecht entschieden/.test([...document.querySelectorAll('footer *, .foot *')].map((e) => (e.getAttribute('aria-label') || '') + ' ' + (e.getAttribute('title') || '') + ' ' + (e.children.length ? '' : e.textContent || '')).join(' ') || document.body.innerText), null, 90000)
     await page.waitForTimeout(300)
-    await page.getByText(/Gefecht (bei|entschieden)|: Gefecht entschieden/).first().click({ timeout: 3000 }).catch(() => {})
+    await page.getByText(/Gefecht (bei|entschieden)|: Gefecht entschieden/).or(page.locator('footer [aria-label*="Gefecht"], footer [title*="Gefecht"], .foot [aria-label*="Gefecht"], .foot [title*="Gefecht"]')).first().click({ timeout: 3000 }).catch(() => {})
     await page.waitForTimeout(500)
     await shot('kampf-gefecht')
     data.layout.battle = await layout(page)
@@ -1159,7 +1159,7 @@ async function runMultiplayerViewport(browser, vp, party) {
     await step('einmarsch-herbeifuehren', guest, async () => {
       const log = []
       data.probes.forcedIntrusion = log
-      const gbtn = (name) => guest.getByRole('button', { name, exact: true }).first()
+      const gbtn = (name, exact = true) => guest.getByRole('button', { name, exact }).first()
       const tryStep = async (label, fn) => {
         try {
           await fn()
@@ -1196,10 +1196,10 @@ async function runMultiplayerViewport(browser, vp, party) {
       // 4. Die Armee abwarten, auswaehlen und in eine Provinz des Gastgebers marschieren lassen.
       await tryStep('Armee da', async () => {
         await picker.selectOption(own[0].value)
-        await guest.waitForFunction(() => [...document.querySelectorAll('aside button')].some((b) => b.textContent?.trim() === 'Auswählen'), null, { timeout: 120000 })
+        await guest.waitForFunction(() => [...document.querySelectorAll('aside button')].some((b) => /^Auswählen/.test((b.getAttribute('aria-label') || b.textContent || '').trim())), null, { timeout: 120000 })
       })
       await tryStep('Marsch befehlen', async () => {
-        await gbtn('Auswählen').click({ timeout: 5000 })
+        await gbtn('Auswählen', false).click({ timeout: 5000 })
         await gbtn('Marschieren').click({ timeout: 5000 })
         const target = guest.locator('aside select').nth(1)
         const options = await target.evaluate((el) => [...el.options].filter((o) => !o.disabled && /USA/.test(o.textContent ?? '')).map((o) => ({ value: o.value, text: o.textContent })))
