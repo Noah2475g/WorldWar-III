@@ -235,7 +235,7 @@ async function strongestViewer(page, text) {
   )
 }
 
-const LEAK_ID = /[ap]\d{1,4}/g
+const LEAK_ID = /b[ap]\d{1,4}b/g
 const LEAK_RAW = /\((?:[A-Z][A-Z_]{2,}|[a-z]+_[a-z_]+)\)/g
 
 /** Sichtbarer Text samt title/aria-label: Kennungen („a68“, „p2“) und Rohwoerter des Kerns in Klammern. */
