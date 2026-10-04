@@ -324,7 +324,7 @@ async function runProbes(browser) {
   const raw = readState('S575')
   const wrongVersion = JSON.parse(raw)
   wrongVersion.schemaVersion = 999
-  const slots = { 'stand-2': JSON.stringify(wrongVersion), 'stand-3': '{"kaputt":true}', 'stand-4': 'kein json {' }
+  const slots = { 'stand-2': JSON.stringify(wrongVersion), 'stand-3': JSON.stringify({ schemaVersion: JSON.parse(raw).schemaVersion, savedAtTick: 123, kaputt: true }), 'stand-4': 'kein json {' }
   await page.evaluate(
     (entries) =>
       new Promise((res, rej) => {
@@ -341,12 +341,15 @@ async function runProbes(browser) {
       }),
     slots,
   )
-  for (const [slot, label] of [['stand-2', 'andere Fassung (schemaVersion 999)'], ['stand-3', 'beschaedigt (kaputt-Objekt)'], ['stand-4', 'beschaedigt (kein JSON)']]) {
+  for (const [slot, label] of [['stand-2', 'andere Fassung (schemaVersion 999)'], ['stand-3', 'beschaedigt (gueltige Kopfzeile, Inhalt kaputt)'], ['stand-4', 'beschaedigt (kein JSON)']]) {
     await page.keyboard.press('Escape')
     await btn('Spielstände').click({ timeout: 5000 })
     await page.waitForTimeout(400)
     const idx = Number(slot.split('-')[1]) - 1
-    await page.getByRole('button', { name: 'Laden', exact: true }).nth(idx).click({ timeout: 5000 })
+    const loadBtn = page.getByRole('button', { name: 'Laden', exact: true }).nth(idx)
+    const disabled = await loadBtn.isDisabled().catch(() => null)
+    out.saves[slot + '-ladeknopf'] = { disabled }
+    if (disabled === false) await loadBtn.click({ timeout: 5000 })
     await page.waitForTimeout(700)
     out.saves[slot] = { label, text: await page.evaluate(() => (document.querySelector('[role=dialog]')?.innerText ?? document.body.innerText).replace(/\s+/g, ' ').slice(0, 500)) }
     out.saves[slot].saysOtherVersion = /anderen Fassung/.test(out.saves[slot].text)
@@ -394,7 +397,10 @@ async function contrastProbe(page, label) {
       el.style.setProperty('stroke', 'transparent', 'important')
       el.style.setProperty('text-shadow', 'none', 'important')
     })
-    const png = await page.screenshot({ clip: info.rect })
+    // 2 px nach innen: der Rahmen des Knotens gehoert nicht zum Hintergrund des Textes.
+    const inset = info.rect.width > 8 && info.rect.height > 8 ? 2 : 0
+    const clip = { x: info.rect.x + inset, y: info.rect.y + inset, width: info.rect.width - 2 * inset, height: info.rect.height - 2 * inset }
+    const png = await page.screenshot({ clip })
     await loc.evaluate((el) => (el.__oldStyle === null ? el.removeAttribute('style') : el.setAttribute('style', el.__oldStyle)))
     const svgText = info.tag === 'text' || info.tag === 'tspan'
     const fg = svgText && info.fill.startsWith('rgb') ? info.fill : info.color
@@ -524,10 +530,13 @@ async function runState(browser, name, vp, measureOnly) {
     async () => {
       // Dorthin springen, wo die Armeen der KI stehen: ueber die Uebersichtskarte nach Asien.
       const mini = page.locator('canvas.map-overview').first()
-      const b = await mini.boundingBox()
-      if (!b) throw new Error('keine Uebersichtskarte')
-      await mini.click({ position: { x: b.width * 0.72, y: b.height * 0.4 }, timeout: 4000 })
-      await page.waitForTimeout(500)
+      const b = await mini.boundingBox().catch(() => null)
+      let minimap = false
+      if (b) {
+        await mini.click({ position: { x: b.width * 0.72, y: b.height * 0.4 }, timeout: 4000 })
+        await page.waitForTimeout(500)
+        minimap = true
+      }
       const map = page.locator('.map-layer--overlay').first()
       const mb = await map.boundingBox()
       const zoom = await longTasksDuring(page, async () => {
@@ -538,7 +547,7 @@ async function runState(browser, name, vp, measureOnly) {
         }
       })
       await page.waitForTimeout(300)
-      return { zoom }
+      return { zoom, minimapPresent: minimap }
     },
     { core: true, axeToo: false },
   )

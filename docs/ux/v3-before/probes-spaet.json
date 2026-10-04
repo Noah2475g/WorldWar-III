@@ -1,0 +1,126 @@
+{
+ "state": "S575G",
+ "views": {
+  "karte": {
+   "ids": [],
+   "raw": [],
+   "chars": 14333
+  },
+  "protokoll-alles": {
+   "ids": [],
+   "raw": [],
+   "chars": 14333
+  },
+  "protokoll-Kämpfe": {
+   "ids": [],
+   "raw": [],
+   "chars": 13831
+  },
+  "protokoll-Aufbau": {
+   "ids": [],
+   "raw": [],
+   "chars": 4603
+  },
+  "protokoll-Verträge": {
+   "ids": [],
+   "raw": [],
+   "chars": 4352
+  },
+  "protokoll-Weltgeschehen": {
+   "ids": [],
+   "raw": [],
+   "chars": 11926
+  },
+  "diplomatie": {
+   "ids": [],
+   "raw": [],
+   "chars": 15363
+  },
+  "markt": {
+   "ids": [],
+   "raw": [],
+   "chars": 14764
+  },
+  "spionage": {
+   "ids": [],
+   "raw": [],
+   "chars": 15130
+  },
+  "rangliste": {
+   "ids": [],
+   "raw": [],
+   "chars": 15061
+  },
+  "provinz-mit-armee": {
+   "ids": [],
+   "raw": [],
+   "chars": 18299
+  },
+  "armee-panel": {
+   "ids": [],
+   "raw": [],
+   "chars": 16511
+  },
+  "armee-marsch": {
+   "ids": [],
+   "raw": [],
+   "chars": 20977
+  }
+ },
+ "saves": {
+  "stand-2-ladeknopf": {
+   "disabled": false
+  },
+  "stand-2": {
+   "label": "andere Fassung (schemaVersion 999)",
+   "text": "Spielstände × Dieser Spielstand stammt aus einer anderen Fassung des Spiels. Stand 1 — Tag 576 Speichern Laden Stand 2 — Tag 576 Speichern Laden Stand 3 — Tag 6 Speichern Laden Stand 4 — leer Speichern Laden Stand 5 — leer Speichern Laden Automatisch gespeichert 1 — leer Speichern Laden Automatisch gespeichert 2 — leer Speichern Laden Automatisch gespeichert 3 — leer Speichern Laden Automatisch gespeichert 4 — leer Speichern Laden Automatisch gespeichert 5 — leer Speichern Laden",
+   "saysOtherVersion": true,
+   "saysBroken": false
+  },
+  "stand-3-ladeknopf": {
+   "disabled": false
+  },
+  "stand-3": {
+   "label": "beschaedigt (gueltige Kopfzeile, Inhalt kaputt)",
+   "text": "Spielstände × Dieser Spielstand ist beschädigt und wurde nicht geladen. Stand 1 — Tag 576 Speichern Laden Stand 2 — Tag 576 Speichern Laden Stand 3 — Tag 6 Speichern Laden Stand 4 — leer Speichern Laden Stand 5 — leer Speichern Laden Automatisch gespeichert 1 — leer Speichern Laden Automatisch gespeichert 2 — leer Speichern Laden Automatisch gespeichert 3 — leer Speichern Laden Automatisch gespeichert 4 — leer Speichern Laden Automatisch gespeichert 5 — leer Speichern Laden",
+   "saysOtherVersion": false,
+   "saysBroken": true
+  },
+  "stand-4-ladeknopf": {
+   "disabled": true
+  },
+  "stand-4": {
+   "label": "beschaedigt (kein JSON)",
+   "text": "Spielstände × Stand 1 — Tag 576 Speichern Laden Stand 2 — Tag 576 Speichern Laden Stand 3 — Tag 6 Speichern Laden Stand 4 — leer Speichern Laden Stand 5 — leer Speichern Laden Automatisch gespeichert 1 — leer Speichern Laden Automatisch gespeichert 2 — leer Speichern Laden Automatisch gespeichert 3 — leer Speichern Laden Automatisch gespeichert 4 — leer Speichern Laden Automatisch gespeichert 5 — leer Speichern Laden",
+   "saysOtherVersion": false,
+   "saysBroken": false
+  }
+ },
+ "noRoute": {
+  "options": {
+   "groupLabel": "Nicht erreichbar",
+   "count": 72,
+   "disabled": 72,
+   "sample": [
+    {
+     "text": "Australisches Hauptstadtterritorium",
+     "disabled": true,
+     "value": "AUS-SE"
+    },
+    {
+     "text": "Bahrain",
+     "disabled": true,
+     "value": "BHR"
+    },
+    {
+     "text": "Bolivien",
+     "disabled": true,
+     "value": "BOL"
+    }
+   ]
+  },
+  "panelAfter": "Provinz — keine — Afghanistan Albanien Vereinigte Arabische Emirate Armenien Österreich Aserbaidschan Belgien Benin Burkina Faso Bangladesch Bulgarien Bosnien und Herzegowina Belarus Schweiz Ostchina Nordostchina Nordchina Nordwestchina Südchina Südwestchina Elfenbeinküste Tschechien Nordostdeutschland Nordwestdeutschland Südostdeutschland Südwestdeutschland Algerien Mittelägypten Nildelta Oberägypten Nordostspanien Nordwestspanien Südostspanien Südwestspanien Estland Finnland Nordostfrankreich Nordwestfrankreich Südostfrankreich Südwestfrankreich Georgien Ghana Guinea Guinea-Bissau Griechenland Hongkong Kroatien Ungarn Kalimantan Zentralindien Ostindien Nordostindien Nordindien Südindien We",
+  "mentionsNoRoute": false,
+  "mentionsEnemyTerritory": false
+ }
+}
