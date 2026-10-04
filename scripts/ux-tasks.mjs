@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* global document, window, HTMLElement, HTMLSelectElement, MutationObserver, indexedDB, innerWidth, innerHeight, performance */
 /**
  * Aufgabenlaeufe auf dem Spaetspiel-Stand S300 (PLAN-V3 P0-B2, Bahn C).
  *
@@ -149,6 +150,7 @@ async function openState(browser, text) {
   return { page, context, errors }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Hilfe fuer weitere Aufgabenlaeufe (V3 M46), bewusst behalten (Regel 1)
 const gameClock = (page) =>
   page.evaluate((src) => {
     const m = new RegExp(src).exec(document.body.innerText)

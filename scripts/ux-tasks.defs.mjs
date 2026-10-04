@@ -1,3 +1,4 @@
+/* global document, HTMLElement */
 /**
  * Die acht Handlungen (PLAN-V3 P0-B2). Jede hat `maus` und `tastatur`; `minimum` ist die kuerzeste
  * Folge der Oberflaeche, von Hand gezaehlt. Bei der Tastatur steht als Mass die Zahl der Absichten
@@ -22,6 +23,7 @@ async function until(page, fn, arg, ms = 6000) {
   return page.waitForFunction(fn, arg, { timeout: ms }).then(() => true, () => false)
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Hilfe fuer weitere Aufgabenlaeufe (V3 M46), bewusst behalten (Regel 1)
 const aside = (page) => page.locator('aside.side')
 const asideSelect = (page, n) => page.locator('aside select').nth(n)
 const btn = (page, name, exact = true) => page.getByRole('button', { name, exact }).first()
@@ -49,6 +51,7 @@ async function kbSelectArmy(run, page) {
 }
 
 /** Klartext der Armee-Liste der Provinz -- Anzahl der Eintraege "Armee ... Staerke". */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Hilfe fuer weitere Aufgabenlaeufe (V3 M46), bewusst behalten (Regel 1)
 const armyCount = (page) =>
   page.evaluate(() => {
     const m = /Armeen hier([\s\S]*?)Ausheben/.exec(document.querySelector('aside.side')?.innerText ?? '')
