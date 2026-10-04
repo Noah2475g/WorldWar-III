@@ -108,6 +108,7 @@ async function layout(page) {
       map,
       mapShare: share,
       side: box('.side'),
+      sideScroll: (() => { const e = document.querySelector('.side'); return e ? { scrollH: e.scrollHeight, clientH: e.clientHeight, top: e.scrollTop } : null })(),
       foot: box('.foot'),
       overflowingRegions: overflowing,
       alarmChipVisible: Boolean(chip && chip.getBoundingClientRect().width > 0),
@@ -423,9 +424,11 @@ async function runState(browser, name, vp, measureOnly) {
     { core: true },
   )
   await scene('protokoll-kaempfe', async () => {
-    await btn('Kämpfe').click({ timeout: 4000 })
+    const filter = btn('Kämpfe')
+    const filterVisible = await filter.isVisible().catch(() => false)
+    if (filterVisible) await filter.click({ timeout: 4000 })
     await page.waitForTimeout(300)
-    return page.evaluate(() => ({ entries: document.querySelectorAll('.log li').length }))
+    return page.evaluate((fv) => ({ filterVisible: fv, entries: document.querySelectorAll('.log li').length }), filterVisible)
   })
   await btn('alles').click({ timeout: 2000 }).catch(() => {})
 
@@ -441,6 +444,72 @@ async function runState(browser, name, vp, measureOnly) {
     )
     return { optionCount: await picker.locator('option').count(), buttons }
   })
+
+  // Armee des Menschen: im Stand hat der Mensch keine; eine Kaserne gibt es oder wird gebaut, dann ausheben.
+  await scene(
+    'armee-ausheben',
+    async () => {
+      const recruit = page.getByRole('button', { name: 'Infanterie ausheben', exact: true }).first()
+      let builtBarracks = false
+      if (!(await recruit.isEnabled().catch(() => false))) {
+        const build = btn('Kaserne bauen')
+        if (await build.isVisible().catch(() => false)) {
+          await build.click({ timeout: 4000 })
+          builtBarracks = true
+        }
+      }
+      await btn('100').click({ timeout: 5000 })
+      try {
+        await page.getByRole('button', { name: 'Infanterie ausheben', exact: true }).and(page.locator(':enabled')).waitFor({ timeout: 60000 })
+      } finally {
+        await btn('Pause').click({ timeout: 5000 }).catch(() => {})
+      }
+      for (let i = 0; i < 3; i++) {
+        await recruit.click({ timeout: 3000 }).catch(() => {})
+        await page.waitForTimeout(150)
+      }
+      await btn('100').click({ timeout: 5000 })
+      try {
+        await page.waitForFunction(() => [...document.querySelectorAll('aside button')].some((b) => b.textContent?.trim() === 'Auswählen'), null, { timeout: 90000 })
+      } finally {
+        await btn('Pause').click({ timeout: 5000 }).catch(() => {})
+      }
+      return { builtBarracks }
+    },
+    { axeToo: false },
+  )
+  await scene(
+    'armee-panel',
+    async () => {
+      await btn('Auswählen').click({ timeout: 5000 })
+      await page.waitForTimeout(400)
+      return page.evaluate(() => {
+        const side = document.querySelector('aside.side')
+        const panel = [...document.querySelectorAll('aside.side section.panel')].find((el) => el.querySelector('.panel__head'))
+        const inView = (el) => {
+          if (!el) return false
+          const r = el.getBoundingClientRect()
+          return r.top >= 0 && r.bottom <= innerHeight && r.height > 0
+        }
+        const march = [...document.querySelectorAll('aside button')].find((b) => b.textContent?.includes('Marschieren'))
+        return { nameVisible: inView(panel?.querySelector('h2')), marchVisible: inView(march), sideScrollTop: side?.scrollTop ?? null, sideScrollH: side?.scrollHeight ?? null }
+      })
+    },
+  )
+  await scene(
+    'armee-marsch-zielwahl',
+    async () => {
+      const t = await longTasksDuring(page, () => btn('Marschieren').click({ timeout: 5000 }))
+      await page.waitForTimeout(300)
+      const options = await page.evaluate(() => {
+        const select = document.querySelectorAll('aside select')[1]
+        return { options: select?.querySelectorAll('option').length ?? 0, groups: [...(select?.querySelectorAll('optgroup') ?? [])].map((g) => ({ label: g.label, options: g.children.length })) }
+      })
+      return { open: t, ...options }
+    },
+  )
+  await page.keyboard.press('Escape').catch(() => {})
+  await page.waitForTimeout(250)
 
   for (const [key, label] of [
     ['diplomatie', 'Diplomatie'],
