@@ -5,13 +5,13 @@ Je 150 Partien je Paarung, 40 Spieltage; drei Mächte reihum (Nordland/Ostmark/S
 der Dritte als Füller auf „normal"; Startzahlen 1000–1024 je Aufstellung, Stufen je
 Paar getauscht.
 
-Gemessen auf: 9be3821299336c991c68b24531bf62ad632ed33d (Quellen sauber)
+Gemessen auf: af97ec4126342a99e9eec419f68afb2bfb6c20e6 (Quellen sauber)
 
 | Paarung | Siege A | Siege B | Unentschieden | Siegquote A | Kriegserklärungen (schwer) | Friedensschlüsse (schwer) | Überfälle | verschiedene Ausgänge | Siege je Nation |
 |---|---|---|---|---|---|---|---|---|---|
 | schwer gegen leicht, im Krieg | 51 | 0 | 24 | 84 % | 256 | 116 | 0 | 55 | Nordland 50 · Ostmark 74 · Sueden 26 |
 | schwer gegen normal, im Frieden | 18 | 1 | 56 | 61 % | 714 | 437 | 3 | 107 | Nordland 86 · Ostmark 17 · Sueden 47 |
-| schwer gegen normal, im Krieg | 19 | 0 | 56 | 63 % | 260 | 244 | 0 | 72 | Nordland 81 · Ostmark 19 · Sueden 50 |
+| schwer gegen normal, im Krieg | 18 | 0 | 57 | 62 % | 262 | 247 | 0 | 72 | Nordland 82 · Ostmark 18 · Sueden 50 |
 
 Je Stufe nach dem **Handelnden**, über alle drei Paarungen, in denen sie antritt
 (T-M15-08 versprach „neun Zahlen je Stufe"; nachgeprüft in T-M41-08, `DECISIONS.md`):
@@ -19,8 +19,8 @@ Je Stufe nach dem **Handelnden**, über alle drei Paarungen, in denen sie antrit
 | Stufe | Kriegserklärungen | davon förmlich | Selbsttätiger Beschuss |
 |---|---|---|---|
 | leicht | 0 | 0 | 0 |
-| normal | 267 | 265 | 0 |
-| schwer | 522 | 522 | 0 |
+| normal | 268 | 266 | 0 |
+| schwer | 523 | 523 | 0 |
 
 Schwer gegen normal, im Frieden, je Sitzordnung (T-M17-15, Befund M17-T4):
 

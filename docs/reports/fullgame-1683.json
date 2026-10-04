@@ -13,27 +13,27 @@
     "China",
     "Indien"
   ],
-  "decidedOnDay": 594,
+  "decidedOnDay": 711,
   "winner": "p7",
   "condition": "points",
   "warDeclarations": 6,
-  "captures": 1467,
-  "battles": 3074,
+  "captures": 1818,
+  "battles": 4143,
   "factory": {
     "highestLevelPerNation": {
       "Vereinigte Staaten": 0,
       "Kanada": 0,
       "Mexiko": 3,
-      "Brasilien": 2,
+      "Brasilien": 3,
       "Argentinien": 3,
       "Russland": 0,
       "China": 3,
-      "Indien": 2
+      "Indien": 1
     },
-    "provincesAtLevel2OrMore": 45,
-    "provincesAtLevel3": 13,
-    "upgradesStartedToLevel2": 57,
-    "upgradesStartedToLevel3": 14
+    "provincesAtLevel2OrMore": 61,
+    "provincesAtLevel3": 32,
+    "upgradesStartedToLevel2": 116,
+    "upgradesStartedToLevel3": 34
   },
   "cities": {
     "Vereinigte Staaten": {
@@ -79,17 +79,17 @@
       "fabrikOhneEisenbahn": 0
     },
     "China": {
-      "staedte": 55,
-      "eisenbahn": 51,
-      "festung": 52,
-      "festung2": 51,
-      "fabrikOhneEisenbahn": 3
+      "staedte": 58,
+      "eisenbahn": 55,
+      "festung": 55,
+      "festung2": 53,
+      "fabrikOhneEisenbahn": 2
     },
     "Indien": {
-      "staedte": 10,
-      "eisenbahn": 2,
-      "festung": 2,
-      "festung2": 1,
+      "staedte": 9,
+      "eisenbahn": 3,
+      "festung": 3,
+      "festung2": 0,
       "fabrikOhneEisenbahn": 0
     }
   },
@@ -103,8 +103,8 @@
     "winner": {
       "provinces": 159,
       "pointShareFirst": 275,
-      "populationShare": 440,
-      "pointShareSecond": 539
+      "populationShare": 437,
+      "pointShareSecond": 627
     },
     "perNation": {
       "Vereinigte Staaten": {
@@ -146,8 +146,8 @@
       "China": {
         "provinces": 159,
         "pointShareFirst": 275,
-        "populationShare": 440,
-        "pointShareSecond": 539
+        "populationShare": 437,
+        "pointShareSecond": 627
       },
       "Indien": {
         "provinces": 141,
@@ -185,18 +185,18 @@
       "veraltet": 0
     },
     "China": {
-      "eintraege": 151,
-      "armeen": 151,
+      "eintraege": 139,
+      "armeen": 139,
       "veraltet": 0
     },
     "Indien": {
-      "eintraege": 117,
-      "armeen": 117,
+      "eintraege": 92,
+      "armeen": 93,
       "veraltet": 0
     }
   },
-  "aiMemoryKB": 7,
-  "stateKB": 340,
+  "aiMemoryKB": 6,
+  "stateKB": 320,
   "maxDays": 1500,
-  "measuredAt": "2026-10-03T12:14:51.174Z"
+  "measuredAt": "2026-10-04T22:24:25.086Z"
 }
