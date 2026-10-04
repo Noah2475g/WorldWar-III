@@ -1,0 +1,1743 @@
+{
+ "createdAt": "2026-10-04T08:21:03.780Z",
+ "url": "http://localhost:5341/",
+ "runs": [],
+ "contrast": [
+  {
+   "label": "S100 Karte mit Einfuehrung",
+   "incompleteNodes": 10,
+   "probed": 10,
+   "rows": [
+    {
+     "target": ".resource--food > .resource__dir--plus > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".resource--wood > .resource__dir--plus > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".resource--iron > .resource__dir--plus > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".resource--coal > .resource__dir--plus > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".resource--money > .resource__dir--plus > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": "button[aria-label=\"Herauszoomen\"]",
+     "text": "−",
+     "tag": "button",
+     "cls": "map-control",
+     "fontSize": 14,
+     "need": 4.5,
+     "pixels": 440,
+     "min": 7.2,
+     "p05": 7.3,
+     "median": 7.56,
+     "p95": 7.71,
+     "fg": [
+      224,
+      162,
+      32
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": "button[aria-label=\"Hauptstadt zentrieren\"]",
+     "text": "◎",
+     "tag": "button",
+     "cls": "map-control",
+     "fontSize": 14,
+     "need": 4.5,
+     "pixels": 440,
+     "min": 7.21,
+     "p05": 7.3,
+     "median": 7.56,
+     "p95": 7.56,
+     "fg": [
+      224,
+      162,
+      32
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".legend__title",
+     "text": "Besitz?",
+     "tag": "span",
+     "cls": "legend__title",
+     "fontSize": 10,
+     "need": 4.5,
+     "pixels": 1034,
+     "min": 1,
+     "p05": 4.38,
+     "median": 6.58,
+     "p95": 6.58,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "grenzwertig"
+    },
+    {
+     "target": ".legend__item:nth-child(1)",
+     "text": "neutral",
+     "tag": "li",
+     "cls": "legend__item",
+     "fontSize": 11,
+     "need": 4.5,
+     "pixels": 540,
+     "min": 4.24,
+     "p05": 11.66,
+     "median": 13.28,
+     "p95": 13.28,
+     "fg": [
+      230,
+      225,
+      211
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".legend__item:nth-child(2)",
+     "text": "eigen",
+     "tag": "li",
+     "cls": "legend__item",
+     "fontSize": 11,
+     "need": 4.5,
+     "pixels": 432,
+     "min": 4.24,
+     "p05": 4.24,
+     "median": 13.28,
+     "p95": 13.28,
+     "fg": [
+      230,
+      225,
+      211
+     ],
+     "textShadow": "none",
+     "verdict": "grenzwertig"
+    }
+   ]
+  },
+  {
+   "label": "S100 Karte",
+   "incompleteNodes": 10,
+   "probed": 10,
+   "rows": [
+    {
+     "target": ".resource--food > .resource__dir--plus > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".resource--wood > .resource__dir--plus > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".resource--iron > .resource__dir--plus > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".resource--coal > .resource__dir--plus > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".resource--money > .resource__dir--plus > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": "button[aria-label=\"Herauszoomen\"]",
+     "text": "−",
+     "tag": "button",
+     "cls": "map-control",
+     "fontSize": 14,
+     "need": 4.5,
+     "pixels": 440,
+     "min": 7.2,
+     "p05": 7.3,
+     "median": 7.56,
+     "p95": 7.71,
+     "fg": [
+      224,
+      162,
+      32
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": "button[aria-label=\"Hauptstadt zentrieren\"]",
+     "text": "◎",
+     "tag": "button",
+     "cls": "map-control",
+     "fontSize": 14,
+     "need": 4.5,
+     "pixels": 440,
+     "min": 7.21,
+     "p05": 7.3,
+     "median": 7.56,
+     "p95": 7.56,
+     "fg": [
+      224,
+      162,
+      32
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".legend__title",
+     "text": "Besitz?",
+     "tag": "span",
+     "cls": "legend__title",
+     "fontSize": 10,
+     "need": 4.5,
+     "pixels": 1034,
+     "min": 1,
+     "p05": 4.38,
+     "median": 6.58,
+     "p95": 6.58,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "grenzwertig"
+    },
+    {
+     "target": ".legend__item:nth-child(1)",
+     "text": "neutral",
+     "tag": "li",
+     "cls": "legend__item",
+     "fontSize": 11,
+     "need": 4.5,
+     "pixels": 540,
+     "min": 4.24,
+     "p05": 11.66,
+     "median": 13.28,
+     "p95": 13.28,
+     "fg": [
+      230,
+      225,
+      211
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".legend__item:nth-child(2)",
+     "text": "eigen",
+     "tag": "li",
+     "cls": "legend__item",
+     "fontSize": 11,
+     "need": 4.5,
+     "pixels": 432,
+     "min": 4.24,
+     "p05": 4.24,
+     "median": 13.28,
+     "p95": 13.28,
+     "fg": [
+      230,
+      225,
+      211
+     ],
+     "textShadow": "none",
+     "verdict": "grenzwertig"
+    }
+   ]
+  },
+  {
+   "label": "S300 Karte mit Einfuehrung",
+   "incompleteNodes": 10,
+   "probed": 10,
+   "rows": [
+    {
+     "target": ".resource--food > .resource__dir--plus > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".resource--wood > .resource__dir--plus > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".resource--iron > .resource__dir--plus > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".resource--coal > .resource__dir--plus > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".resource--money > .resource__dir--plus > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": "button[aria-label=\"Herauszoomen\"]",
+     "text": "−",
+     "tag": "button",
+     "cls": "map-control",
+     "fontSize": 14,
+     "need": 4.5,
+     "pixels": 440,
+     "min": 7.2,
+     "p05": 7.3,
+     "median": 7.56,
+     "p95": 7.71,
+     "fg": [
+      224,
+      162,
+      32
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": "button[aria-label=\"Hauptstadt zentrieren\"]",
+     "text": "◎",
+     "tag": "button",
+     "cls": "map-control",
+     "fontSize": 14,
+     "need": 4.5,
+     "pixels": 440,
+     "min": 7.21,
+     "p05": 7.3,
+     "median": 7.56,
+     "p95": 7.56,
+     "fg": [
+      224,
+      162,
+      32
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".legend__title",
+     "text": "Besitz?",
+     "tag": "span",
+     "cls": "legend__title",
+     "fontSize": 10,
+     "need": 4.5,
+     "pixels": 1034,
+     "min": 1,
+     "p05": 4.38,
+     "median": 6.58,
+     "p95": 6.58,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "grenzwertig"
+    },
+    {
+     "target": ".legend__item:nth-child(1)",
+     "text": "neutral",
+     "tag": "li",
+     "cls": "legend__item",
+     "fontSize": 11,
+     "need": 4.5,
+     "pixels": 540,
+     "min": 4.24,
+     "p05": 11.66,
+     "median": 13.28,
+     "p95": 13.28,
+     "fg": [
+      230,
+      225,
+      211
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".legend__item:nth-child(2)",
+     "text": "eigen",
+     "tag": "li",
+     "cls": "legend__item",
+     "fontSize": 11,
+     "need": 4.5,
+     "pixels": 432,
+     "min": 4.24,
+     "p05": 4.24,
+     "median": 13.28,
+     "p95": 13.28,
+     "fg": [
+      230,
+      225,
+      211
+     ],
+     "textShadow": "none",
+     "verdict": "grenzwertig"
+    }
+   ]
+  },
+  {
+   "label": "S300 Karte",
+   "incompleteNodes": 10,
+   "probed": 10,
+   "rows": [
+    {
+     "target": ".resource--food > .resource__dir--plus > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".resource--wood > .resource__dir--plus > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".resource--iron > .resource__dir--plus > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".resource--coal > .resource__dir--plus > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".resource--money > .resource__dir--plus > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": "button[aria-label=\"Herauszoomen\"]",
+     "text": "−",
+     "tag": "button",
+     "cls": "map-control",
+     "fontSize": 14,
+     "need": 4.5,
+     "pixels": 440,
+     "min": 7.2,
+     "p05": 7.3,
+     "median": 7.56,
+     "p95": 7.71,
+     "fg": [
+      224,
+      162,
+      32
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": "button[aria-label=\"Hauptstadt zentrieren\"]",
+     "text": "◎",
+     "tag": "button",
+     "cls": "map-control",
+     "fontSize": 14,
+     "need": 4.5,
+     "pixels": 440,
+     "min": 7.21,
+     "p05": 7.3,
+     "median": 7.56,
+     "p95": 7.56,
+     "fg": [
+      224,
+      162,
+      32
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".legend__title",
+     "text": "Besitz?",
+     "tag": "span",
+     "cls": "legend__title",
+     "fontSize": 10,
+     "need": 4.5,
+     "pixels": 1034,
+     "min": 1,
+     "p05": 4.38,
+     "median": 6.58,
+     "p95": 6.58,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "grenzwertig"
+    },
+    {
+     "target": ".legend__item:nth-child(1)",
+     "text": "neutral",
+     "tag": "li",
+     "cls": "legend__item",
+     "fontSize": 11,
+     "need": 4.5,
+     "pixels": 540,
+     "min": 4.24,
+     "p05": 11.66,
+     "median": 13.28,
+     "p95": 13.28,
+     "fg": [
+      230,
+      225,
+      211
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".legend__item:nth-child(2)",
+     "text": "eigen",
+     "tag": "li",
+     "cls": "legend__item",
+     "fontSize": 11,
+     "need": 4.5,
+     "pixels": 432,
+     "min": 4.24,
+     "p05": 4.24,
+     "median": 13.28,
+     "p95": 13.28,
+     "fg": [
+      230,
+      225,
+      211
+     ],
+     "textShadow": "none",
+     "verdict": "grenzwertig"
+    }
+   ]
+  },
+  {
+   "label": "S575 Karte mit Einfuehrung",
+   "incompleteNodes": 10,
+   "probed": 10,
+   "rows": [
+    {
+     "target": ".resource--food > .resource__dir--plus > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".resource--wood > .resource__dir--plus > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".resource--iron > .resource__dir--plus > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".resource--coal > .resource__dir--plus > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".resource--money > .resource__dir--plus > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": "button[aria-label=\"Herauszoomen\"]",
+     "text": "−",
+     "tag": "button",
+     "cls": "map-control",
+     "fontSize": 14,
+     "need": 4.5,
+     "pixels": 440,
+     "min": 7.2,
+     "p05": 7.3,
+     "median": 7.56,
+     "p95": 7.71,
+     "fg": [
+      224,
+      162,
+      32
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": "button[aria-label=\"Hauptstadt zentrieren\"]",
+     "text": "◎",
+     "tag": "button",
+     "cls": "map-control",
+     "fontSize": 14,
+     "need": 4.5,
+     "pixels": 440,
+     "min": 7.21,
+     "p05": 7.3,
+     "median": 7.56,
+     "p95": 7.56,
+     "fg": [
+      224,
+      162,
+      32
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".legend__title",
+     "text": "Besitz?",
+     "tag": "span",
+     "cls": "legend__title",
+     "fontSize": 10,
+     "need": 4.5,
+     "pixels": 1034,
+     "min": 1,
+     "p05": 4.38,
+     "median": 6.58,
+     "p95": 6.58,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "grenzwertig"
+    },
+    {
+     "target": ".legend__item:nth-child(1)",
+     "text": "neutral",
+     "tag": "li",
+     "cls": "legend__item",
+     "fontSize": 11,
+     "need": 4.5,
+     "pixels": 540,
+     "min": 4.24,
+     "p05": 11.66,
+     "median": 13.28,
+     "p95": 13.28,
+     "fg": [
+      230,
+      225,
+      211
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".legend__item:nth-child(2)",
+     "text": "eigen",
+     "tag": "li",
+     "cls": "legend__item",
+     "fontSize": 11,
+     "need": 4.5,
+     "pixels": 432,
+     "min": 4.24,
+     "p05": 4.24,
+     "median": 13.28,
+     "p95": 13.28,
+     "fg": [
+      230,
+      225,
+      211
+     ],
+     "textShadow": "none",
+     "verdict": "grenzwertig"
+    }
+   ]
+  },
+  {
+   "label": "S575 Karte",
+   "incompleteNodes": 10,
+   "probed": 10,
+   "rows": [
+    {
+     "target": ".resource--food > .resource__dir--plus > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".resource--wood > .resource__dir--plus > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".resource--iron > .resource__dir--plus > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".resource--coal > .resource__dir--plus > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".resource--money > .resource__dir--plus > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": "button[aria-label=\"Herauszoomen\"]",
+     "text": "−",
+     "tag": "button",
+     "cls": "map-control",
+     "fontSize": 14,
+     "need": 4.5,
+     "pixels": 440,
+     "min": 7.2,
+     "p05": 7.3,
+     "median": 7.56,
+     "p95": 7.71,
+     "fg": [
+      224,
+      162,
+      32
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": "button[aria-label=\"Hauptstadt zentrieren\"]",
+     "text": "◎",
+     "tag": "button",
+     "cls": "map-control",
+     "fontSize": 14,
+     "need": 4.5,
+     "pixels": 440,
+     "min": 7.21,
+     "p05": 7.3,
+     "median": 7.56,
+     "p95": 7.56,
+     "fg": [
+      224,
+      162,
+      32
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".legend__title",
+     "text": "Besitz?",
+     "tag": "span",
+     "cls": "legend__title",
+     "fontSize": 10,
+     "need": 4.5,
+     "pixels": 1034,
+     "min": 1,
+     "p05": 4.38,
+     "median": 6.58,
+     "p95": 6.58,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "grenzwertig"
+    },
+    {
+     "target": ".legend__item:nth-child(1)",
+     "text": "neutral",
+     "tag": "li",
+     "cls": "legend__item",
+     "fontSize": 11,
+     "need": 4.5,
+     "pixels": 540,
+     "min": 4.24,
+     "p05": 11.66,
+     "median": 13.28,
+     "p95": 13.28,
+     "fg": [
+      230,
+      225,
+      211
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".legend__item:nth-child(2)",
+     "text": "eigen",
+     "tag": "li",
+     "cls": "legend__item",
+     "fontSize": 11,
+     "need": 4.5,
+     "pixels": 432,
+     "min": 4.24,
+     "p05": 4.24,
+     "median": 13.28,
+     "p95": 13.28,
+     "fg": [
+      230,
+      225,
+      211
+     ],
+     "textShadow": "none",
+     "verdict": "grenzwertig"
+    }
+   ]
+  },
+  {
+   "label": "S575G Karte mit Einfuehrung",
+   "incompleteNodes": 12,
+   "probed": 12,
+   "rows": [
+    {
+     "target": ".resource--food > em > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".resource--wood > em > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".resource--iron > em > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".resource--coal > em > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".resource--oil > em > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".resource--rare > em > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".resource--money > em > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": "button[aria-label=\"Herauszoomen\"]",
+     "text": "−",
+     "tag": "button",
+     "cls": "map-control",
+     "fontSize": 14,
+     "need": 4.5,
+     "pixels": 440,
+     "min": 7.2,
+     "p05": 7.3,
+     "median": 7.56,
+     "p95": 7.71,
+     "fg": [
+      224,
+      162,
+      32
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": "button[aria-label=\"Hauptstadt zentrieren\"]",
+     "text": "◎",
+     "tag": "button",
+     "cls": "map-control",
+     "fontSize": 14,
+     "need": 4.5,
+     "pixels": 440,
+     "min": 7.2,
+     "p05": 7.3,
+     "median": 7.56,
+     "p95": 7.56,
+     "fg": [
+      224,
+      162,
+      32
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".legend__title",
+     "text": "Besitz?",
+     "tag": "span",
+     "cls": "legend__title",
+     "fontSize": 10,
+     "need": 4.5,
+     "pixels": 1034,
+     "min": 1,
+     "p05": 4.38,
+     "median": 6.58,
+     "p95": 6.58,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "grenzwertig"
+    },
+    {
+     "target": ".legend__item:nth-child(1)",
+     "text": "neutral",
+     "tag": "li",
+     "cls": "legend__item",
+     "fontSize": 11,
+     "need": 4.5,
+     "pixels": 540,
+     "min": 4.24,
+     "p05": 11.66,
+     "median": 13.28,
+     "p95": 13.28,
+     "fg": [
+      230,
+      225,
+      211
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".legend__item:nth-child(2)",
+     "text": "eigen",
+     "tag": "li",
+     "cls": "legend__item",
+     "fontSize": 11,
+     "need": 4.5,
+     "pixels": 432,
+     "min": 4.24,
+     "p05": 4.24,
+     "median": 13.28,
+     "p95": 13.28,
+     "fg": [
+      230,
+      225,
+      211
+     ],
+     "textShadow": "none",
+     "verdict": "grenzwertig"
+    }
+   ]
+  },
+  {
+   "label": "S575G Karte",
+   "incompleteNodes": 12,
+   "probed": 12,
+   "rows": [
+    {
+     "target": ".resource--food > em > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".resource--wood > em > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".resource--iron > em > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".resource--coal > em > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".resource--oil > em > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".resource--rare > em > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".resource--money > em > span[aria-hidden=\"true\"]",
+     "text": "▲",
+     "tag": "span",
+     "cls": "",
+     "fontSize": 9,
+     "need": 4.5,
+     "pixels": 44,
+     "min": 5.78,
+     "p05": 5.78,
+     "median": 5.78,
+     "p95": 5.78,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": "button[aria-label=\"Herauszoomen\"]",
+     "text": "−",
+     "tag": "button",
+     "cls": "map-control",
+     "fontSize": 14,
+     "need": 4.5,
+     "pixels": 440,
+     "min": 7.2,
+     "p05": 7.3,
+     "median": 7.56,
+     "p95": 7.71,
+     "fg": [
+      224,
+      162,
+      32
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": "button[aria-label=\"Hauptstadt zentrieren\"]",
+     "text": "◎",
+     "tag": "button",
+     "cls": "map-control",
+     "fontSize": 14,
+     "need": 4.5,
+     "pixels": 440,
+     "min": 7.2,
+     "p05": 7.3,
+     "median": 7.56,
+     "p95": 7.56,
+     "fg": [
+      224,
+      162,
+      32
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".legend__title",
+     "text": "Besitz?",
+     "tag": "span",
+     "cls": "legend__title",
+     "fontSize": 10,
+     "need": 4.5,
+     "pixels": 1034,
+     "min": 1,
+     "p05": 4.38,
+     "median": 6.58,
+     "p95": 6.58,
+     "fg": [
+      154,
+      160,
+      168
+     ],
+     "textShadow": "none",
+     "verdict": "grenzwertig"
+    },
+    {
+     "target": ".legend__item:nth-child(1)",
+     "text": "neutral",
+     "tag": "li",
+     "cls": "legend__item",
+     "fontSize": 11,
+     "need": 4.5,
+     "pixels": 540,
+     "min": 4.24,
+     "p05": 11.66,
+     "median": 13.28,
+     "p95": 13.28,
+     "fg": [
+      230,
+      225,
+      211
+     ],
+     "textShadow": "none",
+     "verdict": "gruen"
+    },
+    {
+     "target": ".legend__item:nth-child(2)",
+     "text": "eigen",
+     "tag": "li",
+     "cls": "legend__item",
+     "fontSize": 11,
+     "need": 4.5,
+     "pixels": 432,
+     "min": 4.24,
+     "p05": 4.24,
+     "median": 13.28,
+     "p95": 13.28,
+     "fg": [
+      230,
+      225,
+      211
+     ],
+     "textShadow": "none",
+     "verdict": "grenzwertig"
+    }
+   ]
+  }
+ ]
+}

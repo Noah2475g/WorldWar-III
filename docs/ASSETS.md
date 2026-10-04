@@ -630,3 +630,66 @@ Erzeugt mit `node scripts/ux-capture.mjs --out docs/ux/after --measure-only 1920
 | `docs/ux/after/x-krieg-fragt-nach-1366x768.png` | `scripts/ux-capture.mjs` | krieg fragt nach, 1366x768 |
 | `docs/ux/after/x-krieg-fragt-nach-375x667.png` | `scripts/ux-capture.mjs` | krieg fragt nach, 375x667 |
 | `docs/ux/after/x-krieg-fragt-nach-667x375.png` | `scripts/ux-capture.mjs` | krieg fragt nach, 667x375 |
+
+## Bildschirmfotos der Spaetspiel-Aufnahme (V3 P0-B1, 2026-10-04)
+
+Kein Fremdinhalt — Bildschirmfotos des eigenen Spiels, erzeugt mit `node scripts/ux-late.mjs --out docs/ux/v3-before` (Playwright gegen den Dev-Server, Staende `test/fixtures/v3`). Nur 375x667 und 1280x800 (PLAN-V3 Regel 12). Sie stehen hier, weil `test/guards/no-foreign-assets.test.ts` jede eingecheckte Bilddatei namentlich verlangt. Befunde: `docs/ux/v3-before/messwerte-spaet.json`.
+
+| Datei | Erzeugt von | Zeigt |
+|---|---|---|
+| `docs/ux/v3-before/S100-04-karte-brennpunkt-1280x800.png` | `scripts/ux-late.mjs` | Tag 100: Karte im Brennpunkt der Armeen, 1280x800 |
+| `docs/ux/v3-before/S100-04-karte-brennpunkt-375x667.png` | `scripts/ux-late.mjs` | Tag 100: Karte im Brennpunkt der Armeen, 375x667 |
+| `docs/ux/v3-before/S100-06-protokoll-alles-1280x800.png` | `scripts/ux-late.mjs` | Tag 100: volles Protokoll, 1280x800 |
+| `docs/ux/v3-before/S100-06-protokoll-alles-375x667.png` | `scripts/ux-late.mjs` | Tag 100: volles Protokoll, 375x667 |
+| `docs/ux/v3-before/S100-12-diplomatie-1280x800.png` | `scripts/ux-late.mjs` | Tag 100: Diplomatie, 1280x800 |
+| `docs/ux/v3-before/S100-12-diplomatie-375x667.png` | `scripts/ux-late.mjs` | Tag 100: Diplomatie, 375x667 |
+| `docs/ux/v3-before/S300-04-karte-brennpunkt-1280x800.png` | `scripts/ux-late.mjs` | Tag 300: Karte im Brennpunkt der Armeen, 1280x800 |
+| `docs/ux/v3-before/S300-04-karte-brennpunkt-375x667.png` | `scripts/ux-late.mjs` | Tag 300: Karte im Brennpunkt der Armeen, 375x667 |
+| `docs/ux/v3-before/S300-06-protokoll-alles-1280x800.png` | `scripts/ux-late.mjs` | Tag 300: volles Protokoll, 1280x800 |
+| `docs/ux/v3-before/S300-06-protokoll-alles-375x667.png` | `scripts/ux-late.mjs` | Tag 300: volles Protokoll, 375x667 |
+| `docs/ux/v3-before/S300-12-diplomatie-1280x800.png` | `scripts/ux-late.mjs` | Tag 300: Diplomatie, 1280x800 |
+| `docs/ux/v3-before/S300-12-diplomatie-375x667.png` | `scripts/ux-late.mjs` | Tag 300: Diplomatie, 375x667 |
+| `docs/ux/v3-before/S575-04-karte-brennpunkt-1280x800.png` | `scripts/ux-late.mjs` | Tag 575: Karte im Brennpunkt der Armeen, 1280x800 |
+| `docs/ux/v3-before/S575-04-karte-brennpunkt-375x667.png` | `scripts/ux-late.mjs` | Tag 575: Karte im Brennpunkt der Armeen, 375x667 |
+| `docs/ux/v3-before/S575-06-protokoll-alles-1280x800.png` | `scripts/ux-late.mjs` | Tag 575: volles Protokoll, 1280x800 |
+| `docs/ux/v3-before/S575-06-protokoll-alles-375x667.png` | `scripts/ux-late.mjs` | Tag 575: volles Protokoll, 375x667 |
+| `docs/ux/v3-before/S575-12-diplomatie-1280x800.png` | `scripts/ux-late.mjs` | Tag 575: Diplomatie, 1280x800 |
+| `docs/ux/v3-before/S575-12-diplomatie-375x667.png` | `scripts/ux-late.mjs` | Tag 575: Diplomatie, 375x667 |
+| `docs/ux/v3-before/S575G-01-karte-geladen-1280x800.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Karte nach dem Laden, 1280x800 |
+| `docs/ux/v3-before/S575G-01-karte-geladen-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Karte nach dem Laden, 375x667 |
+| `docs/ux/v3-before/S575G-02-karte-besitz-1280x800.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Karte Besitz, 1280x800 |
+| `docs/ux/v3-before/S575G-02-karte-besitz-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Karte Besitz, 375x667 |
+| `docs/ux/v3-before/S575G-03-karte-truppen-1280x800.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Karte Truppenstaerke, 1280x800 |
+| `docs/ux/v3-before/S575G-03-karte-truppen-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Karte Truppenstaerke, 375x667 |
+| `docs/ux/v3-before/S575G-04-karte-brennpunkt-1280x800.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Karte im Brennpunkt der Armeen, 1280x800 |
+| `docs/ux/v3-before/S575G-04-karte-brennpunkt-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Karte im Brennpunkt der Armeen, 375x667 |
+| `docs/ux/v3-before/S575G-05-karte-zoom-schieben-1280x800.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Karte gezoomt, 1280x800 |
+| `docs/ux/v3-before/S575G-05-karte-zoom-schieben-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Karte gezoomt, 375x667 |
+| `docs/ux/v3-before/S575G-06-protokoll-alles-1280x800.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: volles Protokoll, 1280x800 |
+| `docs/ux/v3-before/S575G-06-protokoll-alles-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: volles Protokoll, 375x667 |
+| `docs/ux/v3-before/S575G-07-protokoll-kaempfe-1280x800.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Protokoll Kaempfe, 1280x800 |
+| `docs/ux/v3-before/S575G-07-protokoll-kaempfe-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Protokoll Kaempfe, 375x667 |
+| `docs/ux/v3-before/S575G-08-provinz-eigene-1280x800.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Provinzpanel, 1280x800 |
+| `docs/ux/v3-before/S575G-08-provinz-eigene-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Provinzpanel, 375x667 |
+| `docs/ux/v3-before/S575G-09-armee-ausheben-1280x800.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Armee ausgehoben, 1280x800 |
+| `docs/ux/v3-before/S575G-09-armee-ausheben-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Armee ausgehoben, 375x667 |
+| `docs/ux/v3-before/S575G-10-armee-panel-1280x800.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Armeepanel, 1280x800 |
+| `docs/ux/v3-before/S575G-10-armee-panel-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Armeepanel, 375x667 |
+| `docs/ux/v3-before/S575G-11-armee-marsch-zielwahl-1280x800.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Marsch-Zielwahl, 1280x800 |
+| `docs/ux/v3-before/S575G-11-armee-marsch-zielwahl-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Marsch-Zielwahl, 375x667 |
+| `docs/ux/v3-before/S575G-12-diplomatie-1280x800.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Diplomatie, 1280x800 |
+| `docs/ux/v3-before/S575G-12-diplomatie-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Diplomatie, 375x667 |
+| `docs/ux/v3-before/S575G-13-diplomatie-macht-1280x800.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Diplomatie mit gewaehlter Macht, 1280x800 |
+| `docs/ux/v3-before/S575G-13-diplomatie-macht-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Diplomatie mit gewaehlter Macht, 375x667 |
+| `docs/ux/v3-before/S575G-14-markt-1280x800.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Markt, 1280x800 |
+| `docs/ux/v3-before/S575G-14-markt-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Markt, 375x667 |
+| `docs/ux/v3-before/S575G-15-spionage-1280x800.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Spionage, 1280x800 |
+| `docs/ux/v3-before/S575G-15-spionage-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Spionage, 375x667 |
+| `docs/ux/v3-before/S575G-16-rangliste-1280x800.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Rangliste, 1280x800 |
+| `docs/ux/v3-before/S575G-16-rangliste-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Rangliste, 375x667 |
+| `docs/ux/v3-before/S575G-17-speichern-laden-1280x800.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Spielstaende speichern, 1280x800 |
+| `docs/ux/v3-before/S575G-17-speichern-laden-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Spielstaende speichern, 375x667 |
+| `docs/ux/v3-before/S575G-18-laden-grosser-stand-1280x800.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Laden eines grossen Standes, 1280x800 |
+| `docs/ux/v3-before/S575G-18-laden-grosser-stand-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Laden eines grossen Standes, 375x667 |
+| `docs/ux/v3-before/S575G-19-tempo-100-alarm-1280x800.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Tempo 100 mit Alarm, 1280x800 |
+| `docs/ux/v3-before/S575G-19-tempo-100-alarm-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Tempo 100 mit Alarm, 375x667 |
