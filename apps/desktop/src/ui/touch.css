@@ -745,7 +745,7 @@ select,
     max-height: none;
     padding: 0 var(--sp-md) var(--sp-md);
     border-top: 1px solid var(--line);
-    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 -4px 12px color-mix(in srgb, var(--water) 70%, transparent);
   }
 
   :root:root .foot[data-log='open'] .log__filters {
