@@ -87,8 +87,34 @@ erfüllt; die Bildschirmfotos `1-start.png` und `5-neustart.png` belegen den Inh
 ## Grenzen dieser Messung
 
 - Ein Rechner (Windows 11), aus dem gebauten Ordner, nicht aus MSI/Setup.
+<!-- LOESCHVERMERK (Review): ersetzt durch den Abschnitt „Uhr bei Tempo 100 (2026-10-04)“ darunter. Wortlaut:
 - **Die Uhr bei Tempo 100 wurde nicht neu gemessen.** Die M44-Änderungen bis `1aab3a1`
   sind für die Uhr unbelegt; maßgeblich bleibt die Messung vom 2026-09-26 unten.
+-->
+- Die Uhr bei Tempo 100 ist am 2026-10-04 an der neu gebauten exe gemessen (Abschnitt unten).
+
+## Uhr bei Tempo 100 (2026-10-04, PLAN-V3 Schritt 0)
+
+Skript `docs/plan/schlussblock/uhr-cdp.mjs`, Rohdaten `docs/reports/v3/uhr-exe.json`. Je exe 5 Läufe,
+jeder frisch gestartet, sichtbares Fenster, neue Partie, Taste `+` siebenmal, 10 s Echtzeit;
+Spielstunden der Kopfleiste und `performance.now()` im selben `Runtime.evaluate`. Beide exe am
+selben Morgen nacheinander, Last vor dem Lauf 9 % (alt) bzw. 4 % (neu); Blender lief im Leerlauf
+mit (0,09 CPU-s in 15 s). Noahs Spielstände geparkt, danach zurück, SHA-256 gleich. Autosave
+läuft in beiden exe gleich mit.
+
+| exe | Quelle | Größe | SHA-256 (Anfang) | Minimum | Median | Höchstwert |
+|---|---|---|---|---|---|---|
+| alt (Ausgangswert) | `7a6aa47`, gebaut 2026-09-26 | 6 816 768 B | `a0f3b238` | 99,80 | 99,88 | 100,01 |
+| neu | `19b28d3` (`main` nach PR #19), gebaut 2026-10-03 21:04 | 6 827 008 B | `f9b1f12e` | 99,64 | 99,77 | 99,99 |
+
+**Bewertung (Falle 18):** Minimum −0,16, Median −0,11 Ticks/s gegen den Ausgangswert vom selben
+Tag; die Streuung des Ausgangswerts selbst beträgt 0,21. Der Abstand liegt darunter →
+**Normalstreuung, kein Befund.** Die Uhr hält an der exe nach M44 und PR #15–#19.
+Gemessen ist nur eine **neue Partie** (Tag 1); das Spätspiel misst V3 am Bündel
+(`docs/reports/v3/leistung-ausgang.md`).
+
+Nebenbefund am Skript: die exe von `7a6aa47` hat „Partie beginnen“ noch nicht in `.dialog__foot`;
+das Skript sucht seitdem ersatzweise jeden sichtbaren Knopf mit diesem Text.
 - Gemessen ist die Einzelspieler-Seite; AK-9 bleibt unberührt.
 - Die Partie wurde an Tag 1 gespeichert; ein weit fortgeschrittener Stand wird hier nicht
   gezeigt.

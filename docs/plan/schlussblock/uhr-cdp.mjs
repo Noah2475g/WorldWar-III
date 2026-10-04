@@ -83,7 +83,8 @@ async function waitFor(cdp, expression, what, timeoutMs = 30000) {
 }
 const bodyText = 'document.body.innerText'
 // „Partie beginnen“ steht in der festen Fußzeile des Dialogs (.dialog__foot, Dialogs.tsx:166).
-const clickStart = `(() => { const b = [...document.querySelectorAll('.dialog__foot button')].find(b => b.offsetParent !== null && /^Partie beginnen$/.test(b.textContent.trim())); if (!b || b.disabled) return false; b.click(); return true })()`
+// Ältere exe (vor der festen Fußzeile, z. B. 7a6aa47) haben den Knopf ohne .dialog__foot — dann jeder sichtbare Knopf.
+const clickStart = `(() => { const pick = (sel) => [...document.querySelectorAll(sel)].find(b => b.offsetParent !== null && /^Partie beginnen$/.test(b.textContent.trim())); const b = pick('.dialog__foot button') ?? pick('button'); if (!b || b.disabled) return false; b.click(); return true })()`
 // Kopfleiste „Tag N · HH:MM“ und Zeitstempel im selben Aufruf → kein Rundlauf-Versatz.
 const sample = `(() => { const t = performance.now(); const m = /Tag (\\d+) · (\\d\\d):(\\d\\d)/.exec(document.body.innerText); return m ? { t, hours: Number(m[1]) * 24 + Number(m[2]) + Number(m[3]) / 60 } : null })()`
 
