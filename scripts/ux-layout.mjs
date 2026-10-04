@@ -175,6 +175,8 @@ const logScene = (page) =>
       box: { h: Math.round(r.height), w: Math.round(r.width) },
       entriesInDom: items.length,
       visibleRows: visible.length,
+      // T-M46-17: nur die Protokollzeilen (.log__row), ohne die li der geschlossenen Berichte und Trennzeilen.
+      visibleLogRows: visible.filter((li) => li.classList.contains('log__row')).length,
       filterVisible: Boolean(filters && fs.display !== 'none' && filters.getBoundingClientRect().height > 0),
       filterButtonsInView: filterButtons.filter((b) => {
         const q = b.getBoundingClientRect()

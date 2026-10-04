@@ -270,13 +270,10 @@ function ActionButton({
             disabled={action.disabledReason !== null || (action.pendingNotice !== undefined && action.ackOnly !== true)}
             title={buttonTitle(action)}
             // Der Name nennt die Handlung, nicht nur die Sache (T-M22-06, V2-13).
-            // Bei reinen Zeichenknoepfen (T-M46-17) traegt der Name auch den Grund der Sperre: ein versteckter
-            // Absatz daneben wuerde als Text im Dokument stehen, den niemand sieht.
-            aria-label={
-              compact || iconOnly
-                ? [action.aria ?? action.label, action.disabledReason].filter(Boolean).join(' - ')
-                : action.aria
-            }
+            // Bei reinen Zeichenknoepfen (T-M46-17) steht der Grund der Sperre als Beschreibung (aria-description)
+            // statt als versteckter Absatz daneben: der stuende als Text im Dokument, den niemand sieht.
+            aria-label={compact || iconOnly ? (action.aria ?? action.label) : action.aria}
+            aria-description={action.disabledReason && (compact || iconOnly) ? action.disabledReason : undefined}
             aria-describedby={action.disabledReason && !(compact || iconOnly) ? reasonId : undefined}
             onClick={action.onRun}
           >
@@ -1681,7 +1678,7 @@ function LogRow({
 }
 
 /** Die Groesse des Zeichens einer Protokollzeile (T-M46-17). */
-const LOG_ICON = 24
+const LOG_ICON = 26
 
 /**
  * Relations with every other power, and the orders towards the one the player picks

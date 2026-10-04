@@ -787,3 +787,18 @@ Sie stehen hier, weil `test/guards/no-foreign-assets.test.ts` jede eingecheckte 
 | `docs/ux/v3-after/S575G-nachher-diplomatie-1280x800.png` | `scripts/ux-layout.mjs` | T-M46-06/-11: Diplomatie mit gewählter Macht, Handlungen im Bild, Aufstandshinweise gebündelt |
 | `docs/ux/v3-after/mp-alarmchip-375x667.png` | `scripts/ux-capture.mjs` | T-M46-08: Alarmchip in der Partie zu zweit, Telefon |
 | `docs/ux/v3-after/mp-alarmchip-1280x800.png` | `scripts/ux-capture.mjs` | T-M46-08: Alarmchip in der Partie zu zweit, Schreibtisch |
+
+### Nachher-Bilder des Symbol-Durchgangs (T-M46-17, Bahn U-Symbol)
+
+Fünf Bilder des Standes S575G (Mensch = stärkste Macht), erzeugt mit `node scripts/ux-bild.mjs --shots …`, nur 375x667 und
+1280x800 (PLAN-V3 Regel 12). Die Vorher-Bilder sind die gleichnamigen ohne „symbol“ (Bahn U-Bild). Zählwerte dazu:
+`docs/reports/v3/usymbol-vorher.json` und `usymbol-nachher.json`. Keine neue Fremddatei: die Zeichen kommen aus den schon
+genannten Quellen (Lucide ISC, milsymbol MIT, game-icons.net CC BY 3.0).
+
+| Datei | Erzeugt von | Zeigt |
+|---|---|---|
+| `docs/ux/v3-after/S575G-symbol-karte-1280x800.png` | `scripts/ux-bild.mjs` | Kopfleiste, Alarmliste und Protokoll als Zeichen mit Kurzwort, 1280x800 |
+| `docs/ux/v3-after/S575G-symbol-provinz-1280x800.png` | `scripts/ux-bild.mjs` | Provinzpanel: Gattung, Gelände, Küste, Vorkommen, Bauplätze, Armeen als Zeichen, 1280x800 |
+| `docs/ux/v3-after/S575G-symbol-armee-1280x800.png` | `scripts/ux-bild.mjs` | Armeepanel: Befehle und Haltungen als Zeichenknöpfe, Marsch mit Fußzeichen und Zahl, 1280x800 |
+| `docs/ux/v3-after/S575G-symbol-karte-375x667.png` | `scripts/ux-bild.mjs` | Telefon: Kopfleiste mit Zeichen, Alarmliste, Fuß, 375x667 |
+| `docs/ux/v3-after/S575G-symbol-armee-375x667.png` | `scripts/ux-bild.mjs` | Telefon: Armeepanel im halben Blatt, 375x667 |

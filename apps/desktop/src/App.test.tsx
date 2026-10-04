@@ -54,6 +54,13 @@ vi.mock('./game/fastForward.ts', async (importOriginal) => {
 
 // jsdom does not give import.meta.url a file: scheme; vitest runs from the repo root.
 const ROOT = process.cwd()
+
+/**
+ * Was ein Element sagt (T-M46-17): sein Text UND die Namen seiner Zeichen und Knoepfe. Seit dem Symbol-Durchgang steht
+ * der Satz einer Meldung oder Protokollzeile als aria-label/Tooltip am Zeichen, im Bild nur das Kurzwort.
+ */
+const spoken = (element: Element): string =>
+  [element.textContent ?? '', ...[element, ...element.querySelectorAll('[aria-label]')].map((e) => e.getAttribute('aria-label') ?? '')].join(' ')
 const world = JSON.parse(readFileSync(`${ROOT}/data/maps/world.json`, 'utf8')) as MapData
 const testworld = JSON.parse(readFileSync(`${ROOT}/data/maps/testworld.json`, 'utf8')) as MapData
 // Die Sammlung traegt die Karten selbst, nicht nur ihre Namen (T-M12-08): eine Auswahl,
@@ -303,19 +310,23 @@ describe('R-ECON-06 Die Wirtschaft steht vollstaendig auf dem Bildschirm', () =>
   // "die Spalte tut nichts" (Frage 15). Sie heisst jetzt, was sie ist, und daneben
   // steht die Antwort auf die eigentliche Frage: was in Auftraegen gebunden ist.
   it('zeigt Bestand, Produktion, Unterhalt und Bilanz je Rohstoff', () => {
+    // Die Tabelle wird erst im aufgeklappten Zustand gezeichnet (T-M46-17).
+    localStorage.setItem('worldwar.economyOpen', '1')
     startGame()
     const panel = screen.getByRole('region', { name: 'Wirtschaft' })
 
     // "In Auftrag" ist seit T-M22-02 keine Spalte mehr: sie schob die Tabelle aus der
     // Leiste (Befund V2-02). Die Auskunft steht jetzt als Zeichen mit Zahl hinter dem
     // Bestand — geprueft in Panels.test.tsx am Fall mit laufenden Auftraegen.
+    // Die Koepfe und die Zeilen sind seit T-M46-17 Zeichen mit Namen.
     for (const column of ['Bestand', 'Produktion', 'Unterhalt', 'Bilanz']) {
-      expect(within(panel).getByText(column), `Spalte ${column} fehlt`).toBeTruthy()
+      expect(within(panel).getByLabelText(column), `Spalte ${column} fehlt`).toBeTruthy()
     }
-    expect(within(panel).queryByText('In Auftrag')).toBeNull()
+    expect(within(panel).queryByLabelText('In Auftrag')).toBeNull()
     for (const resource of ['Nahrung', 'Eisen', 'Geld']) {
-      expect(within(panel).getByText(resource), `Zeile ${resource} fehlt`).toBeTruthy()
+      expect(within(panel).getByLabelText(resource), `Zeile ${resource} fehlt`).toBeTruthy()
     }
+    localStorage.removeItem('worldwar.economyOpen')
   })
 
   it('nennt in der Kopfleiste die Richtung, nicht nur den Bestand (T-M36-02)', () => {
@@ -330,7 +341,8 @@ describe('R-ECON-06 Die Wirtschaft steht vollstaendig auf dem Bildschirm', () =>
     expect(resources.textContent).toMatch(/Bilanz [+−±]\d/)
 
     const sichtbar = resources.cloneNode(true) as HTMLElement
-    for (const versteckt of sichtbar.querySelectorAll('.visually-hidden')) versteckt.remove()
+    // Der Name eines Zeichens steht im <title> des SVG und wird nicht gezeichnet (T-M46-17).
+    for (const versteckt of sichtbar.querySelectorAll('.visually-hidden, svg title')) versteckt.remove()
     expect(sichtbar.textContent).not.toMatch(/[+−]\d/)
   })
 })
@@ -414,10 +426,13 @@ describe('R-TIME-06 Der Tagesbericht im Protokoll klappt auf', () => {
 
     const log = screen.getByRole('region', { name: 'Ereignisse' })
     await waitFor(() => {
-      const bericht = [...log.querySelectorAll('details.log__report')].find((element) =>
-        /Tagesbericht/.test(element.querySelector('summary')?.textContent ?? ''),
+      const bericht = [...log.querySelectorAll<HTMLDetailsElement>('details.log__report')].find((element) =>
+        /Tagesbericht/.test(element.querySelector('summary')?.getAttribute('aria-label') ?? ''),
       )
       expect(bericht, 'kein aufklappbarer Tagesbericht im Protokoll').toBeTruthy()
+      // Der Koerper wird erst beim Aufklappen gezeichnet (T-M46-17).
+      bericht!.open = true
+      fireEvent(bericht!, new Event('toggle'))
       expect(bericht!.textContent).toMatch(/Bilanz|Moral|Morgen neu|ruhiger Tag/)
     })
   })
@@ -517,7 +532,7 @@ describe('R-UI-05 Befehle aus der Oberflaeche', () => {
   const fastForward = (days: number) => {
     for (let i = 0; i < days; i++) fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
   }
-  const log = () => screen.getByRole('region', { name: 'Ereignisse' }).textContent ?? ''
+  const log = () => spoken(screen.getByRole('region', { name: 'Ereignisse' }))
 
   /**
    * Befund vom 2026-09-08 (Sichtpruefung nach M25-M27): ein Marschbefehl ueber die
@@ -577,7 +592,7 @@ describe('R-UI-05 Befehle aus der Oberflaeche', () => {
     fastForward(2)
     expect(log()).toContain('Infanterie ausgehoben')
 
-    fireEvent.click(screen.getByRole('button', { name: 'Auswählen' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Auswählen/ }))
     const panel = screen.getByRole('region', { name: 'Armee' })
     expect(panel.textContent).toContain('Infanterie')
     fireEvent.click(within(panel).getByRole('button', { name: 'Marschieren' }))
@@ -634,7 +649,7 @@ describe('R-UI-05 Befehle aus der Oberflaeche', () => {
     fastForward(2)
     fireEvent.click(within(screen.getByRole('region', { name: 'Ausheben' })).getByRole('button', { name: 'Infanterie ausheben' }))
     fastForward(2)
-    fireEvent.click(screen.getByRole('button', { name: 'Auswählen' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Auswählen/ }))
     const panel = screen.getByRole('region', { name: 'Armee' })
     fireEvent.click(within(panel).getByRole('button', { name: 'Marschieren' }))
     expect(within(panel).queryByRole('combobox', { name: 'Ziel' })).not.toBeNull()
@@ -764,7 +779,7 @@ describe('R-SPY-06 Spionage aus der Oberflaeche', () => {
  * Quittung, und bei stehender Uhr sagt sie „wirkt beim Weiterlaufen".
  */
 describe('R-UI-05 Jeder Befehl quittiert sofort sichtbar', () => {
-  const log = () => screen.getByRole('region', { name: 'Ereignisse' }).textContent ?? ''
+  const log = () => spoken(screen.getByRole('region', { name: 'Ereignisse' }))
 
   it('zeigt am ausloesenden Knopf "befohlen", bis der naechste Tick den Befehl anwendet', () => {
     startGame({ storage: new MemoryStorage() })
@@ -842,7 +857,7 @@ describe('R-UI-05 Jeder Befehl quittiert sofort sichtbar', () => {
       within(screen.getByRole('region', { name: 'Ausheben' })).getByRole('button', { name: 'Infanterie ausheben' }),
     )
     fastForward(2)
-    fireEvent.click(screen.getByRole('button', { name: 'Auswählen' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Auswählen/ }))
     const panel = screen.getByRole('region', { name: 'Armee' })
     fireEvent.click(within(panel).getByRole('button', { name: 'Marschieren' }))
     const target = within(panel).getByRole('combobox', { name: 'Ziel' })
@@ -1694,7 +1709,7 @@ describe('R-UI-14 Die Meldungen erreichen den Spieler', () => {
     const meldungen = await zeige(state)
 
     // R-UI-14 nennt vier Quellen; diese fehlte in alertsFor vollstaendig.
-    expect(meldungen.textContent).toContain('fertig')
+    expect(spoken(meldungen)).toContain('fertig')
   })
 
   /**
@@ -1721,7 +1736,7 @@ describe('R-UI-14 Die Meldungen erreichen den Spieler', () => {
       const nation = nachAngebot.players[p2]!.nation
 
       const meldungen = await zeige(nachAngebot)
-      expect(meldungen.textContent).toContain(`Handelsangebot von ${nation}`)
+      expect(spoken(meldungen)).toContain(`Handelsangebot von ${nation}`)
 
       fireEvent.click(screen.getByRole('button', { name: new RegExp(`Handelsangebot von ${nation}`) }))
 
@@ -1751,7 +1766,7 @@ describe('R-UI-14 Die Meldungen erreichen den Spieler', () => {
       const nation = nachAntrag.players[p2]!.nation
 
       const meldungen = await zeige(nachAntrag)
-      expect(meldungen.textContent).toContain(`${nation} bittet um Durchmarsch`)
+      expect(spoken(meldungen)).toContain(`${nation} bittet um Durchmarsch`)
 
       // Taste D (oder der Kopfleisten-Knopf) statt Klick auf die Meldung — die Macht wird
       // erst danach von Hand gewaehlt (03-TASKS T-M17-14, Sichtpruefung S2).
@@ -1883,8 +1898,8 @@ describe('R-UI-14 Die Meldungen erreichen den Spieler', () => {
       const knopf = await within(meldungen).findByRole('button', { name: /^Räumfrist: / })
       const provinzName = state.provinces[hostProvinceId]!.name
       const machtName = state.players[hostId]!.nation
-      expect(knopf.textContent).toContain(provinzName)
-      expect(knopf.textContent).toContain(machtName)
+      expect(spoken(knopf)).toContain(provinzName)
+      expect(spoken(knopf)).toContain(machtName)
 
       fireEvent.click(knopf)
 
@@ -2015,7 +2030,7 @@ describe('T-M41-12 Ankuendigung und Freischaltung bleiben sichtbar', () => {
  * Protokoll, nicht an einer Variable.
  */
 describe('T-M41-13 Tempo waehrend des Vorspulens verliert keine Befehle', () => {
-  const log = () => screen.getByRole('region', { name: 'Ereignisse' }).textContent ?? ''
+  const log = () => spoken(screen.getByRole('region', { name: 'Ereignisse' }))
   const abbrechen = () => screen.queryByRole('button', { name: 'Abbrechen' })
   let wartend: FrameRequestCallback[] = []
   let jetzt = 0
@@ -2359,7 +2374,7 @@ describe('T-M40-11 Anhalten stellt eine marschierende Verteidigung auf Garnison'
     fireEvent.click((await screen.findAllByRole('button', { name: 'Laden' }))[0]!)
     await waitFor(() => expect(screen.queryByRole('combobox', { name: 'Provinz' })).not.toBeNull())
     fireEvent.change(screen.getByRole('combobox', { name: 'Provinz' }), { target: { value: capital } })
-    fireEvent.click(screen.getAllByRole('button', { name: 'Auswählen' })[0]!)
+    fireEvent.click(screen.getAllByRole('button', { name: /^Auswählen/ })[0]!)
   }
 
   const armeePanel = () => screen.getByRole('region', { name: 'Armee' })
@@ -2482,7 +2497,7 @@ describe('T-M40-14 Ein eigener Marschbefehl stellt eine Verteidigung auf Garniso
     fireEvent.click((await screen.findAllByRole('button', { name: 'Laden' }))[0]!)
     await waitFor(() => expect(screen.queryByRole('combobox', { name: 'Provinz' })).not.toBeNull())
     fireEvent.change(screen.getByRole('combobox', { name: 'Provinz' }), { target: { value: capital } })
-    fireEvent.click(screen.getAllByRole('button', { name: 'Auswählen' })[0]!)
+    fireEvent.click(screen.getAllByRole('button', { name: /^Auswählen/ })[0]!)
     return { ziel: ziel! }
   }
 
@@ -2497,7 +2512,7 @@ describe('T-M40-14 Ein eigener Marschbefehl stellt eine Verteidigung auf Garniso
     fireEvent.change(within(armeePanel()).getByRole('combobox', { name: 'Ziel' }), { target: { value: ziel } })
     return within(armeePanel()).getByRole('button', { name: 'Marsch befehlen' })
   }
-  const protokoll = () => screen.getByRole('region', { name: 'Ereignisse' }).textContent ?? ''
+  const protokoll = () => spoken(screen.getByRole('region', { name: 'Ereignisse' }))
 
   it('schickt eine Verteidigung los und stellt sie zugleich auf Garnison', async () => {
     const { ziel } = await ladeStehend('defensive')
@@ -2630,7 +2645,7 @@ describe('R-MP-01/AK1 Die Oberflaeche bezieht sich auf den Spieler, der sie betr
   it('liest das Protokoll mit den Augen des betriebenen Spielers', () => {
     startGame()
     fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
-    const erstesProtokoll = screen.getByRole('region', { name: 'Ereignisse' }).textContent ?? ''
+    const erstesProtokoll = spoken(screen.getByRole('region', { name: 'Ereignisse' }))
     expect(erstesProtokoll.length, 'das Protokoll ist leer — der Test misst nichts').toBeGreaterThan(20)
     cleanup()
 
@@ -2639,7 +2654,7 @@ describe('R-MP-01/AK1 Die Oberflaeche bezieht sich auf den Spieler, der sie betr
 
     // Derselbe Spieltag, dieselbe Partie, ein anderer Leser: der Tagesbericht traegt die
     // Bilanzen der eigenen Macht, und die beiden Maechte wirtschaften verschieden.
-    expect(screen.getByRole('region', { name: 'Ereignisse' }).textContent ?? '').not.toEqual(erstesProtokoll)
+    expect(spoken(screen.getByRole('region', { name: 'Ereignisse' }))).not.toEqual(erstesProtokoll)
   }, 30_000)
 })
 

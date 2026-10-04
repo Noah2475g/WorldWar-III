@@ -23,6 +23,7 @@ import {
   dayReportBody,
   dayReportDeltas,
   describeEvent,
+  eventSymbol,
   mergeBattleLines,
   openIntrusion,
   priceSeries,
@@ -1462,5 +1463,43 @@ describe('R-UX-02/AK4 Gleichlautende Gefechtszeilen sind eine Zeile mit Anzahl',
   it('behaelt die Reihenfolge: die Sammelzeile steht, wo die erste stand', () => {
     const merged = mergeBattleLines([zeile('x', { tick: 130, text: 'Anderes.' }), zeile('a'), zeile('b'), zeile('y', { tick: 100, text: 'Spaeter.' })])
     expect(merged.map((e) => e.id)).toEqual(['x', 'a', 'y'])
+  })
+})
+
+/**
+ * Zeichen und Kurzwort der Protokollzeile (T-M46-17, VM-05): „keinen Text als Hauptvordergrund“.
+ * Das Zeichen sagt, WAS geschah, das Kurzwort WO oder MIT WEM; der Satz bleibt `text` (Tooltip, Name fuers Ohr).
+ */
+describe('T-M46-17 Jede Protokollzeile traegt ein Zeichen', () => {
+  it('nennt beim Bau das Gebaeudezeichen und den Ort', () => {
+    const entry = describeEvent(event({ type: 'BUILD_COMPLETED', provinceId, building: 'barracks' }), 0, map)
+
+    expect(entry.symbol).toBe('barracks')
+    expect(entry.short).toBe(provinceName)
+  })
+
+  it('nennt beim Mangel den Rohstoff als Zeichen und braucht kein Kurzwort', () => {
+    const entry = describeEvent(event({ type: 'RESOURCE_SHORTAGE', resource: 'oil' }), 0, map)
+
+    expect(entry.symbol).toBe('oil')
+    expect(entry.short).toBeUndefined()
+  })
+
+  it('gibt jeder Ereignisart ein Zeichen', () => {
+    for (const type of EVENT_TYPES) {
+      const { symbol } = eventSymbol(event({ type, resource: 'oil', building: 'barracks', unitKey: 'infantry' }), {}, undefined)
+
+      expect(symbol, type).toBeTruthy()
+    }
+  })
+
+  it('traegt auch die leise Zeile der Automatik ein Zeichen und den Ort', () => {
+    const [entry] = adjutantMarchEntries(
+      [{ tick: 3, command: { type: 'MOVE_ARMY', playerId: 'p1', armyId: 'a1', targetProvinceId: provinceId } as Command }],
+      { army: () => 'Armee 1', province: () => provinceName },
+    )
+
+    expect(entry?.symbol).toBe('march')
+    expect(entry?.short).toBe(provinceName)
   })
 })

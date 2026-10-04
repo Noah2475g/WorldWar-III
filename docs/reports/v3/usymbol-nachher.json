@@ -1,0 +1,565 @@
+{
+  "url": "http://localhost:5331/",
+  "states": {
+    "S300": {
+      "viewports": {
+        "1280x800": {
+          "karte": {
+            "kopf": {
+              "chars": 65,
+              "symbols": 20,
+              "textArea": 6288,
+              "symbolArea": 9045,
+              "textShare": 0.41,
+              "boxArea": 94720
+            },
+            "panel": {
+              "chars": 25,
+              "symbols": 5,
+              "textArea": 2093,
+              "symbolArea": 3620,
+              "textShare": 0.366,
+              "boxArea": 201400
+            },
+            "alarme": {
+              "chars": 25,
+              "symbols": 3,
+              "textArea": 2093,
+              "symbolArea": 2352,
+              "textShare": 0.471,
+              "boxArea": 35500
+            },
+            "protokoll": {
+              "chars": 24,
+              "symbols": 12,
+              "textArea": 2218,
+              "symbolArea": 6132,
+              "textShare": 0.266,
+              "boxArea": 176929
+            }
+          },
+          "brennpunkt": {
+            "kopf": {
+              "chars": 65,
+              "symbols": 20,
+              "textArea": 6288,
+              "symbolArea": 9045,
+              "textShare": 0.41,
+              "boxArea": 94720
+            },
+            "panel": {
+              "chars": 25,
+              "symbols": 5,
+              "textArea": 2093,
+              "symbolArea": 3620,
+              "textShare": 0.366,
+              "boxArea": 201400
+            },
+            "alarme": {
+              "chars": 25,
+              "symbols": 3,
+              "textArea": 2093,
+              "symbolArea": 2352,
+              "textShare": 0.471,
+              "boxArea": 35500
+            },
+            "protokoll": {
+              "chars": 24,
+              "symbols": 12,
+              "textArea": 2218,
+              "symbolArea": 6132,
+              "textShare": 0.266,
+              "boxArea": 176929
+            }
+          },
+          "nah": {
+            "kopf": {
+              "chars": 65,
+              "symbols": 20,
+              "textArea": 6288,
+              "symbolArea": 9045,
+              "textShare": 0.41,
+              "boxArea": 94720
+            },
+            "panel": {
+              "chars": 25,
+              "symbols": 5,
+              "textArea": 2093,
+              "symbolArea": 3620,
+              "textShare": 0.366,
+              "boxArea": 201400
+            },
+            "alarme": {
+              "chars": 25,
+              "symbols": 3,
+              "textArea": 2093,
+              "symbolArea": 2352,
+              "textShare": 0.471,
+              "boxArea": 35500
+            },
+            "protokoll": {
+              "chars": 24,
+              "symbols": 12,
+              "textArea": 2218,
+              "symbolArea": 6132,
+              "textShare": 0.266,
+              "boxArea": 176929
+            }
+          },
+          "provinz": {
+            "kopf": {
+              "chars": 65,
+              "symbols": 20,
+              "textArea": 6288,
+              "symbolArea": 9045,
+              "textShare": 0.41,
+              "boxArea": 94720
+            },
+            "panel": {
+              "chars": 112,
+              "symbols": 13,
+              "textArea": 12001,
+              "symbolArea": 6555,
+              "textShare": 0.647,
+              "boxArea": 201400
+            },
+            "alarme": {
+              "chars": 25,
+              "symbols": 3,
+              "textArea": 2093,
+              "symbolArea": 2352,
+              "textShare": 0.471,
+              "boxArea": 35500
+            },
+            "protokoll": {
+              "chars": 24,
+              "symbols": 12,
+              "textArea": 2218,
+              "symbolArea": 6132,
+              "textShare": 0.266,
+              "boxArea": 176929
+            }
+          }
+        },
+        "375x667": {
+          "karte": {
+            "kopf": {
+              "chars": 65,
+              "symbols": 20,
+              "textArea": 6242,
+              "symbolArea": 4844,
+              "textShare": 0.563,
+              "boxArea": 56250
+            },
+            "panel": {
+              "chars": 25,
+              "symbols": 4,
+              "textArea": 2093,
+              "symbolArea": 2836,
+              "textShare": 0.425,
+              "boxArea": 43072
+            },
+            "alarme": {
+              "chars": 25,
+              "symbols": 3,
+              "textArea": 2093,
+              "symbolArea": 2352,
+              "textShare": 0.471,
+              "boxArea": 53132
+            },
+            "protokoll": {
+              "chars": 16,
+              "symbols": 4,
+              "textArea": 1248,
+              "symbolArea": 784,
+              "textShare": 0.614,
+              "boxArea": 16500
+            }
+          },
+          "provinz": {
+            "kopf": {
+              "chars": 65,
+              "symbols": 20,
+              "textArea": 6242,
+              "symbolArea": 4844,
+              "textShare": 0.563,
+              "boxArea": 56250
+            },
+            "panel": {
+              "chars": 53,
+              "symbols": 13,
+              "textArea": 6657,
+              "symbolArea": 5968,
+              "textShare": 0.527,
+              "boxArea": 125063
+            },
+            "alarme": {
+              "chars": 25,
+              "symbols": 3,
+              "textArea": 2093,
+              "symbolArea": 2352,
+              "textShare": 0.471,
+              "boxArea": 53132
+            },
+            "protokoll": {
+              "chars": 0,
+              "symbols": 0,
+              "textArea": 0,
+              "symbolArea": 0,
+              "textShare": 0,
+              "boxArea": 0
+            }
+          }
+        }
+      },
+      "overlap": {
+        "viewer": "p1",
+        "armies": 3,
+        "byScale": {
+          "1": {
+            "markers": 3,
+            "fullyHidden": 0,
+            "partlyCovered": 0
+          },
+          "2": {
+            "markers": 3,
+            "fullyHidden": 0,
+            "partlyCovered": 0
+          },
+          "4": {
+            "markers": 3,
+            "fullyHidden": 0,
+            "partlyCovered": 0
+          },
+          "8": {
+            "markers": 3,
+            "fullyHidden": 0,
+            "partlyCovered": 0
+          },
+          "0.5": {
+            "markers": 3,
+            "fullyHidden": 0,
+            "partlyCovered": 0
+          }
+        },
+        "provincesWithStack": 1,
+        "largestStack": 3,
+        "largestStackProvince": "CAN-EAST"
+      }
+    },
+    "S575G": {
+      "viewports": {
+        "1280x800": {
+          "karte": {
+            "kopf": {
+              "chars": 83,
+              "symbols": 21,
+              "textArea": 7929,
+              "symbolArea": 9529,
+              "textShare": 0.454,
+              "boxArea": 104960
+            },
+            "panel": {
+              "chars": 7,
+              "symbols": 4,
+              "textArea": 633,
+              "symbolArea": 2836,
+              "textShare": 0.182,
+              "boxArea": 198360
+            },
+            "alarme": {
+              "chars": 7,
+              "symbols": 2,
+              "textArea": 633,
+              "symbolArea": 1568,
+              "textShare": 0.288,
+              "boxArea": 25205
+            },
+            "protokoll": {
+              "chars": 77,
+              "symbols": 15,
+              "textArea": 6419,
+              "symbolArea": 7380,
+              "textShare": 0.465,
+              "boxArea": 176929
+            }
+          },
+          "brennpunkt": {
+            "kopf": {
+              "chars": 83,
+              "symbols": 21,
+              "textArea": 7929,
+              "symbolArea": 9529,
+              "textShare": 0.454,
+              "boxArea": 104960
+            },
+            "panel": {
+              "chars": 7,
+              "symbols": 4,
+              "textArea": 633,
+              "symbolArea": 2836,
+              "textShare": 0.182,
+              "boxArea": 198360
+            },
+            "alarme": {
+              "chars": 7,
+              "symbols": 2,
+              "textArea": 633,
+              "symbolArea": 1568,
+              "textShare": 0.288,
+              "boxArea": 25205
+            },
+            "protokoll": {
+              "chars": 77,
+              "symbols": 15,
+              "textArea": 6419,
+              "symbolArea": 7380,
+              "textShare": 0.465,
+              "boxArea": 176929
+            }
+          },
+          "nah": {
+            "kopf": {
+              "chars": 83,
+              "symbols": 21,
+              "textArea": 7929,
+              "symbolArea": 9529,
+              "textShare": 0.454,
+              "boxArea": 104960
+            },
+            "panel": {
+              "chars": 7,
+              "symbols": 4,
+              "textArea": 633,
+              "symbolArea": 2836,
+              "textShare": 0.182,
+              "boxArea": 198360
+            },
+            "alarme": {
+              "chars": 7,
+              "symbols": 2,
+              "textArea": 633,
+              "symbolArea": 1568,
+              "textShare": 0.288,
+              "boxArea": 25205
+            },
+            "protokoll": {
+              "chars": 77,
+              "symbols": 15,
+              "textArea": 6419,
+              "symbolArea": 7380,
+              "textShare": 0.465,
+              "boxArea": 176929
+            }
+          },
+          "provinz": {
+            "kopf": {
+              "chars": 83,
+              "symbols": 21,
+              "textArea": 7929,
+              "symbolArea": 9529,
+              "textShare": 0.454,
+              "boxArea": 104960
+            },
+            "panel": {
+              "chars": 125,
+              "symbols": 48,
+              "textArea": 12927,
+              "symbolArea": 26020,
+              "textShare": 0.332,
+              "boxArea": 198360
+            },
+            "alarme": {
+              "chars": 7,
+              "symbols": 2,
+              "textArea": 633,
+              "symbolArea": 1568,
+              "textShare": 0.288,
+              "boxArea": 25205
+            },
+            "protokoll": {
+              "chars": 77,
+              "symbols": 15,
+              "textArea": 6419,
+              "symbolArea": 7380,
+              "textShare": 0.465,
+              "boxArea": 176929
+            }
+          },
+          "armee": {
+            "kopf": {
+              "chars": 83,
+              "symbols": 21,
+              "textArea": 7929,
+              "symbolArea": 9529,
+              "textShare": 0.454,
+              "boxArea": 104960
+            },
+            "panel": {
+              "chars": 37,
+              "symbols": 22,
+              "textArea": 4796,
+              "symbolArea": 13386,
+              "textShare": 0.264,
+              "boxArea": 198360
+            },
+            "alarme": {
+              "chars": 7,
+              "symbols": 2,
+              "textArea": 633,
+              "symbolArea": 1568,
+              "textShare": 0.288,
+              "boxArea": 25205
+            },
+            "protokoll": {
+              "chars": 77,
+              "symbols": 15,
+              "textArea": 6419,
+              "symbolArea": 7380,
+              "textShare": 0.465,
+              "boxArea": 176929
+            }
+          }
+        },
+        "375x667": {
+          "karte": {
+            "kopf": {
+              "chars": 83,
+              "symbols": 21,
+              "textArea": 7867,
+              "symbolArea": 5040,
+              "textShare": 0.61,
+              "boxArea": 56250
+            },
+            "panel": {
+              "chars": 7,
+              "symbols": 4,
+              "textArea": 633,
+              "symbolArea": 2836,
+              "textShare": 0.182,
+              "boxArea": 43072
+            },
+            "alarme": {
+              "chars": 7,
+              "symbols": 2,
+              "textArea": 633,
+              "symbolArea": 1568,
+              "textShare": 0.288,
+              "boxArea": 35182
+            },
+            "protokoll": {
+              "chars": 30,
+              "symbols": 4,
+              "textArea": 2308,
+              "symbolArea": 732,
+              "textShare": 0.759,
+              "boxArea": 16500
+            }
+          },
+          "provinz": {
+            "kopf": {
+              "chars": 83,
+              "symbols": 21,
+              "textArea": 7867,
+              "symbolArea": 5040,
+              "textShare": 0.61,
+              "boxArea": 56250
+            },
+            "panel": {
+              "chars": 36,
+              "symbols": 16,
+              "textArea": 4023,
+              "symbolArea": 7108,
+              "textShare": 0.361,
+              "boxArea": 125063
+            },
+            "alarme": {
+              "chars": 7,
+              "symbols": 2,
+              "textArea": 633,
+              "symbolArea": 1568,
+              "textShare": 0.288,
+              "boxArea": 35182
+            },
+            "protokoll": {
+              "chars": 0,
+              "symbols": 0,
+              "textArea": 0,
+              "symbolArea": 0,
+              "textShare": 0,
+              "boxArea": 0
+            }
+          },
+          "armee": {
+            "kopf": {
+              "chars": 83,
+              "symbols": 21,
+              "textArea": 7867,
+              "symbolArea": 5040,
+              "textShare": 0.61,
+              "boxArea": 56250
+            },
+            "panel": {
+              "chars": 39,
+              "symbols": 14,
+              "textArea": 4926,
+              "symbolArea": 6124,
+              "textShare": 0.446,
+              "boxArea": 125063
+            },
+            "alarme": {
+              "chars": 7,
+              "symbols": 2,
+              "textArea": 633,
+              "symbolArea": 1568,
+              "textShare": 0.288,
+              "boxArea": 35182
+            },
+            "protokoll": {
+              "chars": 0,
+              "symbols": 0,
+              "textArea": 0,
+              "symbolArea": 0,
+              "textShare": 0,
+              "boxArea": 0
+            }
+          }
+        }
+      },
+      "overlap": {
+        "viewer": "p6",
+        "armies": 237,
+        "byScale": {
+          "1": {
+            "markers": 237,
+            "fullyHidden": 0,
+            "partlyCovered": 1
+          },
+          "2": {
+            "markers": 237,
+            "fullyHidden": 0,
+            "partlyCovered": 25
+          },
+          "4": {
+            "markers": 237,
+            "fullyHidden": 0,
+            "partlyCovered": 109
+          },
+          "8": {
+            "markers": 237,
+            "fullyHidden": 0,
+            "partlyCovered": 145
+          },
+          "0.5": {
+            "markers": 237,
+            "fullyHidden": 0,
+            "partlyCovered": 0
+          }
+        },
+        "provincesWithStack": 27,
+        "largestStack": 27,
+        "largestStackProvince": "SAU"
+      }
+    }
+  }
+}

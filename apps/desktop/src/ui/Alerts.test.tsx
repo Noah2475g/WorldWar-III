@@ -863,12 +863,18 @@ describe('T-M46-11 Aufstandshinweise gebuendelt: eine Zeile mit Zahl', () => {
   it('sechs Hinweise werden eine Zeile „6 Provinzen stehen vor dem Aufstand“ (vorher sechs Zeilen, ~190 px)', () => {
     render(<Alerts alerts={unrest(['A1', 'B2', 'C3', 'D4', 'E5', 'F6'])} onJump={() => undefined} />)
     expect(screen.getAllByRole('listitem').filter((li) => li.classList.contains('alert')).length).toBe(1)
-    expect(screen.getByText('6 Provinzen stehen vor dem Aufstand')).toBeTruthy()
+    // Im Bild steht Zeichen und Zahl (T-M46-17), der Satz ist der Name der Zeile.
+    expect(screen.getByLabelText('6 Provinzen stehen vor dem Aufstand').textContent).toContain('6')
   })
 
   it('die Provinzen stehen dahinter, jede mit ihrem Sprung', () => {
     const onJump = vi.fn()
     render(<Alerts alerts={unrest(['Alpha', 'Beta'])} onJump={onJump} />)
+    // Die Liste wird erst beim Aufklappen gezeichnet (T-M46-17).
+    expect(screen.queryByRole('button', { name: 'Beta steht vor dem Aufstand' })).toBeNull()
+    const details = screen.getByLabelText('2 Provinzen stehen vor dem Aufstand').closest('details')!
+    details.open = true
+    fireEvent(details, new Event('toggle'))
     fireEvent.click(screen.getByRole('button', { name: 'Beta steht vor dem Aufstand' }))
     expect(onJump).toHaveBeenCalledWith({ kind: 'province', provinceId: 'P1' })
   })
@@ -891,5 +897,28 @@ describe('T-M46-11 Aufstandshinweise gebuendelt: eine Zeile mit Zahl', () => {
     )
     render(<Alerts alerts={alerts} onJump={() => undefined} />)
     expect(screen.getAllByRole('listitem').filter((li) => li.classList.contains('alert')).length).toBe(2)
+  })
+})
+
+describe('T-M46-17 Meldungen sind Zeichen mit Kurzwort, der Satz ist ihr Name', () => {
+  it('zeigt im Bild nur das Kurzwort, nennt den ganzen Satz als Name und Tooltip', () => {
+    const alerts = alertsFor(
+      view({ capital: null, provinces: [{ id: 'P0', name: 'Alpha', owner: 'p1', morale: UNREST_MORALE - 1000 }] }),
+    )
+    render(<Alerts alerts={alerts} onJump={() => undefined} />)
+
+    const knopf = screen.getByRole('button', { name: 'Alpha steht vor dem Aufstand' })
+    expect(knopf.textContent).toBe('Alpha')
+    expect(knopf.getAttribute('title')).toBe('Alpha steht vor dem Aufstand')
+    expect(knopf.querySelector('svg')).toBeTruthy()
+  })
+
+  it('traegt eine Meldung ohne Ziel ihren Satz als Name des Zeichens', () => {
+    const alerts = alertsFor(view({ shortages: ['iron'] }))
+    const { container } = render(<Alerts alerts={alerts} onJump={() => undefined} />)
+
+    const zeichen = container.querySelector('.alert svg')
+    expect(zeichen?.getAttribute('role')).toBe('img')
+    expect(zeichen?.getAttribute('aria-label')).toMatch(/Eisen/)
   })
 })

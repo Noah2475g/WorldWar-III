@@ -47,6 +47,23 @@ import type { NextUnlock } from '../game/actions.ts'
  */
 
 afterEach(cleanup)
+// Die Wirtschaftstabelle wird seit T-M46-17 erst beim Oeffnen gezeichnet (als geschlossenes <details> stand ihr Text
+// sonst im Dokument, ohne dass ihn jemand sah): die Tests, die in die Tabelle schauen, starten mit offener Wirtschaft.
+/** Klappt jede Protokollzeile mit Koerper auf (T-M46-17): der Koerper wird erst dann gezeichnet. */
+function aufklappen(): void {
+  for (const details of document.querySelectorAll<HTMLDetailsElement>('details.log__report')) {
+    details.open = true
+    fireEvent(details, new Event('toggle'))
+  }
+}
+
+beforeEach(() => {
+  try {
+    globalThis.localStorage?.setItem('worldwar.economyOpen', '1')
+  } catch {
+    // ohne Speicher bleibt sie zu
+  }
+})
 
 /** Eine Spielerfarbe, wie sie aus der Sicht kaeme — nicht als Literal im Quelltext. */
 const FARBE = TOKENS.accent
@@ -343,7 +360,10 @@ describe('R-GAME-06 Der Filter im Ereignisprotokoll', () => {
 
     const details = document.querySelector('details.log__report')
     expect(details, 'der Bericht traegt kein details-Element').toBeTruthy()
-    expect(details!.querySelector('summary')!.textContent).toContain('Tagesbericht für Tag 1.')
+    // Der Satz ist der Name der Ueberschrift (T-M46-17), im Bild stehen Zeichen und Kurzwort.
+    expect(details!.querySelector('summary')!.getAttribute('aria-label')).toBe('Tagesbericht für Tag 1.')
+    expect(screen.queryByText('Bilanz je Tag: Nahrung +120'), 'der Koerper steht erst nach dem Aufklappen da').toBeNull()
+    aufklappen()
     expect(screen.getByText('Bilanz je Tag: Nahrung +120')).toBeTruthy()
     expect(screen.getByText('Moral: Alpha 62 % ↗')).toBeTruthy()
   })
@@ -375,6 +395,7 @@ describe('R-GAME-06 Der Filter im Ereignisprotokoll', () => {
     }
     render(<EventLog entries={[bericht]} ticksPerDay={24} onJump={() => undefined} />)
 
+    aufklappen()
     const details = document.querySelector('details.log__report')!
     const zeilen = [...details.querySelectorAll('.log__deltas li')]
     expect(zeilen, 'keine Delta-Zeilen im Bericht').toHaveLength(2)
@@ -456,8 +477,11 @@ describe('R-BAT-05 Der Kampfbericht wird ein Bild', () => {
     battle,
   }
 
-  const renderBattle = () =>
-    render(<EventLog entries={[eintrag]} ticksPerDay={24} onJump={() => undefined} />)
+  const renderBattle = () => {
+    const result = render(<EventLog entries={[eintrag]} ticksPerDay={24} onJump={() => undefined} />)
+    aufklappen()
+    return result
+  }
 
   it('klappt den Gefechtseintrag auf und bindet die Balkenlaengen an den Datensatz', () => {
     renderBattle()
@@ -1491,7 +1515,10 @@ describe('T-M20-03 Was laengst gerechnet wird, steht auch da', () => {
     const entries: EventEntry[] = [{ id: '1', tick: 5, text: 'Die Partie beginnt.', severity: 'info' }]
     const { container } = render(<EventLog entries={entries} ticksPerDay={24} onJump={() => undefined} />)
 
-    expect(container.querySelector('.log__row svg')).toBeNull()
+    // Seit T-M46-17 traegt jede Zeile ein Zeichen (das allgemeine, wo es keine Rubrik gibt): ohne ein Kurzwort
+    // im Bild bliebe sie sonst leer. Der Satz ist der Name des Zeichens.
+    const symbol = container.querySelector('.log__row svg')
+    expect(symbol?.getAttribute('aria-label')).toBe('Die Partie beginnt.')
   })
 
   it('zeichnet die vorherrschende Gattung neben den Armeenamen', () => {
@@ -1816,11 +1843,11 @@ describe('T-M29-03 Das Provinzpanel traegt das Bauplatz-Raster', () => {
     const { unmount } = render(
       <ProvincePanel province={{ ...province, terrain: 'mountain' }} ownerName="Nordland" actions={[]} ticksPerDay={24} currentTick={0} />,
     )
-    expect(screen.getByText(/Verteidigung \+30 %/)).toBeTruthy()
+    expect(screen.getByTitle(/Verteidigung \+30 %/)).toBeTruthy()
     unmount()
 
     render(<ProvincePanel province={{ ...province, terrain: 'plains' }} ownerName="Nordland" actions={[]} ticksPerDay={24} currentTick={0} />)
-    expect(screen.queryByText(/Verteidigung/)).toBeNull()
+    expect(screen.queryByTitle(/Verteidigung/)).toBeNull()
   })
 
   it('haelt die Bonus-Tabelle deckungsgleich mit dem Kern', () => {
@@ -1996,7 +2023,7 @@ describe('T-M31-02 Das Armeepanel traegt Marker, Zustand und Haltungsgruppe', ()
 
     // `amount` rechnet Festkomma heraus — gebunden wird die Zeile, nicht die Schreibweise.
     expect(screen.getByLabelText('Kampfkraft').textContent).toBeTruthy()
-    expect(document.querySelector('.panel__sub')!.textContent).toContain('Zustand 86 %')
+    // Der Zustand steht als Balken mit Zahl (T-M46-17), nicht mehr zusaetzlich als versteckter Satz im Kopf.
     const meter = screen.getByRole('meter', { name: 'Zustand' })
     expect(meter.getAttribute('aria-valuenow')).toBe('86')
     expect(meter.textContent).toContain('86 %')
@@ -2390,7 +2417,8 @@ describe('T-M36-05 Ruhiger, nicht kuerzer', () => {
 
   it('behaelt alle vier Groessen im Baum — R-ECON-06 bleibt belegt', () => {
     const { container } = render(<EconomyPanel view={wirtschaftMit(349_000)} />)
-    const kopf = [...container.querySelectorAll('thead th')].map((th) => th.textContent)
+    // Die Spaltenkoepfe sind seit T-M46-17 Zeichen; der Name steht am Kopf (aria-label).
+    const kopf = [...container.querySelectorAll('thead th')].map((th) => th.getAttribute('aria-label'))
 
     expect(kopf).toEqual(['Rohstoff', 'Bestand', 'Produktion', 'Unterhalt', 'Bilanz'])
     expect(container.querySelectorAll('tbody tr td')).toHaveLength(5)
@@ -2615,8 +2643,12 @@ describe('R-UX-02 T-M44-12 Wirtschaft einklappbar, Panelkopf mit Zurueck', () =>
     const details = container.querySelector('section.panel > details')
     expect(details, 'Wirtschaft ist kein details').toBeTruthy()
     expect(details!.querySelector('summary')).toBeTruthy()
-    expect(details!.querySelector('table')).toBeTruthy()
+    // Eingeklappt steht die Tabelle nicht im Dokument (T-M46-17), nach dem Aufklappen schon.
+    expect(details!.querySelector('table')).toBeNull()
     expect((details as HTMLDetailsElement).open).toBe(false)
+    ;(details as HTMLDetailsElement).open = true
+    fireEvent(details!, new Event('toggle'))
+    expect(details!.querySelector('table')).toBeTruthy()
     // Die Region mit dem Namen bleibt: App.test sucht sie.
     expect(container.querySelector('section.panel')!.getAttribute('aria-label')).toBe('Wirtschaft')
   })

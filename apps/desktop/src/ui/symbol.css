@@ -66,6 +66,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.4em;
+  font-size: 11px;
   text-decoration: none;
 }
 .log__jump:hover,
@@ -174,4 +175,69 @@ ul.facts--icons > li {
 .foot,
 .foot .log {
   max-height: 196px;
+}
+
+/* Telefon (375 px): die grossen Zeichen der Kopfleiste bleiben so klein wie vorher, sonst bricht die Rohstoffleiste
+   in drei statt zwei Zeilen und die Karte verliert ueber 60 px (T-M46-10 misst Kopfhoehe und Kartenanteil). */
+@media (max-width: 600px) {
+  .resource > svg {
+    width: 20px;
+    height: 20px;
+  }
+  :root:root .resource {
+    gap: 3px;
+    padding-inline: 4px;
+  }
+  .resource__dir svg {
+    width: 9px;
+    height: 9px;
+  }
+  .resource__reach svg {
+    width: 11px;
+    height: 11px;
+  }
+  .clock__time > svg,
+  .alarm-chip > svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+/* Telefon: das Protokoll haelt seine Zeilenzahl (T-M46-10 misst die sichtbaren Zeilen des aufgeklappten Blattes);
+   die Zeichen sind hier klein, gross sind sie auf dem Schreibtisch, wo die Messung des Textanteils gilt. */
+@media (max-width: 600px) {
+  .log__entry svg,
+  .log__day svg {
+    width: 14px;
+    height: 14px;
+  }
+  .log__row {
+    min-height: 0;
+    padding: 0;
+    line-height: 1.1;
+  }
+  .log__row time,
+  .log__count,
+  .log__day {
+    font-size: 10px;
+  }
+  .log__day {
+    margin-top: 0;
+  }
+  .log__filter {
+    height: 26px;
+    min-width: 30px;
+  }
+  .log__filter svg {
+    width: 16px;
+    height: 16px;
+  }
+  .log__goto {
+    padding: 0 4px;
+    line-height: 1;
+  }
+  .log__goto svg {
+    width: 12px;
+    height: 12px;
+  }
 }
