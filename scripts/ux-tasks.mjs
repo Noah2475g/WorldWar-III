@@ -489,9 +489,9 @@ async function extras(browser, base, armies) {
     await page.locator('aside select').first().selectOption({ label: 'Mittlerer Westen' })
     await page.waitForTimeout(300)
     out.auswaehlenKnoepfe = await page.evaluate(() =>
-      [...document.querySelectorAll('aside.side button')].filter((b) => b.textContent?.trim() === 'Auswählen').map((b) => ({ ariaLabel: b.getAttribute('aria-label'), title: b.getAttribute('title') })),
+      [...document.querySelectorAll('aside.side button')].filter((b) => /^Auswählen/.test((b.getAttribute('aria-label') || b.textContent || '').trim())).map((b) => ({ ariaLabel: b.getAttribute('aria-label'), title: b.getAttribute('title') })),
     )
-    await page.getByRole('button', { name: 'Auswählen', exact: true }).first().click()
+    await page.getByRole('button', { name: /^Auswählen/ }).first().click()
     await page.getByRole('button', { name: 'Marschieren', exact: true }).click()
     await page.waitForTimeout(300)
     out.marschzielliste = await page.evaluate(() => {

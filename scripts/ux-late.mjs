@@ -288,7 +288,7 @@ async function runProbes(browser) {
   for (let i = 1; i < n; i++) {
     await picker.selectOption({ index: i }, { timeout: 5000 })
     await page.waitForTimeout(120)
-    if (await btn('Auswählen').isVisible().catch(() => false)) {
+    if (await btn('Auswählen', false).isVisible().catch(() => false)) {
       armyOption = i
       break
     }
@@ -296,7 +296,7 @@ async function runProbes(browser) {
   await view('provinz-mit-armee', async () => {})
   // AK4: Marschziel, das nicht erreichbar ist — was sagt die Oberflaeche?
   if (armyOption !== null) {
-    await btn('Auswählen').click({ timeout: 4000 })
+    await btn('Auswählen', false).click({ timeout: 4000 })
     await page.waitForTimeout(300)
     await view('armee-panel', async () => {})
     await btn('Marschieren').click({ timeout: 4000 })
@@ -619,7 +619,7 @@ async function runState(browser, name, vp, measureOnly) {
     await page.waitForTimeout(500)
     const buttons = await page.evaluate(() =>
       [...document.querySelectorAll('aside button')]
-        .map((b) => b.textContent.trim())
+        .map((b) => (b.getAttribute('aria-label') || b.textContent || '').trim())
         .filter(Boolean)
         .slice(0, 40),
     )
@@ -635,7 +635,7 @@ async function runState(browser, name, vp, measureOnly) {
       for (let i = 1; i < n; i++) {
         await picker.selectOption({ index: i }, { timeout: 5000 })
         await page.waitForTimeout(150)
-        if (await btn('Auswählen').isVisible().catch(() => false)) return { builtBarracks: false, foundArmyInOption: i, optionsScanned: i }
+        if (await btn('Auswählen', false).isVisible().catch(() => false)) return { builtBarracks: false, foundArmyInOption: i, optionsScanned: i }
       }
       await picker.selectOption({ index: 1 }, { timeout: 5000 })
       await page.waitForTimeout(300)
@@ -660,7 +660,7 @@ async function runState(browser, name, vp, measureOnly) {
       }
       await btn('100').click({ timeout: 5000 })
       try {
-        await page.waitForFunction(() => [...document.querySelectorAll('aside button')].some((b) => b.textContent?.trim() === 'Auswählen'), null, { timeout: 90000 })
+        await page.waitForFunction(() => [...document.querySelectorAll('aside button')].some((b) => /^Auswählen/.test((b.getAttribute('aria-label') || b.textContent || '').trim())), null, { timeout: 90000 })
       } finally {
         await btn('Pause').click({ timeout: 5000 }).catch(() => {})
       }
@@ -671,7 +671,7 @@ async function runState(browser, name, vp, measureOnly) {
   await scene(
     'armee-panel',
     async () => {
-      await btn('Auswählen').click({ timeout: 5000 })
+      await btn('Auswählen', false).click({ timeout: 5000 })
       await page.waitForTimeout(400)
       return page.evaluate(() => {
         const side = document.querySelector('aside.side')
@@ -681,7 +681,7 @@ async function runState(browser, name, vp, measureOnly) {
           const r = el.getBoundingClientRect()
           return r.top >= 0 && r.bottom <= innerHeight && r.height > 0
         }
-        const march = [...document.querySelectorAll('aside button')].find((b) => b.textContent?.includes('Marschieren'))
+        const march = [...document.querySelectorAll('aside button')].find((b) => (b.getAttribute('aria-label') || b.textContent || '').includes('Marschieren'))
         return { nameVisible: inView(panel?.querySelector('h2')), marchVisible: inView(march), sideScrollTop: side?.scrollTop ?? null, sideScrollH: side?.scrollHeight ?? null }
       })
     },
@@ -723,14 +723,14 @@ async function runState(browser, name, vp, measureOnly) {
       await scene('diplomatie-macht', async () => {
         const countries = await page.evaluate(() =>
           [...document.querySelectorAll('[role=dialog] button, aside button')]
-            .map((b) => b.textContent.trim())
+            .map((b) => (b.getAttribute('aria-label') || b.textContent || '').trim())
             .filter((t) => ['Kanada', 'Mexiko', 'Brasilien', 'Argentinien', 'Russland', 'China', 'Indien'].includes(t)),
         )
         const target = countries.includes('Indien') ? 'Indien' : countries[0]
         if (!target) throw new Error('keine Macht in der Diplomatie')
         await btn(target).click({ timeout: 5000 })
         await page.waitForTimeout(400)
-        const buttons = await page.evaluate(() => [...document.querySelectorAll('[role=dialog] button, aside button')].map((b) => ({ t: b.textContent.trim(), dis: b.disabled })).filter((b) => b.t))
+        const buttons = await page.evaluate(() => [...document.querySelectorAll('[role=dialog] button, aside button')].map((b) => ({ t: (b.getAttribute('aria-label') || b.textContent || '').trim(), dis: b.disabled })).filter((b) => b.t))
         return {
           target,
           panelText: await page.evaluate(() => (document.querySelector('aside')?.innerText ?? '').replace(/\s+/g, ' ').slice(-420)),
