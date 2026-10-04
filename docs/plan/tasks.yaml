@@ -4073,17 +4073,17 @@ tasks:
   - id: T-M45-03
     milestone: M45
     title: "Kern-Hotspots laut Profil (combat, Allokationen, emit)"
-    status: in_progress
+    status: done
     deps: []
     requirements: [R-PERF-01]
     design: []
-    files: [packages/core/src/**]
+    files: [packages/core/src/phases/combat.ts, packages/core/src/phases/occupation.ts, packages/core/src/state/army.ts, packages/core/src/state/clone.ts, packages/core/src/view/intel.ts, packages/core/src/view/publicView.ts]
     tests: [apps/headless/test/perf-profile.slow.test.ts, apps/headless/test/v3-verhalten.slow.test.ts]
     dod: "Bahn P-Kern - P1. Jeder Kandidat mit Ausgangswert und Nachher-Wert (Anteile, Aufrufe, Bytes - keine Millisekunden); Regel-3-Belege a/b/c aus PLAN-V3 gruen (Spaetspiel-Hash unveraendert, Golden Master unveraendert, Turnierbericht zeilengleich); Kern-Tests gruen. Zeitbeleg erst im Rechnerfenster von Phase 2."
   - id: T-M45-02
     milestone: M45
     title: "(bedingt) Wegesuche zwischenspeichern"
-    status: todo
+    status: done
     deps: [T-M45-03]
     requirements: [R-PERF-01]
     design: []
@@ -4093,7 +4093,7 @@ tasks:
   - id: T-M45-01
     milestone: M45
     title: "KI-Bedrohungskarte (threat.ts) einmal je Denkschritt"
-    status: in_progress
+    status: done
     deps: []
     requirements: [R-PERF-01]
     design: []
@@ -4103,7 +4103,7 @@ tasks:
   - id: T-M45-04
     milestone: M45
     title: "Huelle: Ticks mit Zeitbudget je Frame, Ableiten nur bei geaenderter Sicht"
-    status: in_progress
+    status: done
     deps: []
     requirements: [R-PERF-01]
     design: []
@@ -4114,6 +4114,7 @@ tasks:
     milestone: M45
     title: "Buendel aufteilen (React.lazy fuer Dialoge, Mehrspieler, Einstellungen)"
     status: todo
+    reopened: "Nicht gebaut (Bahn P-Huelle, 2026-10-04): Dialoge sind 0,8 % des Buendels, world.json allein 1,17 MB; Lazy wuerde viele Tests asynchron machen fuer unter 1 % Gewinn. Abgeloest durch einen eigenen Auftrag Karte nachladen, falls die Ladezeit am Buendel ein Problem wird (nicht gemessen in V3)."
     deps: [T-M45-04]
     requirements: [R-PERF-01]
     design: []
@@ -4123,7 +4124,7 @@ tasks:
   - id: T-M45-08
     milestone: M45
     title: "Abschlussmessung Leistung im Rechnerfenster"
-    status: todo
+    status: done
     deps: [T-M45-01, T-M45-03, T-M45-04]
     requirements: [R-PERF-01]
     design: []
@@ -4133,7 +4134,7 @@ tasks:
   - id: T-M46-10
     milestone: M46
     title: "Telefon-Layout: Kopfleiste, Seitenleiste, Protokoll"
-    status: todo
+    status: done
     deps: [T-M45-04]
     requirements: [R-UX-01]
     design: []
@@ -4143,7 +4144,7 @@ tasks:
   - id: T-M46-01
     milestone: M46
     title: "Heeruebersicht mit Namen, Sprung zur Karte, Marschziele erreichbar zuerst"
-    status: todo
+    status: done
     deps: [T-M45-04]
     requirements: [R-UX-04]
     design: []
@@ -4153,7 +4154,7 @@ tasks:
   - id: T-M46-05
     milestone: M46
     title: "Tastenkuerzel fuer die acht Handlungen, Tab-Reihenfolge"
-    status: todo
+    status: done
     deps: [T-M46-01]
     requirements: [R-UX-06]
     design: []
@@ -4163,7 +4164,7 @@ tasks:
   - id: T-M46-06
     milestone: M46
     title: "Diplomatie-Uebersicht: Aktionen ueber dem Falz, Handel kompakt"
-    status: todo
+    status: done
     deps: [T-M45-04]
     requirements: [R-UX-02]
     design: []
@@ -4173,7 +4174,7 @@ tasks:
   - id: T-M46-11
     milestone: M46
     title: "Rueckmeldung \"befohlen\" tempounabhaengig, Aufstandshinweise gebuendelt"
-    status: todo
+    status: done
     deps: [T-M45-04]
     requirements: [R-UX-03]
     design: []
@@ -4183,7 +4184,7 @@ tasks:
   - id: T-M46-08
     milestone: M46
     title: "M44-Reste: Alarmchip im Mehrspieler mitpruefen"
-    status: todo
+    status: done
     deps: [T-M46-10]
     requirements: [R-UX-06]
     design: []
@@ -4193,7 +4194,7 @@ tasks:
   - id: T-M46-09
     milestone: M46
     title: "Funde aus Noahs Playtest V3"
-    status: todo
+    status: done
     deps: []
     requirements: [R-UX-02]
     design: []
@@ -4203,7 +4204,7 @@ tasks:
   - id: T-M46-12
     milestone: M46
     title: "Nachher-Aufnahme und Abgleich UX V3"
-    status: todo
+    status: done
     deps: [T-M46-10, T-M46-01, T-M46-05, T-M46-06, T-M46-11, T-M46-08]
     requirements: [R-UX-01, R-UX-02, R-UX-03, R-UX-04, R-UX-06]
     design: []
@@ -4215,7 +4216,7 @@ tasks:
   - id: T-M46-13
     milestone: M46
     title: "Symbole statt Text: Kopfleiste, Provinz-/Armeepanel, Kartenmarker"
-    status: todo
+    status: done
     deps: [T-M45-04]
     requirements: [R-UX-02, R-ASSET-01]
     design: []
@@ -4225,7 +4226,7 @@ tasks:
   - id: T-M46-03
     milestone: M46
     title: "Gestapelte Armeen auffaechern"
-    status: todo
+    status: done
     deps: [T-M46-13]
     requirements: [R-UX-02]
     design: []
@@ -4235,17 +4236,17 @@ tasks:
   - id: T-M46-14
     milestone: M46
     title: "Soundeffekte je Ereignisart statt Ploppen"
-    status: todo
+    status: done
     deps: [T-M46-13]
     requirements: [R-UX-02, R-ASSET-01]
     design: []
-    files: [apps/desktop/src/ui/sound.ts, apps/desktop/public/sfx, docs/ASSETS.md]
+    files: [apps/desktop/src/ui/sound.ts, apps/desktop/src/ui/sfx/, docs/ASSETS.md]
     tests: [apps/desktop/src/ui/sound.test.ts]
     dod: "Bahn U-Bild - P2. Jede Ereignisart mit eigenem Klang; jede Datei in docs/ASSETS.md; bestehende Ton-Tests gruen."
   - id: T-M46-02
     milestone: M46
     title: "Ueberblick: Protokoll nach Wichtigkeit, Sprung und Puls am Ort"
-    status: todo
+    status: done
     deps: [T-M46-10]
     requirements: [R-UX-02]
     design: []
@@ -4255,7 +4256,7 @@ tasks:
   - id: T-M46-15
     milestone: M46
     title: "Moralsperre beim Ausheben mit Zahl und Grenze anzeigen"
-    status: todo
+    status: done
     deps: []
     requirements: [R-UX-03]
     design: []
@@ -4265,7 +4266,7 @@ tasks:
   - id: T-M46-16
     milestone: M46
     title: "Ereignisdichte je Spielabschnitt messen (Mid-Game-Stress)"
-    status: todo
+    status: done
     deps: []
     requirements: [R-UX-02]
     design: []
@@ -4275,7 +4276,7 @@ tasks:
   - id: T-M46-17
     milestone: M46
     title: "Symbol-Durchgang: Textanteil hoechstens 0,5 in allen Spielansichten"
-    status: in_progress
+    status: done
     deps: [T-M46-13, T-M46-10, T-M46-02]
     requirements: [R-UX-02, R-UX-06]
     design: []

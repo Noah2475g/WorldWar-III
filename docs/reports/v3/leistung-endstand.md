@@ -1,6 +1,6 @@
 # V3 · Leistung — Endstand (Rechnerfenster 2, 2026-10-04)
 
-Gemessen 21:02–21:24 auf Noahs Rechner, Freigabe durch Noah („Fenster frei, Blender und Epic sind
+Gemessen 21:02–21:18 auf Noahs Rechner, Freigabe durch Noah („Fenster frei, Blender und Epic sind
 zu“). Last vor den Schritten 1–28 % (Werte je Schritt in `fenster2.log` im Sitzungs-Scratchpad);
 keine andere Claude-Sitzung aktiv. Stand: Versionszweig `claude/v3-leistung-ux` = `6672743`.
 Ausgangswerte: `leistung-ausgang.md` (P0-W, 2026-10-04 morgens).
