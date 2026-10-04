@@ -8080,3 +8080,12 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Dateien:** `apps/headless/test/ereignisdichte.slow.test.ts`, `docs/reports/v3/ereignisdichte.md`
 - **Tests zuerst:** Vollpartie der ausgelieferten Aufstellung, Zaehlung je 50 Tage.
 - **Fertig wenn:** Bericht mit Ereignisdichte je Abschnitt und Empfehlung UX oder Balance an Noah; keine Spielaenderung.
+
+### T-M46-17 · Symbol-Durchgang: Textanteil höchstens 0,5 in allen Spielansichten
+- **Ziel:** Noahs Wunsch „Grafiken und Symbole statt Text“ (VM-05) durchgehend: nach Welle 2 lag der Textanteil noch bei 0,84 (Kopf), 0,79 (Provinz), 0,91 (Armee); Alarmliste und Protokoll waren reiner Text.
+- **Paket und Priorität:** Bahn U-Symbol · P1
+- **Anforderungen:** R-UX-02, R-UX-06
+- **Abhängigkeiten:** T-M46-13, T-M46-10, T-M46-02
+- **Dateien:** `apps/desktop/src/ui/Icon.tsx`, `apps/desktop/src/ui/Header.tsx`, `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/ui/Foot.tsx`, `apps/desktop/src/ui/Alerts.tsx`
+- **Tests zuerst:** Textanteil je Ansicht an S575G (1280x800) mit `scripts/ux-bild.mjs` als Ausgangswert.
+- **Fertig wenn:** Textanteil höchstens 0,5 in Kopfleiste, Provinzpanel, Armeepanel, Alarmliste und Protokoll; jedes Symbol mit zugänglichem Namen (Tooltip, aria-label); a11y-Tests und axe ohne neuen Verstoß; Desktop-Tests grün.

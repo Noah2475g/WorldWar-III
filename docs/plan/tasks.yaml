@@ -4272,3 +4272,13 @@ tasks:
     files: [apps/headless/test/ereignisdichte.slow.test.ts, docs/reports/v3/ereignisdichte.md]
     tests: [apps/headless/test/ereignisdichte.slow.test.ts]
     dod: "Bahn M-Mess - P2. Bericht mit Ereignisdichte je Abschnitt und Empfehlung UX oder Balance an Noah; keine Spielaenderung."
+  - id: T-M46-17
+    milestone: M46
+    title: "Symbol-Durchgang: Textanteil hoechstens 0,5 in allen Spielansichten"
+    status: in_progress
+    deps: [T-M46-13, T-M46-10, T-M46-02]
+    requirements: [R-UX-02, R-UX-06]
+    design: []
+    files: [apps/desktop/src/ui/Icon.tsx, apps/desktop/src/ui/Header.tsx, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/Foot.tsx, apps/desktop/src/ui/Alerts.tsx]
+    tests: [scripts/ux-bild.mjs, apps/desktop/src/ui/a11y.test.tsx]
+    dod: "Bahn U-Symbol - P1, Noahs Freigabe 2026-10-04. Textanteil hoechstens 0,5 in Kopfleiste, Provinzpanel, Armeepanel, Alarmliste und Protokoll (S575G, 1280x800, gemessen wie ux-bild-vorher/-nachher); jedes Symbol mit zugaenglichem Namen (Tooltip, aria-label); a11y-Tests und axe ohne neuen Verstoss; Desktop-Tests gruen."
