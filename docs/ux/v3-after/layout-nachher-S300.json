@@ -1,0 +1,144 @@
+{
+  "tag": "nachher-S300",
+  "state": "S300",
+  "runs": [
+    {
+      "viewport": "1280x800",
+      "scenes": {
+        "kopf": {
+          "headerHeight": 65,
+          "topScrollWidth": 1280,
+          "topClientWidth": 1280,
+          "controls": 12,
+          "controlsInView": 12,
+          "controlsOutside": [],
+          "chipInView": null
+        },
+        "protokollKarte": {
+          "present": true,
+          "box": {
+            "h": 156,
+            "w": 907
+          },
+          "entriesInDom": 21,
+          "visibleRows": 18,
+          "filterVisible": true,
+          "filterButtonsInView": 6
+        },
+        "ohnePanel": {
+          "side": {
+            "y": 65,
+            "h": 579,
+            "w": 380
+          },
+          "sideShareOfViewport": 0.723,
+          "sideScrollH": 579,
+          "map": {
+            "y": 65,
+            "h": 579,
+            "w": 900
+          },
+          "mapShare": 0.723,
+          "foot": {
+            "y": 643,
+            "h": 157,
+            "w": 1280
+          },
+          "sheet": null,
+          "panelOpen": "closed"
+        },
+        "protokollZeilen": {
+          "rows": 3,
+          "days": 3,
+          "rowsPerDay": {
+            "299": 1,
+            "300": 1,
+            "301": 1
+          },
+          "maxRowsPerDay": 1,
+          "withPlace": 0,
+          "withPlaceShare": 0,
+          "collected": 3,
+          "major": 0
+        },
+        "pulse": {
+          "distinctPlaces": 0,
+          "places": []
+        },
+        "hinweise": {
+          "height": 28,
+          "rows": 1,
+          "unrestRows": 0,
+          "unrestTexts": []
+        },
+        "diplomatieAuswahl": {
+          "sideClientH": 579,
+          "names": 7,
+          "inView": 7,
+          "lastY": 496,
+          "alertsH": 28
+        },
+        "diplomatie": {
+          "sideClientH": 579,
+          "sideScrollH": 1426,
+          "probes": [
+            {
+              "label": "Krieg erklaeren",
+              "found": true,
+              "inView": true,
+              "y": 96
+            },
+            {
+              "label": "Frieden anbieten",
+              "found": true,
+              "inView": true,
+              "y": 96
+            },
+            {
+              "label": "Feld Nahrung geben",
+              "found": true,
+              "inView": true,
+              "y": 245
+            },
+            {
+              "label": "Feld Material verlangen",
+              "found": true,
+              "inView": true,
+              "y": 274
+            },
+            {
+              "label": "Handel anbieten",
+              "found": true,
+              "inView": true,
+              "y": 497
+            }
+          ],
+          "belowFold": 0
+        },
+        "panel": {
+          "side": {
+            "y": 65,
+            "h": 579,
+            "w": 380
+          },
+          "sideShareOfViewport": 0.723,
+          "sideScrollH": 1099,
+          "map": {
+            "y": 65,
+            "h": 579,
+            "w": 900
+          },
+          "mapShare": 0.723,
+          "foot": {
+            "y": 643,
+            "h": 157,
+            "w": 1280
+          },
+          "sheet": "half",
+          "panelOpen": "open"
+        }
+      },
+      "errors": []
+    }
+  ]
+}

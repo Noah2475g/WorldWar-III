@@ -62,7 +62,7 @@ import { MENU_ENTRIES } from './ui/menuEntries.ts'
 import { CreditsDialog } from './ui/Credits.tsx'
 import { armyNamer, createArmyNameMemory, nationNamer, provinceNamer } from './game/names.ts'
 import { armyRows } from './game/armies.ts'
-import { ACK_MIN_MS, armyAckKey } from './game/ack.ts'
+import { ACK_MIN_MS, ACK_SLACK_MS, armyAckKey } from './game/ack.ts'
 import { Foot, latestReport } from './ui/Foot.tsx'
 import { standingsRows } from './ui/Standings.tsx'
 import { Dialog } from './ui/Dialogs.tsx'
@@ -604,7 +604,7 @@ export function App(props: AppProps) {
   const showAckLine = useCallback((text: string): void => {
     if (ackLineTimer.current) clearTimeout(ackLineTimer.current)
     setAckLine(text)
-    ackLineTimer.current = setTimeout(() => setAckLine(null), ACK_MIN_MS)
+    ackLineTimer.current = setTimeout(() => setAckLine(null), ACK_MIN_MS + ACK_SLACK_MS)
   }, [])
   useEffect(
     () => () => {
@@ -626,7 +626,7 @@ export function App(props: AppProps) {
           next.delete(key)
           return next
         })
-      }, ACK_MIN_MS),
+      }, ACK_MIN_MS + ACK_SLACK_MS),
     )
   }, [])
   useEffect(() => {
@@ -2127,6 +2127,8 @@ export function App(props: AppProps) {
     })
     // Neueste zuerst wie das Protokoll; `sort` ist stabil, bei gleichem Tick stehen die Ereignisse vorn.
     // Gleichlautende Gefechtszeilen derselben Provinz und Stunde werden eine Zeile (T-M44-10, R-UX-02/AK4).
+    // LOESCHVERMERK (Review): bis T-M46-02 endete die Rechnung mit
+    //   return mergeBattleLines([...zeilen, ...maersche.reverse()].sort((a, b) => b.tick - a.tick), ticksPerDay)
     // Danach Sammelzeilen je Art und Spieltag (T-M46-02, VM-03).
     return groupEntries(
       mergeBattleLines([...zeilen, ...maersche.reverse()].sort((a, b) => b.tick - a.tick), ticksPerDay),

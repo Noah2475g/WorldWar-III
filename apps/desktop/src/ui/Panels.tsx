@@ -1352,6 +1352,7 @@ export function EventLog({
   ticksPerDay: number
   onJump: (provinceId: string) => void
 }) {
+  // LOESCHVERMERK (Review): bis T-M46-02 `useState<EventFilterKey>('all')` - das Protokoll zeigte jede Zeile (35 an einem Tag).
   const [filter, setFilter] = useState<EventFilterKey>('important')
   const shown =
     filter === 'all'
@@ -1606,6 +1607,9 @@ export interface TradeFormSpec {
  * 10, 1280x800: die Auswahl „Mexiko“ musste gerollt werden). Die Meldung darueber nennt sie ohnehin einzeln;
  * `open` erzwingt sie offen, wo der Spieler gerade wegen eines Angebots hergesprungen ist.
  */
+// LOESCHVERMERK (Review): bis T-M46-06 war die Liste immer offen:
+//   <section className="group offers" aria-label={title}><h3 className="group__title">{title}</h3><ul className="offers">...</ul></section>
+// Grund: drei Handelsangebote belegten 300 px und schoben die Machtetabelle unter den Falz.
 function OfferList({ title, rows, open }: { title: string; rows: readonly OfferRow[]; open: boolean }) {
   if (rows.length === 0) return null
   const expanded = open || rows.length < 2
@@ -1924,6 +1928,7 @@ export function TradeOfferForm({
                 />
                 {/* Der Bestand nur in der Geben-Spalte (T-M17-14, Test P7): der Partnerbestand ist der
                     Oberflaeche unbekannt (E10). */}
+                {/* LOESCHVERMERK (Review): bis T-M46-06 `<p className="panel__sub">` unter dem Feld (Zeile 50 px statt 30 px). */}
                 <span className="panel__sub trade-form__stock">{t('trade.stock', { amount: amount(spec.stock[key] ?? 0) })}</span>
               </td>
               <td>

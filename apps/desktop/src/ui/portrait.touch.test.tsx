@@ -106,6 +106,8 @@ describe('R-UX-01/AK1: Karte oben, Seitenleiste darunter, Kartenanteil aus den S
   })
 })
 
+// LOESCHVERMERK (Review): bis T-M46-10 pruefte der erste Fall `flex-wrap: nowrap` und `overflow-x: auto` an `.header__top`
+// ("haelt die Kopfleiste in einer Zeile, die seitlich rollt"), und der Siegziel-Fall `expect(portrait).not.toMatch(/\.meter\s*[,{]/)`.
 describe('R-UX-01/AK2: Kopfleiste ganz im Bild (T-M46-10), Fuss kompakt', () => {
   it('bricht die Kopfleiste um, statt sie seitlich rollen zu lassen', () => {
     // Vorher (T-M44-03b): eine 1561 px breite Wischzeile, 12 von 17 Bedienelementen ausserhalb des Bildes.

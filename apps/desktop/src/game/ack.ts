@@ -9,6 +9,13 @@
  */
 export const ACK_MIN_MS = 1500
 
+/**
+ * Zugabe fuer den Weg vom Befehl bis zum ersten Bild der Quittung (Zustand setzen, Render): der Zeitgeber startet im
+ * Befehl, die Quittung erscheint erst im naechsten Bild. Gemessen (ux-tasks --rueckmeldung): ohne Zugabe 1470 ms
+ * bei Tempo 10, also unter dem Zugesagten; mit ihr steht sie die zugesagten 1,5 s.
+ */
+export const ACK_SLACK_MS = 150
+
 /** Die Schluessel, unter denen der Befehl einer Armee gehalten wird (Marsch, Beschuss): `army:<Kennung>`. */
 export function armyAckKey(armyId: string): string {
   return `army:${armyId}`

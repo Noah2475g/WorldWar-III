@@ -618,6 +618,7 @@ describe('R-NEWS-04 Weltgeschehen ist der fuenfte Filter', () => {
     ...over,
   })
 
+  // LOESCHVERMERK (Review): bis T-M46-02 hiess der Fall 'bietet fuenf Knoepfe an' und erwartete 5 Knoepfe.
   it('bietet sechs Knoepfe an (Wichtig seit T-M46-02 und die fuenf Rubriken)', () => {
     render(<EventLog entries={[eintrag({})]} ticksPerDay={24} onJump={() => {}} />)
 

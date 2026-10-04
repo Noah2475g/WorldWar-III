@@ -578,6 +578,14 @@ select,
     background: var(--ink-soft);
   }
 
+  /* LOESCHVERMERK (Review): bis T-M46-10 stand hier die wischbare Einzeile (T-M44-03b):
+       :root:root .header__top { flex-wrap: nowrap; overflow-x: auto; gap: var(--sp-md); padding: var(--sp-xs) var(--sp-md); scrollbar-width: none; }
+       :root:root .header__top > * { flex: none; }
+       :root:root .header__title { display: none; }
+       :root:root .clock { white-space: nowrap; }
+       :root:root .header__panels { margin-left: 0; }
+     Grund: 5 von 17 Bedienelementen im Bild (docs/ux/v3-before/messwerte-spaet.json); Zaehlwerte in docs/ux/v3-after/layout-vorher.json. */
+
   /* Kopfleiste (T-M46-10, R-UX-01): zwei Zeilen statt einer 1561 px breiten Wischzeile — gemessen an
      S575G, 375x667: vorher 5 von 17 Bedienelementen im Bild (Tempo 25-100, Vorspulen, Kartenmodi,
      Spielstaende, Menue und Alarmchip lagen rechts ausserhalb). Jetzt: oben alle neun Tempostufen in
@@ -737,6 +745,11 @@ select,
     min-width: 0;
     flex: 1 1 0;
   }
+
+  /* LOESCHVERMERK (Review): bis T-M46-10 ohne Aufklappknopf und ohne Positionierung:
+       :root:root .foot { grid-template-columns: minmax(0, 1fr); max-height: none; }
+       :root:root .foot .log { max-height: 44px; padding: 0 var(--sp-md); }
+     Grund: das Protokoll war 44 px hoch, ohne Filter. */
 
   /* Fuss: das Protokoll eine Zeile hoch, darunter die Knoepfe als Reihe; die Rangliste steht in der Lage
      (Knopf „Rangliste / Sieg"). T-M46-10: ein Knopf klappt das Protokoll als Blatt (55 dvh) ueber den Fuss
