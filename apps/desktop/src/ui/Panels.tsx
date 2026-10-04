@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { MAX_DEPART_DELAY_DAYS } from '@worldwar/core'
 import type { PublicView, ResourceKey, Terrain, VisibleArmy, VisibleProvince } from '@worldwar/core'
 // Nur der Typ: zur Laufzeit importiert weiterhin events.ts aus Panels.tsx, nicht umgekehrt.
@@ -798,8 +798,16 @@ const STANCES = ['aggressive', 'defensive', 'retreat', 'garrison'] as const
 
 export function ArmyPanel(props: ArmyPanelProps) {
   const army = props.army
-  if (!army) return null
   const targeting = props.targeting ?? null
+  // Beginnt die Zielwahl (Knopf „Marschieren“ im Panel oder in der Heeruebersicht, T-M46-01), steht der Fokus
+  // auf der Zielliste: der Knopf, der sie oeffnete, ist verschwunden, und der Fokus waere sonst auf <body>
+  // gefallen - mit Tab ginge es wieder bei der Kopfleiste los (19 Stationen bis zur Seitenleiste).
+  const targetList = useRef<HTMLSelectElement>(null)
+  const choosing = targeting !== null
+  useEffect(() => {
+    if (choosing) targetList.current?.focus()
+  }, [choosing])
+  if (!army) return null
 
   // Die Haltung als Gruppe — seit T-M40-05 vier Knoepfe, zwei mal zwei —, die uebrigen
   // Befehle zweispaltig (D27.6, D30.7).
@@ -908,6 +916,7 @@ export function ArmyPanel(props: ArmyPanelProps) {
           <label className="picker">
             <span>{t('army.targetLabel')}</span>
             <select
+              ref={targetList}
               value={targeting.target?.id ?? ''}
               onChange={(event) => targeting.onChoose(event.target.value || null)}
             >
@@ -973,6 +982,108 @@ export function ArmyPanel(props: ArmyPanelProps) {
             ))}
           </div>
         )
+      )}
+    </section>
+  )
+}
+
+/**
+ * Die Heeruebersicht (T-M46-01, R-UX-04): alle eigenen Armeen mit Name, Ort, Staerke und Auftrag,
+ * je Zeile der Sprung zur Karte und der direkte Marschbefehl. Armeen waren nur Pixel auf der Karte
+ * (0 DOM-Elemente, "Auswaehlen" ohne Namen); ohne Maus kostete "Armee bewegen" 46 Tasten, mit Maus 5 Klicks.
+ */
+export type ArmyOrder = 'battle' | 'marching' | 'idle'
+
+export interface ArmyRow {
+  id: string
+  name: string
+  provinceName: string
+  /** Staerke wie im Armeepanel (Festkomma). */
+  strength: number
+  order: ArmyOrder
+  /** Der Auftrag als Satz: "marschiert nach X · Ankunft ...", "im Gefecht", "steht (Angriff)". */
+  orderText: string
+}
+
+export type ArmyFilter = 'all' | ArmyOrder
+
+export const ARMY_FILTERS: readonly ArmyFilter[] = ['all', 'battle', 'marching', 'idle']
+
+/** Zeilen nach Filter; die Reihenfolge der Eingabe bleibt (der Aufrufer sortiert Gefecht, Marsch, Stand). */
+export function filterArmyRows(rows: readonly ArmyRow[], filter: ArmyFilter): ArmyRow[] {
+  return filter === 'all' ? [...rows] : rows.filter((row) => row.order === filter)
+}
+
+export interface ArmiesPanelProps {
+  rows: readonly ArmyRow[]
+  onSelect: (armyId: string) => void
+  onMarch: (armyId: string) => void
+  onClose?: (() => void) | undefined
+}
+
+export function ArmiesPanel(props: ArmiesPanelProps) {
+  const [filter, setFilter] = useState<ArmyFilter>('all')
+  const shown = filterArmyRows(props.rows, filter)
+  const count = (value: ArmyFilter): number => filterArmyRows(props.rows, value).length
+  // Per Kurztaste geoeffnet (A) landet der Fokus auf der ersten Armee: der naechste Tastendruck gehoert ihr.
+  const list = useRef<HTMLUListElement>(null)
+  useEffect(() => {
+    list.current?.querySelector<HTMLButtonElement>('button')?.focus()
+  }, [])
+
+  return (
+    <section className="panel" aria-label={t('armies.title')}>
+      <PanelHead title={`${t('armies.title')} (${props.rows.length})`} onClose={props.onClose} />
+      <div className="log__filters armies__filters" role="group" aria-label={t('alerts.filter')}>
+        {ARMY_FILTERS.map((value) => (
+          <button
+            key={value}
+            type="button"
+            className={filter === value ? 'speed speed--active' : 'speed'}
+            aria-pressed={filter === value}
+            onClick={() => setFilter(value)}
+          >
+            {t(`armies.filter.${value}`, { count: count(value) })}
+          </button>
+        ))}
+      </div>
+      {shown.length === 0 ? (
+        <p className="notice notice--info">{props.rows.length === 0 ? t('armies.none') : t('armies.noneFiltered')}</p>
+      ) : (
+        <ul className="armies" ref={list}>
+          {shown.map((row) => (
+            <li key={row.id} className={`armies__row armies__row--${row.order}`}>
+              <div className="armies__what">
+                <b className="armies__name">{row.name}</b>
+                <span className="armies__where">{row.provinceName}</span>
+                <span className="armies__power">
+                  {t('army.power')} {amount(row.strength)}
+                </span>
+                <span className="armies__order">{row.orderText}</span>
+              </div>
+              <div className="armies__go">
+                <button
+                  type="button"
+                  className="button"
+                  aria-label={t('armies.selectAria', { name: row.name })}
+                  title={t('armies.selectAria', { name: row.name })}
+                  onClick={() => props.onSelect(row.id)}
+                >
+                  {t('army.select')}
+                </button>
+                <button
+                  type="button"
+                  className="button"
+                  aria-label={t('armies.marchAria', { name: row.name })}
+                  title={t('armies.marchAria', { name: row.name })}
+                  onClick={() => props.onMarch(row.id)}
+                >
+                  {t('army.move')}
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
       )}
     </section>
   )

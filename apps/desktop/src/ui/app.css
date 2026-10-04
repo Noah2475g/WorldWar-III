@@ -2804,3 +2804,65 @@ body {
   min-width: 44px;
   min-height: 44px;
 }
+
+/* ---- T-M46-01 · Heeruebersicht ---------------------------------------------------------------
+   Eine Zeile je Armee: links Name, Ort, Staerke, Auftrag; rechts "Auswaehlen" und "Marschieren". Gefecht
+   traegt den Zinnoberbalken (wie eine Rueckschlagzeile im Protokoll), Marsch den Bernsteinbalken. */
+.armies {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.armies__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-md);
+  padding: var(--sp-sm) var(--sp-md);
+  background: var(--paper-sunk);
+  border-left: 3px solid var(--line);
+}
+
+.armies__row--battle {
+  border-left-color: var(--accent);
+}
+
+.armies__row--marching {
+  border-left-color: var(--warn);
+}
+
+.armies__what {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.armies__name {
+  font-size: 13px;
+}
+
+.armies__where,
+.armies__power,
+.armies__order {
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
+}
+
+.armies__go {
+  display: flex;
+  flex: none;
+  gap: var(--sp-xs);
+}
+
+.armies__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-xs);
+}
+

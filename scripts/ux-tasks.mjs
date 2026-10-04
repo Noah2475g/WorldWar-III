@@ -367,6 +367,30 @@ class Run {
     return true
   }
 
+  /**
+   * In einer fokussierten Auswahlliste mit der Pfeiltaste nach unten bis zum Eintrag gehen (je Druck ein Zaehler).
+   * Der ehrliche Weg, wenn die Liste nach Naehe sortiert ist und das Ziel weit vorn steht (T-M46-01).
+   */
+  async arrowSelect(match, label, { max = 60 } = {}) {
+    for (let i = 0; i < max; i++) {
+      const cur = await this.page.evaluate(() => {
+        const el = document.activeElement
+        return el instanceof HTMLSelectElement ? (el.selectedOptions[0]?.text ?? '') : null
+      })
+      if (cur === null) {
+        this.detour(label, 'Fokus nicht auf einer Liste')
+        return false
+      }
+      if (cur.trim().toLowerCase().startsWith(match.toLowerCase())) {
+        this.note('Fokus', `${label} = ${cur.trim()} nach ${i} Pfeil-ab`)
+        return true
+      }
+      await this.key('ArrowDown', `${label} Pfeil ab`)
+    }
+    this.detour(label, `Eintrag "${match}" nach ${max} Pfeil-ab nicht erreicht`)
+    return false
+  }
+
   async result(reached, extra = {}) {
     const ackMs = await this.ackDurations()
     return {

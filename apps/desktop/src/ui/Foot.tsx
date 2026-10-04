@@ -66,7 +66,7 @@ export interface FootProps {
   seenTick: number
   onJump: (provinceId: string) => void
   onDispatch: () => void
-  onPanel: (panel: 'diplomacy' | 'market' | 'standings' | 'espionage') => void
+  onPanel: (panel: 'diplomacy' | 'market' | 'standings' | 'espionage' | 'armies') => void
 }
 
 export function Foot(props: FootProps) {
@@ -116,6 +116,9 @@ export function Foot(props: FootProps) {
             {t('header.market')}
           </button>
         </span>
+        <button type="button" className="button foot__button" onClick={() => props.onPanel('armies')}>
+          {t('foot.armies')}
+        </button>
         <button type="button" className="button foot__button" onClick={() => props.onPanel('espionage')}>
           {t('foot.espionage')}
         </button>

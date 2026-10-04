@@ -60,6 +60,7 @@ import { Sidebar } from './ui/Sidebar.tsx'
 import { OrientationHint } from './ui/OrientationHint.tsx'
 import { MENU_ENTRIES } from './ui/menuEntries.ts'
 import { armyNamer, createArmyNameMemory, nationNamer, provinceNamer } from './game/names.ts'
+import { armyRows } from './game/armies.ts'
 import { Foot, latestReport } from './ui/Foot.tsx'
 import { standingsRows } from './ui/Standings.tsx'
 import { Dialog } from './ui/Dialogs.tsx'
@@ -67,6 +68,7 @@ import { DeltaBar } from './ui/charts/DeltaBar.tsx'
 import { gameTime, rate } from './ui/format.ts'
 import { Header } from './ui/Header.tsx'
 import {
+  ArmiesPanel,
   ArmyPanel,
   DiplomacyPanel,
   EconomyPanel,
@@ -2239,6 +2241,20 @@ export function App(props: AppProps) {
     return speed === 0 ? t('actions.orderedPaused') : t('actions.ordered')
   }, [pendingCommands, ui.selectedArmy, speed])
 
+  /** Die Heeruebersicht (T-M46-01): alle eigenen Armeen der Sicht, nur gerechnet, solange das Panel offen ist. */
+  const heerZeilen = useMemo(
+    () =>
+      ui.panel === 'armies' && view && state
+        ? armyRows(view, {
+            nameOfArmy: armyNamer(state.armies, armyNames.current),
+            nameOfProvince,
+            ticksPerDay,
+            battleProvinces: new Set(battleProvinces),
+          })
+        : [],
+    [ui.panel, view, state, nameOfProvince, ticksPerDay, battleProvinces],
+  )
+
   /** Target mode for the selected army: options, the chosen place, and its arrival. */
   const armyTargeting: Targeting | null = useMemo(() => {
     if (!ctx || !targeting || !state || targeting.armyId !== ui.selectedArmy) return null
@@ -2540,6 +2556,28 @@ export function App(props: AppProps) {
                   condition={selectedArmy?.units ? stackSummary(selectedArmy.units, props.rules).condition : undefined}
                   ticksPerDay={ticksPerDay}
                   currentTick={state.tick}
+                />
+              )}
+              {ui.panel === 'armies' && (
+                <ArmiesPanel
+                  rows={heerZeilen}
+                  onClose={() => dispatch({ type: 'closePanel' })}
+                  onSelect={(armyId) => {
+                    const army = state.armies[armyId]
+                    if (!army) return
+                    setTargeting(null)
+                    jumpTo(army.locationProvinceId)
+                    dispatch({ type: 'selectArmy', id: armyId })
+                  }}
+                  onMarch={(armyId) => {
+                    const army = state.armies[armyId]
+                    if (!army) return
+                    // Auswaehlen und gleich die Zielwahl oeffnen: derselbe Weg wie der Knopf "Marschieren" im Armeepanel.
+                    jumpTo(army.locationProvinceId)
+                    dispatch({ type: 'selectArmy', id: armyId })
+                    setTargeting({ armyId, kind: 'move', target: null, delayDays: 0 })
+                    setMovingSpy(null)
+                  }}
                 />
               )}
               {ui.panel === 'diplomacy' && (

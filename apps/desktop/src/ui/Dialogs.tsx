@@ -901,6 +901,7 @@ export function KeyboardHelp({ onClose }: { onClose: () => void }) {
     'diplomacy',
     'market',
     'espionage',
+    'armies',
     'standings',
     'pan',
     'escape',

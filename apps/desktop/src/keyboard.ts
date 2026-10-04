@@ -17,7 +17,7 @@ export type Shortcut =
   | { type: 'load' }
   | { type: 'cycleMode'; mode: MapMode }
   | { type: 'help' }
-  | { type: 'openPanel'; panel: 'diplomacy' | 'market' | 'standings' | 'espionage' }
+  | { type: 'openPanel'; panel: 'diplomacy' | 'market' | 'standings' | 'espionage' | 'armies' }
   | { type: 'close' }
   | { type: 'pan'; dx: number; dy: number }
   /** Bild-auf/-ab: eine Zoomstufe hinein (1) oder heraus (-1) (T-M30-03). */
@@ -132,6 +132,11 @@ export function resolveKey(
     case 's':
     case 'S':
       return { type: 'openPanel', panel: 'espionage' }
+    // Die Heeruebersicht (T-M46-01, R-UX-04): alle eigenen Armeen, der Fokus auf der ersten. Ohne Taste kostete
+    // "Armee bewegen" per Tastatur 46 Tasten, fast nur Tab.
+    case 'a':
+    case 'A':
+      return { type: 'openPanel', panel: 'armies' }
     case 'F1':
     case '?':
       return { type: 'help' }

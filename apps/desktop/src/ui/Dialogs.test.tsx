@@ -875,6 +875,7 @@ describe('R-UX-05 Die Tastenübersicht nennt alle echten Tastenbelegungen', () =
     { key: 'h', type: 'openPanel', glyph: /H — Markt/ },
     { key: 'l', type: 'openPanel', glyph: /L — Lage der Mächte/ },
     { key: 's', type: 'openPanel', glyph: /S — Spionage/ },
+    { key: 'a', type: 'openPanel', glyph: /A — Heer/ },
     { key: 's', ctrl: true, type: 'save', glyph: /Strg\+S/ },
     { key: 'l', ctrl: true, type: 'load', glyph: /Strg\+L/ },
     { key: 'F1', type: 'help', glyph: /F1/ },

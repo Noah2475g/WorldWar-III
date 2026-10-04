@@ -77,7 +77,28 @@ export const TASKS = [
       const text = await page.evaluate(() => document.querySelector('aside.side')?.innerText.slice(0, 600) ?? '')
       return run.result(ok, { beleg: text.replace(/\s+/g, ' ').slice(0, 300) })
     },
+    // T-M46-01: seit der Heeruebersicht: A oeffnet sie (Fokus auf der ersten Armee), Tab zu "Marschieren", Eingabe;
+    // die Zielliste hat den Fokus, Pfeil ab bis zum Ziel (die Liste ist nach Ankunft sortiert), Tab zu "Marsch befehlen".
+    // Der Weg ueber Provinzliste (46 Tasten, docs/ux/v3-before) bleibt als `tastaturAlt` erhalten (Regel 1).
     async tastatur(run, page) {
+      await clockOn(page)
+      run.start()
+      await run.key('a', 'Heeruebersicht')
+      await sleep(page, 300)
+      if (!(await run.tabTo(isButton(/marschieren lassen$/), 'Marschieren (erste Armee)'))) return (run.stop(), run.result(false))
+      await run.key('Enter', 'Marschieren')
+      await sleep(page, 300)
+      if (!(await run.arrowSelect('Südstaaten', 'Marschziel'))) return (run.stop(), run.result(false))
+      if (!(await run.tabTo(isButton(/^Marsch befehlen$/), 'Marsch befehlen'))) return (run.stop(), run.result(false))
+      await run.key('Enter', 'Marsch befehlen')
+      await sleep(page, 400)
+      await run.checkNotice('Marsch befehlen')
+      run.stop()
+      const ok = await until(page, asideHas, MOVING, 5000)
+      const text = await page.evaluate(() => document.querySelector('aside.side')?.innerText.slice(0, 600) ?? '')
+      return run.result(ok || /befohlen/.test(text), { beleg: text.replace(/\s+/g, ' ').slice(0, 300) })
+    },
+    async tastaturAlt(run, page) {
       await clockOn(page)
       run.start()
       if (!(await kbSelectArmy(run, page))) return (run.stop(), run.result(false))

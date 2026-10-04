@@ -995,6 +995,7 @@ export const de = {
     unread: '{{count}} neu',
     none: 'Noch keine Depesche.',
     espionage: 'Spionage',
+    armies: 'Heer',
     // Das Protokoll auf dem Telefon (T-M46-10): eine Zeile, auf Knopfdruck das ganze Blatt mit Filtern.
     logOpen: 'Protokoll öffnen',
     logClose: 'Protokoll schließen',
@@ -1029,6 +1030,7 @@ export const de = {
     zoomOut: 'Bild↓ — herauszoomen',
     home: 'Pos1 — Hauptstadt zentrieren',
     espionage: 'S — Spionageübersicht',
+    armies: 'A — Heer (alle Armeen)',
   },
 
   tutorial: {
@@ -1414,6 +1416,24 @@ export const de = {
     unreachable: 'Nicht erreichbar',
     optionArrival: '{{name}} — Ankunft Tag {{day}}',
     noneReachable: 'Von hier ist für diese Armee kein Ziel erreichbar: Auf der Karte gibt es keine Land- oder Seeverbindung.',
+  },
+
+  /** Die Heerübersicht (T-M46-01, R-UX-04): alle eigenen Armeen, mit Sprung und Marschbefehl. */
+  armies: {
+    title: 'Heer',
+    none: 'Sie haben keine Armee.',
+    noneFiltered: 'Keine Armee in dieser Auswahl.',
+    selectAria: '{{name}} auswählen und auf der Karte zeigen',
+    marchAria: '{{name}} marschieren lassen',
+    filter: {
+      all: 'alle {{count}}',
+      battle: 'im Gefecht {{count}}',
+      marching: 'marschiert {{count}}',
+      idle: 'steht {{count}}',
+    },
+    inBattle: 'im Gefecht',
+    marchingTo: 'marschiert nach {{target}} · {{arrival}}',
+    standing: 'steht · {{stance}}',
   },
 
   /** Die Sammelzeile der Sperrgründe im Diplomatiepanel (T-M44-18, R-UX-03/AK1): „Knopf, Knopf: Grund“. */
