@@ -1,4 +1,4 @@
-import { RECRUIT_MIN_MORALE, buildingCostForLevel, unitCount } from '@worldwar/core'
+import { buildingCostForLevel, recruitMoraleBlocked, unitCount } from '@worldwar/core'
 import type { BuildingKey, Command, ProvinceId, ResourceKey } from '@worldwar/core'
 import type { Fixed } from '@worldwar/shared'
 import { dailyMoneyLedger, unitsWithinDailyBalance } from './finance'
@@ -448,7 +448,8 @@ export function recruitCommands(context: AiContext, explanations: Explanation[])
     if (Object.values(province.buildings ?? {}).every((level) => (level ?? 0) === 0)) continue
     // Unter der Moralgrenze hebt der Kern ohnehin nichts aus (D6.8) — sonst wirft die KI
     // RECRUIT ins Blaue (R-AI-09/AK2, Nacharbeit Turnier M17, C3).
-    if ((province.morale ?? 0) < RECRUIT_MIN_MORALE) continue
+    // LOESCHVERMERK (Review): vorher `if ((province.morale ?? 0) < RECRUIT_MIN_MORALE) continue` — jetzt dieselbe Frage wie der Kern, mit Schonfrist (VM-01, LOESCHVERMERKE Nr. 58).
+    if (recruitMoraleBlocked(province, context.view.tick, context.rules)) continue
 
     /**
      * **Die dringlichste Einheit, die auch bezahlbar ist** (T-M15-08).

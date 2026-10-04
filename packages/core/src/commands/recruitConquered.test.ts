@@ -16,8 +16,8 @@ import type { Command } from './types'
  * Front-Provinz wegen des Besatzungsabzugs (14 Tage) unter 25 000. Ab dann lehnt RECRUIT mit
  * `INVALID_TARGET` / 'Moral zu niedrig' ab, obwohl `buildings.barracks` dem Spieler gehoert.
  *
- * Diese Datei haelt den HEUTIGEN Zustand fest (zweiter Test) und den gewuenschten (erster, `it.fails`).
- * Wer die Sperre aendert, dreht beide um.
+ * Diese Datei haelt den gewuenschten Zustand fest (SOLL) und die Ursache (Test a).
+ * Seit VM-01 (T-M47-01) gilt die Schonfrist; die Ursache bleibt in Test a belegt.
  */
 const map = smallWorld()
 const ctx = { map, rules: TEST_RULES }
@@ -54,23 +54,63 @@ function conqueredFrontProvinceAfterOneDay(): GameState {
   return current
 }
 
-describe('Aushebung in einer eroberten Provinz (Playtest 2026-10-04)', () => {
-  it.fails('SOLL: eine eroberte Provinz mit eigener Kaserne hebt auch am zweiten Tag aus', () => {
+describe('R-UNIT-02/AK1 Schonfrist: Aushebung in einer eroberten Provinz (Playtest 2026-10-04)', () => {
+  it('SOLL: eine eroberte Provinz mit eigener Kaserne hebt auch am zweiten Tag aus', () => {
     const state = conqueredFrontProvinceAfterOneDay()
     expect(state.provinces['m1']!.owner).toBe('p1')
     expect(canApply(state, recruit, { ...ctx, commands: [], events: [] })).toEqual({ ok: true })
   })
 
-  it('IST: die Gebaeude bleiben, aber die Moral sinkt unter die Aushebegrenze und sperrt RECRUIT', () => {
+  // LOESCHVERMERK (Review): IST-Zustand vor VM-01 (LOESCHVERMERKE Nr. 59)
+  // it('IST: die Gebaeude bleiben, aber die Moral sinkt unter die Aushebegrenze und sperrt RECRUIT', () => {
+  // const state = conqueredFrontProvinceAfterOneDay()
+  // const m1 = state.provinces['m1']!
+  // expect(m1.owner).toBe('p1')
+  // expect(m1.buildings.barracks).toBe(1) // nichts zerstoert, nichts zurueckgesetzt
+  // expect(m1.morale).toBeLessThan(RECRUIT_MIN_MORALE)
+  // expect(canApply(state, recruit, { ...ctx, commands: [], events: [] })).toEqual({
+  // ok: false,
+  // code: 'INVALID_TARGET',
+  // detail: { reason: 'Moral zu niedrig', morale: m1.morale },
+  // })
+  // })
+
+  it('die Gebaeude bleiben und die Moral liegt unter der Grenze — die Ursache bleibt belegt', () => {
     const state = conqueredFrontProvinceAfterOneDay()
     const m1 = state.provinces['m1']!
     expect(m1.owner).toBe('p1')
-    expect(m1.buildings.barracks).toBe(1) // nichts zerstoert, nichts zurueckgesetzt
+    expect(m1.buildings.barracks).toBe(1)
     expect(m1.morale).toBeLessThan(RECRUIT_MIN_MORALE)
-    expect(canApply(state, recruit, { ...ctx, commands: [], events: [] })).toEqual({
-      ok: false,
-      code: 'INVALID_TARGET',
-      detail: { reason: 'Moral zu niedrig', morale: m1.morale },
-    })
+  })
+
+  const gesperrt = {
+    ok: false,
+    code: 'INVALID_TARGET',
+    detail: { reason: 'Moral zu niedrig', morale: RECRUIT_MIN_MORALE - 1 },
+  }
+  const window = TEST_RULES.constants.occupationPenaltyDays * TEST_RULES.constants.ticksPerDay
+
+  it('nach der Schonfrist gilt die Grenze wieder', () => {
+    const state = conqueredFrontProvinceAfterOneDay()
+    const m1 = state.provinces['m1']!
+    m1.occupiedSince = state.tick - window
+    m1.morale = RECRUIT_MIN_MORALE - 1
+    expect(canApply(state, recruit, { ...ctx, commands: [], events: [] })).toEqual(gesperrt)
+  })
+
+  it('letzter Tick der Schonfrist hebt aus', () => {
+    const state = conqueredFrontProvinceAfterOneDay()
+    const m1 = state.provinces['m1']!
+    m1.occupiedSince = state.tick - window + 1
+    m1.morale = RECRUIT_MIN_MORALE - 1
+    expect(canApply(state, recruit, { ...ctx, commands: [], events: [] })).toEqual({ ok: true })
+  })
+
+  it('eine nie eroberte Provinz unter der Grenze bleibt gesperrt', () => {
+    const state = conqueredFrontProvinceAfterOneDay()
+    const m1 = state.provinces['m1']!
+    m1.occupiedSince = null
+    m1.morale = RECRUIT_MIN_MORALE - 1
+    expect(canApply(state, recruit, { ...ctx, commands: [], events: [] })).toEqual(gesperrt)
   })
 })

@@ -1,6 +1,6 @@
 import { currentDay } from '../rules/availability'
 import { canAfford, payCost } from '../rules/build'
-import { RECRUIT_MIN_MORALE, recruitDuration } from '../rules/recruit'
+import { recruitDuration, recruitMoraleBlocked } from '../rules/recruit'
 import type { GameState, ResourceKey } from '../state/types'
 import { registerCommand } from './registry'
 import { fail, ok, type RecruitCommand } from './types'
@@ -42,8 +42,10 @@ registerCommand<RecruitCommand>('RECRUIT', {
       return fail('MISSING_BUILDING', { required: unit.requiresBuilding, level: needed })
     }
 
-    // Below this morale a province will not raise new formations at all (D6.8).
-    if (province.morale < RECRUIT_MIN_MORALE) {
+    // Below this morale a province will not raise new formations at all (D6.8) — ausser in der Schonfrist
+    // nach der Eroberung (VM-01, R-UNIT-02/AK1).
+    // LOESCHVERMERK (Review): vorher `if (province.morale < RECRUIT_MIN_MORALE) {` — sperrte auch frisch eroberte Provinzen (VM-01, LOESCHVERMERKE Nr. 57).
+    if (recruitMoraleBlocked(province, state.tick, ctx.rules)) {
       return fail('INVALID_TARGET', { reason: 'Moral zu niedrig', morale: province.morale })
     }
 
