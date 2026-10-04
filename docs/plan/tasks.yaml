@@ -4289,7 +4289,7 @@ tasks:
   - id: T-M47-01
     milestone: M47
     title: "Schonfrist fuers Ausheben in eroberten Provinzen (Kern und KI)"
-    status: todo
+    status: done
     deps: []
     requirements: [R-UNIT-02]
     design: []
@@ -4299,7 +4299,7 @@ tasks:
   - id: T-M47-02
     milestone: M47
     title: "Integrationsmessung: Schonfrist-Aushebungen auf der Weltkarte"
-    status: todo
+    status: done
     deps: [T-M47-01]
     requirements: [R-UNIT-02]
     design: []
@@ -4309,7 +4309,7 @@ tasks:
   - id: T-M47-03
     milestone: M47
     title: "Messkette verhaltensaendernd und PR"
-    status: todo
+    status: done
     deps: [T-M47-02]
     requirements: [R-UNIT-02]
     design: []
