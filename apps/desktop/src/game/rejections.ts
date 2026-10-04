@@ -1,6 +1,6 @@
-import type { Command, CommandError, GameState, ResourceKey, Rules } from '@worldwar/core'
+import { RECRUIT_MIN_MORALE, type Command, type CommandError, type GameState, type ResourceKey, type Rules } from '@worldwar/core'
 import { t } from '../i18n/text.ts'
-import { amount, missing } from '../ui/format.ts'
+import { amount, missing, unfix } from '../ui/format.ts'
 
 /**
  * A refusal, in words the player can act on (T-M10-08, R-UI-05, R-UI-07).
@@ -170,6 +170,14 @@ function reasonSentence(rejection: Rejection, command: Command | null, ctx: Reje
       : t('refusal.thatProvince')
   if (typeof detail.building === 'string') values.building = t(`buildings.${detail.building}`)
   if (typeof detail.resource === 'string') values.resource = t(`resources.${detail.resource}`)
+  // Die Moralsperre nennt Zahl und Grenze (T-M46-15, VM-01 Teil a): Noah hielt „Moral zu niedrig“ in einer
+  // eroberten Provinz fuer ein fehlendes Gebaeude. Abgerundet, damit die Zahl nie die Grenze erreicht, wenn die
+  // Sperre greift. Ohne Zahl im Detail (alter Stand, Fremdaufrufer) bleibt der Satz ohne Zahlen.
+  if (command.type === 'RECRUIT' && detail.reason === 'Moral zu niedrig' && typeof detail.morale === 'number') {
+    values.morale = Math.floor(unfix(detail.morale))
+    values.needed = Math.floor(unfix(RECRUIT_MIN_MORALE))
+    return t('refusal.RECRUIT.lowMoraleNumbers', values)
+  }
   if (detail.reason === 'über der Höchstmenge') {
     const max = detail.resource === 'money' ? ctx.rules.constants.tradeMaxMoney : ctx.rules.constants.tradeMaxResource
     values.max = amount(max)

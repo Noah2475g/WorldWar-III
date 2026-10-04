@@ -1378,6 +1378,8 @@ export const de = {
     },
     RECRUIT: {
       lowMorale: 'Die Moral in dieser Provinz ist zu niedrig, um Truppen auszuheben.',
+      // Mit Zahl und Grenze (T-M46-15): die Moral der Provinz, dann die Mindestmoral.
+      lowMoraleNumbers: 'Moral {{morale}} von {{needed}} nötig, um in dieser Provinz Truppen auszuheben.',
     },
     TRADE: {
       sameResource: 'Tauschen Sie gegen einen anderen Rohstoff.',
