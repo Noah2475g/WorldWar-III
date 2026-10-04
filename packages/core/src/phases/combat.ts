@@ -8,7 +8,7 @@ import {
   sideAttackValue,
 } from '../rules/combat'
 import { armyHp, presentArmiesByProvince, pruneEmptyStacks } from '../state/army'
-import type { Army, GameState, PlayerId, ProvinceId } from '../state/types'
+import type { Army, GameState, PlayerId } from '../state/types'
 import type { Phase, PhaseContext } from './index'
 
 /**
