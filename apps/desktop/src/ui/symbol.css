@@ -1,0 +1,177 @@
+/*
+ * Bahn U-Symbol (V3 Welle 3, T-M46-17): Grafiken und Symbole statt Text als Hauptvordergrund.
+ * Eigene Datei, damit sie neben den anderen Bahnen an app.css keinen Merge-Konflikt erzeugt.
+ * Die Namen der Zeichen stehen als aria-label und Tooltip (Icon `title`), nicht als Wort im Bild.
+ */
+
+/* Kopfleiste: Kalender- und Uhrzeichen tragen die Woerter „Tag“ und „Uhr“. */
+.clock__time {
+  gap: 0.25em;
+}
+.alarm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+}
+.resource > svg {
+  flex: none;
+}
+.resource__dir {
+  display: inline-flex;
+  align-items: center;
+}
+.resource__reach {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15em;
+}
+
+/* Alarmliste: das Zeichen gross, das Kurzwort (Ort, Macht, Zahl) daneben klein. */
+.alert {
+  gap: 0.4em;
+  padding: 2px var(--sp-sm);
+}
+.alert__jump,
+.alert__plain,
+.alert--group summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  text-decoration: none;
+}
+.alert__jump:hover .alert__short,
+.alert__jump:focus-visible {
+  text-decoration: underline dotted;
+}
+.alert svg {
+  flex: none;
+}
+
+/* Protokoll: Zeichen der Art, Kurzwort (Ort oder Macht), Anzahl; der Satz steht im Tooltip. */
+.log__row {
+  grid-template-columns: 46px 1fr;
+  align-items: center;
+  gap: var(--sp-md);
+}
+.log__row time {
+  align-self: center;
+  font-size: 11px;
+}
+.log__entry {
+  align-items: center;
+}
+.log__jump,
+.log__plain,
+.log__report summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  text-decoration: none;
+}
+.log__jump:hover,
+.log__jump:focus-visible {
+  text-decoration: underline dotted;
+}
+.log__count {
+  font-family: var(--font-num);
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+.log__day {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  margin-top: 2px;
+  color: var(--warn);
+  font-family: var(--font-num);
+  font-size: 11px;
+}
+.log__filter {
+  min-width: 36px;
+  height: 30px;
+  padding: 0 6px;
+}
+.log__filters {
+  flex-wrap: wrap;
+}
+
+/* Seitenpanel: Zeichen statt Ueberschrift, Zeichenreihen statt Satzzeilen. */
+.panel__icon-title {
+  display: flex;
+  align-items: center;
+  margin: var(--sp-md) 0 var(--sp-sm);
+  color: var(--ink-soft);
+}
+.panel__sub--icons {
+  display: flex;
+  align-items: center;
+  gap: 0.8em;
+  margin: 0.3em 0;
+}
+.panel__sub--icons > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+}
+.picker {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+}
+.panel--economy > summary h2 {
+  flex-direction: row;
+  align-items: center;
+}
+.actions--icons {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.actions--icons .button {
+  justify-content: center;
+  min-height: 44px;
+}
+.actions--icons .action {
+  display: block;
+}
+.army-list li {
+  gap: 0.6em;
+}
+.army-list__row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.army-list__power {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
+  margin-left: auto;
+  color: var(--ink-soft);
+}
+.slot .button {
+  min-height: 44px;
+}
+.slot__level {
+  font-size: 11px;
+}
+
+/* Eigentuemer, Bevoelkerung: Liste statt <dl> (T-M46-17). */
+ul.facts--icons {
+  list-style: none;
+  padding: 0;
+  display: flex;
+}
+ul.facts--icons > li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Der Fuss braucht fuer die groesseren Protokollzeilen etwas mehr Hoehe (vorher 168 px, rund sieben Textzeilen). */
+.foot,
+.foot .log {
+  max-height: 196px;
+}

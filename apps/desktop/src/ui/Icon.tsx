@@ -1,20 +1,43 @@
 import {
+  ArrowDown,
   ArrowLeftRight,
+  ArrowUp,
+  ArrowUpRight,
+  Ban,
   Banknote,
   Bomb,
   Building2,
+  CalendarDays,
   Castle,
+  ChevronLeft,
+  ChevronUp,
   Clock,
+  Coins,
+  Combine,
+  Crosshair,
   Eye,
   FastForward,
   Flag,
+  Footprints,
+  Gem,
+  Hand,
+  Globe,
+  Hammer,
   Handshake,
   HeartPulse,
   Hourglass,
+  Info,
   Landmark,
+  LayoutGrid,
   Link2,
+  List,
+  Lock,
   Mail,
+  MapPin,
+  MousePointerClick,
+  Package,
   Menu,
+  Minus,
   Mountain,
   Pause,
   Save,
@@ -23,16 +46,21 @@ import {
   Search,
   Shield,
   ShieldCheck,
+  Siren,
+  Split,
   Star,
   Sun,
   Sword,
   Swords,
   TreePine,
-  Trophy,
   TriangleAlert,
+  Trophy,
   Undo2,
   Users,
   VenetianMask,
+  Waves,
+  Wheat,
+  X,
   type LucideIcon,
 } from 'lucide-react'
 import ms from 'milsymbol'
@@ -76,6 +104,35 @@ export type ExtraIconName =
   | 'population'
   | 'morale'
   | 'logbook'
+  | 'day'
+  | 'arrowUp'
+  | 'arrowDown'
+  | 'dash'
+  | 'jump'
+  | 'back'
+  | 'close'
+  | 'expand'
+  | 'logAll'
+  | 'logImportant'
+  | 'build'
+  | 'world'
+  | 'deposits'
+  | 'slots'
+  | 'economy'
+  | 'lock'
+  | 'march'
+  | 'merge'
+  | 'split'
+  | 'bombard'
+  | 'holdFire'
+  | 'place'
+  | 'info'
+  | 'city'
+  | 'rural'
+  | 'coast'
+  | 'halt'
+  | 'select'
+  | 'stock'
 
 export type PictureName = IconName | ExtraIconName
 
@@ -112,6 +169,35 @@ const LUCIDE: Partial<Record<PictureName, LucideIcon>> = {
   population: Users,
   morale: HeartPulse,
   logbook: Mail,
+  day: CalendarDays,
+  arrowUp: ArrowUp,
+  arrowDown: ArrowDown,
+  dash: Minus,
+  jump: ArrowUpRight,
+  back: ChevronLeft,
+  close: X,
+  expand: ChevronUp,
+  logAll: List,
+  logImportant: Siren,
+  build: Hammer,
+  world: Globe,
+  deposits: Gem,
+  slots: LayoutGrid,
+  economy: Coins,
+  lock: Lock,
+  march: Footprints,
+  merge: Combine,
+  split: Split,
+  bombard: Crosshair,
+  holdFire: Ban,
+  place: MapPin,
+  info: Info,
+  city: Building2,
+  rural: Wheat,
+  coast: Waves,
+  halt: Hand,
+  select: MousePointerClick,
+  stock: Package,
   clock: Clock,
   pause: Pause,
   fastForward: FastForward,

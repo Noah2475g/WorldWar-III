@@ -5,6 +5,8 @@ import { amount, unfix } from '../ui/format.ts'
 import { isWorldEventType } from '@worldwar/core'
 import { cueFor } from '../ui/sound.ts'
 import { categoryOf, type DayReportDelta, type EventEntry, type EventImportance } from '../ui/Panels.tsx'
+import { BUILDING_ICONS, RELATION_ICONS, RESOURCE_ICONS, SPY_MISSION_ICONS, UNIT_ICONS } from '../ui/icons.tsx'
+import type { PictureName } from '../ui/Icon.tsx'
 
 /**
  * Turning an event into a sentence (T-M10-06, R-UI-07).
@@ -581,6 +583,8 @@ export function adjutantMarchEntries(
               province: naming.province(command.targetProvinceId),
             }),
             provinceId: command.targetProvinceId,
+            symbol: 'march' as const,
+            short: naming.province(command.targetProvinceId),
             severity: 'info' as const,
             category: 'combat' as const,
             // Leise Zeile der Automatik (T-M46-02): kein Alarm, aber eine Quittung - sie bleibt in der Voreinstellung.
@@ -624,8 +628,86 @@ export function mergeBattleLines(entries: readonly EventEntry[], ticksPerDay = 2
     }
   }
   return merged.map((entry, i) =>
-    (counts[i] ?? 1) > 1 ? { ...entry, text: t('events_ui.repeated', { text: entry.text, count: counts[i] ?? 1 }) } : entry,
+    (counts[i] ?? 1) > 1 ? { ...entry, text: t('events_ui.repeated', { text: entry.text, count: counts[i] ?? 1 }), count: counts[i] ?? 1 } : entry,
   )
+}
+
+/**
+ * Das Zeichen und das Kurzwort einer Protokollzeile (T-M46-17, VM-05): die Zeile soll mit dem Auge gelesen
+ * werden, nicht mit dem Satz. Das Zeichen sagt, WAS geschah (Bau, Marsch, Gefecht, Handel, Vertrag ...), das
+ * Kurzwort WO oder MIT WEM (Provinz, Macht). Der ganze Satz bleibt `text` - Tooltip und Name fuers Ohr.
+ */
+export function eventSymbol(
+  event: GameEvent,
+  values: Record<string, string | number>,
+  placeName: string | undefined,
+): { symbol: PictureName; short?: string } {
+  const record = event as unknown as Record<string, unknown>
+  const str = (key: string): string | undefined => (typeof record[key] === 'string' ? (record[key] as string) : undefined)
+  const withShort = (symbol: PictureName, short: string | undefined) => (short ? { symbol, short } : { symbol })
+  const nation = typeof values.target === 'string' ? values.target : typeof values.player === 'string' ? values.player : undefined
+  switch (event.type) {
+    case 'BUILD_STARTED':
+    case 'BUILD_COMPLETED':
+    case 'BUILD_CANCELLED':
+      return withShort(BUILDING_ICONS[str('building') ?? ''] ?? 'build', placeName)
+    case 'UNIT_RECRUITED':
+      return withShort(UNIT_ICONS[str('unitKey') ?? ''] ?? 'infantry', placeName)
+    case 'ARMY_DEPARTED':
+      return withShort('march', placeName)
+    case 'ARMY_ARRIVED':
+    case 'ARMY_RETREATED':
+      return withShort('place', placeName)
+    case 'ARMY_INTRUDED':
+    case 'PROVINCE_REVOLTED':
+      return withShort('warning', placeName)
+    case 'ARMY_DESTROYED':
+    case 'BATTLE_STARTED':
+    case 'BATTLE_RESOLVED':
+      return withShort('battle', placeName)
+    case 'BOMBARDMENT':
+      return withShort('bombard', placeName)
+    case 'PROVINCE_CAPTURED':
+    case 'PROVINCE_CEDED':
+      return withShort('place', placeName)
+    case 'RESOURCE_SHORTAGE':
+    case 'STORAGE_OVERFLOW':
+      return { symbol: RESOURCE_ICONS[str('resource') ?? ''] ?? 'warning' }
+    case 'TRADE_EXECUTED':
+    case 'TRADE_OFFER_CLOSED':
+    case 'TRADE_AGREED':
+      return { symbol: 'trade' }
+    case 'WAR_DECLARED':
+      return withShort(RELATION_ICONS.war, nation)
+    case 'DIPLOMACY_CHANGED':
+      return withShort(RELATION_ICONS[(str('newState') ?? 'peace') as keyof typeof RELATION_ICONS] ?? 'peace', nation)
+    case 'RIGHT_OF_WAY_CHANGED':
+      return withShort(RELATION_ICONS.rightOfWay, nation)
+    case 'CAPITAL_LOST':
+    case 'CAPITAL_MOVED':
+      return withShort('capital', placeName)
+    case 'PLAYER_ELIMINATED':
+      return withShort('warning', nation)
+    case 'GAME_ENDED':
+    case 'GOAL_REACHED':
+      return { symbol: 'trophy' }
+    case 'DAY_REPORT':
+      return { symbol: 'dispatch' }
+    case 'SABOTAGE_SUFFERED':
+      return withShort(record.kind === 'economic' ? 'spyEconomic' : 'spyMilitary', placeName)
+    case 'SPY_DETECTED':
+    case 'SPY_REPORT':
+    case 'SPY_LOST': {
+      const mission = str('mission') as keyof typeof SPY_MISSION_ICONS | undefined
+      return withShort((mission && SPY_MISSION_ICONS[mission]) || 'espionage', placeName)
+    }
+    case 'COMMAND_REJECTED':
+      return { symbol: 'warning' }
+    case 'GAME_STARTED':
+      return { symbol: 'capital' }
+    default:
+      return withShort('info', placeName)
+  }
 }
 
 export function describeEvent(event: GameEvent, index: number, map: MapData, naming: EventNaming = {}): EventEntry {
@@ -672,6 +754,7 @@ export function describeEvent(event: GameEvent, index: number, map: MapData, nam
     ...(cueFor(event.type) && concernsViewer(event, naming.viewer) ? { audible: true } : {}),
     ...(place ? { provinceId: place } : {}),
     ...(battle ? { battle } : {}),
+    ...eventSymbol(event, values, place ? map.provinces.find((p) => p.id === place)?.name : undefined),
     severity: event.severity === 'alert' ? 'alert' : 'info',
   }
 }
@@ -733,6 +816,7 @@ export function groupEntries(entries: readonly EventEntry[], ticksPerDay = 24): 
       id: `${first.id}+${group.length}`,
       text: t('events_ui.group', { text: first.text, more: group.length - 1 }),
       importance,
+      count: group.length,
       severity: group.some((member) => member.severity === 'alert') ? 'alert' : first.severity,
       ...(group.some((member) => member.self) ? { self: true } : {}),
       ...(group.some((member) => member.audible) ? { audible: true } : {}),

@@ -1,7 +1,7 @@
 import { RESOURCE_KEYS, type PublicView } from '@worldwar/core'
 import { SPEED_STOPS } from '../game/speed.ts'
 import { t } from '../i18n/text.ts'
-import { SHORT_REACH_DAYS, amount, formatTime, rate, reachInDays, reachShort, reachText } from './format.ts'
+import { SHORT_REACH_DAYS, amount, formatTime, rate, reachInDays, reachText } from './format.ts'
 import { RESOURCE_ICONS } from './icons.tsx'
 import { Icon } from './Icon.tsx'
 import { Meter } from './Meter.tsx'
@@ -187,6 +187,11 @@ export function activeSpeedStop(speed: number, stops: readonly number[] = SPEED_
   return best
 }
 
+/** Die Tage der Reichweite als Zahl, gerundet wie `reachText`. */
+function roundedReach(days: number): string {
+  return (days < 10 ? Math.round(days * 10) / 10 : Math.round(days)).toLocaleString('de-DE')
+}
+
 export function Header(props: HeaderProps) {
   const activeStop = activeSpeedStop(props.speed)
   const resources = props.view?.self.resources
@@ -201,8 +206,10 @@ export function Header(props: HeaderProps) {
         <span className="header__title">WorldWar</span>
 
         <div className="clock">
+          {/* Die Uhr bleibt ein Satz: Abnahmelauf, Messwerkzeuge und Tests lesen „Tag N · hh:00“ von hier.
+              Das Zeichen davor ist gross (T-M46-17), der Text klein. */}
           <span className="clock__time">
-            <Icon name="clock" size={13} />
+            <Icon name="clock" size={22} />
             {formatTime(props.view?.tick ?? 0, props.ticksPerDay)}
           </span>
 
@@ -369,6 +376,7 @@ export function Header(props: HeaderProps) {
                 value={victory.share}
                 max={victory.goal}
                 text={t('meter.victoryShare', { percent: Math.round(victory.share), goal: Math.round(victory.goal) })}
+                shown={`${Math.round(victory.share)} %`}
                 tone={victory.share >= victory.goal ? 'good' : 'neutral'}
               />
             </span>
@@ -442,10 +450,13 @@ export function Header(props: HeaderProps) {
                 province: props.alarm.provinceName,
                 intruder: props.alarm.intruder,
               })}
+              title={t('header.alarm', { province: props.alarm.provinceName })}
               onClick={() => props.onAlarm?.(props.alarm!.provinceId)}
             >
-              <Icon name="battle" size={13} />
-              {t('header.alarm', { province: props.alarm.provinceName })}
+              {/* Zeichen plus Ortsname (T-M46-17); „Einmarsch:“ steht im Namen fuers Ohr und im Tooltip.
+                  LOESCHVERMERK (Review): bis T-M46-17 stand der ganze Satz {t('header.alarm', { province })} sichtbar im Chip. */}
+              <Icon name="battle" size={22} />
+              {props.alarm.provinceName}
             </button>
           )}
         </div>
@@ -474,18 +485,16 @@ export function Header(props: HeaderProps) {
               className={`resource resource--${key}${toneClass}${groupClass}`}
               title={t(`resources.${key}`)}
             >
-              {/* Das Symbol traegt die Bedeutung fuers Auge, der Name die fuers Ohr —
-                  beides zugleich sichtbar waere derselbe Begriff zweimal. */}
-              <Icon name={RESOURCE_ICONS[key] ?? 'warning'} size={20} />
+              {/* Das Symbol traegt die Bedeutung fuers Auge und - als Name - fuers Ohr (T-M46-17): kein
+                  versteckter Wortknoten mehr daneben.
+                  LOESCHVERMERK (Review): bis T-M46-17 folgten ein <span className="visually-hidden"> mit dem Rohstoffnamen,
+                  der Richtungspfeil als Textzeichen (▲ ▼ –) samt verstecktem Bilanzsatz und die Reichweite als „6 T“-Text. */}
+              <Icon name={RESOURCE_ICONS[key] ?? 'warning'} size={28} title={t(`resources.${key}`)} />
               <b>{resources ? amount(resources[key] ?? 0) : '—'}</b>
-              <span className="visually-hidden">{t(`resources.${key}`)}</span>
               {flow && (
-                // Sichtbar ist nur noch die RICHTUNG (T-M36-02, D36.2): ein Pfeil auf,
-                // ab oder ein Strich. Die Bilanzzahl selbst steht im Tooltip, wo
-                // Produktion und Unterhalt schon standen — sie traegt an einem ruhigen
-                // Tag keine Entscheidung, kostete aber sieben von einundzwanzig
-                // Angaben. Die vier Groessen bleiben vollstaendig in der
-                // Wirtschaftsuebersicht sichtbar (R-ECON-06, R-UI-09).
+                // Sichtbar ist nur die RICHTUNG (T-M36-02, D36.2): ein Pfeil auf, ab oder ein Strich. Die Bilanzzahl
+                // steht im Tooltip und im Namen des Pfeils; die vier Groessen bleiben vollstaendig in der
+                // Wirtschaftsuebersicht (R-ECON-06, R-UI-09).
                 <em
                   className={`resource__dir resource__dir--${tone}`}
                   title={[
@@ -495,21 +504,18 @@ export function Header(props: HeaderProps) {
                     .filter((part) => part !== null)
                     .join(' · ')}
                 >
-                  <span aria-hidden="true">{tone === 'plus' ? '▲' : tone === 'minus' ? '▼' : '–'}</span>
-                  {/* Ein Pfeil ist fuers Ohr nichts — ein Vorleseprogramm sagt
-                      bestenfalls „nach oben zeigendes Dreieck". Fuers Ohr steht deshalb
-                      die Bilanz da, wo das Auge den Pfeil sieht. */}
-                  <span className="visually-hidden">
-                    {`${t('economy.balance')} ${rate(flow.balance)} ${t('economy.perDay')}`}
-                  </span>
+                  <Icon
+                    name={tone === 'plus' ? 'arrowUp' : tone === 'minus' ? 'arrowDown' : 'dash'}
+                    size={16}
+                    title={`${t('economy.balance')} ${rate(flow.balance)} ${t('economy.perDay')}`}
+                  />
                 </em>
               )}
               {short && days !== null && (
-                // Die Zahl, nach der gehandelt wird — und nur dann, wenn gehandelt
-                // werden muss. Kurz fuers Auge, ganz fuers Ohr.
+                // Die Zahl, nach der gehandelt wird - nur dann, wenn gehandelt werden muss: Sanduhr und Tage.
                 <span className="resource__reach">
-                  <span aria-hidden="true">{reachShort(days)}</span>
-                  <span className="visually-hidden">{reachText(days)}</span>
+                  <Icon name="queue" size={16} title={reachText(days)} />
+                  {roundedReach(days)}
                 </span>
               )}
             </li>

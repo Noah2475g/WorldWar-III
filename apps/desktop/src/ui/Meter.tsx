@@ -1,4 +1,5 @@
 import { t } from '../i18n/text.ts'
+import { Icon } from './Icon.tsx'
 
 /**
  * A bounded value as a bar (T-M13-06, R-UI-09).
@@ -56,6 +57,8 @@ export interface MeterProps {
    * noetig, sonst ist der Balken ein namenloser Wert.
    */
   labelHidden?: boolean
+  /** Was im Bild steht, wenn es kuerzer ist als der gesprochene Wert (T-M46-17): „67 %“ statt „67 % von 70 %“. */
+  shown?: string
   /**
    * Zeichnet die Spur als n Segmente statt als Fuellung (T-M29-03, D27.6): die Moral
    * in zehn Stufen liest sich auf einen Blick als "vier von zehn", wo ein glatter
@@ -69,10 +72,12 @@ const TREND_TEXT: Record<'up' | 'down', string> = {
   down: 'fallend',
 }
 
-const TREND_MARK: Record<'up' | 'down', string> = {
-  up: '▲',
-  down: '▼',
-}
+// LOESCHVERMERK (Review): bis T-M46-17 stand die Richtung als Textzeichen ▲/▼ (`TREND_MARK`), jetzt ein Pfeil-Zeichen mit Namen.
+// const TREND_MARK: Record<'up' | 'down', string> = {
+//   up: '▲',
+//   down: '▼',
+// }
+
 
 export function Meter({
   label,
@@ -82,6 +87,7 @@ export function Meter({
   tone = 'neutral',
   trend = null,
   labelHidden = false,
+  shown,
   segments,
 }: MeterProps) {
   const fraction = fillFraction(value, max)
@@ -118,11 +124,11 @@ export function Meter({
         </span>
       )}
       <span className="meter__value">
-        {text}
+        {shown ?? text}
         {trend && (
           <span className={`meter__trend meter__trend--${trend}`}>
-            {TREND_MARK[trend]}
-            <span className="visually-hidden"> {TREND_TEXT[trend]}</span>
+            {/* Pfeil als Zeichen mit Namen statt ▲/▼ plus verstecktem Wort (T-M46-17). */}
+            <Icon name={trend === 'up' ? 'arrowUp' : 'arrowDown'} size={14} title={TREND_TEXT[trend]} />
           </span>
         )}
       </span>

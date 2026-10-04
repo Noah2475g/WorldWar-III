@@ -27,6 +27,7 @@ const arg = (name, fallback) => {
 const URL_ = arg('url', 'http://localhost:5331/')
 const OUT = resolve(arg('out', 'docs/reports/v3/ubild-messwerte.json'))
 const SHOTS = arg('shots', '')
+const DETAIL = process.argv.includes('--detail')
 const SHOT_STATES = arg('shot-states', 'S575G').split(',')
 const STATES = arg('states', 'S300,S575G').split(',')
 const VIEWPORTS = arg('viewports', '1280x800,375x667')
@@ -105,13 +106,14 @@ async function openState(page, name) {
 
 /** Textflaeche und Symbolflaeche eines Bereichs, in Bildpunkten. */
 function measureArea(page, selector) {
-  return page.evaluate((sel) => {
+  return page.evaluate(([sel, detail]) => {
     const root = document.querySelector(sel)
     if (!root) return null
     const box = root.getBoundingClientRect()
     const inView = (r) => r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth
     let chars = 0
     let textArea = 0
+    const top = []
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
     for (let n = walker.nextNode(); n; n = walker.nextNode()) {
       const text = n.textContent.replace(/\s+/g, ' ').trim()
@@ -122,12 +124,15 @@ function measureArea(page, selector) {
       const range = document.createRange()
       range.selectNodeContents(n)
       let seen = false
+      let nodeArea = 0
       for (const r of range.getClientRects()) {
         if (inView(r)) {
           textArea += r.width * r.height
+          nodeArea += r.width * r.height
           seen = true
         }
       }
+      if (detail && seen) top.push({ text: text.slice(0, 60), area: Math.round(nodeArea) })
       if (seen) chars += text.length
     }
     let symbols = 0
@@ -148,14 +153,18 @@ function measureArea(page, selector) {
       symbolArea: Math.round(symbolArea),
       textShare: total ? +(textArea / total).toFixed(3) : 0,
       boxArea: Math.round(box.width * box.height),
+      ...(detail ? { top: top.sort((a, b) => b.area - a.area).slice(0, 30) } : {}),
     }
-  }, selector)
+  }, [selector, DETAIL])
 }
 
-const AREAS = { kopf: 'header', panel: 'aside' }
+// T-M46-17: Alarmliste (.alerts) und Protokoll (.log) kommen dazu; fehlt der Bereich (keine Meldung), steht null.
+const AREAS = { kopf: 'header', panel: 'aside', alarme: '.alerts', protokoll: '.log' }
 async function measureViews(page, vp, name, stackProvince) {
   const out = {}
   const btn = (n, exact = true) => page.getByRole('button', { name: n, exact }).first()
+  // Seit T-M46-17 ist der Knopf ein Zeichen und heisst „Auswählen: Armee N“ (vorher: sichtbares Wort „Auswählen“).
+  const selectBtn = () => page.getByRole('button', { name: /^Auswählen(:|$)/ }).first()
   await btn('Nicht mehr zeigen').click({ timeout: 3000 }).catch(() => {})
   const snap = async (key) => {
     const row = {}
@@ -193,11 +202,11 @@ async function measureViews(page, vp, name, stackProvince) {
   for (let i = 1; i < n; i++) {
     await picker.selectOption({ index: i }, { timeout: 5000 })
     await page.waitForTimeout(100)
-    if (await btn('Auswählen').isVisible().catch(() => false)) break
+    if (await selectBtn().isVisible().catch(() => false)) break
   }
   await snap('provinz')
-  if (await btn('Auswählen').isVisible().catch(() => false)) {
-    await btn('Auswählen').click({ timeout: 4000 })
+  if (await selectBtn().isVisible().catch(() => false)) {
+    await selectBtn().click({ timeout: 4000 })
     await page.waitForTimeout(300)
     await snap('armee')
   }
