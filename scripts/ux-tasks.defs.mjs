@@ -28,7 +28,7 @@ const aside = (page) => page.locator('aside.side')
 const asideSelect = (page, n) => page.locator('aside select').nth(n)
 const btn = (page, name, exact = true) => page.getByRole('button', { name, exact }).first()
 const asideHas = (src) => new RegExp(src).test(document.querySelector('aside.side')?.innerText ?? '')
-const MOVING = 'Marsch\\s+Ankunft Tag \\d+'
+const MOVING = '(Marsch\\s+Ankunft Tag \\d+|\\d+ · \\d\\d:00)' // Symbol-Durchgang T-M46-17: Ankunft steht als "380 · 03:00"
 const bodyHas = (src) => new RegExp(src).test(document.body.innerText)
 
 /** Fokus-Tests */
@@ -44,7 +44,7 @@ const MARKER = [513, 561]
 async function kbSelectArmy(run, page) {
   if (!(await run.tabTo(isProvinceSelect, 'Provinzliste'))) return false
   if (!(await run.typeSelect('Mittlerer Westen', 'Provinz'))) return false
-  if (!(await run.tabTo(isButton(/^Auswählen$/), 'Auswählen (Armee)'))) return false
+  if (!(await run.tabTo(isButton(/^Auswählen/), 'Auswählen (Armee)'))) return false
   await run.key('Enter', 'Auswählen')
   await sleep(page, 300)
   return true
@@ -128,11 +128,11 @@ export const TASKS = [
       run.start()
       await run.clickAt(MARKER[0], MARKER[1], 'Armeezeichen auf der Karte')
       await run.click(btn(page, 'Teilen'), 'Teilen')
-      const geteilt = await until(page, () => /Zusammenlegen/.test(document.body.innerText) && [...document.querySelectorAll('aside.side button')].some((b) => b.textContent?.trim() === 'Zusammenlegen' && !b.disabled), null, 5000)
+      const geteilt = await until(page, () => [...document.querySelectorAll('aside.side button')].some((b) => (b.getAttribute('aria-label') || b.textContent || '').trim() === 'Zusammenlegen' && !b.disabled), null, 5000)
       if (!geteilt) run.detour('Teilen', 'Zusammenlegen wurde nach 5 s nicht frei')
       await run.click(btn(page, 'Zusammenlegen'), 'Zusammenlegen')
       run.stop()
-      const ok = await until(page, () => [...document.querySelectorAll('aside.side button')].some((b) => b.textContent?.trim() === 'Zusammenlegen' && b.disabled), null, 5000)
+      const ok = await until(page, () => [...document.querySelectorAll('aside.side button')].some((b) => (b.getAttribute('aria-label') || b.textContent || '').trim() === 'Zusammenlegen' && b.disabled), null, 5000)
       return run.result(geteilt && ok, { beleg: `geteilt=${geteilt}, wieder eine Armee=${ok}` })
     },
     // T-M46-05: A oeffnet die Heeruebersicht, Eingabe waehlt die erste Armee, der Fokus steht auf ihrem ersten Befehl.
@@ -146,12 +146,12 @@ export const TASKS = [
       await sleep(page, 300)
       if (!(await run.tabTo(isButton(/^Teilen$/), 'Teilen', { checkFirst: true }))) return (run.stop(), run.result(false))
       await run.key('Enter', 'Teilen')
-      const geteilt = await until(page, () => [...document.querySelectorAll('aside.side button')].some((b) => b.textContent?.trim() === 'Zusammenlegen' && !b.disabled), null, 5000)
+      const geteilt = await until(page, () => [...document.querySelectorAll('aside.side button')].some((b) => (b.getAttribute('aria-label') || b.textContent || '').trim() === 'Zusammenlegen' && !b.disabled), null, 5000)
       if (!geteilt) run.detour('Teilen', 'Zusammenlegen wurde nach 5 s nicht frei')
       if (!(await run.tabTo(isButton(/^Zusammenlegen$/), 'Zusammenlegen', { max: 40, back: true }))) return (run.stop(), run.result(false))
       await run.key('Enter', 'Zusammenlegen')
       run.stop()
-      const ok = await until(page, () => [...document.querySelectorAll('aside.side button')].some((b) => b.textContent?.trim() === 'Zusammenlegen' && b.disabled), null, 5000)
+      const ok = await until(page, () => [...document.querySelectorAll('aside.side button')].some((b) => (b.getAttribute('aria-label') || b.textContent || '').trim() === 'Zusammenlegen' && b.disabled), null, 5000)
       return run.result(geteilt && ok, { beleg: `geteilt=${geteilt}, wieder eine Armee=${ok}` })
     },
     async tastaturAlt(run, page) {
@@ -160,13 +160,13 @@ export const TASKS = [
       if (!(await kbSelectArmy(run, page))) return (run.stop(), run.result(false))
       if (!(await run.tabTo(isButton(/^Teilen$/), 'Teilen'))) return (run.stop(), run.result(false))
       await run.key('Enter', 'Teilen')
-      const geteilt = await until(page, () => [...document.querySelectorAll('aside.side button')].some((b) => b.textContent?.trim() === 'Zusammenlegen' && !b.disabled), null, 5000)
+      const geteilt = await until(page, () => [...document.querySelectorAll('aside.side button')].some((b) => (b.getAttribute('aria-label') || b.textContent || '').trim() === 'Zusammenlegen' && !b.disabled), null, 5000)
       if (!geteilt) run.detour('Teilen', 'Zusammenlegen wurde nach 5 s nicht frei')
       // Der Fokus steht nach dem Befehl auf dem Teilen-Knopf; Zusammenlegen liegt davor: Umschalt+Tab.
       if (!(await run.tabTo(isButton(/^Zusammenlegen$/), 'Zusammenlegen', { max: 40, back: true }))) return (run.stop(), run.result(false))
       await run.key('Enter', 'Zusammenlegen')
       run.stop()
-      const ok = await until(page, () => [...document.querySelectorAll('aside.side button')].some((b) => b.textContent?.trim() === 'Zusammenlegen' && b.disabled), null, 5000)
+      const ok = await until(page, () => [...document.querySelectorAll('aside.side button')].some((b) => (b.getAttribute('aria-label') || b.textContent || '').trim() === 'Zusammenlegen' && b.disabled), null, 5000)
       return run.result(geteilt && ok, { beleg: `geteilt=${geteilt}, wieder eine Armee=${ok}` })
     },
   },
