@@ -210,3 +210,93 @@ describe('Ton nach der ersten Beruehrung (Autoplay-Regel)', () => {
     expect(audio.resume).not.toHaveBeenCalled()
   })
 })
+
+/**
+ * T-M46-14 · Jede Ereignisart klingt anders (VM-04).
+ *
+ * Noah: „Statt einfach diesen Ploppen, das nervt sehr.“ Ausgangswert vor der Aufgabe: sieben
+ * Ereignisarten mit Ton, davon nur drei mit eigenem Klang (Bau und Aushebung teilten sich
+ * `complete`, Krieg und Einmarsch `war`), alle erzeugt aus Oszillatoren. Jetzt: acht Arten, acht
+ * Klaenge, jeder aus einer eigenen Aufnahme (Kenney, CC0).
+ */
+describe('T-M46-14 Klang je Ereignisart', () => {
+  const ARTEN = [
+    'BATTLE_STARTED',
+    'PROVINCE_CAPTURED',
+    'BUILD_COMPLETED',
+    'UNIT_RECRUITED',
+    'RESOURCE_SHORTAGE',
+    'WAR_DECLARED',
+    'ARMY_INTRUDED',
+    'DIPLOMACY_CHANGED',
+  ]
+
+  it('gibt jeder Ereignisart ihren eigenen Klang', () => {
+    const klaenge = ARTEN.map((art) => cueFor(art))
+    expect(klaenge.every((klang) => klang !== null)).toBe(true)
+    expect(new Set(klaenge).size).toBe(ARTEN.length)
+  })
+
+  it('spielt eine Aufnahme, wo der Kontext dekodieren kann, und merkt sie sich', async () => {
+    const buffer = {} as AudioBuffer
+    const source = { buffer: null as unknown, connect: vi.fn(), start: vi.fn() }
+    const gain = { gain: { value: 0 }, connect: vi.fn() }
+    const decode = vi.fn(async (bytes: ArrayBuffer) => {
+      // Jede Aufnahme ist wirklich eine OGG-Datei.
+      expect(new TextDecoder().decode(new Uint8Array(bytes).slice(0, 4))).toBe('OggS')
+      return buffer
+    })
+    const audio = {
+      currentTime: 0,
+      destination: {},
+      decodeAudioData: decode,
+      createBufferSource: () => source,
+      createGain: () => gain,
+      createOscillator: vi.fn(),
+    }
+
+    expect(play('battle', { enabled: true, speed: 1 }, () => audio as never)).toBe(true)
+    await vi.waitFor(() => expect(source.start).toHaveBeenCalledTimes(1))
+    expect(source.buffer).toBe(buffer)
+    expect(audio.createOscillator).not.toHaveBeenCalled()
+
+    play('battle', { enabled: true, speed: 1 }, () => audio as never)
+    await vi.waitFor(() => expect(source.start).toHaveBeenCalledTimes(2))
+    expect(decode).toHaveBeenCalledTimes(1)
+  })
+
+  it('faellt auf den erzeugten Ton zurueck, wenn eine Aufnahme sich nicht lesen laesst', async () => {
+    const oscillator = { type: '', frequency: { value: 0 }, connect: vi.fn(), start: vi.fn(), stop: vi.fn() }
+    const gain = {
+      gain: { value: 0, setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn() },
+      connect: vi.fn(),
+    }
+    const audio = {
+      currentTime: 0,
+      destination: {},
+      decodeAudioData: vi.fn(async () => {
+        throw new Error('nicht lesbar')
+      }),
+      createBufferSource: vi.fn(),
+      createGain: () => gain,
+      createOscillator: () => oscillator,
+    }
+
+    play('war', { enabled: true, speed: 1 }, () => audio as never)
+    await vi.waitFor(() => expect(oscillator.start).toHaveBeenCalled())
+    expect(audio.createBufferSource).not.toHaveBeenCalled()
+  })
+
+  it('haelt Tempolimit und Stummschaltung auch fuer die neuen Klaenge', () => {
+    for (const cue of ['recruited', 'intruded', 'diplomacy'] as const) {
+      expect(shouldPlay(cue, { enabled: false, speed: 1 })).toBe(false)
+      expect(shouldPlay(cue, { enabled: true, speed: CUE_SPEED_LIMIT + 1 })).toBe(false)
+      expect(shouldPlay(cue, { enabled: true, speed: 1 })).toBe(true)
+    }
+  })
+
+  it('waehlt den Alarm vor der Eroberung und die Diplomatie vor dem Bau', () => {
+    expect(cueForEvents([{ type: 'PROVINCE_CAPTURED' }, { type: 'ARMY_INTRUDED' }])).toBe('intruded')
+    expect(cueForEvents([{ type: 'BUILD_COMPLETED' }, { type: 'DIPLOMACY_CHANGED' }])).toBe('diplomacy')
+  })
+})

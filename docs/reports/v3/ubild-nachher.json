@@ -1,0 +1,341 @@
+{
+  "url": "http://localhost:5332/",
+  "states": {
+    "S300": {
+      "viewports": {
+        "1280x800": {
+          "karte": {
+            "kopf": {
+              "chars": 245,
+              "symbols": 13,
+              "textArea": 18846,
+              "symbolArea": 4250,
+              "textShare": 0.816,
+              "boxArea": 84480
+            },
+            "panel": {
+              "chars": 284,
+              "symbols": 10,
+              "textArea": 28423,
+              "symbolArea": 1771,
+              "textShare": 0.941,
+              "boxArea": 215080
+            }
+          },
+          "brennpunkt": {
+            "kopf": {
+              "chars": 245,
+              "symbols": 13,
+              "textArea": 18846,
+              "symbolArea": 4250,
+              "textShare": 0.816,
+              "boxArea": 84480
+            },
+            "panel": {
+              "chars": 292,
+              "symbols": 10,
+              "textArea": 29129,
+              "symbolArea": 1771,
+              "textShare": 0.943,
+              "boxArea": 215080
+            }
+          },
+          "nah": {
+            "kopf": {
+              "chars": 245,
+              "symbols": 13,
+              "textArea": 18846,
+              "symbolArea": 4250,
+              "textShare": 0.816,
+              "boxArea": 84480
+            },
+            "panel": {
+              "chars": 292,
+              "symbols": 10,
+              "textArea": 29129,
+              "symbolArea": 1771,
+              "textShare": 0.943,
+              "boxArea": 215080
+            }
+          },
+          "provinz": {
+            "kopf": {
+              "chars": 245,
+              "symbols": 13,
+              "textArea": 18846,
+              "symbolArea": 4250,
+              "textShare": 0.816,
+              "boxArea": 84480
+            },
+            "panel": {
+              "chars": 415,
+              "symbols": 15,
+              "textArea": 42097,
+              "symbolArea": 2771,
+              "textShare": 0.938,
+              "boxArea": 215080
+            }
+          }
+        },
+        "375x667": {
+          "karte": {
+            "kopf": {
+              "chars": 228,
+              "symbols": 9,
+              "textArea": 17088,
+              "symbolArea": 3090,
+              "textShare": 0.847,
+              "boxArea": 39000
+            },
+            "panel": {
+              "chars": 99,
+              "symbols": 3,
+              "textArea": 9618,
+              "symbolArea": 588,
+              "textShare": 0.942,
+              "boxArea": 60322
+            }
+          },
+          "provinz": {
+            "kopf": {
+              "chars": 228,
+              "symbols": 9,
+              "textArea": 17088,
+              "symbolArea": 3090,
+              "textShare": 0.847,
+              "boxArea": 39000
+            },
+            "panel": {
+              "chars": 161,
+              "symbols": 5,
+              "textArea": 16272,
+              "symbolArea": 1081,
+              "textShare": 0.938,
+              "boxArea": 95338
+            }
+          }
+        }
+      },
+      "overlap": {
+        "viewer": "p1",
+        "armies": 3,
+        "byScale": {
+          "1": {
+            "markers": 3,
+            "fullyHidden": 0,
+            "partlyCovered": 0
+          },
+          "2": {
+            "markers": 3,
+            "fullyHidden": 0,
+            "partlyCovered": 0
+          },
+          "4": {
+            "markers": 3,
+            "fullyHidden": 0,
+            "partlyCovered": 0
+          },
+          "8": {
+            "markers": 3,
+            "fullyHidden": 0,
+            "partlyCovered": 0
+          },
+          "0.5": {
+            "markers": 3,
+            "fullyHidden": 0,
+            "partlyCovered": 0
+          }
+        },
+        "provincesWithStack": 1,
+        "largestStack": 3,
+        "largestStackProvince": "CAN-EAST"
+      }
+    },
+    "S575G": {
+      "viewports": {
+        "1280x800": {
+          "karte": {
+            "kopf": {
+              "chars": 290,
+              "symbols": 14,
+              "textArea": 22315,
+              "symbolArea": 4419,
+              "textShare": 0.835,
+              "boxArea": 89600
+            },
+            "panel": {
+              "chars": 497,
+              "symbols": 18,
+              "textArea": 47556,
+              "symbolArea": 3039,
+              "textShare": 0.94,
+              "boxArea": 213560
+            }
+          },
+          "brennpunkt": {
+            "kopf": {
+              "chars": 290,
+              "symbols": 14,
+              "textArea": 22315,
+              "symbolArea": 4419,
+              "textShare": 0.835,
+              "boxArea": 89600
+            },
+            "panel": {
+              "chars": 505,
+              "symbols": 18,
+              "textArea": 48262,
+              "symbolArea": 3039,
+              "textShare": 0.941,
+              "boxArea": 213560
+            }
+          },
+          "nah": {
+            "kopf": {
+              "chars": 290,
+              "symbols": 14,
+              "textArea": 22315,
+              "symbolArea": 4419,
+              "textShare": 0.835,
+              "boxArea": 89600
+            },
+            "panel": {
+              "chars": 505,
+              "symbols": 18,
+              "textArea": 48262,
+              "symbolArea": 3039,
+              "textShare": 0.941,
+              "boxArea": 213560
+            }
+          },
+          "provinz": {
+            "kopf": {
+              "chars": 290,
+              "symbols": 14,
+              "textArea": 22315,
+              "symbolArea": 4419,
+              "textShare": 0.835,
+              "boxArea": 89600
+            },
+            "panel": {
+              "chars": 410,
+              "symbols": 25,
+              "textArea": 39465,
+              "symbolArea": 10773,
+              "textShare": 0.786,
+              "boxArea": 213560
+            }
+          },
+          "armee": {
+            "kopf": {
+              "chars": 290,
+              "symbols": 14,
+              "textArea": 22315,
+              "symbolArea": 4419,
+              "textShare": 0.835,
+              "boxArea": 89600
+            },
+            "panel": {
+              "chars": 659,
+              "symbols": 21,
+              "textArea": 60890,
+              "symbolArea": 6020,
+              "textShare": 0.91,
+              "boxArea": 213560
+            }
+          }
+        },
+        "375x667": {
+          "karte": {
+            "kopf": {
+              "chars": 250,
+              "symbols": 9,
+              "textArea": 18582,
+              "symbolArea": 3090,
+              "textShare": 0.857,
+              "boxArea": 39000
+            },
+            "panel": {
+              "chars": 129,
+              "symbols": 4,
+              "textArea": 10912,
+              "symbolArea": 784,
+              "textShare": 0.933,
+              "boxArea": 60322
+            }
+          },
+          "provinz": {
+            "kopf": {
+              "chars": 250,
+              "symbols": 9,
+              "textArea": 18582,
+              "symbolArea": 3090,
+              "textShare": 0.857,
+              "boxArea": 39000
+            },
+            "panel": {
+              "chars": 161,
+              "symbols": 5,
+              "textArea": 13521,
+              "symbolArea": 980,
+              "textShare": 0.932,
+              "boxArea": 95338
+            }
+          },
+          "armee": {
+            "kopf": {
+              "chars": 250,
+              "symbols": 9,
+              "textArea": 18582,
+              "symbolArea": 3090,
+              "textShare": 0.857,
+              "boxArea": 39000
+            },
+            "panel": {
+              "chars": 161,
+              "symbols": 5,
+              "textArea": 13521,
+              "symbolArea": 980,
+              "textShare": 0.932,
+              "boxArea": 95338
+            }
+          }
+        }
+      },
+      "overlap": {
+        "viewer": "p6",
+        "armies": 237,
+        "byScale": {
+          "1": {
+            "markers": 237,
+            "fullyHidden": 0,
+            "partlyCovered": 1
+          },
+          "2": {
+            "markers": 237,
+            "fullyHidden": 0,
+            "partlyCovered": 25
+          },
+          "4": {
+            "markers": 237,
+            "fullyHidden": 0,
+            "partlyCovered": 109
+          },
+          "8": {
+            "markers": 237,
+            "fullyHidden": 0,
+            "partlyCovered": 145
+          },
+          "0.5": {
+            "markers": 237,
+            "fullyHidden": 0,
+            "partlyCovered": 0
+          }
+        },
+        "provincesWithStack": 27,
+        "largestStack": 27,
+        "largestStackProvince": "SAU"
+      }
+    }
+  }
+}

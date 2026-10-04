@@ -28,6 +28,9 @@ export const de = {
     newGameConfirm: 'Die laufende Partie wird verlassen, Ungespeichertes geht verloren — noch einmal klicken.',
     // Der Weg zur Tastenübersicht (T-M44-16, R-UX-05).
     keys: 'Tastenkürzel',
+    // Namensnennung der Symbole und Klänge von Dritten (T-M46-13, CC BY 3.0).
+    credits: 'Mitwirkende',
+    creditsIntro: 'Symbole und Klänge stammen von diesen Urhebern. Die Lizenzen stehen in docs/ASSETS.md.',
   },
 
   header: {

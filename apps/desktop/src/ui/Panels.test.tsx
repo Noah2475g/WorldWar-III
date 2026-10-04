@@ -29,8 +29,9 @@ import {
   type Targeting,
   type TradeFormSpec,
 } from './Panels.tsx'
-import { BUILDING_ICONS, BUILDING_ORDER, ICON_PATHS, RESOURCE_ICONS, UNIT_ICONS } from './icons.tsx'
-import { ART, ART_FOR_ICON, BUILDING_ART, UNIT_ART } from './art.tsx'
+import { BUILDING_ICONS, BUILDING_ORDER, RESOURCE_ICONS, UNIT_ICONS } from './icons.tsx'
+import { GLYPH_PATHS } from './glyphs.ts'
+import { ART, BUILDING_ART, UNIT_ART } from './art.tsx'
 import { UnitMarker, type MarkerTone } from './UnitMarker.tsx'
 import type { BattleReportData } from '../game/events.ts'
 import type { TimelineEntry } from '../game/saves.ts'
@@ -1555,8 +1556,8 @@ describe('R-UI-05 Der Markt zeigt das Zeichen des gewaehlten Rohstoffs', () => {
       <MarketPanel resources={['wood', 'iron', 'oil'] as never} stock={{}} preview={handel} />,
     )
 
-    expect(zeichnung(container, 'give')).toBe(ICON_PATHS[RESOURCE_ICONS.wood!])
-    expect(zeichnung(container, 'want')).toBe(ICON_PATHS[RESOURCE_ICONS.iron!])
+    expect(zeichnung(container, 'give')).toBe(GLYPH_PATHS[RESOURCE_ICONS.wood!]!)
+    expect(zeichnung(container, 'want')).toBe(GLYPH_PATHS[RESOURCE_ICONS.iron!]!)
   })
 
   it('wechselt das Zeichen mit der Auswahl', () => {
@@ -1566,7 +1567,7 @@ describe('R-UI-05 Der Markt zeigt das Zeichen des gewaehlten Rohstoffs', () => {
 
     fireEvent.change(container.querySelector('#market-give')!, { target: { value: 'oil' } })
 
-    expect(zeichnung(container, 'give')).toBe(ICON_PATHS[RESOURCE_ICONS.oil!])
+    expect(zeichnung(container, 'give')).toBe(GLYPH_PATHS[RESOURCE_ICONS.oil!]!)
   })
 })
 
@@ -1650,11 +1651,9 @@ describe('T-M29-03 Das Provinzpanel traegt das Bauplatz-Raster', () => {
     )
   }
 
-  /** Die Flaeche je Feld, in der Reihenfolge des Rasters. */
+  /** Die Flaeche je Feld, in der Reihenfolge des Rasters (seit T-M46-13: der Pfad von game-icons.net). */
   const bilderImRaster = (container: HTMLElement): (string | null)[] =>
-    [...container.querySelectorAll('.slot')].map(
-      (slot) => slot.querySelector('.unit-art .unit-art__body')?.getAttribute('d') ?? null,
-    )
+    [...container.querySelectorAll('.slot')].map((slot) => slot.querySelector('svg path')?.getAttribute('d') ?? null)
 
   it('zeigt sieben Felder mit sieben verschiedenen Gebaeudebildern', () => {
     const { container } = gerastert('gebaut')
@@ -1664,7 +1663,7 @@ describe('T-M29-03 Das Provinzpanel traegt das Bauplatz-Raster', () => {
     expect(bilder.filter(Boolean)).toHaveLength(bilder.length)
     expect(new Set(bilder).size).toBe(bilder.length)
     for (const [index, key] of BUILDING_ORDER.entries()) {
-      expect(bilder[index], key).toBe(ART[BUILDING_ART[key]]!.body)
+      expect(bilder[index], key).toBe(GLYPH_PATHS[BUILDING_ICONS[key]!])
     }
   })
 
@@ -1679,25 +1678,22 @@ describe('T-M29-03 Das Provinzpanel traegt das Bauplatz-Raster', () => {
     expect(bilderImRaster(gebaut.container)).toEqual(bilderImRaster(frei.container))
   })
 
-  it('faerbt das Gebaeude in jedem Zustand in `building` und nicht in `ink` (D33.2)', () => {
-    // Im Raster gibt es keinen fremden Besitzer; die Gebaeudefarbe ist die Auskunft.
-    // Befund der Sichtpruefung vom 2026-09-11: im FREIEN Feld stand der Riss in `ink`,
-    // weil das Bild dort im Knopf sitzt und `.slot > svg` es nicht mehr erwischt.
+  it('zeigt in jedem Zustand ein Zeichen je Feld, gefuellt mit der Textfarbe (T-M46-13)', () => {
+    // Seit T-M46-13 kein Schattenriss mehr, sondern das Zeichen von game-icons.net: eine Flaeche,
+    // die mit `currentColor` gefuellt wird — `.slot > svg` faerbt sie in `building`.
     for (const zustand of ['frei', 'bau', 'gebaut'] as const) {
       const { container, unmount } = gerastert(zustand)
-      const bilder = [...container.querySelectorAll('.slot .unit-art')]
+      const bilder = [...container.querySelectorAll('.slot svg[fill="currentColor"]')]
 
-      expect(bilder, zustand).toHaveLength(BUILDING_ORDER.length)
-      for (const bild of bilder) {
-        expect(bild.getAttribute('class'), zustand).toContain('unit-art--building')
-      }
+      // Im gebauten Feld sitzt zum Zeichen des Gebaeudes noch das des Ausbau-Knopfs daneben.
+      expect(bilder, zustand).toHaveLength(BUILDING_ORDER.length * (zustand === 'gebaut' ? 2 : 1))
       unmount()
     }
   })
 
   it('setzt die Bilder auf die 30 px des Bauplans', () => {
     const { container } = gerastert('gebaut')
-    const bilder = [...container.querySelectorAll('.slot .unit-art')]
+    const bilder = [...container.querySelectorAll('.slot > svg[fill="currentColor"]')]
 
     expect(bilder).toHaveLength(BUILDING_ORDER.length)
     for (const bild of bilder) {
@@ -1713,7 +1709,7 @@ describe('T-M29-03 Das Provinzpanel traegt das Bauplatz-Raster', () => {
 
     expect(feld.querySelector('.slot__level')?.textContent).toBe('2')
     const benannt = within(feld).getByRole('img', { name: '2 Fabrik' })
-    expect(benannt.classList.contains('unit-art'), 'Der Name haengt noch an der Glyphe').toBe(true)
+    expect(benannt.getAttribute('fill'), 'Der Name haengt noch am Zeichen').toBe('currentColor')
   })
 
   it('zeichnet die Moral in zehn Segmenten mit dem Prozentwert und der Tendenz', () => {
@@ -1803,7 +1799,8 @@ describe('T-M31-02 Das Armeepanel traegt Marker, Zustand und Haltungsgruppe', ()
 
     expect(buttons.length).toBe(4)
     const pressed = buttons.filter((b) => b.getAttribute('aria-pressed') === 'true')
-    expect(pressed.map((b) => b.textContent)).toEqual(['Verteidigung'])
+    // Nur das Zeichen sichtbar (T-M46-13): der Name steht im aria-label.
+    expect(pressed.map((b) => b.getAttribute('aria-label'))).toEqual(['Haltung Verteidigung einnehmen'])
   })
 
   it('bietet vier Haltungen an, jede mit ihrem Hinweis im Tooltip (R-UNIT-09/AK6)', () => {
@@ -1811,7 +1808,13 @@ describe('T-M31-02 Das Armeepanel traegt Marker, Zustand und Haltungsgruppe', ()
     const group = screen.getByRole('group', { name: 'Haltung' })
     const buttons = within(group).getAllByRole('button')
 
-    expect(buttons.map((b) => b.textContent)).toEqual(['Angriff', 'Verteidigung', 'Rückzug', 'Garnison'])
+    expect(buttons.map((b) => b.textContent)).toEqual(['', '', '', ''])
+    expect(buttons.map((b) => b.getAttribute('aria-label'))).toEqual([
+      'Haltung Angriff einnehmen',
+      'Haltung Verteidigung einnehmen',
+      'Haltung Rückzug einnehmen',
+      'Haltung Garnison einnehmen',
+    ])
     const haltungen = actions.filter((action) => action.id.startsWith('stance-'))
     haltungen.forEach((action, index) => {
       expect(buttons[index]!.getAttribute('title'), action.id).toContain(action.hint)
@@ -1849,25 +1852,29 @@ describe('T-M31-02 Das Armeepanel traegt Marker, Zustand und Haltungsgruppe', ()
    * zwei Bildsprachen im selben Spiel halten nur zusammen, solange alles andere gleich
    * bleibt.
    */
-  it('zeigt in der Armeeliste den Schattenriss statt der Glyphe', () => {
+  // LOESCHVERMERK (Review): bis T-M46-13 standen hier „zeigt in der Armeeliste den Schattenriss statt der Glyphe“
+  // (Schattenriss aus ART in der Platte) und „nimmt fuer die Bildfassung die 44 px des Bauplans“ (Breite 44,
+  // Hoehe 26,4). Das Plaettchen traegt jetzt das Truppenzeichen aus milsymbol und bleibt bei 30 x 18.
+  it('zeigt in der Armeeliste das Truppenzeichen statt Glyphe oder Schattenriss (T-M46-13)', () => {
     const { container } = panel()
     const marker = [...container.querySelectorAll('.unit-marker')]
 
     expect(marker).toHaveLength(2)
     expect(container.querySelector('.unit-marker__glyph'), 'Die Liste stempelt noch Glyphen').toBeNull()
-    marker.forEach((platte, index) => {
-      const bild = ART_FOR_ICON[units[index]!.icon]!
-      expect(platte.querySelector('.unit-marker__art')?.getAttribute('d')).toBe(ART[bild]!.body)
-      expect(platte.querySelector('.unit-marker__art-cut')?.getAttribute('d')).toBe(ART[bild]!.cut)
-    })
+    expect(container.querySelector('.unit-marker__art'), 'Die Liste zeigt noch Schattenrisse').toBeNull()
+    for (const platte of marker) {
+      const zeichen = platte.querySelector('svg.unit-marker__sym')
+      expect(zeichen, 'Kein Truppenzeichen im Plaettchen').toBeTruthy()
+      expect(zeichen!.querySelector('path'), 'Das Truppenzeichen ist leer').toBeTruthy()
+    }
   })
 
-  it('nimmt fuer die Bildfassung die 44 px des Bauplans, ohne das Seitenverhaeltnis zu drehen', () => {
+  it('haelt das Plaettchen bei 30 x 18, ohne das Seitenverhaeltnis zu drehen', () => {
     const { container } = panel()
     const platte = container.querySelector('.unit-marker')!
 
-    expect(platte.getAttribute('width')).toBe('44')
-    expect(platte.getAttribute('height')).toBe('26.4')
+    expect(platte.getAttribute('width')).toBe('30')
+    expect(platte.getAttribute('height')).toBe('18')
     expect(platte.getAttribute('viewBox')).toBe('0 0 30 18')
   })
 
@@ -1906,7 +1913,8 @@ describe('T-M31-02 Das Armeepanel traegt Marker, Zustand und Haltungsgruppe', ()
     panel()
 
     // `amount` rechnet Festkomma heraus — gebunden wird die Zeile, nicht die Schreibweise.
-    expect(screen.getByText(/Kampfkraft/).textContent).toContain('Zustand 86 %')
+    expect(screen.getByLabelText('Kampfkraft').textContent).toBeTruthy()
+    expect(document.querySelector('.panel__sub')!.textContent).toContain('Zustand 86 %')
     const meter = screen.getByRole('meter', { name: 'Zustand' })
     expect(meter.getAttribute('aria-valuenow')).toBe('86')
     expect(meter.textContent).toContain('86 %')

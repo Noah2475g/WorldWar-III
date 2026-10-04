@@ -8,6 +8,7 @@ import { boundsOf } from './picking.ts'
 import type { RenderProvince } from './render.ts'
 import { TOKENS } from '../ui/tokens.ts'
 import { ICON_PATHS } from '../ui/icons.tsx'
+import { GLYPH_PATHS } from '../ui/glyphs.ts'
 import { ART } from '../ui/art.tsx'
 
 /**
@@ -437,7 +438,8 @@ describe('T-M33-04 Die Karte stempelt weiter die NATO-Glyphe', () => {
     // Ohne diese Zeile prueft der Rest sieben Stempel, die es nicht gibt.
     expect(pfade.length, 'Die Karte hat keinen einzigen Stempel gebaut').toBeGreaterThan(0)
 
-    const glyphen = new Set(Object.values(ICON_PATHS))
+    // Einheiten: die NATO-Glyphe; Gebaeude seit T-M46-13: das gefuellte Zeichen von game-icons.net.
+    const glyphen = new Set([...Object.values(ICON_PATHS), ...Object.values(GLYPH_PATHS)])
     const risse = new Set(Object.values(ART).flatMap((bild) => [bild.body, bild.cut]))
     for (const d of pfade) {
       expect(risse.has(d), `Die Karte stempelt einen Schattenriss: ${d.slice(0, 30)}`).toBe(false)

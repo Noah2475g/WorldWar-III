@@ -87,9 +87,12 @@ gezeichnet in der Formensprache militärischer Lagekarten — Rechteck mit Diago
 für Infanterie, Oval für Panzer, Winkel für Artillerie. Diese Formensprache ist eine
 gemeinfreie Konvention, kein Werk; übernommen wurde nichts.
 
-**Klänge** (`apps/desktop/src/ui/sound.ts`): keine Aufnahmen, sondern erzeugte Töne über
-die Web-Audio-Schnittstelle — je Ereignis ein Oszillator mit Frequenz, Dauer und
-Hüllkurve. Nichts wird geladen, nichts ist lizenziert, nichts wiegt etwas.
+<!-- LOESCHVERMERK (Review): bis T-M46-14 stand hier „Klänge (`apps/desktop/src/ui/sound.ts`): keine Aufnahmen, sondern
+erzeugte Töne über die Web-Audio-Schnittstelle — je Ereignis ein Oszillator mit Frequenz, Dauer und Hüllkurve. Nichts wird
+geladen, nichts ist lizenziert, nichts wiegt etwas.“ Seit T-M46-14 klingt jede Ereignisart nach einer Aufnahme von Kenney
+(Abschnitt „Klänge von Dritten“ unten); die erzeugten Töne in `sound.ts` bleiben nur als Rückfall. -->
+**Klänge** (`apps/desktop/src/ui/sound.ts`): Aufnahmen von Kenney (CC0), siehe „Klänge von Dritten“ unten; erzeugte
+Töne über die Web-Audio-Schnittstelle bleiben als Rückfall, falls sich eine Datei nicht dekodieren lässt.
 
 ## Anwendungssymbol — Eigenerzeugnis, kein Fremdinhalt
 
@@ -695,3 +698,75 @@ Kein Fremdinhalt — Bildschirmfotos des eigenen Spiels, erzeugt mit `node scrip
 | `docs/ux/v3-before/S575G-18-laden-grosser-stand-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Laden eines grossen Standes, 375x667 |
 | `docs/ux/v3-before/S575G-19-tempo-100-alarm-1280x800.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Tempo 100 mit Alarm, 1280x800 |
 | `docs/ux/v3-before/S575G-19-tempo-100-alarm-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Tempo 100 mit Alarm, 375x667 |
+
+## Symbole von Dritten — game-icons.net, milsymbol, Lucide (V3 Welle 2, T-M46-13, 2026-10-04)
+
+Auf Noahs Wort vom 2026-10-04 (DECISIONS) ist R-ASSET-02 für **CC BY 3.0** geöffnet; CC BY verlangt die Nennung
+des Urhebers, und die steht hier **und** sichtbar im Spiel (Menü, Eintrag „Mitwirkende“; Quelle der Texte:
+`CREDITS` in `apps/desktop/src/ui/glyphs.ts`). Die Dateien liegen unverändert wie bezogen vor; das Spiel
+verwendet nur den weißen Pfad und füllt ihn mit der Textfarbe (`apps/desktop/src/ui/Icon.tsx`).
+
+**game-icons.net** — Lizenz Creative Commons Attribution 3.0 (https://creativecommons.org/licenses/by/3.0/),
+Bezug https://github.com/game-icons/icons (Ordner je Urheber), Seite https://game-icons.net. Kein Konto nötig.
+
+| Datei | Urheber | Quelle | Zeigt |
+|---|---|---|---|
+| `apps/desktop/src/ui/glyphs/delapouite_barracks.svg` | Delapouite — CC BY 3.0 | https://game-icons.net/1x1/delapouite/barracks.html | Kaserne |
+| `apps/desktop/src/ui/glyphs/delapouite_factory.svg` | Delapouite — CC BY 3.0 | https://game-icons.net/1x1/delapouite/factory.html | Fabrik |
+| `apps/desktop/src/ui/glyphs/delapouite_control-tower.svg` | Delapouite — CC BY 3.0 | https://game-icons.net/1x1/delapouite/control-tower.html | Flugplatz |
+| `apps/desktop/src/ui/glyphs/delapouite_harbor-dock.svg` | Delapouite — CC BY 3.0 | https://game-icons.net/1x1/delapouite/harbor-dock.html | Hafen |
+| `apps/desktop/src/ui/glyphs/delapouite_crane.svg` | Delapouite — CC BY 3.0 | https://game-icons.net/1x1/delapouite/crane.html | Werft |
+| `apps/desktop/src/ui/glyphs/delapouite_military-fort.svg` | Delapouite — CC BY 3.0 | https://game-icons.net/1x1/delapouite/military-fort.html | Festung |
+| `apps/desktop/src/ui/glyphs/delapouite_railway.svg` | Delapouite — CC BY 3.0 | https://game-icons.net/1x1/delapouite/railway.html | Bahn |
+| `apps/desktop/src/ui/glyphs/lorc_wheat.svg` | Lorc — CC BY 3.0 | https://game-icons.net/1x1/lorc/wheat.html | Nahrung |
+| `apps/desktop/src/ui/glyphs/delapouite_wood-pile.svg` | Delapouite — CC BY 3.0 | https://game-icons.net/1x1/delapouite/wood-pile.html | Material |
+| `apps/desktop/src/ui/glyphs/lorc_metal-bar.svg` | Lorc — CC BY 3.0 | https://game-icons.net/1x1/lorc/metal-bar.html | Eisen |
+| `apps/desktop/src/ui/glyphs/delapouite_coal-pile.svg` | Delapouite — CC BY 3.0 | https://game-icons.net/1x1/delapouite/coal-pile.html | Kohle |
+| `apps/desktop/src/ui/glyphs/skoll_oil-drum.svg` | Skoll — CC BY 3.0 | https://game-icons.net/1x1/skoll/oil-drum.html | Öl |
+| `apps/desktop/src/ui/glyphs/lorc_crystal-cluster.svg` | Lorc — CC BY 3.0 | https://game-icons.net/1x1/lorc/crystal-cluster.html | Seltene Erden |
+| `apps/desktop/src/ui/glyphs/delapouite_coins-pile.svg` | Delapouite — CC BY 3.0 | https://game-icons.net/1x1/delapouite/coins-pile.html | Geld |
+
+**milsymbol** — Måns Beckman (Spatial Illusions), Lizenz **MIT**, https://github.com/spatialillusions/milsymbol,
+npm-Paket `milsymbol` (`apps/desktop/package.json`). Erzeugt zur Laufzeit die NATO-Truppenzeichen (APP-6/MIL-STD-2525)
+für die zehn Einheitenarten; es wird keine Datei eingecheckt.
+
+**Lucide** — Lucide Contributors (Eric Fennis u. a.), Lizenz **ISC**, https://github.com/lucide-icons/lucide,
+npm-Paket `lucide-react` (`apps/desktop/package.json`). Oberflächensymbole (Uhr, Pause, Warnung, Beziehungen,
+Gelände, Spionage); keine Datei eingecheckt.
+
+## Klänge von Dritten — Kenney (V3 Welle 2, T-M46-14, 2026-10-04)
+
+Urheber **Kenney** (www.kenney.nl), Lizenz **CC0 1.0** (https://creativecommons.org/publicdomain/zero/1.0/, gemeinfrei
+gestellt; Nennung freiwillig und im Menü unter „Mitwirkende“ trotzdem geführt). Bezug ohne Konto von
+https://kenney.nl/assets/interface-sounds und https://kenney.nl/assets/impact-sounds (ZIP, 835 kB bzw. 801 kB; daraus
+nur die neun Dateien unten, unverändert, OGG). Sie liegen unter `apps/desktop/src/ui/sfx/` und stehen als Daten-URL im
+Bündel (`sound.ts`, kein `fetch`: `connect-src 'none'`).
+
+| Datei | Paket | Ereignisart | Zweck |
+|---|---|---|---|
+| `apps/desktop/src/ui/sfx/select_002.ogg` | Kenney Interface Sounds (CC0) | `select` | Befehl/Auswahl |
+| `apps/desktop/src/ui/sfx/confirmation_002.ogg` | Kenney Interface Sounds (CC0) | `complete` | Bau fertig |
+| `apps/desktop/src/ui/sfx/error_004.ogg` | Kenney Interface Sounds (CC0) | `shortage` | Rohstoffmangel |
+| `apps/desktop/src/ui/sfx/bong_001.ogg` | Kenney Interface Sounds (CC0) | `intruded` | Alarm: Einmarsch |
+| `apps/desktop/src/ui/sfx/question_002.ogg` | Kenney Interface Sounds (CC0) | `diplomacy` | Diplomatie |
+| `apps/desktop/src/ui/sfx/impactMetal_medium_002.ogg` | Kenney Impact Sounds (CC0) | `recruited` | Aushebung |
+| `apps/desktop/src/ui/sfx/impactMetal_heavy_001.ogg` | Kenney Impact Sounds (CC0) | `battle` | Gefecht |
+| `apps/desktop/src/ui/sfx/impactBell_heavy_003.ogg` | Kenney Impact Sounds (CC0) | `captured` | Eroberung |
+| `apps/desktop/src/ui/sfx/impactPlate_heavy_002.ogg` | Kenney Impact Sounds (CC0) | `war` | Kriegserklärung |
+
+## Bildschirmfotos der Bahn U-Bild (V3 Welle 2, T-M46-13 / T-M46-03, 2026-10-04)
+
+Kein Fremdinhalt — Bildschirmfotos des eigenen Spiels (Stand S575G, Sicht der stärksten Macht, mit den Symbolen aus dem
+Abschnitt oben), erzeugt mit `node scripts/ux-bild.mjs --shots docs/ux/v3-after`. Messwerte dazu:
+`docs/reports/v3/ubild-vorher.json` und `docs/reports/v3/ubild-nachher.json`. Nur 375x667 und 1280x800.
+
+| Datei | Erzeugt von | Zeigt |
+|---|---|---|
+| `docs/ux/v3-after/S575G-armee-1280x800.png` | `scripts/ux-bild.mjs` | Armeepanel mit Haltungen als Zeichen und Truppenzeichen, 1280x800 |
+| `docs/ux/v3-after/S575G-armee-375x667.png` | `scripts/ux-bild.mjs` | Armeepanel mit Haltungen als Zeichen und Truppenzeichen, 375x667 |
+| `docs/ux/v3-after/S575G-brennpunkt-1280x800.png` | `scripts/ux-bild.mjs` | Karte über Asien: aufgefächerte Armeestapel, 1280x800 |
+| `docs/ux/v3-after/S575G-karte-1280x800.png` | `scripts/ux-bild.mjs` | Karte mit der neuen Kopfleiste (Symbole statt Text), 1280x800 |
+| `docs/ux/v3-after/S575G-karte-375x667.png` | `scripts/ux-bild.mjs` | Karte mit der neuen Kopfleiste (Symbole statt Text), 375x667 |
+| `docs/ux/v3-after/S575G-nah-1280x800.png` | `scripts/ux-bild.mjs` | Karte über Asien, vergrößert: aufgefächerte Armeestapel, 1280x800 |
+| `docs/ux/v3-after/S575G-provinz-1280x800.png` | `scripts/ux-bild.mjs` | Provinzpanel mit Zeichen für Eigentümer, Bevölkerung, Moral und Bauplätze, 1280x800 |
+| `docs/ux/v3-after/S575G-provinz-375x667.png` | `scripts/ux-bild.mjs` | Provinzpanel mit Zeichen für Eigentümer, Bevölkerung, Moral und Bauplätze, 375x667 |

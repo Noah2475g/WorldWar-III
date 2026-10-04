@@ -11,7 +11,7 @@ import { t } from '../i18n/text.ts'
  */
 
 /** Welcher Dialog sich hinter dem Eintrag öffnet — `App.tsx` kennt die Wertemenge von `dialog`. */
-export type MenuTarget = 'new' | 'saves' | 'settings' | 'keys'
+export type MenuTarget = 'new' | 'saves' | 'settings' | 'keys' | 'credits'
 
 export interface MenuEntry {
   readonly id: string
@@ -33,4 +33,6 @@ export const MENU_ENTRIES: readonly MenuEntry[] = [
   { id: 'settings', label: () => t('settings.title'), target: 'settings' },
   // Erkennen statt Erinnern (T-M44-16, R-UX-05): die Übersicht der Tasten, nicht nur per F1.
   { id: 'keys', label: () => t('menu.keys'), target: 'keys' },
+  // Die Namensnennung, die CC BY 3.0 verlangt (T-M46-13): sichtbar im Spiel, nicht nur in ASSETS.md.
+  { id: 'credits', label: () => t('menu.credits'), target: 'credits' },
 ]

@@ -1,4 +1,5 @@
-import { Icon, type IconName } from './icons.tsx'
+import { type IconName } from './icons.tsx'
+import { Icon } from './Icon.tsx'
 
 /**
  * A row of things, as symbols with their counts (T-M13-01, R-UI-10).
@@ -49,7 +50,7 @@ export interface IconRowProps {
   size?: number
 }
 
-export function IconRow({ items, max = 8, size = 14 }: IconRowProps) {
+export function IconRow({ items, max = 8, size = 20 }: IconRowProps) {
   const all = condense(items)
   if (all.length === 0) return null
 

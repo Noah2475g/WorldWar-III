@@ -2345,7 +2345,7 @@ describe('T-M40-11 Anhalten stellt eine marschierende Verteidigung auf Garnison'
     within(within(armeePanel()).getByRole('group', { name: 'Haltung' }))
       .getAllByRole('button')
       .filter((knopf) => knopf.getAttribute('aria-pressed') === 'true')
-      .map((knopf) => knopf.textContent)
+      .map((knopf) => (knopf.getAttribute('aria-label') ?? '').replace(/^Haltung | einnehmen$/g, ''))
 
   it('haelt eine Verteidigung an und stellt sie auf Garnison', async () => {
     await ladeMarsch('defensive')
@@ -2469,7 +2469,7 @@ describe('T-M40-14 Ein eigener Marschbefehl stellt eine Verteidigung auf Garniso
     within(within(armeePanel()).getByRole('group', { name: 'Haltung' }))
       .getAllByRole('button')
       .filter((knopf) => knopf.getAttribute('aria-pressed') === 'true')
-      .map((knopf) => knopf.textContent)
+      .map((knopf) => (knopf.getAttribute('aria-label') ?? '').replace(/^Haltung | einnehmen$/g, ''))
   const befehle = (ziel: string) => {
     fireEvent.click(within(armeePanel()).getByRole('button', { name: 'Marschieren' }))
     fireEvent.change(within(armeePanel()).getByRole('combobox', { name: 'Ziel' }), { target: { value: ziel } })
@@ -2509,7 +2509,7 @@ describe('T-M40-14 Ein eigener Marschbefehl stellt eine Verteidigung auf Garniso
     const { ziel } = await ladeStehend('garrison')
     expect(gedrueckt()).toEqual(['Garnison'])
     const haltung = within(armeePanel()).getByRole('group', { name: 'Haltung' })
-    fireEvent.click(within(haltung).getAllByRole('button').find((knopf) => knopf.textContent === 'Verteidigung')!)
+    fireEvent.click(within(haltung).getAllByRole('button').find((knopf) => knopf.getAttribute('aria-label') === 'Haltung Verteidigung einnehmen')!)
     const knopf = befehle(ziel)
     const titel = knopf.getAttribute('title') ?? ''
 
