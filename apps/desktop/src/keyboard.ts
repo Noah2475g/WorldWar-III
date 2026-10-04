@@ -17,8 +17,14 @@ export type Shortcut =
   | { type: 'load' }
   | { type: 'cycleMode'; mode: MapMode }
   | { type: 'help' }
-  | { type: 'openPanel'; panel: 'diplomacy' | 'market' | 'standings' | 'espionage' }
+  | { type: 'openPanel'; panel: 'diplomacy' | 'market' | 'standings' | 'espionage' | 'armies' }
   | { type: 'close' }
+  /**
+   * Der Fokus springt in eine Zone der Seitenleiste (T-M46-05, R-UX-06): die Provinzliste, die Bauknoepfe, die
+   * Aushebeknoepfe. Per Tab kostete jede Handlung 19 bis 60 Tasten, fast nur Tab; die Provinzliste ist Station 14
+   * bis 19 von 86.
+   */
+  | { type: 'focusZone'; zone: 'provinces' | 'build' | 'recruit' }
   | { type: 'pan'; dx: number; dy: number }
   /** Bild-auf/-ab: eine Zoomstufe hinein (1) oder heraus (-1) (T-M30-03). */
   | { type: 'zoom'; direction: 1 | -1 }
@@ -132,6 +138,22 @@ export function resolveKey(
     case 's':
     case 'S':
       return { type: 'openPanel', panel: 'espionage' }
+    // Die Heeruebersicht (T-M46-01, R-UX-04): alle eigenen Armeen, der Fokus auf der ersten. Ohne Taste kostete
+    // "Armee bewegen" per Tastatur 46 Tasten, fast nur Tab.
+    case 'a':
+    case 'A':
+      return { type: 'openPanel', panel: 'armies' }
+    // Die Zonen der Seitenleiste (T-M46-05): P Provinzliste, B Bauen, E Einheiten ausheben. Die Buchstaben der
+    // Panels (D, H, L, S, A) bleiben, wie sie waren - keine Taste zweimal belegt.
+    case 'p':
+    case 'P':
+      return { type: 'focusZone', zone: 'provinces' }
+    case 'b':
+    case 'B':
+      return { type: 'focusZone', zone: 'build' }
+    case 'e':
+    case 'E':
+      return { type: 'focusZone', zone: 'recruit' }
     case 'F1':
     case '?':
       return { type: 'help' }

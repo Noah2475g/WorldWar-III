@@ -113,6 +113,12 @@ importers:
       '@worldwar/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      lucide-react:
+        specifier: ^1.51.0
+        version: 1.51.0(@types/react@19.2.18)(react@19.2.8)
+      milsymbol:
+        specifier: ^3.0.4
+        version: 3.0.4
       react:
         specifier: ^19.2.8
         version: 19.2.8
@@ -1547,6 +1553,15 @@ packages:
   lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}
 
+  lucide-react@1.51.0:
+    resolution: {integrity: sha512-9929jimol5y7VbXUlVKcgURMSeIxFJB7dtWCkRAaNnF7KiCRkSkhmqWPUmAmUFYPezNawFk6qvz3Mu0gEnfI4g==}
+    peerDependencies:
+      '@types/react': '*'
+      react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+
   lz-string@1.5.0:
     resolution: {integrity: sha512-h5bgJWpxJNswbU7qCrV0tIKQCaS3blPDrqKWx+QxzuzL1zGUzij9XCWLrSLsJPu5t+eWA/ycetzYAO5IOMcWAQ==}
     hasBin: true
@@ -1563,6 +1578,9 @@ packages:
 
   mdn-data@2.27.1:
     resolution: {integrity: sha512-9Yubnt3e8A0OKwxYSXyhLymGW4sCufcLG6VdiDdUGVkPhpqLxlvP5vl1983gQjJl3tqbrM731mjaZaP68AgosQ==}
+
+  milsymbol@3.0.4:
+    resolution: {integrity: sha512-Jrs1RBCag2IzyEJwI476i2+pNHdi8WMwAp2mDD23g3TR48ERdHmdQgPXZUosRKyhPMr58/eOPyyLE53lMPPAgw==}
 
   minimatch@10.2.6:
     resolution: {integrity: sha512-vpLQEs+VLCr1nU0BXS07maYoFwlDAH0gngQuuttxIwutDFEMHq2blX+8vpgxDdK3J1PwjCJiep77OitTZ4Ll1A==}
@@ -3254,6 +3272,12 @@ snapshots:
     dependencies:
       yallist: 3.1.1
 
+  lucide-react@1.51.0(@types/react@19.2.18)(react@19.2.8):
+    dependencies:
+      react: 19.2.8
+    optionalDependencies:
+      '@types/react': 19.2.18
+
   lz-string@1.5.0: {}
 
   magic-string@0.30.21:
@@ -3271,6 +3295,8 @@ snapshots:
       semver: 7.8.5
 
   mdn-data@2.27.1: {}
+
+  milsymbol@3.0.4: {}
 
   minimatch@10.2.6:
     dependencies:

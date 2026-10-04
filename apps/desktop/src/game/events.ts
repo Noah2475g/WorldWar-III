@@ -3,7 +3,10 @@ import { isPluralNation } from '../i18n/grammar.ts'
 import { hasKey, t } from '../i18n/text.ts'
 import { amount, unfix } from '../ui/format.ts'
 import { isWorldEventType } from '@worldwar/core'
-import { categoryOf, type DayReportDelta, type EventEntry } from '../ui/Panels.tsx'
+import { cueFor } from '../ui/sound.ts'
+import { categoryOf, type DayReportDelta, type EventEntry, type EventImportance } from '../ui/Panels.tsx'
+import { BUILDING_ICONS, RELATION_ICONS, RESOURCE_ICONS, SPY_MISSION_ICONS, UNIT_ICONS } from '../ui/icons.tsx'
+import type { PictureName } from '../ui/Icon.tsx'
 
 /**
  * Turning an event into a sentence (T-M10-06, R-UI-07).
@@ -39,6 +42,11 @@ export interface EventNaming {
    * Unterschied entsteht nur, wenn jemand *benannt* ist und es nicht der Betrachter ist.
    */
   viewer?: string
+  /**
+   * Die Hauptstadt einer Macht (T-M46-02): der Ort fuer Ereignisse ohne eigene Provinz — der
+   * Mangel in der eigenen Wirtschaft, die Kriegserklaerung. Fehlt sie, bleibt die Zeile ohne Ort.
+   */
+  capital?: (playerId: string) => string | undefined
 }
 
 export function provinceOf(event: GameEvent): string | undefined {
@@ -48,6 +56,52 @@ export function provinceOf(event: GameEvent): string | undefined {
     if (typeof value === 'string') return value
   }
   return undefined
+}
+
+/**
+ * Der Ort eines Ereignisses (T-M46-02, VM-03): die Provinz, von der es handelt — und fuer die zwei
+ * Arten ohne eigene Provinz die Hauptstadt der Macht, die es betrifft. Der Mangel trifft die eigene
+ * Wirtschaft (eigene Hauptstadt); die Kriegserklaerung ist ein Vorgang zwischen zwei Hauptstaedten,
+ * und gezeigt wird die der Gegenseite. Ohne Ort bleibt `undefined` (Tagesbericht, Handel).
+ */
+export function placeOf(event: GameEvent, viewer: string | undefined, capital?: (playerId: string) => string | undefined): string | undefined {
+  const own = provinceOf(event)
+  if (own) return own
+  if (!capital) return undefined
+  if (event.type === 'RESOURCE_SHORTAGE') return capital(event.playerId)
+  // DIPLOMACY_CHANGED (Frieden, Buendnis, Kuendigung, Kriegsbeginn) hat einen Ton, aber keine Provinz: ohne Ort
+  // pulsierte es nicht und liess sich nicht anspringen (Nachbesserung U, Quote hoerbar/Puls+Sprung).
+  if (event.type === 'WAR_DECLARED' || event.type === 'DIPLOMACY_CHANGED') {
+    const other = viewer === event.playerId ? event.targetPlayerId : event.playerId
+    return capital(other) ?? capital(viewer === event.playerId ? event.playerId : event.targetPlayerId)
+  }
+  return undefined
+}
+
+/**
+ * Ereignisarten, die nur Buchhaltung des Alltags sind: Ankuenfte und Rueckzuege, Beschuss, volles Lager. Der
+ * Abmarsch, der Baubeginn und der Handelsvollzug gehoeren NICHT dazu: sie quittieren, was der Spieler selbst
+ * befohlen hat (R-UI-05), und bleiben in der Voreinstellung sichtbar - dort fassen die Sammelzeilen sie zusammen.
+ */
+const MINOR_TYPES = new Set(['ARMY_ARRIVED', 'ARMY_RETREATED', 'BOMBARDMENT', 'STORAGE_OVERFLOW', 'GAME_STARTED'])
+
+/** Ereignisarten, die auch dann zaehlen, wenn sie den Betrachter nicht selbst betreffen (Weltlage). */
+const WORLD_RELEVANT = new Set(['GAME_ENDED', 'PLAYER_ELIMINATED', 'CAPITAL_LOST', 'WAR_DECLARED', 'GOAL_REACHED'])
+
+/**
+ * Wie wichtig eine Zeile fuer den Betrachter ist (T-M46-02, VM-03): `major` ist, was seine Aufmerksamkeit
+ * jetzt braucht (eigener Alarm, Rueckschlag, Krieg, Ende), `minor` die Alltagsbuchhaltung und alles Fremde,
+ * `normal` der Rest (Bau fertig, Gefechtsausgang, Vertraege, Tagesbericht). Rein; gerechnet wird aus Art,
+ * Schwere und Betroffenen — die Kernereignisse selbst bleiben unberuehrt.
+ */
+export function importanceOf(event: GameEvent, viewer: string | undefined): EventImportance {
+  const mine = concernsViewer(event, viewer)
+  if (!mine) return WORLD_RELEVANT.has(event.type) ? 'normal' : 'minor'
+  if (event.type === 'GAME_ENDED') return 'major'
+  if (isSelfSetback(event, viewer) || event.type === 'WAR_DECLARED') return 'major'
+  if (event.severity === 'alert') return 'major'
+  if (MINOR_TYPES.has(event.type)) return 'minor'
+  return 'normal'
 }
 
 /**
@@ -531,8 +585,13 @@ export function adjutantMarchEntries(
               province: naming.province(command.targetProvinceId),
             }),
             provinceId: command.targetProvinceId,
+            symbol: 'march' as const,
+            short: naming.province(command.targetProvinceId),
             severity: 'info' as const,
             category: 'combat' as const,
+            // Leise Zeile der Automatik (T-M46-02): kein Alarm, aber eine Quittung - sie bleibt in der Voreinstellung.
+            type: 'ADJUTANT_MARCH',
+            importance: 'normal' as const,
           },
         ]
       : [],
@@ -571,12 +630,90 @@ export function mergeBattleLines(entries: readonly EventEntry[], ticksPerDay = 2
     }
   }
   return merged.map((entry, i) =>
-    (counts[i] ?? 1) > 1 ? { ...entry, text: t('events_ui.repeated', { text: entry.text, count: counts[i] ?? 1 }) } : entry,
+    (counts[i] ?? 1) > 1 ? { ...entry, text: t('events_ui.repeated', { text: entry.text, count: counts[i] ?? 1 }), count: counts[i] ?? 1 } : entry,
   )
 }
 
+/**
+ * Das Zeichen und das Kurzwort einer Protokollzeile (T-M46-17, VM-05): die Zeile soll mit dem Auge gelesen
+ * werden, nicht mit dem Satz. Das Zeichen sagt, WAS geschah (Bau, Marsch, Gefecht, Handel, Vertrag ...), das
+ * Kurzwort WO oder MIT WEM (Provinz, Macht). Der ganze Satz bleibt `text` - Tooltip und Name fuers Ohr.
+ */
+export function eventSymbol(
+  event: GameEvent,
+  values: Record<string, string | number>,
+  placeName: string | undefined,
+): { symbol: PictureName; short?: string } {
+  const record = event as unknown as Record<string, unknown>
+  const str = (key: string): string | undefined => (typeof record[key] === 'string' ? (record[key] as string) : undefined)
+  const withShort = (symbol: PictureName, short: string | undefined) => (short ? { symbol, short } : { symbol })
+  const nation = typeof values.target === 'string' ? values.target : typeof values.player === 'string' ? values.player : undefined
+  switch (event.type) {
+    case 'BUILD_STARTED':
+    case 'BUILD_COMPLETED':
+    case 'BUILD_CANCELLED':
+      return withShort(BUILDING_ICONS[str('building') ?? ''] ?? 'build', placeName)
+    case 'UNIT_RECRUITED':
+      return withShort(UNIT_ICONS[str('unitKey') ?? ''] ?? 'infantry', placeName)
+    case 'ARMY_DEPARTED':
+      return withShort('march', placeName)
+    case 'ARMY_ARRIVED':
+    case 'ARMY_RETREATED':
+      return withShort('place', placeName)
+    case 'ARMY_INTRUDED':
+    case 'PROVINCE_REVOLTED':
+      return withShort('warning', placeName)
+    case 'ARMY_DESTROYED':
+    case 'BATTLE_STARTED':
+    case 'BATTLE_RESOLVED':
+      return withShort('battle', placeName)
+    case 'BOMBARDMENT':
+      return withShort('bombard', placeName)
+    case 'PROVINCE_CAPTURED':
+    case 'PROVINCE_CEDED':
+      return withShort('place', placeName)
+    case 'RESOURCE_SHORTAGE':
+    case 'STORAGE_OVERFLOW':
+      return { symbol: RESOURCE_ICONS[str('resource') ?? ''] ?? 'warning' }
+    case 'TRADE_EXECUTED':
+    case 'TRADE_OFFER_CLOSED':
+    case 'TRADE_AGREED':
+      return { symbol: 'trade' }
+    case 'WAR_DECLARED':
+      return withShort(RELATION_ICONS.war, nation)
+    case 'DIPLOMACY_CHANGED':
+      return withShort(RELATION_ICONS[(str('newState') ?? 'peace') as keyof typeof RELATION_ICONS] ?? 'peace', nation)
+    case 'RIGHT_OF_WAY_CHANGED':
+      return withShort(RELATION_ICONS.rightOfWay, nation)
+    case 'CAPITAL_LOST':
+    case 'CAPITAL_MOVED':
+      return withShort('capital', placeName)
+    case 'PLAYER_ELIMINATED':
+      return withShort('warning', nation)
+    case 'GAME_ENDED':
+    case 'GOAL_REACHED':
+      return { symbol: 'trophy' }
+    case 'DAY_REPORT':
+      return { symbol: 'dispatch' }
+    case 'SABOTAGE_SUFFERED':
+      return withShort(record.kind === 'economic' ? 'spyEconomic' : 'spyMilitary', placeName)
+    case 'SPY_DETECTED':
+    case 'SPY_REPORT':
+    case 'SPY_LOST': {
+      const mission = str('mission') as keyof typeof SPY_MISSION_ICONS | undefined
+      return withShort((mission && SPY_MISSION_ICONS[mission]) || 'espionage', placeName)
+    }
+    case 'COMMAND_REJECTED':
+      return { symbol: 'warning' }
+    case 'GAME_STARTED':
+      return { symbol: 'capital' }
+    default:
+      return withShort('info', placeName)
+  }
+}
+
 export function describeEvent(event: GameEvent, index: number, map: MapData, naming: EventNaming = {}): EventEntry {
-  const province = provinceOf(event)
+  const place = placeOf(event, naming.viewer, naming.capital)
 
   // Aus fremder Sicht: eine kürzere Fassung ohne Mengen, wo es eine gibt (R-DIP-04).
   // Die Auswahl steht hier und nicht im Filter — sonst läge die Geheimhaltung an zwei
@@ -613,8 +750,123 @@ export function describeEvent(event: GameEvent, index: number, map: MapData, nam
     // Protokoll den Zinnober-Balken und Fettung.
     self: isSelfSetback(event, naming.viewer),
     text: t(`events.${key}`, values),
-    ...(province ? { provinceId: province } : {}),
+    type: event.type,
+    importance: importanceOf(event, naming.viewer),
+    // Ein hoerbares Ereignis (es hat einen Ton, `cueFor`) betrifft den Betrachter selbst: nur seine Toene spielen.
+    ...(cueFor(event.type) && concernsViewer(event, naming.viewer) ? { audible: true } : {}),
+    ...(place ? { provinceId: place } : {}),
     ...(battle ? { battle } : {}),
+    ...eventSymbol(event, values, place ? map.provinces.find((p) => p.id === place)?.name : undefined),
     severity: event.severity === 'alert' ? 'alert' : 'info',
   }
+}
+
+/** Ereignisarten, die nie zu einer Sammelzeile werden: jede steht fuer sich (Bericht, Krieg, Vertrag, Ende). */
+const SOLO_TYPES = new Set([
+  'DAY_REPORT',
+  'GAME_ENDED',
+  'WAR_DECLARED',
+  'DIPLOMACY_CHANGED',
+  'CAPITAL_LOST',
+  'PLAYER_ELIMINATED',
+  'GOAL_REACHED',
+  'COMMAND_REJECTED',
+])
+
+const IMPORTANCE_RANK: Record<EventImportance, number> = { minor: 0, normal: 1, major: 2 }
+
+/**
+ * Sammelzeilen (T-M46-02, VM-03): mehrere Zeilen derselben Art am selben Spieltag werden **eine** — der Text
+ * der juengsten mit „+n weitere", dahinter die Teile, jeder mit seinem Sprung. Gemessen an S575G: 35 Zeilen
+ * an einem Spieltag, vor allem Beschuss, Armeewege und Einmaersche in langen Reihen. Die Sammelzeile steht,
+ * wo die juengste stand (die Liste ist neueste zuerst), behaelt deren Kennung mit Anhang und nimmt die
+ * Wichtigkeit des wichtigsten Teils. Zeilen ohne Art (Tests, Werkzeuge) und die Solo-Arten bleiben, was sie
+ * waren. Das Protokoll des Kerns bleibt unberuehrt — gemischt wird nur, was gezeigt wird.
+ */
+export function groupEntries(entries: readonly EventEntry[], ticksPerDay = 24): EventEntry[] {
+  const perDay = Math.max(1, ticksPerDay)
+  const keyOf = (entry: EventEntry): string | null =>
+    entry.type && !SOLO_TYPES.has(entry.type) ? `${Math.floor(entry.tick / perDay)}|${entry.type}` : null
+  const members = new Map<string, EventEntry[]>()
+  for (const entry of entries) {
+    const key = keyOf(entry)
+    if (key) members.set(key, [...(members.get(key) ?? []), entry])
+  }
+  const emitted = new Set<string>()
+  const result: EventEntry[] = []
+  for (const entry of entries) {
+    const key = keyOf(entry)
+    const group = key ? members.get(key) : undefined
+    if (!key || !group || group.length < 2) {
+      result.push(entry)
+      continue
+    }
+    if (emitted.has(key)) continue
+    emitted.add(key)
+    const first = group[0]!
+    const importance = group.reduce<EventImportance>(
+      (best, member) => (IMPORTANCE_RANK[member.importance ?? 'normal'] > IMPORTANCE_RANK[best] ? (member.importance ?? 'normal') : best),
+      'minor',
+    )
+    // Eine Sammelzeile traegt keinen Gefechts-, Tages- oder Bilanzkoerper des juengsten Teils: ihr Koerper sind die Teile.
+    const rest: EventEntry = { ...first }
+    delete rest.battle
+    delete rest.body
+    delete rest.deltas
+    result.push({
+      ...rest,
+      id: `${first.id}+${group.length}`,
+      text: t('events_ui.group', { text: first.text, more: group.length - 1 }),
+      importance,
+      count: group.length,
+      severity: group.some((member) => member.severity === 'alert') ? 'alert' : first.severity,
+      ...(group.some((member) => member.self) ? { self: true } : {}),
+      ...(group.some((member) => member.audible) ? { audible: true } : {}),
+      parts: group.map((member) => ({
+        id: member.id,
+        tick: member.tick,
+        text: member.text,
+        ...(member.provinceId ? { provinceId: member.provinceId } : {}),
+      })),
+    })
+  }
+  return result
+}
+
+/** Ein Puls auf der Karte (T-M46-02): wo etwas Hoerbares geschah, wann (Tick) und wie dringend. */
+export interface MapPing {
+  id: string
+  provinceId: string
+  tick: number
+  tone: 'alert' | 'good' | 'info'
+}
+
+/**
+ * Die Pulse der hoerbaren Ereignisse (T-M46-02, VM-03): jedes Ereignis, das einen Ton hat und den Betrachter
+ * betrifft, pulsiert an seinem Ort — dieselbe Auswahl wie der Ton (`cueForOwnEvents`), aber ohne die Regel
+ * „hoechstens ein Ton je Tick": der Ton kann nur einen Ort nennen, die Karte nennt alle. Je Ort und Tick
+ * hoechstens einer, damit ein Einmarsch in drei Armeen nicht dreifach pulsiert.
+ */
+export function pingsFor(
+  events: readonly GameEvent[],
+  viewer: string,
+  capital?: (playerId: string) => string | undefined,
+): MapPing[] {
+  const seen = new Set<string>()
+  const pings: MapPing[] = []
+  for (const event of events) {
+    if (!cueFor(event.type) || !event.concerns.includes(viewer)) continue
+    const place = placeOf(event, viewer, capital)
+    if (!place) continue
+    const key = `${event.tick}|${place}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    pings.push({
+      id: `${event.tick}-${event.type}-${place}`,
+      provinceId: place,
+      tick: event.tick,
+      tone: event.severity === 'alert' ? 'alert' : event.type === 'BUILD_COMPLETED' || event.type === 'UNIT_RECRUITED' ? 'good' : 'info',
+    })
+  }
+  return pings
 }

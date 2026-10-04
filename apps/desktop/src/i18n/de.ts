@@ -28,6 +28,9 @@ export const de = {
     newGameConfirm: 'Die laufende Partie wird verlassen, Ungespeichertes geht verloren — noch einmal klicken.',
     // Der Weg zur Tastenübersicht (T-M44-16, R-UX-05).
     keys: 'Tastenkürzel',
+    // Namensnennung der Symbole und Klänge von Dritten (T-M46-13, CC BY 3.0).
+    credits: 'Mitwirkende',
+    creditsIntro: 'Symbole und Klänge stammen von diesen Urhebern. Die Lizenzen stehen in docs/ASSETS.md.',
   },
 
   header: {
@@ -81,6 +84,7 @@ export const de = {
   /** Das Blatt im Hochformat (T-M44-03b): Griff und die drei Rasten. */
   sheet: {
     handle: 'Panelhöhe',
+    nav: 'Panels',
     snap: { peek: 'Streifen', half: 'halb', full: 'voll' },
   },
 
@@ -363,6 +367,11 @@ export const de = {
     // angewendet — und bei stehender Uhr sagt der Satz dazu, wann es so weit ist.
     ordered: '✓ befohlen — wirkt im nächsten Tick.',
     orderedPaused: '✓ befohlen — wirkt beim Weiterlaufen.',
+    // Schon angewendet, aber mindestens anderthalb Sekunden sichtbar geblieben (T-M46-11).
+    orderedDone: '✓ befohlen — ausgeführt.',
+    // Die Quittung oben in der Seitenleiste (T-M46-11): am Befehl, nicht am Knopf.
+    ackLine: '✓ befohlen: {{label}}',
+    ackPlain: '✓ befohlen.',
     cancelGroup: 'Im Bau',
     buildGroup: 'Bauen',
     recruitGroup: 'Ausheben',
@@ -705,6 +714,8 @@ export const de = {
     giveProvince: 'Provinz abgeben',
     wantProvince: 'Provinz verlangen',
     pickProvince: 'Provinz wählen …',
+    // Das Provinzenhandeln steht zugeklappt (T-M46-06): die seltene Ausnahme, nicht der Normalfall.
+    provincesToggle: 'Provinzen tauschen …',
     removeProvince: '{{province}} entfernen',
     province: 'Provinz {{name}}',
     nothing: 'nichts',
@@ -947,6 +958,9 @@ export const de = {
     adjutantMarch: '{{army}} rückt von selbst nach {{province}} nach.',
     // Gleichlautende Gefechtszeilen derselben Provinz und Stunde als eine Zeile (T-M44-10, R-UX-02/AK4).
     repeated: '{{text}} ({{count}} Mal)',
+    // Sammelzeile (T-M46-02): die juengste Zeile und wie viele gleichartige dazugehoeren.
+    group: '{{text}} (+{{more}} weitere)',
+    jumpNewest: 'Zum jüngsten Ort springen',
     battleReport: 'Kampfbericht',
     attacker: 'Angreifer',
     defender: 'Verteidiger',
@@ -992,6 +1006,10 @@ export const de = {
     unread: '{{count}} neu',
     none: 'Noch keine Depesche.',
     espionage: 'Spionage',
+    armies: 'Heer',
+    // Das Protokoll auf dem Telefon (T-M46-10): eine Zeile, auf Knopfdruck das ganze Blatt mit Filtern.
+    logOpen: 'Protokoll öffnen',
+    logClose: 'Protokoll schließen',
   },
 
   map: {
@@ -1023,6 +1041,11 @@ export const de = {
     zoomOut: 'Bild↓ — herauszoomen',
     home: 'Pos1 — Hauptstadt zentrieren',
     espionage: 'S — Spionageübersicht',
+    armies: 'A — Heer (alle Armeen)',
+    // Der Fokus springt in die Seitenleiste (T-M46-05): statt 19 bis 60 Mal Tab.
+    provinces: 'P — zur Provinzliste',
+    build: 'B — zu den Bauknöpfen der Provinz',
+    recruit: 'E — zu den Aushebeknöpfen der Provinz',
   },
 
   tutorial: {
@@ -1230,11 +1253,15 @@ export const de = {
     completionUnit: '{{unit}} in {{province}} ist ausgehoben',
     shortage: '{{resource}} wird knapp',
     unrest: '{{province}} steht vor dem Aufstand',
+    // Ab zwei Provinzen eine Zeile mit Zahl (T-M46-11); aufgeklappt stehen die Provinzen darunter.
+    unrestMany: '{{count}} Provinzen stehen vor dem Aufstand',
     world: 'Weltgeschehen',
     filter: 'Filter',
     // Eigene Woerter, nicht die der Kopfleiste: zwei Knoepfe namens "Diplomatie" sind
     // fuer eine Vorleseansage (und fuer einen Test) nicht auseinanderzuhalten.
     all: 'alles',
+    // Voreinstellung des Protokolls (T-M46-02): ohne die Alltagszeilen.
+    important: 'Wichtig',
     combat: 'Kämpfe',
     economy: 'Aufbau',
     diplomacy: 'Verträge',
@@ -1370,6 +1397,8 @@ export const de = {
     },
     RECRUIT: {
       lowMorale: 'Die Moral in dieser Provinz ist zu niedrig, um Truppen auszuheben.',
+      // Mit Zahl und Grenze (T-M46-15): die Moral der Provinz, dann die Mindestmoral.
+      lowMoraleNumbers: 'Moral {{morale}} von {{needed}} nötig, um in dieser Provinz Truppen auszuheben.',
     },
     TRADE: {
       sameResource: 'Tauschen Sie gegen einen anderen Rohstoff.',
@@ -1404,6 +1433,24 @@ export const de = {
     unreachable: 'Nicht erreichbar',
     optionArrival: '{{name}} — Ankunft Tag {{day}}',
     noneReachable: 'Von hier ist für diese Armee kein Ziel erreichbar: Auf der Karte gibt es keine Land- oder Seeverbindung.',
+  },
+
+  /** Die Heerübersicht (T-M46-01, R-UX-04): alle eigenen Armeen, mit Sprung und Marschbefehl. */
+  armies: {
+    title: 'Heer',
+    none: 'Sie haben keine Armee.',
+    noneFiltered: 'Keine Armee in dieser Auswahl.',
+    selectAria: '{{name}} auswählen und auf der Karte zeigen',
+    marchAria: '{{name}} marschieren lassen',
+    filter: {
+      all: 'alle {{count}}',
+      battle: 'im Gefecht {{count}}',
+      marching: 'marschiert {{count}}',
+      idle: 'steht {{count}}',
+    },
+    inBattle: 'im Gefecht',
+    marchingTo: 'marschiert nach {{target}} · {{arrival}}',
+    standing: 'steht · {{stance}}',
   },
 
   /** Die Sammelzeile der Sperrgründe im Diplomatiepanel (T-M44-18, R-UX-03/AK1): „Knopf, Knopf: Grund“. */

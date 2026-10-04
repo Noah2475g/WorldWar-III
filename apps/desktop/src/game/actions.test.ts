@@ -177,6 +177,18 @@ describe('R-UNIT-02 Ausheben braucht das Gebaeude und nennt die Anfangsstaerke',
   })
 })
 
+describe('T-M46-15 Die Moralsperre beim Ausheben nennt Zahl und Grenze', () => {
+  it('eine Provinz unter 25 Moral graut aus und sagt „Moral 23 von 25 nötig“ (vorher: Satz ohne Zahl)', () => {
+    const { ctx, capital } = fresh()
+    ctx.state.provinces[capital]!.buildings.barracks = 1
+    ctx.state.provinces[capital]!.morale = 23_825
+
+    const infantry = recruitActions(ctx, capital).find((a) => a.id === 'recruit-infantry')!
+    expect(infantry.disabledReason).toContain('Moral 23 von 25 nötig')
+    expect(infantry.disabledReason).not.toMatch(RAW_KEY)
+  })
+})
+
 describe('R-UNIT-03/04 Armeebefehle', () => {
   it('sagt bei JEDEM Armeebefehl, was er kostet', () => {
     // Playtest 25a: Rueckzug, Marschieren, Angriff und Teilen trugen keinen Hinweis,

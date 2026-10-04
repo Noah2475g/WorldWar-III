@@ -120,6 +120,150 @@ export function toneFor(army: Pick<ArmyMarker, 'own' | 'relation'>): MarkerTone 
 /** Der gezeichnete Stapel in Bildpunkten (D27.2): Rechteck mit Zahl und Zustandsbalken. */
 export const ARMY_BOX = { width: 30, height: 18 } as const
 
+/** Der Abstand zweier aufgefaecherter Stapel in Bildpunkten: Kasten plus zwei Punkte Luft (T-M46-03). */
+export const FAN_PITCH = { x: ARMY_BOX.width + 2, y: ARMY_BOX.height + 2 } as const
+
+/**
+ * Faechert Stapel auf, die an demselben Punkt liegen (T-M46-03, VM-02).
+ *
+ * Noah (Playtest V3): „Einheiten sind manchmal uebereinander … man hat Einheiten nicht gesehen.“
+ * Mehrere Armeen einer Provinz bekamen alle die Provinzmitte und lagen exakt aufeinander — gezaehlt
+ * an S575G: 208 von 237 Markern waren vollstaendig verdeckt, bis zu 27 an einem Ort. Jetzt bilden
+ * sie ein Raster um den gemeinsamen Punkt, in Bildpunkten und damit bei jeder Vergroesserung gleich
+ * gross: die Abstaende sind die des Kastens plus Luft, nicht die der Karte.
+ *
+ * Gruppiert wird nach dem **gezeichneten Punkt**, nicht nach der Provinz: eine marschierende Armee
+ * steht zwischen zwei Provinzen und bleibt allein, sobald sie sich vom Stapel loest. Die Reihenfolge
+ * innerhalb des Rasters ist die der Eingabe — stabil von Bild zu Bild, damit ein Marker nicht
+ * springt, solange sich die Zusammensetzung nicht aendert. Eine einzelne Armee bleibt, wo sie war.
+ */
+export function fanOut<T extends { x: number; y: number }>(markers: readonly T[]): T[] {
+  const groups = new Map<string, number[]>()
+  markers.forEach((marker, index) => {
+    // Auf ganze Bildpunkte gerundet: zwei Mitten, die sich um Bruchteile unterscheiden, sind derselbe Ort.
+    const key = `${Math.round(marker.x)}:${Math.round(marker.y)}`
+    const group = groups.get(key)
+    if (group) group.push(index)
+    else groups.set(key, [index])
+  })
+
+  const out = markers.map((marker) => ({ ...marker }))
+  for (const indices of groups.values()) {
+    const n = indices.length
+    if (n < 2) continue
+    // Etwa so breit wie hoch, wenn man die Kastenform einrechnet; mindestens zwei nebeneinander.
+    const cols = Math.min(n, Math.max(2, Math.ceil(Math.sqrt((n * FAN_PITCH.y) / FAN_PITCH.x) * 1.6)))
+    const rows = Math.ceil(n / cols)
+    indices.forEach((markerIndex, slot) => {
+      const row = Math.floor(slot / cols)
+      const inRow = row === rows - 1 ? n - row * cols : cols
+      const col = slot % cols
+      const target = out[markerIndex]!
+      target.x += (col - (inRow - 1) / 2) * FAN_PITCH.x
+      target.y += (row - (rows - 1) / 2) * FAN_PITCH.y
+    })
+  }
+  return out
+}
+
+/**
+ * Die Suchreihenfolge fuer einen freien Platz: Versaetze im Raster eines halben Kastens, nach
+ * Entfernung sortiert, bis `DECLUTTER_RADIUS` Bildpunkte. Einmal gebaut, danach nur gelesen.
+ */
+export const DECLUTTER_RADIUS = 256
+// LOESCHVERMERK (Review): bis zur Nachbesserung U stand hier `DECLUTTER_RADIUS = 96`; an S575G blieben damit bei
+// Massstab 4 und 8 109 und 145 von 237 Markern teilweise verdeckt (Klickflaeche nur zu 93 % / 80 % sichtbar).
+// export const DECLUTTER_RADIUS = 96
+const DECLUTTER_STEP = { x: ARMY_BOX.width / 2, y: ARMY_BOX.height / 2 } as const
+const SLOT_ORDER: readonly (readonly [number, number])[] = (() => {
+  const list: [number, number][] = []
+  const nx = Math.floor(DECLUTTER_RADIUS / DECLUTTER_STEP.x)
+  const ny = Math.floor(DECLUTTER_RADIUS / DECLUTTER_STEP.y)
+  for (let i = -nx; i <= nx; i++) {
+    for (let j = -ny; j <= ny; j++) {
+      const dx = i * DECLUTTER_STEP.x
+      const dy = j * DECLUTTER_STEP.y
+      if (Math.hypot(dx, dy) <= DECLUTTER_RADIUS) list.push([dx, dy])
+    }
+  }
+  // Gleiche Entfernung: erst oben/unten, dann links/rechts — das haelt Stapel eher in der Hoehe als in der Breite.
+  return list.sort((a, b) => Math.hypot(a[0], a[1]) - Math.hypot(b[0], b[1]) || a[0] - b[0] || a[1] - b[1])
+})()
+
+/**
+ * Schiebt Stapel auseinander, die sich auch nach `fanOut` noch ueberdecken (T-M46-03).
+ *
+ * `fanOut` loest den haeufigen Fall — mehrere Armeen an EINEM Ort. Es kennt aber keine
+ * Nachbarn: liegen zwei Provinzen weniger als einen Kasten auseinander (bei kleinem Massstab
+ * ist das fast immer so), landen ihre Raster ineinander, und ein Stapel lag vollstaendig unter
+ * dem naechsten. Hier wird jeder Marker, in der Reihenfolge der Wichtigkeit (eigene zuerst,
+ * sonst Eingabereihenfolge), an den naechsten freien Platz in Reichweite gesetzt — sein eigener,
+ * wenn der frei ist. Findet sich innerhalb des Radius keiner, bekommt er den Platz mit der
+ * geringsten Ueberdeckung: ein Marker, der weit von seinem Ort wandert, luegt ueber den Ort,
+ * einer, der zum Teil verdeckt ist, nur ueber einen Zipfel.
+ *
+ * Rein und stabil: gleiche Eingabe, gleiche Plaetze. Die Reihenfolge der Liste (die
+ * Zeichenreihenfolge) bleibt unveraendert; nur x und y aendern sich.
+ */
+export function declutter<T extends { x: number; y: number; own?: boolean }>(markers: readonly T[]): T[] {
+  const out = markers.map((marker) => ({ ...marker }))
+  if (out.length < 2) return out
+
+  const gapX = FAN_PITCH.x
+  const gapY = FAN_PITCH.y
+  // Raster aus Zellen der Groesse eines Kastens samt Luft: Nachbarn stehen in den 3 x 3 Zellen ringsum.
+  // Zahlenschluessel statt Zeichenketten (Nachbesserung U): der groessere Suchradius ruft `overlapAt` bis zu dreimal
+  // so oft auf (S575G, Massstab 8: 37 871 -> 114 414 Aufrufe), und jeder baute neun Schluessel-Zeichenketten.
+  // Die Zellen liegen in +-32768 (Karte 16 000 px breit bei Massstab 0,5 -> rund 500 Zellen).
+  const cells = new Map<number, number[]>()
+  const cellKey = (cx: number, cy: number): number => (cx + 32768) * 65536 + (cy + 32768)
+  const key = (x: number, y: number): number => cellKey(Math.floor(x / gapX), Math.floor(y / gapY))
+
+  const overlapAt = (x: number, y: number): number => {
+    const cx = Math.floor(x / gapX)
+    const cy = Math.floor(y / gapY)
+    let area = 0
+    for (let ix = cx - 1; ix <= cx + 1; ix++) {
+      for (let iy = cy - 1; iy <= cy + 1; iy++) {
+        const list = cells.get(cellKey(ix, iy))
+        if (!list) continue
+        for (const other of list) {
+          const dx = Math.abs(out[other]!.x - x)
+          const dy = Math.abs(out[other]!.y - y)
+          if (dx < gapX && dy < gapY) area += (gapX - dx) * (gapY - dy)
+        }
+      }
+    }
+    return area
+  }
+
+  const order = out.map((_, index) => index).sort((a, b) => Number(Boolean(out[b]!.own)) - Number(Boolean(out[a]!.own)) || a - b)
+  for (const index of order) {
+    const marker = out[index]!
+    const home = { x: marker.x, y: marker.y }
+    let chosen: { x: number; y: number } | null = null
+    let best = { x: home.x, y: home.y, area: Infinity }
+    for (const [dx, dy] of SLOT_ORDER) {
+      const x = home.x + dx
+      const y = home.y + dy
+      const area = overlapAt(x, y)
+      if (area === 0) {
+        chosen = { x, y }
+        break
+      }
+      if (area < best.area) best = { x, y, area }
+    }
+    const spot = chosen ?? best
+    marker.x = spot.x
+    marker.y = spot.y
+    const k = key(spot.x, spot.y)
+    const list = cells.get(k)
+    if (list) list.push(index)
+    else cells.set(k, [index])
+  }
+  return out
+}
+
 /** Which arm of service a stack is mostly made of — that is the symbol it wears. */
 export function dominantIcon(units: readonly { unitKey: string; hp: number }[]): IconName | undefined {
   let best: { icon: IconName; hp: number } | null = null
@@ -261,6 +405,61 @@ function fallbackAnchors(centre: Point, scale: number): Anchor[] {
   })
 }
 
+/** Die letzte Anordnung der Armeemarker, solange Eingabe, Massstab und Uhr dieselben bleiben. */
+let layoutCache: {
+  armies: readonly ArmyMarker[]
+  centres: Readonly<Record<string, Point>>
+  scale: number
+  tick: number | undefined
+  result: Marker[]
+} | null = null
+
+/**
+ * Die Armeemarker samt Aufaecherung, in Bildpunkten fuer den Ausschnitt mit Ursprung (0, 0).
+ *
+ * Getrennt vom Ausschnitt, damit das Schieben der Karte nichts neu rechnet: nur der Massstab,
+ * die Armeen, die Mitten und die Uhr (marschierende Armeen gleiten) veraendern die Anordnung.
+ */
+function armyLayout(
+  armies: readonly ArmyMarker[],
+  centres: Readonly<Record<string, Point>>,
+  scale: number,
+  tick: number | undefined,
+): Marker[] {
+  const cached = layoutCache
+  if (cached && cached.armies === armies && cached.centres === centres && cached.scale === scale && cached.tick === tick) {
+    return cached.result
+  }
+
+  const origin: View = { x: 0, y: 0, scale }
+  const raw: Marker[] = []
+  for (const army of armies) {
+    const centre = centres[army.provinceId]
+    if (!centre) continue
+
+    // Unterwegs steht der Marker zwischen den Provinzen, sonst in der Mitte. `tick`
+    // fehlt heisst: keine Bewegung — der Aufrufer will keine, oder es gibt keine Uhr.
+    const unterwegs = tick === undefined ? null : marchPoint(army, centres, tick)
+    const point = toScreen(unterwegs ?? centre, origin)
+    raw.push({
+      kind: 'army',
+      provinceId: army.provinceId,
+      x: point.x,
+      y: point.y,
+      own: army.own,
+      tone: toneFor(army),
+      armyId: army.id,
+      ...(army.icon ? { icon: army.icon } : {}),
+      ...(army.count !== undefined ? { count: army.count } : {}),
+      ...(army.condition !== undefined ? { condition: army.condition } : {}),
+    })
+  }
+
+  const result = declutter(fanOut(raw))
+  layoutCache = { armies, centres, scale, tick, result }
+  return result
+}
+
 export function markersFor(
   armies: readonly ArmyMarker[],
   buildings: BuildingsByProvince,
@@ -300,27 +499,15 @@ export function markersFor(
     }
   }
 
-  for (const army of armies) {
-    const centre = centres[army.provinceId]
-    if (!centre) continue
-
-    // Unterwegs steht der Marker zwischen den Provinzen, sonst in der Mitte. `tick`
-    // fehlt heisst: keine Bewegung — der Aufrufer will keine, oder es gibt keine Uhr.
-    const unterwegs = extras.tick === undefined ? null : marchPoint(army, centres, extras.tick)
-    const point = toScreen(unterwegs ?? centre, view)
-    markers.push({
-      kind: 'army',
-      provinceId: army.provinceId,
-      x: point.x,
-      y: point.y,
-      own: army.own,
-      tone: toneFor(army),
-      armyId: army.id,
-      ...(army.icon ? { icon: army.icon } : {}),
-      ...(army.count !== undefined ? { count: army.count } : {}),
-      ...(army.condition !== undefined ? { condition: army.condition } : {}),
-    })
-  }
+  // Stapel an einem Punkt werden aufgefaechert und ueberlappende Raster auseinandergeschoben
+  // (T-M46-03). LOESCHVERMERK (Review): bis dahin lagen alle Armeen einer Provinz exakt
+  // aufeinander — hier stand `markers.push({ kind: 'army', … })` je Armee ohne Versatz.
+  // Die Anordnung haengt nur vom Massstab ab, nicht vom Ausschnitt: sie wird einmal gerechnet und
+  // beim Schieben der Karte nur verschoben.
+  const laidOut = armyLayout(armies, centres, view.scale, extras.tick)
+  const shiftX = -view.x / view.scale
+  const shiftY = -view.y / view.scale
+  for (const marker of laidOut) markers.push({ ...marker, x: marker.x + shiftX, y: marker.y + shiftY })
 
   // The capital sits above the units of its own province: it is a place, not a piece,
   // and the player looks for it more often than for anything else on the map.

@@ -9,6 +9,8 @@ import { parseNetLink, type NetLink } from './net/link.ts'
 import type { Transport } from '@worldwar/netplay'
 import './ui/app.css'
 import './ui/touch.css'
+import './ui/bild.css'
+import './ui/symbol.css'
 
 import worldMap from '../../../data/maps/world.json' with { type: 'json' }
 import testMap from '../../../data/maps/testworld.json' with { type: 'json' }

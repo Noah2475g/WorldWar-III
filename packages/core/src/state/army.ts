@@ -1,6 +1,6 @@
 import { ONE, divFixed, mulChain, type Fixed } from '@worldwar/shared'
 import type { Rules } from '../rules/types'
-import type { Army, ResourceKey, UnitClass, UnitStack } from './types'
+import type { Army, GameState, ProvinceId, ResourceKey, UnitClass, UnitStack } from './types'
 
 /**
  * Helpers around the hit-point pool model (design D2).
@@ -93,4 +93,23 @@ export function scaleArmyHp(army: Army, factor: Fixed): Fixed {
   }
   pruneEmptyStacks(army)
   return lost
+}
+
+/**
+ * Armies that can fight or occupy, grouped by province (V3 T-M45-03).
+ *
+ * "Present" means: located there, not at sea, not empty. Each list keeps `armyOrder`, so a
+ * caller sees exactly what a filter over `armyOrder` per province would have shown it — but the
+ * walk over the armies happens once per phase instead of once per province.
+ */
+export function presentArmiesByProvince(state: GameState): Map<ProvinceId, Army[]> {
+  const byProvince = new Map<ProvinceId, Army[]>()
+  for (const id of state.armyOrder) {
+    const army = state.armies[id]
+    if (!army || army.embarked || army.units.length === 0) continue
+    const list = byProvince.get(army.locationProvinceId)
+    if (list) list.push(army)
+    else byProvince.set(army.locationProvinceId, [army])
+  }
+  return byProvince
 }

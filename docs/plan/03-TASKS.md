@@ -7882,3 +7882,210 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 > - **Tests zuerst:** Browser: `node scripts/ux-capture.mjs --out docs/ux/after` und `pnpm ux:check` - alle Kriterien grün.
 > - **Fertig wenn:** Alle R-UX-Kriterien grün in drei Größen; Tabelle vorher/nachher im UX-PLAN Paragraf 7; pnpm verify Exit 0; Golden-Master unverändert; packages/core, packages/ai, data/rules ohne Diff gegen den Stand vor M44. Neue Bilder in docs/ASSETS.md (R-ASSET-01). Aufwand 2 h.
 -->
+
+## Meilenstein M45 — Leistung V3
+
+> **Herkunft.** PLAN-V3 Phase 0 (Rechnerfenster P0-W am 2026-10-04, `docs/reports/v3/leistung-ausgang.md`) und
+> Gate G1 (`docs/plan/V3-G1-DOSSIER.md`, Noahs Wort 1–7 am 2026-10-04). **Grenze:** nur verhaltensgleiche
+> Änderungen; Beleg Regel 3 aus PLAN-V3 (Spätspiel-Hash, Golden Master, Turnierbericht zeilengleich).
+> Verhaltensändernder KI-Denktakt und Simulation im Worker sind nicht eingeplant (G1-2, G1-3).
+
+### T-M45-03 · Kern-Hotspots laut Profil (combat, Allokationen, emit)
+- **Ziel:** Die teuersten Kernstellen aus dem V3-Profil (combat 15–19 % an S100/S300, Allokationen cloneProvince/cloneArmy/emit) verhaltensgleich verbilligen.
+- **Paket und Priorität:** Bahn P-Kern · P1
+- **Anforderungen:** R-PERF-01
+- **Abhängigkeiten:** —
+- **Dateien:** `packages/core/src/phases/combat.ts`, `packages/core/src/phases/occupation.ts`, `packages/core/src/state/army.ts`, `packages/core/src/state/clone.ts`, `packages/core/src/view/intel.ts`, `packages/core/src/view/publicView.ts`
+- **Tests zuerst:** Anteil, Aufrufzahl und Allokation je Kandidat mit perf-profile.slow messen (Modi calls/cpu), Ausgangswert in den Commit-Text.
+- **Fertig wenn:** Jeder Kandidat mit Ausgangswert und Nachher-Wert (Anteile, Aufrufe, Bytes - keine Millisekunden); Regel-3-Belege a/b/c aus PLAN-V3 gruen (Spaetspiel-Hash unveraendert, Golden Master unveraendert, Turnierbericht zeilengleich); Kern-Tests gruen. Zeitbeleg erst im Rechnerfenster von Phase 2.
+
+### T-M45-02 · (bedingt) Wegesuche zwischenspeichern
+- **Ziel:** planRoute (1,5–2 Aufrufe je Tick) nur angehen, wenn das Profil nach T-M45-03 sie noch unter den ersten fuenf zeigt.
+- **Paket und Priorität:** Bahn P-Kern · P3
+- **Anforderungen:** R-PERF-01
+- **Abhängigkeiten:** T-M45-03
+- **Dateien:** `packages/core/src/phases/movement.ts`, `packages/core/src/rules/homePath.ts`
+- **Tests zuerst:** Profil nach T-M45-03 lesen; steht planRoute nicht in den ersten fuenf, wird die Aufgabe ohne Code erledigt.
+- **Fertig wenn:** Entweder done mit "nicht noetig, Anteil N nach T-M45-03" oder Zwischenspeicher mit Invalidierung bei Besitz-/Buendniswechsel und Regel-3-Belegen a/b/c.
+
+### T-M45-01 · KI-Bedrohungskarte (threat.ts) einmal je Denkschritt
+- **Ziel:** distances (24 %) und threatMap (13 %) an S575 nicht je Aufruf neu berechnen, sondern je Denkschritt bzw. bei Aenderung; neu zugeschnitten an G1 (vorher: Etappe-2-Paesse, die nur 0,25-mal je Tick laufen).
+- **Paket und Priorität:** Bahn P-KI · P1
+- **Anforderungen:** R-PERF-01
+- **Abhängigkeiten:** —
+- **Dateien:** `packages/ai/src/threat.ts`
+- **Tests zuerst:** Aufrufzahl von distances/threatMap und CPU-Anteil an S575 messen, Ausgangswert in den Commit-Text.
+- **Fertig wenn:** Anteil von threat.ts an S575 messbar gesunken; Ergebnisse bitgenau gleich; Regel-3-Belege a/b/c gruen, nach dem Merge von P-Kern erneut a und b.
+
+### T-M45-04 · Huelle: Ticks mit Zeitbudget je Frame, Ableiten nur bei geaenderter Sicht
+- **Ziel:** Im Browser kostet die Huelle an S575 rund zwei Drittel der Zeit (29,9 statt 100 Ticks/s). Ableitungen, Panels und Karte hoechstens einmal je Frame statt je Tick.
+- **Paket und Priorität:** Bahn P-Huelle · P1
+- **Anforderungen:** R-PERF-01
+- **Abhängigkeiten:** —
+- **Dateien:** `apps/desktop/src/App.tsx`, `apps/desktop/src/game/clock.ts`, `apps/desktop/src/map/MapCanvas.tsx`, `apps/desktop/src/ui/Panels.tsx`
+- **Tests zuerst:** Zaehlwerte an S575 (Renders und Ableitungen je Tick und je Frame, Anteile aus einem Browserprofil) vor der Aenderung festhalten.
+- **Fertig wenn:** Zaehlwerte je Tick deutlich gesunken; Uhr-Semantik und R-TIME-Tests unveraendert gruen; packages/core, packages/ai, data/rules ohne Diff; Ticks/s am Buendel misst das Rechnerfenster von Phase 2 (T-M45-08).
+
+### T-M45-05 · Buendel aufteilen (React.lazy fuer Dialoge, Mehrspieler, Einstellungen)
+- **Ziel:** Der Haupt-Chunk ist 1,80 MB; Dialoge und Mehrspieler erst bei Bedarf laden.
+- **Paket und Priorität:** Bahn P-Huelle · P3
+- **Anforderungen:** R-PERF-01
+- **Abhängigkeiten:** T-M45-04
+- **Dateien:** `apps/desktop/src/ui/Dialogs.tsx`, `apps/desktop/src/main.tsx`
+- **Tests zuerst:** Buendelgroesse je Chunk vorher festhalten (Bytes).
+- **Fertig wenn:** Haupt-Chunk kleiner (Bytes vorher/nachher); alle Desktop-Tests gruen; Ladezeit am Buendel misst T-M45-08.
+
+### T-M45-08 · Abschlussmessung Leistung im Rechnerfenster
+- **Ziel:** R-PERF-01 am Buendel und im Langlauf belegen.
+- **Paket und Priorität:** Orchestrator · P1
+- **Anforderungen:** R-PERF-01
+- **Abhängigkeiten:** T-M45-01, T-M45-03, T-M45-04
+- **Dateien:** `docs/reports/v3/leistung-ausgang.md`, `docs/reports/performance.md`
+- **Tests zuerst:** Rechnerfenster nur auf Noahs Wort; Ausgangswerte aus leistung-ausgang.md.
+- **Fertig wenn:** R-PERF-01/AK1 und AK2 gemessen; verfehlt eines, kommt das Ergebnis mit Zahl an Noah (G1-2/G1-3 neu), die Grenze wird nicht gesenkt.
+
+## Meilenstein M46 — UX V3
+
+> **Herkunft.** P0-B1 (56 Bilder, `docs/ux/v3-before/`) und P0-B2 (16 Aufgabenläufe, `aufgaben.json`),
+> Top-10-Befunde und Gate G1 Frage 6. **Grenze:** `packages/core`, `packages/ai`, `data/rules`,
+> `apps/desktop/src/game/newGame.ts` bleiben unberührt. Nicht eingeplant mangels Messbefund:
+> Kartenlesbarkeit, Mehrfachauswahl, Ladezustand, Protokollfilter am Desktop.
+
+### T-M46-10 · Telefon-Layout: Kopfleiste, Seitenleiste, Protokoll
+- **Ziel:** Bei 375x667 ist die Kopfleiste 1561 px breit (Tempo, Menue, Alarmchip ausserhalb), die Seitenleiste 260 px und das Protokoll 44 px hoch (P0-B1, Befunde 1-3).
+- **Paket und Priorität:** Bahn U-Karte · P1
+- **Anforderungen:** R-UX-01
+- **Abhängigkeiten:** T-M45-04
+- **Dateien:** `apps/desktop/src/ui/Header.tsx`, `apps/desktop/src/ui/touch.css`, `apps/desktop/src/ui/Foot.tsx`, `apps/desktop/src/ui/app.css`
+- **Tests zuerst:** ux-late an S575G in 375x667: Breite der Kopfleiste, Sichtbarkeit jedes Kopfknopfs, Hoehe von Seitenleiste und Protokoll.
+- **Fertig wenn:** Bei 375x667 alle Kopfknoepfe erreichbar und sichtbar, Seitenleiste bei offenem Panel mindestens 50 % Hoehe, Protokoll mit Filter; Aufnahme nach docs/ux/v3-after.
+
+### T-M46-01 · Heeruebersicht mit Namen, Sprung zur Karte, Marschziele erreichbar zuerst
+- **Ziel:** Armeen sind nur Canvas-Pixel (0 DOM-Elemente), die Marschzielliste hat 237 Eintraege, davon 33 erreichbar (P0-B2, Befunde 5 und 7).
+- **Paket und Priorität:** Bahn U-Panels · P1
+- **Anforderungen:** R-UX-04
+- **Abhängigkeiten:** T-M45-04
+- **Dateien:** `apps/desktop/src/ui/Panels.tsx`
+- **Tests zuerst:** Lauf "Armee finden und bewegen" aus ux-tasks.mjs per Maus und Tastatur als Ausgangswert.
+- **Fertig wenn:** Lauf "Armee bewegen" per Tastatur unter 15 Tasten (vorher 46), Maus nicht schlechter (5 Klicks); Marschziele erreichbar zuerst oder gruppiert.
+
+### T-M46-05 · Tastenkuerzel fuer die acht Handlungen, Tab-Reihenfolge
+- **Ziel:** Jede Handlung kostet per Tastatur 19-60 Tasten, fast nur Tab; die Provinzliste ist Station 19 von 86 (P0-B2, Befunde 4 und 9).
+- **Paket und Priorität:** Bahn U-Karte · P2
+- **Anforderungen:** R-UX-06
+- **Abhängigkeiten:** T-M46-01
+- **Dateien:** `apps/desktop/src/keyboard.ts`, `apps/desktop/src/ui/Dialogs.tsx`
+- **Tests zuerst:** Alle acht Tastaturlaeufe aus ux-tasks.mjs als Ausgangswert.
+- **Fertig wenn:** Jeder Tastaturlauf mindestens halbiert; Kuerzel in der Tastenhilfe sichtbar; keine Kollision mit bestehenden Tasten.
+
+### T-M46-06 · Diplomatie-Uebersicht: Aktionen ueber dem Falz, Handel kompakt
+- **Ziel:** Diplomatie mit gewaehlter Macht: 1852 px Inhalt bei 566 px Hoehe, 1-2 Bildlaeufe je Handlung, 14 Zahlenfelder im Handel (P0-B1/B2, Befund 8).
+- **Paket und Priorität:** Bahn U-Panels · P2
+- **Anforderungen:** R-UX-02
+- **Abhängigkeiten:** T-M45-04
+- **Dateien:** `apps/desktop/src/ui/Panels.tsx`
+- **Tests zuerst:** Laeufe Krieg, Frieden, Handel aus ux-tasks.mjs (Bildlaeufe) als Ausgangswert.
+- **Fertig wenn:** 0 Bildlaeufe je Handlung bei 1280x800; Klicks nicht mehr als vorher.
+
+### T-M46-11 · Rueckmeldung "befohlen" tempounabhaengig, Aufstandshinweise gebuendelt
+- **Ziel:** Die Rueckmeldung steht bei Tempo 100 nur 111 ms, bei 10 nur 269 ms im Bild; sechs Aufstandshinweise schieben die Panels um ~190 px (Befunde 6 und 10).
+- **Paket und Priorität:** Bahn U-Panels · P2
+- **Anforderungen:** R-UX-03
+- **Abhängigkeiten:** T-M45-04
+- **Dateien:** `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/App.tsx`
+- **Tests zuerst:** Sichtdauer der Rueckmeldung je Tempo und Hoehe der Hinweise an S575G festhalten.
+- **Fertig wenn:** Rueckmeldung mindestens 1,5 s sichtbar bei jedem Tempo; Aufstandshinweise in einer Zeile mit Zahl.
+
+### T-M46-08 · M44-Reste: Alarmchip im Mehrspieler mitpruefen
+- **Ziel:** Kontrast ist entschieden (Pixelprobe, kein Verstoss); offen bleibt der Beweis des Alarmchips im --mp-Lauf.
+- **Paket und Priorität:** Bahn U-Karte · P3
+- **Anforderungen:** R-UX-06
+- **Abhängigkeiten:** T-M46-10
+- **Dateien:** `scripts/ux-capture.mjs`
+- **Tests zuerst:** Mp-Lauf mit erzwungenem Einmarsch vorbereiten.
+- **Fertig wenn:** Alarmchip im --mp-Lauf sichtbar belegt (auch bei 375x667 nach T-M46-10).
+
+### T-M46-09 · Funde aus Noahs Playtest V3
+- **Ziel:** Noahs Playtest (docs/PLAYTEST-V3.md) waehrend Welle 1; Funde werden vor Welle 2 eingeplant.
+- **Paket und Priorität:** nach Playtest · P2
+- **Anforderungen:** R-UX-02
+- **Abhängigkeiten:** —
+- **Dateien:** `docs/reports/playtest-v3.md`
+- **Tests zuerst:** Antworten in docs/reports/playtest-v3.md.
+- **Fertig wenn:** Jeder Fund ist eingeplant, begruendet verworfen oder an eine M46-Aufgabe gehaengt; spielt Noah nicht, steht das hier mit Datum.
+
+### T-M46-12 · Nachher-Aufnahme und Abgleich UX V3
+- **Ziel:** Dieselben Aufnahmen und Aufgabenlaeufe nachher; Abgleich durch einen frischen Agenten.
+- **Paket und Priorität:** alle · P1
+- **Anforderungen:** R-UX-01, R-UX-02, R-UX-03, R-UX-04, R-UX-06
+- **Abhängigkeiten:** T-M46-10, T-M46-01, T-M46-05, T-M46-06, T-M46-11, T-M46-08
+- **Dateien:** `docs/ux/v3-after/aufgaben.json`, `docs/ASSETS.md`
+- **Tests zuerst:** ux-late und ux-tasks nach docs/ux/v3-after.
+- **Fertig wenn:** Jede M46-Aufgabe hat ihren Lauf verbessert (Urteil erfuellt/teilweise/nicht); die Spaetspiel-Uhr ist nicht schlechter; Bilder in docs/ASSETS.md.
+
+### Nachtrag G1 (2026-10-04) — Playtest-Funde und Grafik statt Text
+
+> Noahs Wort zu G1-8 und G1-10 bis G1-12 (`V3-G1-DOSSIER.md`, Nachtrag; `VORMERKUNGEN.md`).
+
+### T-M46-13 · Symbole statt Text: Kopfleiste, Provinz-/Armeepanel, Kartenmarker
+- **Ziel:** Noah (Playtest V3, VM-05): „keinen Text als Hauptvordergrund, sondern Grafiken und Symbole“. Einheiten als milsymbol (MIT), Gebaeude und Rohstoffe aus game-icons.net (CC BY 3.0, R-ASSET-02 seit 2026-10-04), Oberflaeche aus Lucide (ISC); Text nur noch als Beschriftung/Tooltip.
+- **Paket und Priorität:** Bahn U-Bild · P1
+- **Anforderungen:** R-UX-02, R-ASSET-01
+- **Abhängigkeiten:** T-M45-04
+- **Dateien:** `apps/desktop/src/ui/Icon.tsx`, `apps/desktop/src/ui/Header.tsx`, `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/map/MapCanvas.tsx`, `docs/ASSETS.md`
+- **Tests zuerst:** ux-late an S300/S575G: Anteil Textflaeche in Kopf und Panels und Zahl der Symbole je Ansicht als Ausgangswert.
+- **Fertig wenn:** Jede Einheit, jedes Gebaeude und jeder Rohstoff in Kopf, Panels und Karte hat ein Symbol; jede Datei mit Urheber, Lizenz und Quelle in docs/ASSETS.md und sichtbar unter Mitwirkende; Tooltips tragen den Text; Desktop-Tests und no-foreign-assets gruen.
+
+### T-M46-03 · Gestapelte Armeen auffaechern
+- **Ziel:** Noah (VM-02): „Einheiten sind manchmal uebereinander … man hat Einheiten nicht gesehen“.
+- **Paket und Priorität:** Bahn U-Bild · P1
+- **Anforderungen:** R-UX-02
+- **Abhängigkeiten:** T-M46-13
+- **Dateien:** `apps/desktop/src/map/MapCanvas.tsx`, `apps/desktop/src/map/markers.ts`
+- **Tests zuerst:** ux-late an S575G: Zahl sich ueberdeckender Armeemarker als Ausgangswert.
+- **Fertig wenn:** 0 vollstaendig verdeckte Armeemarker an S575G; jede Armee per Klick waehlbar; Bildbudget render.bench haelt.
+
+### T-M46-14 · Soundeffekte je Ereignisart statt Ploppen
+- **Ziel:** Noah (VM-04): „Statt einfach diesen Ploppen, das nervt sehr“. Kenney-Pakete (CC0), eigener Klang je Ereignisart; Tempolimit und Stummschaltung bleiben.
+- **Paket und Priorität:** Bahn U-Bild · P2
+- **Anforderungen:** R-UX-02, R-ASSET-01
+- **Abhängigkeiten:** T-M46-13
+- **Dateien:** `apps/desktop/src/ui/sound.ts`, `apps/desktop/src/ui/sfx/`, `docs/ASSETS.md`
+- **Tests zuerst:** Liste der heutigen Klaenge je Ereignisart (sound.ts) als Ausgangswert.
+- **Fertig wenn:** Jede Ereignisart mit eigenem Klang; jede Datei in docs/ASSETS.md; bestehende Ton-Tests gruen.
+
+### T-M46-02 · Ueberblick: Protokoll nach Wichtigkeit, Sprung und Puls am Ort
+- **Ziel:** Noah (VM-03): „Sounds passieren und man weiss nicht, wo etwas passiert, und die Konsole unten ist viel zu ueberfuellt“.
+- **Paket und Priorität:** Bahn U-Layout · P1
+- **Anforderungen:** R-UX-02
+- **Abhängigkeiten:** T-M46-10
+- **Dateien:** `apps/desktop/src/ui/Foot.tsx`, `apps/desktop/src/game/events.ts`, `apps/desktop/src/map/MapCanvas.tsx`
+- **Tests zuerst:** Protokollzeilen je Spieltag an S300/S575G und Anteil Ereignisse mit Ort als Ausgangswert.
+- **Fertig wenn:** Jedes hoerbare Ereignis pulsiert an seinem Ort und ist per Klick anspringbar; Protokoll nach Wichtigkeit mit Sammelzeilen und Filtern; sichtbare Zeilen je Spieltag deutlich weniger.
+
+### T-M46-15 · Moralsperre beim Ausheben mit Zahl und Grenze anzeigen
+- **Ziel:** VM-01 Teil a (G1-10): die Sperre heisst heute nur „Moral zu niedrig“; Noah hielt sie fuer ein fehlendes Gebaeude.
+- **Paket und Priorität:** Bahn U-Layout · P1
+- **Anforderungen:** R-UX-03
+- **Abhängigkeiten:** —
+- **Dateien:** `apps/desktop/src/game/rejections.ts`, `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** Test: gesperrtes Ausheben in eroberter Provinz zeigt heute keine Zahl.
+- **Fertig wenn:** Gesperrtes Ausheben nennt Moral und Grenze (z. B. „Moral 23 von 25 noetig“); keine Kern- oder Regelaenderung.
+
+### T-M46-16 · Ereignisdichte je Spielabschnitt messen (Mid-Game-Stress)
+- **Ziel:** Noah (VM-06): „Das Mid-Game ist sehr, sehr stressig“. Erst messen: Ereignisse, Kriegserklaerungen, Angriffe auf den Menschen je Spieltag nach Spielabschnitt.
+- **Paket und Priorität:** Bahn M-Mess · P2
+- **Anforderungen:** R-UX-02
+- **Abhängigkeiten:** —
+- **Dateien:** `apps/headless/test/ereignisdichte.slow.test.ts`, `docs/reports/v3/ereignisdichte.md`
+- **Tests zuerst:** Vollpartie der ausgelieferten Aufstellung, Zaehlung je 50 Tage.
+- **Fertig wenn:** Bericht mit Ereignisdichte je Abschnitt und Empfehlung UX oder Balance an Noah; keine Spielaenderung.
+
+### T-M46-17 · Symbol-Durchgang: Textanteil höchstens 0,5 in allen Spielansichten
+- **Ziel:** Noahs Wunsch „Grafiken und Symbole statt Text“ (VM-05) durchgehend: nach Welle 2 lag der Textanteil noch bei 0,84 (Kopf), 0,79 (Provinz), 0,91 (Armee); Alarmliste und Protokoll waren reiner Text.
+- **Paket und Priorität:** Bahn U-Symbol · P1
+- **Anforderungen:** R-UX-02, R-UX-06
+- **Abhängigkeiten:** T-M46-13, T-M46-10, T-M46-02
+- **Dateien:** `apps/desktop/src/ui/Icon.tsx`, `apps/desktop/src/ui/Header.tsx`, `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/ui/Foot.tsx`, `apps/desktop/src/ui/Alerts.tsx`
+- **Tests zuerst:** Textanteil je Ansicht an S575G (1280x800) mit `scripts/ux-bild.mjs` als Ausgangswert.
+- **Fertig wenn:** Textanteil höchstens 0,5 in Kopfleiste, Provinzpanel, Armeepanel, Alarmliste und Protokoll; jedes Symbol mit zugänglichem Namen (Tooltip, aria-label); a11y-Tests und axe ohne neuen Verstoß; Desktop-Tests grün.

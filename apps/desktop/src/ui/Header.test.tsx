@@ -141,7 +141,9 @@ describe('R-UI-13 Der Weg zum Sieg', () => {
     renderHeader(view(300, [400, 300], 900))
 
     const meter = screen.getByRole('meter', { name: 'Siegziel' })
-    expect(meter.textContent).toContain('30 % von 90 %')
+    // Im Bild steht die Zahl allein (T-M46-17), das Ziel steht im gesprochenen Wert.
+    expect(meter.textContent).toBe('30 %')
+    expect(meter.getAttribute('aria-valuetext')).toContain('30 % von 90 %')
   })
 
   it('bleibt still, wenn es nichts zu rechnen gibt', () => {
@@ -459,13 +461,14 @@ describe('T-M36-02 Reichweite statt Bilanz', () => {
     const { container } = renderHeader(mitFluss(100_000, 2000))
     const leiste = container.querySelector('.resources') as HTMLElement
     const sichtbar = leiste.cloneNode(true) as HTMLElement
-    for (const versteckt of sichtbar.querySelectorAll('.visually-hidden')) versteckt.remove()
+    // Der Name eines Zeichens steht im <title> des SVG: er wird nicht gezeichnet (T-M46-17).
+    for (const versteckt of sichtbar.querySelectorAll('.visually-hidden, svg title')) versteckt.remove()
 
     expect(leiste.querySelectorAll('.resource__dir').length).toBe(7)
     expect(sichtbar.textContent).not.toMatch(/[+−]\d/)
-    // Und die Gegenprobe, damit der Vergleich nicht ueber dem Nichts steht: fuers Ohr
-    // steht die Bilanz weiterhin da.
-    expect(leiste.textContent).toContain('Bilanz +2 je Tag')
+    // Und die Gegenprobe, damit der Vergleich nicht ueber dem Nichts steht: fuers Ohr steht die Bilanz
+    // weiterhin da - seit T-M46-17 als Name des Pfeil-Zeichens statt als versteckter Wortknoten.
+    expect(leiste.querySelector('.resource__dir svg')?.getAttribute('aria-label')).toBe('Bilanz +2 je Tag')
   })
 
   it('sagt zu einem stehenden Vorrat weder auf noch ab', () => {
@@ -479,9 +482,7 @@ describe('T-M36-02 Reichweite statt Bilanz', () => {
     // „2,5 T" ist für das Auge gekürzt; ein Vorleseprogramm bekommt den ganzen Satz.
     const { container } = renderHeader(mitFluss(5000, -2000))
 
-    expect(zelle(container).querySelector('.resource__reach .visually-hidden')?.textContent).toBe(
-      'noch 2,5 Tage',
-    )
+    expect(zelle(container).querySelector('.resource__reach svg')?.getAttribute('aria-label')).toBe('noch 2,5 Tage')
   })
 })
 
@@ -816,7 +817,7 @@ describe('R-UX-02/AK1 Die Kopfleiste ist einzeilig, mit Siegziel in der Uhrzeile
 
     expect(clock.querySelector('.meter')).not.toBeNull()
     expect(container.querySelector('.resources .meter')).toBeNull()
-    expect(within(clock as HTMLElement).getByText(/von 90 %/)).toBeTruthy()
+    expect(within(clock as HTMLElement).getByRole('meter', { name: 'Siegziel' }).getAttribute('aria-valuetext')).toMatch(/von 90 %/)
   })
 
   it('haelt das Siegziel auch mit fester Rate in der Uhrzeile (Mehrspieler)', () => {

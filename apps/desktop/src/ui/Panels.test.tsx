@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { readFileSync } from 'node:fs'
+import { useState } from 'react'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { TEST_RULES } from '@worldwar/testkit'
 import { defenceMultiplier, type Province, type PublicView, type Terrain, type VisibleArmy, type VisibleProvince } from '@worldwar/core'
@@ -29,8 +30,9 @@ import {
   type Targeting,
   type TradeFormSpec,
 } from './Panels.tsx'
-import { BUILDING_ICONS, BUILDING_ORDER, ICON_PATHS, RESOURCE_ICONS, UNIT_ICONS } from './icons.tsx'
-import { ART, ART_FOR_ICON, BUILDING_ART, UNIT_ART } from './art.tsx'
+import { BUILDING_ICONS, BUILDING_ORDER, RESOURCE_ICONS, UNIT_ICONS } from './icons.tsx'
+import { GLYPH_PATHS } from './glyphs.ts'
+import { ART, BUILDING_ART, UNIT_ART } from './art.tsx'
 import { UnitMarker, type MarkerTone } from './UnitMarker.tsx'
 import type { BattleReportData } from '../game/events.ts'
 import type { TimelineEntry } from '../game/saves.ts'
@@ -45,6 +47,23 @@ import type { NextUnlock } from '../game/actions.ts'
  */
 
 afterEach(cleanup)
+// Die Wirtschaftstabelle wird seit T-M46-17 erst beim Oeffnen gezeichnet (als geschlossenes <details> stand ihr Text
+// sonst im Dokument, ohne dass ihn jemand sah): die Tests, die in die Tabelle schauen, starten mit offener Wirtschaft.
+/** Klappt jede Protokollzeile mit Koerper auf (T-M46-17): der Koerper wird erst dann gezeichnet. */
+function aufklappen(): void {
+  for (const details of document.querySelectorAll<HTMLDetailsElement>('details.log__report')) {
+    details.open = true
+    fireEvent(details, new Event('toggle'))
+  }
+}
+
+beforeEach(() => {
+  try {
+    globalThis.localStorage?.setItem('worldwar.economyOpen', '1')
+  } catch {
+    // ohne Speicher bleibt sie zu
+  }
+})
 
 /** Eine Spielerfarbe, wie sie aus der Sicht kaeme — nicht als Literal im Quelltext. */
 const FARBE = TOKENS.accent
@@ -341,7 +360,10 @@ describe('R-GAME-06 Der Filter im Ereignisprotokoll', () => {
 
     const details = document.querySelector('details.log__report')
     expect(details, 'der Bericht traegt kein details-Element').toBeTruthy()
-    expect(details!.querySelector('summary')!.textContent).toContain('Tagesbericht für Tag 1.')
+    // Der Satz ist der Name der Ueberschrift (T-M46-17), im Bild stehen Zeichen und Kurzwort.
+    expect(details!.querySelector('summary')!.getAttribute('aria-label')).toBe('Tagesbericht für Tag 1.')
+    expect(screen.queryByText('Bilanz je Tag: Nahrung +120'), 'der Koerper steht erst nach dem Aufklappen da').toBeNull()
+    aufklappen()
     expect(screen.getByText('Bilanz je Tag: Nahrung +120')).toBeTruthy()
     expect(screen.getByText('Moral: Alpha 62 % ↗')).toBeTruthy()
   })
@@ -373,6 +395,7 @@ describe('R-GAME-06 Der Filter im Ereignisprotokoll', () => {
     }
     render(<EventLog entries={[bericht]} ticksPerDay={24} onJump={() => undefined} />)
 
+    aufklappen()
     const details = document.querySelector('details.log__report')!
     const zeilen = [...details.querySelectorAll('.log__deltas li')]
     expect(zeilen, 'keine Delta-Zeilen im Bericht').toHaveLength(2)
@@ -454,8 +477,11 @@ describe('R-BAT-05 Der Kampfbericht wird ein Bild', () => {
     battle,
   }
 
-  const renderBattle = () =>
-    render(<EventLog entries={[eintrag]} ticksPerDay={24} onJump={() => undefined} />)
+  const renderBattle = () => {
+    const result = render(<EventLog entries={[eintrag]} ticksPerDay={24} onJump={() => undefined} />)
+    aufklappen()
+    return result
+  }
 
   it('klappt den Gefechtseintrag auf und bindet die Balkenlaengen an den Datensatz', () => {
     renderBattle()
@@ -616,11 +642,12 @@ describe('R-NEWS-04 Weltgeschehen ist der fuenfte Filter', () => {
     ...over,
   })
 
-  it('bietet fuenf Knoepfe an', () => {
+  // LOESCHVERMERK (Review): bis T-M46-02 hiess der Fall 'bietet fuenf Knoepfe an' und erwartete 5 Knoepfe.
+  it('bietet sechs Knoepfe an (Wichtig seit T-M46-02 und die fuenf Rubriken)', () => {
     render(<EventLog entries={[eintrag({})]} ticksPerDay={24} onJump={() => {}} />)
 
     expect(screen.getByRole('button', { name: 'Weltgeschehen' })).toBeTruthy()
-    expect(screen.getAllByRole('button').length).toBe(5)
+    expect(screen.getAllByRole('button').length).toBe(6)
   })
 
   it('zeigt unter Weltgeschehen eine Kriegserklaerung zwischen zwei fremden Maechten', () => {
@@ -821,6 +848,69 @@ describe('R-UX-03/AK1 Sperrgründe der Verträge gebündelt, Leerzustände als F
   })
 })
 
+/**
+ * V3 Nachbesserung U (Messung S575G 1280x800): „Macht waehlen“ schob die ganze App um die Kopfhoehe nach oben
+ * (header.y = -82), weil `scrollIntoView` auch Vorfahren mit `overflow: hidden` rollt. Der Blick darf nur den
+ * Rollrahmen der Seitenleiste bewegen.
+ */
+describe('Diplomatie: Machtwahl rollt nur die Seitenleiste (V3 Nachbesserung U)', () => {
+  it('ruft nie scrollIntoView auf und rollt den naechsten Rollrahmen, nicht den aeusseren', () => {
+    const intoView = vi.fn()
+    Element.prototype.scrollIntoView = intoView
+    const view = diplomacyView({ others: [{ id: 'p2', nation: 'Ostmark' }] })
+    const treaties: Action[] = [{ id: 't6', label: 'Krieg erklären', disabledReason: null, onRun: () => undefined }]
+    const outer = document.createElement('div')
+    outer.style.overflowY = 'hidden'
+    const side = document.createElement('aside')
+    side.style.overflowY = 'auto'
+    outer.append(side)
+    document.body.append(outer)
+    Object.defineProperty(side, 'scrollHeight', { value: 900, configurable: true })
+    Object.defineProperty(side, 'clientHeight', { value: 400, configurable: true })
+    const { container } = render(
+      <DiplomacyPanel view={view} nameOf={() => 'Ostmark'} chosen="p2" onChoose={() => undefined} actionsFor={() => treaties} />,
+      { container: side.appendChild(document.createElement('div')) },
+    )
+    const block = container.querySelector<HTMLElement>('.group') ?? container
+    vi.spyOn(block, 'getBoundingClientRect').mockReturnValue({ top: 300 } as DOMRect)
+    // Der Block steht erst nach dem Klick im Rollrahmen; den Wert setzen wir fuer alle Kinder des Panels.
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      return { top: this === side ? 100 : 300 } as DOMRect
+    })
+    fireEvent.click(screen.getByRole('button', { name: /Ostmark/ }))
+
+    expect(intoView, 'scrollIntoView rollt auch overflow:hidden-Vorfahren').not.toHaveBeenCalled()
+    expect(outer.scrollTop, 'der aeussere Rahmen bleibt stehen').toBe(0)
+    expect(side.scrollTop, 'die Seitenleiste rollt zum Block').toBeGreaterThan(0)
+    vi.restoreAllMocks()
+    outer.remove()
+  })
+})
+
+describe('ActionGroup iconOnly (Nachbesserung U, Textanteil): Zeichenknoepfe tragen Tooltip und Namen', () => {
+  it('Handlungen mit Zeichen werden Zeichenknoepfe, solche ohne Zeichen behalten das Wort', () => {
+    const group = {
+      id: 'espionage',
+      title: 'Spionage',
+      actions: [
+        { id: 'a', label: 'Aufklärung', icon: 'espionage', disabledReason: null, onRun: () => undefined },
+        { id: 'b', label: 'Wirtschaftssabotage', icon: 'espionage', disabledReason: 'Kein Agent frei.', onRun: () => undefined },
+        { id: 'c', label: 'Ohne Zeichen', disabledReason: null, onRun: () => undefined },
+      ],
+    } as unknown as Parameters<typeof ActionGroup>[0]['group']
+    render(<ActionGroup group={group} iconOnly />)
+
+    for (const label of ['Aufklärung', 'Wirtschaftssabotage']) {
+      const button = screen.getByRole('button', { name: label })
+      expect(button.textContent, label).toBe('')
+      expect(button.getAttribute('title'), label).toContain(label)
+      expect(button.querySelector('svg'), label).toBeTruthy()
+    }
+    expect(screen.getByRole('button', { name: 'Wirtschaftssabotage' }).getAttribute('aria-description')).toBe('Kein Agent frei.')
+    expect(screen.getByRole('button', { name: 'Ohne Zeichen' }).textContent).toBe('Ohne Zeichen')
+  })
+})
+
 describe('R-DIP-07 Das Diplomatiepanel (T-M17-14)', () => {
   it('zeigt das Ansehen jeder Macht als Balken', () => {
     const view = diplomacyView({
@@ -908,6 +998,50 @@ describe('R-DIP-07 Das Diplomatiepanel (T-M17-14)', () => {
 
     fireEvent.click(within(incoming).getByRole('button', { name: 'Angebot annehmen' }))
     expect(onRun).toHaveBeenCalledTimes(1)
+  })
+
+  it('T-M46-06: ab zwei Angeboten sind die Angebote zugeklappt, mit der Zahl in der Ueberschrift', () => {
+    const view = diplomacyView({ others: [{ id: 'p2', nation: 'Ostmark' }] })
+    const action = (label: string, id: string): Action => ({ id, label, disabledReason: null, onRun: () => undefined })
+    const row = (id: string): OfferRow => ({ id, text: `Angebot ${id}`, actions: [action('Angebot annehmen', `a-${id}`)] })
+    const { container } = render(
+      <DiplomacyPanel view={view} nameOf={() => 'Ostmark'} offers={{ incoming: [row('1'), row('2'), row('3')], outgoing: [row('4')] }} />,
+    )
+    const incoming = container.querySelector('section[aria-label="Eingehende Angebote"] details')!
+    expect(incoming.hasAttribute('open')).toBe(false)
+    expect(incoming.querySelector('summary')!.textContent).toBe('Eingehende Angebote (3)')
+    // Ein einzelnes Angebot bleibt offen.
+    expect(container.querySelector('section[aria-label="Ausgehende Angebote"] details')!.hasAttribute('open')).toBe(true)
+  })
+
+  it('T-M46-06: kommt der Spieler mit gewaehlter Macht her (Sprung aus einer Meldung), stehen die Angebote offen', () => {
+    const view = diplomacyView({ others: [{ id: 'p2', nation: 'Ostmark' }] })
+    const action = (label: string, id: string): Action => ({ id, label, disabledReason: null, onRun: () => undefined })
+    const row = (id: string): OfferRow => ({ id, text: `Angebot ${id}`, actions: [action('Angebot annehmen', `a-${id}`)] })
+    const { container } = render(
+      <DiplomacyPanel view={view} nameOf={() => 'Ostmark'} chosen="p2" offers={{ incoming: [row('1'), row('2')], outgoing: [] }} />,
+    )
+    expect(container.querySelector('section[aria-label="Eingehende Angebote"] details')!.hasAttribute('open')).toBe(true)
+  })
+
+  it('T-M46-06: die Wahl einer Macht setzt den Fokus auf den ersten Knopf ihrer Aktionen', () => {
+    const view = diplomacyView({ others: [{ id: 'p2', nation: 'Ostmark' }] })
+    const action = (label: string, id: string): Action => ({ id, label, disabledReason: null, onRun: () => undefined })
+    function Host() {
+      const [chosen, setChosen] = useState<string | null>(null)
+      return (
+        <DiplomacyPanel
+          view={view}
+          nameOf={() => 'Ostmark'}
+          chosen={chosen}
+          onChoose={setChosen}
+          actionsFor={() => [action('Krieg erklären', 'w'), action('Frieden anbieten', 'p')]}
+        />
+      )
+    }
+    render(<Host />)
+    fireEvent.click(screen.getByRole('button', { name: /Ostmark/ }))
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Krieg erklären' }))
   })
 
   it('zeigt keine Regionen fuer Angebote, wenn es keine gibt', () => {
@@ -1085,6 +1219,42 @@ describe('R-DIP-07 Das Diplomatiepanel (T-M17-14)', () => {
 
     render(<TradeOfferForm partner="p2" partnerName="Ostmark" spec={spec} />)
     expect(screen.getAllByText('Bestand 12')).toHaveLength(1)
+  })
+
+  it('T-M46-05: Eingabe in einem Mengenfeld schickt das Angebot ab, solange der Knopf frei ist', () => {
+    const onRun = vi.fn()
+    const action: Action = { id: 'trade-offer', label: 'Handel anbieten', disabledReason: null, onRun }
+    const spec: TradeFormSpec = {
+      resources: ['iron', 'money'],
+      stock: { iron: 12000 },
+      limits: { money: 507650, resource: 152295 },
+      ownProvinces: [],
+      provincesOf: () => [],
+      evaluate: () => ({ text: '', action }),
+    }
+    render(<TradeOfferForm partner="p2" partnerName="Ostmark" spec={spec} />)
+    fireEvent.keyDown(screen.getByLabelText('Geld verlangen'), { key: 'Enter' })
+    expect(onRun).toHaveBeenCalledTimes(1)
+  })
+
+  it('T-M46-05: gesperrt oder noch ausstehend schickt Eingabe nichts', () => {
+    const onRun = vi.fn()
+    const gesperrt: Action = { id: 'trade-offer', label: 'Handel anbieten', disabledReason: 'Kein Angebot', onRun }
+    const ausstehend: Action = { id: 'trade-offer', label: 'Handel anbieten', disabledReason: null, pendingNotice: '✓ befohlen', onRun }
+    for (const action of [gesperrt, ausstehend]) {
+      const spec: TradeFormSpec = {
+        resources: ['iron'],
+        stock: {},
+        limits: { money: 1, resource: 1 },
+        ownProvinces: [],
+        provincesOf: () => [],
+        evaluate: () => ({ text: '', action }),
+      }
+      const { unmount } = render(<TradeOfferForm partner="p2" partnerName="Ostmark" spec={spec} />)
+      fireEvent.keyDown(screen.getByLabelText('Eisen geben'), { key: 'Enter' })
+      unmount()
+    }
+    expect(onRun).not.toHaveBeenCalled()
   })
 })
 
@@ -1408,7 +1578,10 @@ describe('T-M20-03 Was laengst gerechnet wird, steht auch da', () => {
     const entries: EventEntry[] = [{ id: '1', tick: 5, text: 'Die Partie beginnt.', severity: 'info' }]
     const { container } = render(<EventLog entries={entries} ticksPerDay={24} onJump={() => undefined} />)
 
-    expect(container.querySelector('.log__row svg')).toBeNull()
+    // Seit T-M46-17 traegt jede Zeile ein Zeichen (das allgemeine, wo es keine Rubrik gibt): ohne ein Kurzwort
+    // im Bild bliebe sie sonst leer. Der Satz ist der Name des Zeichens.
+    const symbol = container.querySelector('.log__row svg')
+    expect(symbol?.getAttribute('aria-label')).toBe('Die Partie beginnt.')
   })
 
   it('zeichnet die vorherrschende Gattung neben den Armeenamen', () => {
@@ -1555,8 +1728,8 @@ describe('R-UI-05 Der Markt zeigt das Zeichen des gewaehlten Rohstoffs', () => {
       <MarketPanel resources={['wood', 'iron', 'oil'] as never} stock={{}} preview={handel} />,
     )
 
-    expect(zeichnung(container, 'give')).toBe(ICON_PATHS[RESOURCE_ICONS.wood!])
-    expect(zeichnung(container, 'want')).toBe(ICON_PATHS[RESOURCE_ICONS.iron!])
+    expect(zeichnung(container, 'give')).toBe(GLYPH_PATHS[RESOURCE_ICONS.wood!]!)
+    expect(zeichnung(container, 'want')).toBe(GLYPH_PATHS[RESOURCE_ICONS.iron!]!)
   })
 
   it('wechselt das Zeichen mit der Auswahl', () => {
@@ -1566,7 +1739,7 @@ describe('R-UI-05 Der Markt zeigt das Zeichen des gewaehlten Rohstoffs', () => {
 
     fireEvent.change(container.querySelector('#market-give')!, { target: { value: 'oil' } })
 
-    expect(zeichnung(container, 'give')).toBe(ICON_PATHS[RESOURCE_ICONS.oil!])
+    expect(zeichnung(container, 'give')).toBe(GLYPH_PATHS[RESOURCE_ICONS.oil!]!)
   })
 })
 
@@ -1650,11 +1823,9 @@ describe('T-M29-03 Das Provinzpanel traegt das Bauplatz-Raster', () => {
     )
   }
 
-  /** Die Flaeche je Feld, in der Reihenfolge des Rasters. */
+  /** Die Flaeche je Feld, in der Reihenfolge des Rasters (seit T-M46-13: der Pfad von game-icons.net). */
   const bilderImRaster = (container: HTMLElement): (string | null)[] =>
-    [...container.querySelectorAll('.slot')].map(
-      (slot) => slot.querySelector('.unit-art .unit-art__body')?.getAttribute('d') ?? null,
-    )
+    [...container.querySelectorAll('.slot')].map((slot) => slot.querySelector('svg path')?.getAttribute('d') ?? null)
 
   it('zeigt sieben Felder mit sieben verschiedenen Gebaeudebildern', () => {
     const { container } = gerastert('gebaut')
@@ -1664,7 +1835,7 @@ describe('T-M29-03 Das Provinzpanel traegt das Bauplatz-Raster', () => {
     expect(bilder.filter(Boolean)).toHaveLength(bilder.length)
     expect(new Set(bilder).size).toBe(bilder.length)
     for (const [index, key] of BUILDING_ORDER.entries()) {
-      expect(bilder[index], key).toBe(ART[BUILDING_ART[key]]!.body)
+      expect(bilder[index], key).toBe(GLYPH_PATHS[BUILDING_ICONS[key]!])
     }
   })
 
@@ -1679,25 +1850,22 @@ describe('T-M29-03 Das Provinzpanel traegt das Bauplatz-Raster', () => {
     expect(bilderImRaster(gebaut.container)).toEqual(bilderImRaster(frei.container))
   })
 
-  it('faerbt das Gebaeude in jedem Zustand in `building` und nicht in `ink` (D33.2)', () => {
-    // Im Raster gibt es keinen fremden Besitzer; die Gebaeudefarbe ist die Auskunft.
-    // Befund der Sichtpruefung vom 2026-09-11: im FREIEN Feld stand der Riss in `ink`,
-    // weil das Bild dort im Knopf sitzt und `.slot > svg` es nicht mehr erwischt.
+  it('zeigt in jedem Zustand ein Zeichen je Feld, gefuellt mit der Textfarbe (T-M46-13)', () => {
+    // Seit T-M46-13 kein Schattenriss mehr, sondern das Zeichen von game-icons.net: eine Flaeche,
+    // die mit `currentColor` gefuellt wird — `.slot > svg` faerbt sie in `building`.
     for (const zustand of ['frei', 'bau', 'gebaut'] as const) {
       const { container, unmount } = gerastert(zustand)
-      const bilder = [...container.querySelectorAll('.slot .unit-art')]
+      const bilder = [...container.querySelectorAll('.slot svg[fill="currentColor"]')]
 
-      expect(bilder, zustand).toHaveLength(BUILDING_ORDER.length)
-      for (const bild of bilder) {
-        expect(bild.getAttribute('class'), zustand).toContain('unit-art--building')
-      }
+      // Im gebauten Feld sitzt zum Zeichen des Gebaeudes noch das des Ausbau-Knopfs daneben.
+      expect(bilder, zustand).toHaveLength(BUILDING_ORDER.length * (zustand === 'gebaut' ? 2 : 1))
       unmount()
     }
   })
 
   it('setzt die Bilder auf die 30 px des Bauplans', () => {
     const { container } = gerastert('gebaut')
-    const bilder = [...container.querySelectorAll('.slot .unit-art')]
+    const bilder = [...container.querySelectorAll('.slot > svg[fill="currentColor"]')]
 
     expect(bilder).toHaveLength(BUILDING_ORDER.length)
     for (const bild of bilder) {
@@ -1713,7 +1881,7 @@ describe('T-M29-03 Das Provinzpanel traegt das Bauplatz-Raster', () => {
 
     expect(feld.querySelector('.slot__level')?.textContent).toBe('2')
     const benannt = within(feld).getByRole('img', { name: '2 Fabrik' })
-    expect(benannt.classList.contains('unit-art'), 'Der Name haengt noch an der Glyphe').toBe(true)
+    expect(benannt.getAttribute('fill'), 'Der Name haengt noch am Zeichen').toBe('currentColor')
   })
 
   it('zeichnet die Moral in zehn Segmenten mit dem Prozentwert und der Tendenz', () => {
@@ -1738,11 +1906,11 @@ describe('T-M29-03 Das Provinzpanel traegt das Bauplatz-Raster', () => {
     const { unmount } = render(
       <ProvincePanel province={{ ...province, terrain: 'mountain' }} ownerName="Nordland" actions={[]} ticksPerDay={24} currentTick={0} />,
     )
-    expect(screen.getByText(/Verteidigung \+30 %/)).toBeTruthy()
+    expect(screen.getByTitle(/Verteidigung \+30 %/)).toBeTruthy()
     unmount()
 
     render(<ProvincePanel province={{ ...province, terrain: 'plains' }} ownerName="Nordland" actions={[]} ticksPerDay={24} currentTick={0} />)
-    expect(screen.queryByText(/Verteidigung/)).toBeNull()
+    expect(screen.queryByTitle(/Verteidigung/)).toBeNull()
   })
 
   it('haelt die Bonus-Tabelle deckungsgleich mit dem Kern', () => {
@@ -1803,7 +1971,8 @@ describe('T-M31-02 Das Armeepanel traegt Marker, Zustand und Haltungsgruppe', ()
 
     expect(buttons.length).toBe(4)
     const pressed = buttons.filter((b) => b.getAttribute('aria-pressed') === 'true')
-    expect(pressed.map((b) => b.textContent)).toEqual(['Verteidigung'])
+    // Nur das Zeichen sichtbar (T-M46-13): der Name steht im aria-label.
+    expect(pressed.map((b) => b.getAttribute('aria-label'))).toEqual(['Haltung Verteidigung einnehmen'])
   })
 
   it('bietet vier Haltungen an, jede mit ihrem Hinweis im Tooltip (R-UNIT-09/AK6)', () => {
@@ -1811,7 +1980,13 @@ describe('T-M31-02 Das Armeepanel traegt Marker, Zustand und Haltungsgruppe', ()
     const group = screen.getByRole('group', { name: 'Haltung' })
     const buttons = within(group).getAllByRole('button')
 
-    expect(buttons.map((b) => b.textContent)).toEqual(['Angriff', 'Verteidigung', 'Rückzug', 'Garnison'])
+    expect(buttons.map((b) => b.textContent)).toEqual(['', '', '', ''])
+    expect(buttons.map((b) => b.getAttribute('aria-label'))).toEqual([
+      'Haltung Angriff einnehmen',
+      'Haltung Verteidigung einnehmen',
+      'Haltung Rückzug einnehmen',
+      'Haltung Garnison einnehmen',
+    ])
     const haltungen = actions.filter((action) => action.id.startsWith('stance-'))
     haltungen.forEach((action, index) => {
       expect(buttons[index]!.getAttribute('title'), action.id).toContain(action.hint)
@@ -1849,25 +2024,29 @@ describe('T-M31-02 Das Armeepanel traegt Marker, Zustand und Haltungsgruppe', ()
    * zwei Bildsprachen im selben Spiel halten nur zusammen, solange alles andere gleich
    * bleibt.
    */
-  it('zeigt in der Armeeliste den Schattenriss statt der Glyphe', () => {
+  // LOESCHVERMERK (Review): bis T-M46-13 standen hier „zeigt in der Armeeliste den Schattenriss statt der Glyphe“
+  // (Schattenriss aus ART in der Platte) und „nimmt fuer die Bildfassung die 44 px des Bauplans“ (Breite 44,
+  // Hoehe 26,4). Das Plaettchen traegt jetzt das Truppenzeichen aus milsymbol und bleibt bei 30 x 18.
+  it('zeigt in der Armeeliste das Truppenzeichen statt Glyphe oder Schattenriss (T-M46-13)', () => {
     const { container } = panel()
     const marker = [...container.querySelectorAll('.unit-marker')]
 
     expect(marker).toHaveLength(2)
     expect(container.querySelector('.unit-marker__glyph'), 'Die Liste stempelt noch Glyphen').toBeNull()
-    marker.forEach((platte, index) => {
-      const bild = ART_FOR_ICON[units[index]!.icon]!
-      expect(platte.querySelector('.unit-marker__art')?.getAttribute('d')).toBe(ART[bild]!.body)
-      expect(platte.querySelector('.unit-marker__art-cut')?.getAttribute('d')).toBe(ART[bild]!.cut)
-    })
+    expect(container.querySelector('.unit-marker__art'), 'Die Liste zeigt noch Schattenrisse').toBeNull()
+    for (const platte of marker) {
+      const zeichen = platte.querySelector('svg.unit-marker__sym')
+      expect(zeichen, 'Kein Truppenzeichen im Plaettchen').toBeTruthy()
+      expect(zeichen!.querySelector('path'), 'Das Truppenzeichen ist leer').toBeTruthy()
+    }
   })
 
-  it('nimmt fuer die Bildfassung die 44 px des Bauplans, ohne das Seitenverhaeltnis zu drehen', () => {
+  it('haelt das Plaettchen bei 30 x 18, ohne das Seitenverhaeltnis zu drehen', () => {
     const { container } = panel()
     const platte = container.querySelector('.unit-marker')!
 
-    expect(platte.getAttribute('width')).toBe('44')
-    expect(platte.getAttribute('height')).toBe('26.4')
+    expect(platte.getAttribute('width')).toBe('30')
+    expect(platte.getAttribute('height')).toBe('18')
     expect(platte.getAttribute('viewBox')).toBe('0 0 30 18')
   })
 
@@ -1906,7 +2085,8 @@ describe('T-M31-02 Das Armeepanel traegt Marker, Zustand und Haltungsgruppe', ()
     panel()
 
     // `amount` rechnet Festkomma heraus — gebunden wird die Zeile, nicht die Schreibweise.
-    expect(screen.getByText(/Kampfkraft/).textContent).toContain('Zustand 86 %')
+    expect(screen.getByLabelText('Kampfkraft').textContent).toBeTruthy()
+    // Der Zustand steht als Balken mit Zahl (T-M46-17), nicht mehr zusaetzlich als versteckter Satz im Kopf.
     const meter = screen.getByRole('meter', { name: 'Zustand' })
     expect(meter.getAttribute('aria-valuenow')).toBe('86')
     expect(meter.textContent).toContain('86 %')
@@ -2300,7 +2480,8 @@ describe('T-M36-05 Ruhiger, nicht kuerzer', () => {
 
   it('behaelt alle vier Groessen im Baum — R-ECON-06 bleibt belegt', () => {
     const { container } = render(<EconomyPanel view={wirtschaftMit(349_000)} />)
-    const kopf = [...container.querySelectorAll('thead th')].map((th) => th.textContent)
+    // Die Spaltenkoepfe sind seit T-M46-17 Zeichen; der Name steht am Kopf (aria-label).
+    const kopf = [...container.querySelectorAll('thead th')].map((th) => th.getAttribute('aria-label'))
 
     expect(kopf).toEqual(['Rohstoff', 'Bestand', 'Produktion', 'Unterhalt', 'Bilanz'])
     expect(container.querySelectorAll('tbody tr td')).toHaveLength(5)
@@ -2525,8 +2706,12 @@ describe('R-UX-02 T-M44-12 Wirtschaft einklappbar, Panelkopf mit Zurueck', () =>
     const details = container.querySelector('section.panel > details')
     expect(details, 'Wirtschaft ist kein details').toBeTruthy()
     expect(details!.querySelector('summary')).toBeTruthy()
-    expect(details!.querySelector('table')).toBeTruthy()
+    // Eingeklappt steht die Tabelle nicht im Dokument (T-M46-17), nach dem Aufklappen schon.
+    expect(details!.querySelector('table')).toBeNull()
     expect((details as HTMLDetailsElement).open).toBe(false)
+    ;(details as HTMLDetailsElement).open = true
+    fireEvent(details!, new Event('toggle'))
+    expect(details!.querySelector('table')).toBeTruthy()
     // Die Region mit dem Namen bleibt: App.test sucht sie.
     expect(container.querySelector('section.panel')!.getAttribute('aria-label')).toBe('Wirtschaft')
   })

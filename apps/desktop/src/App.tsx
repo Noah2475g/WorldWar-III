@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'react'
 import {
   RESOURCE_KEYS,
   canApply,
@@ -17,7 +17,7 @@ import {
 } from '@worldwar/core'
 import { advanceStep } from './game/advance.ts'
 import { RESUME_SPEED } from './game/speed.ts'
-import { clockStep } from './game/clock.ts'
+import { createClockDriver } from './game/clock.ts'
 import { fastForwardChunk } from './game/fastForward.ts'
 import { clearanceAlerts, clearanceNotices } from './game/clearance.ts'
 import {
@@ -59,7 +59,10 @@ import { useMapTooltip } from './ui/useMapTooltip.ts'
 import { Sidebar } from './ui/Sidebar.tsx'
 import { OrientationHint } from './ui/OrientationHint.tsx'
 import { MENU_ENTRIES } from './ui/menuEntries.ts'
+import { CreditsDialog } from './ui/Credits.tsx'
 import { armyNamer, createArmyNameMemory, nationNamer, provinceNamer } from './game/names.ts'
+import { armyRows } from './game/armies.ts'
+import { ACK_MIN_MS, ACK_SLACK_MS, armyAckKey } from './game/ack.ts'
 import { Foot, latestReport } from './ui/Foot.tsx'
 import { standingsRows } from './ui/Standings.tsx'
 import { Dialog } from './ui/Dialogs.tsx'
@@ -67,6 +70,7 @@ import { DeltaBar } from './ui/charts/DeltaBar.tsx'
 import { gameTime, rate } from './ui/format.ts'
 import { Header } from './ui/Header.tsx'
 import {
+  ArmiesPanel,
   ArmyPanel,
   DiplomacyPanel,
   EconomyPanel,
@@ -116,7 +120,10 @@ import {
   dayReportBody,
   dayReportDeltas,
   describeEvent,
+  groupEntries,
   mergeBattleLines,
+  pingsFor,
+  type MapPing,
   openIntrusion,
   priceSeries,
 } from './game/events.ts'
@@ -126,7 +133,7 @@ import { createStorage } from './storage/createStorage'
 import { UNIT_ICONS } from './ui/icons.tsx'
 import type { IconItem } from './ui/IconRow.tsx'
 import { Tutorial } from './ui/Tutorial.tsx'
-import { SheetHandle, type SheetSnap } from './ui/Sheet.tsx'
+import { SheetHandle, SheetNav, usePhonePortrait, type SheetSnap } from './ui/Sheet.tsx'
 import { Legend } from './ui/Legend.tsx'
 import { StandingsPanel, VictoryDialog } from './ui/Standings.tsx'
 import {
@@ -239,6 +246,14 @@ const VIEWPORT = { viewportWidth: 960, viewportHeight: 600, minScale: 0.2, maxSc
 const STALL_AFTER_MS = 2000
 /** Wie oft die stehende Uhr nachsieht — oft genug, dass die Meldung nicht nachhinkt. */
 const STALL_CHECK_MS = 500
+/** Zeitbudget der Uhr je Bild und je Zeitscheibe dazwischen, in ms (T-M45-04); mindestens ein Tick je Aufruf. */
+const FRAME_BUDGET_MS = 12
+const SLICE_BUDGET_MS = 12
+/** Kam seit so langer Zeit kein Bild, rechnen auch die Zeitscheiben nicht — das Fenster ist verdeckt (R-TIME-02). */
+const SLICE_MAX_FRAME_AGE_MS = 600
+/** Die Luecke zwischen zwei Staenden fuer React: das Vielfache der letzten Commitzeit, hoechstens so viel (ms). */
+const DISPLAY_GAP_FACTOR = 8
+const DISPLAY_GAP_MAX_MS = 200
 
 /**
  * Whether this player has seen the introduction before.
@@ -297,7 +312,15 @@ export function App(props: AppProps) {
   // Synchron gepflegter Spiegel fuer Ablaeufe ausserhalb des Renderzyklus (Vorspulen):
   // sie duerfen nicht im setState-Updater rechnen (StrictMode ruft Updater doppelt).
   const stateRef = useRef<GameState | null>(null)
-  stateRef.current = state
+  // LOESCHVERMERK (T-M45-04): bis dahin stand hier `stateRef.current = state` bei jedem Render.
+  // Die Uhr schreibt jetzt zwischen zwei Bildern mehrere Ticks in den Spiegel und gibt den Stand
+  // erst am Bildende an React (`flushState`); ein Render dazwischen mit dem alten React-Stand
+  // haette den Spiegel zurueckgedreht und Ticks verschluckt (dieselbe Klasse wie T-M41-17).
+  // Alle Schreiber gehen ueber `commitState`, das den Spiegel selbst fuehrt — die Zeile war nur
+  // ein Abgleich mit sich selbst.
+  // stateRef.current = state
+  /** Der Spiegel ist weiter als der Stand, den React kennt: am Bildende per `flushState` einspielen. */
+  const dirtyRef = useRef(false)
 
   /**
    * Der letzte bekannte Name jeder Armee (T-M44-06, R-UX-03/AK2): damit „Achtundsechzigste ist
@@ -337,12 +360,42 @@ export function App(props: AppProps) {
    * Die Zuweisung im Render bleibt: sie ist der Abgleich mit dem, was React wirklich
    * haelt, und schreibt denselben Wert noch einmal.
    */
-  const commitState = useCallback((next: GameState | null) => {
+  const commitState = useCallback((next: GameState | null, deferred = false) => {
     stateRef.current = next
     // Ohne Partie gibt es keine Armeen, deren Namen man behalten koennte (T-M44-06).
     if (next === null) forgetGame()
+    // T-M45-04: die Uhr rechnet mehrere Ticks je Bild und gibt React nur das Ergebnis am
+    // Bildende (`flushState`) — der Spiegel ist sofort aktuell, die Ableitungen (`publicView`,
+    // Tafeln, Karte) laufen hoechstens einmal je Bild statt je Tick.
+    if (deferred) {
+      dirtyRef.current = true
+      return
+    }
+    dirtyRef.current = false
     setState(next)
   }, [forgetGame])
+
+  /** Spielt den Stand des Spiegels bei React ein, wenn die Uhr ihn seit dem letzten Mal weitergeschoben hat. */
+  const flushState = useCallback(() => {
+    if (!dirtyRef.current) return
+    dirtyRef.current = false
+    flushStartedAt.current = performance.now()
+    setState(stateRef.current)
+  }, [])
+  /**
+   * Zeitbudget fuer das Zeichnen (T-M45-04): wann `flushState` zuletzt rief, und wie lange der Commit
+   * danach brauchte. Die Uhr gibt React hoechstens alle `displayGap` ms einen Stand — das Vielfache der
+   * letzten Commitzeit, damit Ableiten und Zeichnen einen festen Anteil der Zeit behalten statt mit jedem
+   * Bild die Ticks zu verdraengen. Ohne gemessene Zeit (Tests mit stehender Uhr) ist die Luecke 0.
+   */
+  const flushStartedAt = useRef(0)
+  const displayGapMs = useRef(0)
+  useLayoutEffect(() => {
+    const started = flushStartedAt.current
+    if (started === 0) return
+    flushStartedAt.current = 0
+    displayGapMs.current = Math.min(DISPLAY_GAP_MAX_MS, (performance.now() - started) * DISPLAY_GAP_FACTOR)
+  }, [state])
 
   /**
    * Die Karte der laufenden Partie (T-M12-08).
@@ -458,7 +511,7 @@ export function App(props: AppProps) {
     trigger: GameEvent | null
   }>({ running: false, ticksRun: 0, reason: null, trigger: null })
   const [dialog, setDialog] = useState<
-    'new' | 'menu' | 'saves' | 'settings' | 'keys' | 'report' | 'netplayEnd' | null
+    'new' | 'menu' | 'saves' | 'settings' | 'keys' | 'credits' | 'report' | 'netplayEnd' | null
   >('new')
   /** Bis zu welchem Tick der Spieler das Protokoll zuletzt gesehen hat — die Neu-Marke (T-M31-03). */
   const [seenTick, setSeenTick] = useState(-1)
@@ -507,6 +560,8 @@ export function App(props: AppProps) {
   // How far the event log had been read the last time a sound was played. Without it
   // every render would replay the same battle.
   const soundedUpTo = useRef(0)
+  /** Die Pulse hoerbarer Ereignisse fuer die Karte (T-M46-02): wo es klang. */
+  const [pings, setPings] = useState<readonly MapPing[]>([])
   /** Wie weit die Fuehrung das Protokoll schon gesehen hat (T-M21-02). */
   const tutoredUpTo = useRef(0)
   const [autosave, setAutosave] = useState<AutosaveState>({
@@ -533,6 +588,51 @@ export function App(props: AppProps) {
    */
   const [pendingCommands, setPendingCommands] = useState<readonly { actionId: string; command: Command }[]>([])
   const pendingRef = useRef<readonly { actionId: string; command: Command }[]>([])
+  /**
+   * Quittungen, die nach dem Anwenden noch ACK_MIN_MS stehen bleiben (T-M46-11): bei Tempo 100 wendet der naechste Tick
+   * den Befehl nach ~100 ms an, und die Quittung war weg, bevor jemand hinsah.
+   */
+  const [ackHeld, setAckHeld] = useState<ReadonlySet<string>>(new Set())
+  const ackTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>())
+  /**
+   * Die Quittung als eigene Zeile oben in der Seitenleiste (T-M46-11): viele Knoepfe verschwinden, sobald der Befehl
+   * wirkt (aus „Kaserne bauen“ wird der Bauauftrag), und mit ihnen ihre Quittung. Diese Zeile haengt am Befehl, nicht
+   * am Knopf, und steht ACK_MIN_MS lang - bei jedem Tempo.
+   */
+  const [ackLine, setAckLine] = useState<string | null>(null)
+  const ackLineTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const showAckLine = useCallback((text: string): void => {
+    if (ackLineTimer.current) clearTimeout(ackLineTimer.current)
+    setAckLine(text)
+    ackLineTimer.current = setTimeout(() => setAckLine(null), ACK_MIN_MS + ACK_SLACK_MS)
+  }, [])
+  useEffect(
+    () => () => {
+      if (ackLineTimer.current) clearTimeout(ackLineTimer.current)
+    },
+    [],
+  )
+  const holdAck = useCallback((key: string): void => {
+    if (!key) return
+    const old = ackTimers.current.get(key)
+    if (old) clearTimeout(old)
+    setAckHeld((held) => new Set(held).add(key))
+    ackTimers.current.set(
+      key,
+      setTimeout(() => {
+        ackTimers.current.delete(key)
+        setAckHeld((held) => {
+          const next = new Set(held)
+          next.delete(key)
+          return next
+        })
+      }, ACK_MIN_MS + ACK_SLACK_MS),
+    )
+  }, [])
+  useEffect(() => {
+    const timers = ackTimers.current
+    return () => timers.forEach((timer) => clearTimeout(timer))
+  }, [])
   const takePending = useCallback((): Command[] => {
     const commands = pendingRef.current.map((entry) => entry.command)
     if (commands.length > 0) {
@@ -595,6 +695,12 @@ export function App(props: AppProps) {
     // aber nicht deshalb meine Sache.
     const cue = cueForOwnEvents(fresh, viewerId)
     if (cue) play(cue, { enabled: ui.settings.sound, speed }, props.audio)
+
+    // Jedes hoerbare Ereignis pulsiert an seinem Ort (T-M46-02): der Ton nennt keinen, die Karte alle. Nur was der
+    // letzte Tick brachte - ein geladener Stand bringt sein ganzes Protokoll mit.
+    const recent = fresh.filter((event) => event.tick >= state.tick - 1)
+    const newPings = pingsFor(recent, viewerId, (id) => state.players[id]?.capitalProvinceId ?? undefined)
+    if (newPings.length > 0) setPings((old) => [...old, ...newPings].slice(-24))
   }, [state, viewerId, ui.settings.sound, speed, props.audio])
 
   /**
@@ -944,7 +1050,7 @@ export function App(props: AppProps) {
 
   /** One game hour, AI included — and the moment the collected orders take effect. */
   const step = useCallback(
-    (ticks: number) => {
+    (ticks: number, deferred = false) => {
       // Die gesammelten Befehle gehoeren dem ersten Tick dieses Schritts (T-M22-05).
       const commands = takePending()
       lastTickAt.current = now()
@@ -959,7 +1065,7 @@ export function App(props: AppProps) {
         noteMarches(result.adjutant)
         // Ueber `commitState`, nicht `setState`: das naechste Bild kann kommen, bevor React
         // eingespielt hat, und muss auf DIESEM Stand weiterrechnen (T-M41-17).
-        commitState(result.state)
+        commitState(result.state, deferred)
         return
       }
       const result = advanceWithTrace(current, ticks, { map: activeMap, rules: props.rules }, commands)
@@ -969,7 +1075,7 @@ export function App(props: AppProps) {
         explanations: result.explanations,
       })
       noteMarches(result.adjutant)
-      commitState(result.state)
+      commitState(result.state, deferred)
     },
     [activeMap, props.rules, debugOn, noteTrace, noteMarches, takePending, now, commitState],
   )
@@ -1156,26 +1262,71 @@ export function App(props: AppProps) {
 
   const stepRef = useRef(step)
   stepRef.current = step
+  const flushRef = useRef(flushState)
+  flushRef.current = flushState
   useEffect(() => {
     // Zu zweit gibt es keine zweite Uhr daneben (T-M37-11): der Gleichschritt gibt den
     // Takt, und ein rAF-Lauf darueber rechnete Ticks, die niemand freigegeben hat.
     if (speed === 0 || !hasGame || netplay.active || partyPending) return
     let running = true
-    let last = performance.now()
-    let owed = 0
+    // T-M45-04: Der Takt rechnet mit Zeitbudget (`createClockDriver`) — aus dem Bild UND in
+    // kurzen Zeitscheiben dazwischen. Der Befund am Buendel (S575): fuenf Ticks je Bild, sechs
+    // Bilder je Sekunde, der Hauptfaden zur Haelfte im Leerlauf; die Zeit zwischen zwei Bildern
+    // blieb ungenutzt. React bekommt den Stand nur am Bildende (`flushState`), nicht je Tick.
+    const driver = createClockDriver({
+      speed,
+      now: () => performance.now(),
+      run: () => stepRef.current(1, true),
+    })
+    let lastFrameAt = performance.now()
+    let lastFlushAt = 0
+    let slice: ReturnType<typeof setTimeout> | null = null
+    let sliceQueued = false
+    const channel = typeof MessageChannel === 'undefined' ? null : new MessageChannel()
+
+    const pump = () => {
+      sliceQueued = false
+      if (!running) return
+      // Die ehrliche Uhr (R-TIME-02): steht das Bild (verdecktes Fenster), rechnen auch die
+      // Zeitscheiben nicht — sie laufen nur, solange vor kurzem ein Bild kam.
+      if (performance.now() - lastFrameAt > SLICE_MAX_FRAME_AGE_MS) return
+      driver.advance(SLICE_BUDGET_MS)
+      schedule()
+    }
+    const schedule = () => {
+      if (!running || sliceQueued) return
+      const wait = driver.msToNextTick()
+      sliceQueued = true
+      if (wait <= 0 && channel) {
+        channel.port2.postMessage(0)
+      } else {
+        slice = setTimeout(pump, Math.max(0, Math.floor(wait)))
+      }
+    }
+    if (channel) channel.port1.onmessage = pump
 
     const frame = () => {
       if (!running) return
-      const now = performance.now()
-      const next = clockStep(owed, now - last, speed)
-      last = now
-      owed = next.owed
-      if (next.due > 0) stepRef.current(next.due)
+      lastFrameAt = performance.now()
+      driver.advance(FRAME_BUDGET_MS)
+      if (lastFrameAt - lastFlushAt >= displayGapMs.current) {
+        lastFlushAt = lastFrameAt
+        flushRef.current()
+      }
+      schedule()
       requestAnimationFrame(frame)
     }
     requestAnimationFrame(frame)
     return () => {
       running = false
+      if (slice !== null) clearTimeout(slice)
+      if (channel) {
+        channel.port1.onmessage = null
+        channel.port1.close()
+        channel.port2.close()
+      }
+      // Pause, anderes Tempo, Partie zu Ende: was die Uhr noch nicht abgegeben hat, gehoert React.
+      flushRef.current()
     }
   }, [speed, hasGame, netplay.active, partyPending])
 
@@ -1190,7 +1341,7 @@ export function App(props: AppProps) {
    * ausloesenden Knopf bis dahin die Quittung zeigen.
    */
   const send = useCallback(
-    (command: Command, actionId?: string): boolean => {
+    (command: Command, actionId?: string, label?: string): boolean => {
       if (!state || !ctx) return false
       const result = canApply(state, command, {
         map: activeMap,
@@ -1208,9 +1359,13 @@ export function App(props: AppProps) {
       if (netplay.active) netplay.give(command)
       pendingRef.current = [...pendingRef.current, { actionId: actionId ?? '', command }]
       setPendingCommands(pendingRef.current)
+      // Die Quittung bleibt mindestens ACK_MIN_MS, auch wenn der naechste Tick den Befehl schon angewendet hat.
+      holdAck(actionId ?? '')
+      if (command.type === 'MOVE_ARMY' || command.type === 'BOMBARD') holdAck(armyAckKey(command.armyId))
+      showAckLine(label ? t('actions.ackLine', { label }) : t('actions.ackPlain'))
       return true
     },
-    [state, ctx, activeMap, props.rules, netplay],
+    [state, ctx, activeMap, props.rules, netplay, holdAck, showAckLine],
   )
 
   /** Welche Knoepfe gerade eine Quittung tragen (T-M22-05): ihr Befehl steht noch aus. */
@@ -1233,7 +1388,10 @@ export function App(props: AppProps) {
       // angewendet — bei stehender Uhr mit dem Hinweis, wann es so weit sein wird.
       ...(pendingIds.has(spec.id)
         ? { pendingNotice: speed === 0 ? t('actions.orderedPaused') : t('actions.ordered') }
-        : {}),
+        : ackHeld.has(spec.id)
+          ? // Schon angewendet, aber noch nicht lange genug gesehen (T-M46-11).
+            { pendingNotice: t('actions.orderedDone'), ackOnly: true }
+          : {}),
       onRun: () => {
         if (spec.id.startsWith('build-')) tutor('openBuild')
         if (spec.targetKind && armyId) {
@@ -1248,11 +1406,11 @@ export function App(props: AppProps) {
           // Garnison. Beide gehen in denselben naechsten Tick, in der Reihenfolge des Knopfs — der zweite
           // nur, wenn die Vorpruefung in `send` den ersten annimmt (T-M40-14). Der Kern kann den ersten im
           // Tick trotzdem ablehnen; der zweite gilt dann allein (Befund N-4, PROBLEME.md).
-          if (send(spec.command, spec.id) && spec.followUp) send(spec.followUp, spec.id)
+          if (send(spec.command, spec.id, spec.label) && spec.followUp) send(spec.followUp, spec.id)
         }
       },
     }),
-    [send, tutor, pendingIds, speed],
+    [send, tutor, pendingIds, ackHeld, speed],
   )
 
   /**
@@ -1288,6 +1446,18 @@ export function App(props: AppProps) {
       })
     },
     [centres, ui.view, activeMap, tutor, centreView],
+  )
+
+  /** Nur auf dem Telefon im Hochformat gibt es die Panelwahl im Kopf des Blatts (T-M46-10). */
+  const phonePortrait = usePhonePortrait()
+
+  /** Ein Panel aus Fuss oder Blattleiste oeffnen. Die Lage oeffnen heisst: gesehen, die Neu-Marke faellt auf null. */
+  const openFootPanel = useCallback(
+    (panel: 'diplomacy' | 'market' | 'standings' | 'espionage' | 'armies') => {
+      if (panel === 'standings' && state) setSeenTick(state.tick)
+      dispatch({ type: 'openPanel', panel })
+    },
+    [state],
   )
 
   // Auto-Schwenk (T-M44-03b): im Hochformat des Telefons bleibt die gewaehlte Provinz im sichtbaren
@@ -1410,6 +1580,20 @@ export function App(props: AppProps) {
         case 'centreCapital':
           if (view?.self.capitalProvinceId) jumpTo(view.self.capitalProvinceId)
           break
+        case 'focusZone': {
+          // Der Fokus springt in die Seitenleiste (T-M46-05). Bau- und Aushebeknoepfe gibt es nur bei offenem
+          // Provinzpanel; fehlt es, ist die Provinzliste der naechste sinnvolle Halt.
+          const side = document.querySelector('aside.side')
+          const target =
+            shortcut.zone === 'provinces'
+              ? null
+              : side?.querySelector<HTMLElement>(
+                  `section[data-group="${shortcut.zone}"] button:not(:disabled)`,
+                ) ?? null
+          const picker = side?.querySelector<HTMLElement>('.picker select') ?? null
+          ;(target ?? picker)?.focus()
+          break
+        }
         case 'multiplayerLocked':
           // Die Leertaste wird zum Pausenantrag, sobald wirklich ein Mitspieler da ist
           // (T-M37-11, D28.7). Ohne Sitzung bleibt es beim Hinweis.
@@ -1906,6 +2090,8 @@ export function App(props: AppProps) {
       army: armyNamer(state.armies, armyNames.current),
       ticksPerDay,
       viewer: viewerId,
+      // Der Ort fuer Ereignisse ohne eigene Provinz (T-M46-02): Mangel und Krieg zeigen auf eine Hauptstadt.
+      capital: (id: string) => state.players[id]?.capitalProvinceId ?? undefined,
     }
     // **Erst deuten, dann zuschneiden** (T-M15-09). Bis zum 2026-09-06 stand hier
     // `.slice(-40)` *vor* allem anderen: das Protokoll wurde auf die letzten vierzig
@@ -1941,7 +2127,13 @@ export function App(props: AppProps) {
     })
     // Neueste zuerst wie das Protokoll; `sort` ist stabil, bei gleichem Tick stehen die Ereignisse vorn.
     // Gleichlautende Gefechtszeilen derselben Provinz und Stunde werden eine Zeile (T-M44-10, R-UX-02/AK4).
-    return mergeBattleLines([...zeilen, ...maersche.reverse()].sort((a, b) => b.tick - a.tick), ticksPerDay)
+    // LOESCHVERMERK (Review): bis T-M46-02 endete die Rechnung mit
+    //   return mergeBattleLines([...zeilen, ...maersche.reverse()].sort((a, b) => b.tick - a.tick), ticksPerDay)
+    // Danach Sammelzeilen je Art und Spieltag (T-M46-02, VM-03).
+    return groupEntries(
+      mergeBattleLines([...zeilen, ...maersche.reverse()].sort((a, b) => b.tick - a.tick), ticksPerDay),
+      ticksPerDay,
+    )
   }, [state, viewerId, activeMap, nameOf, ticksPerDay, dayBodies, adjutantMarches])
 
   /**
@@ -2127,9 +2319,23 @@ export function App(props: AppProps) {
         (entry.command.type === 'MOVE_ARMY' || entry.command.type === 'BOMBARD') &&
         entry.command.armyId === ui.selectedArmy,
     )
-    if (!waiting) return null
+    if (!waiting) return ackHeld.has(armyAckKey(ui.selectedArmy)) ? t('actions.orderedDone') : null
     return speed === 0 ? t('actions.orderedPaused') : t('actions.ordered')
-  }, [pendingCommands, ui.selectedArmy, speed])
+  }, [pendingCommands, ui.selectedArmy, speed, ackHeld])
+
+  /** Die Heeruebersicht (T-M46-01): alle eigenen Armeen der Sicht, nur gerechnet, solange das Panel offen ist. */
+  const heerZeilen = useMemo(
+    () =>
+      ui.panel === 'armies' && view && state
+        ? armyRows(view, {
+            nameOfArmy: armyNamer(state.armies, armyNames.current),
+            nameOfProvince,
+            ticksPerDay,
+            battleProvinces: new Set(battleProvinces),
+          })
+        : [],
+    [ui.panel, view, state, nameOfProvince, ticksPerDay, battleProvinces],
+  )
 
   /** Target mode for the selected army: options, the chosen place, and its arrival. */
   const armyTargeting: Targeting | null = useMemo(() => {
@@ -2165,7 +2371,7 @@ export function App(props: AppProps) {
           onRun: () => {
             // Ein eigener Marschbefehl haelt fest (T-M40-14): eine Verteidigung geht mit dem Marsch auf
             // Garnison — der zweite Befehl nur, wenn die Vorpruefung in `send` den Marsch annimmt (Befund N-4).
-            if (confirmSpec.command && send(confirmSpec.command, confirmSpec.id) && confirmSpec.followUp) {
+            if (confirmSpec.command && send(confirmSpec.command, confirmSpec.id, confirmSpec.label) && confirmSpec.followUp) {
               send(confirmSpec.followUp, confirmSpec.id)
             }
             setTargeting(null)
@@ -2322,6 +2528,7 @@ export function App(props: AppProps) {
             ownershipVersion={ui.ownershipVersion}
             selectedProvince={ui.selectedProvince}
             alarmProvince={alarm?.provinceId ?? null}
+            pings={pings}
             capitalProvinceId={view.self.capitalProvinceId}
             battleProvinces={battleProvinces}
             speed={speed}
@@ -2363,7 +2570,15 @@ export function App(props: AppProps) {
         {/* LOESCHVERMERK (Review): bis T-M44-02b stand hier `<aside className="side">` mit denselben sechs Kindern direkt in dieser Datei. */}
         <Sidebar
           scrollKey={`${ui.panel}:${ui.selectedProvince}:${ui.selectedArmy}`}
-          handle={ui.panel ? <SheetHandle snap={sheetSnap} onSnap={setSheetSnap} onClose={() => dispatch({ type: 'closePanel' })} /> : null}
+          handle={
+            ui.panel ? (
+              // Griff und Panelwahl in einer Leiste (T-M46-10): das Blatt deckt den Fuss, die Wahl bleibt erreichbar.
+              <div className="sheet__bar">
+                <SheetHandle snap={sheetSnap} onSnap={setSheetSnap} onClose={() => dispatch({ type: 'closePanel' })} />
+                {phonePortrait && <SheetNav active={ui.panel} onPanel={openFootPanel} />}
+              </div>
+            ) : null
+          }
           picker={
               <ProvincePicker
                 own={ownProvinces}
@@ -2387,7 +2602,17 @@ export function App(props: AppProps) {
                 }
               />
           }
-          notice={ui.notice && <p className={`notice notice--${ui.notice.kind}`}>{ui.notice.text}</p>}
+          notice={
+            <>
+              {/* Die Quittung haengt am Befehl und steht mindestens anderthalb Sekunden (T-M46-11). */}
+              {ackLine && (
+                <p className="action__pending notice notice--ack" aria-live="polite">
+                  {ackLine}
+                </p>
+              )}
+              {ui.notice && <p className={`notice notice--${ui.notice.kind}`}>{ui.notice.text}</p>}
+            </>
+          }
           panel={
             <>
               {ui.panel === 'province' && (
@@ -2431,6 +2656,28 @@ export function App(props: AppProps) {
                   condition={selectedArmy?.units ? stackSummary(selectedArmy.units, props.rules).condition : undefined}
                   ticksPerDay={ticksPerDay}
                   currentTick={state.tick}
+                />
+              )}
+              {ui.panel === 'armies' && (
+                <ArmiesPanel
+                  rows={heerZeilen}
+                  onClose={() => dispatch({ type: 'closePanel' })}
+                  onSelect={(armyId) => {
+                    const army = state.armies[armyId]
+                    if (!army) return
+                    setTargeting(null)
+                    jumpTo(army.locationProvinceId)
+                    dispatch({ type: 'selectArmy', id: armyId })
+                  }}
+                  onMarch={(armyId) => {
+                    const army = state.armies[armyId]
+                    if (!army) return
+                    // Auswaehlen und gleich die Zielwahl oeffnen: derselbe Weg wie der Knopf "Marschieren" im Armeepanel.
+                    jumpTo(army.locationProvinceId)
+                    dispatch({ type: 'selectArmy', id: armyId })
+                    setTargeting({ armyId, kind: 'move', target: null, delayDays: 0 })
+                    setMovingSpy(null)
+                  }}
                 />
               )}
               {ui.panel === 'diplomacy' && (
@@ -2503,11 +2750,7 @@ export function App(props: AppProps) {
         seenTick={seenTick}
         onJump={jumpTo}
         onDispatch={() => setDialog('report')}
-        onPanel={(panel) => {
-          // Die Lage oeffnen heisst: gesehen. Die Marke faellt auf null.
-          if (panel === 'standings') setSeenTick(state.tick)
-          dispatch({ type: 'openPanel', panel })
-        }}
+        onPanel={openFootPanel}
       />
 
       <Tutorial
@@ -2560,6 +2803,7 @@ export function App(props: AppProps) {
         />
       )}
       {dialog === 'keys' && <KeyboardHelp onClose={() => setDialog(null)} />}
+      {dialog === 'credits' && <CreditsDialog onClose={() => setDialog(null)} />}
       {/* Die Depesche (T-M31-03): der juengste Tagesbericht, wie er im Protokoll steht. */}
       {dialog === 'report' &&
         (() => {

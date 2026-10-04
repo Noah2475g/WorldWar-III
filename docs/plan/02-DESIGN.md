@@ -3635,3 +3635,20 @@ Richtungen und weicht dem Element aus, auf das sie zeigt. Ein Token `focus` (Ber
 gegen `ground` und `paper`) ersetzt `accent` im Fokusrahmen. Im Finger-Betrieb und unter 600 px
 gelten 44 px als Mindestmaß für Knöpfe, sonst 24 px.
 -->
+
+## D38. Leistung V3 — Tempo 100 im Spätspiel (M45 — R-PERF-01)
+
+Gemessen am 2026-10-04 (`docs/reports/v3/leistung-ausgang.md`): headless bleibt jede Partie vor der
+Entscheidung unter 9,3 ms je Tick; im Browser schafft der Stand S575 nur 29,9 Ticks/s, davon rund zwei
+Drittel in der Hülle. Der Entwurf setzt deshalb in dieser Reihenfolge an, alles verhaltensgleich (G1-2):
+
+1. **Hülle (T-M45-04):** die Uhr rechnet Ticks gegen ein Zeitbudget je Frame (Rückstand gedeckelt,
+   Uhr-Semantik aus R-TIME unverändert); Ableitungen (`publicView`, Panels, Karte) entstehen höchstens
+   einmal je Frame aus dem letzten Stand, nicht je Tick.
+2. **KI (T-M45-01):** `threat.ts` berechnet Entfernungen und Bedrohungskarte einmal je Denkschritt und
+   reicht sie weiter, statt sie je Aufruf neu aufzubauen; Ergebnisse bitgleich.
+3. **Kern (T-M45-03, bedingt T-M45-02):** Allokationen im Tick (`cloneProvince`, `cloneArmy`, `emit`)
+   und `combat` nach Profil; Wegesuche nur, wenn sie danach vorn steht.
+
+Beleg der Gleichheit: Spätspiel-Hash ab S100/S300/S575 (`v3-verhalten.slow.test.ts`), Golden Master,
+Turnierbericht zeilengleich. Zeitbeleg nur im Rechnerfenster (T-M45-08).

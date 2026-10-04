@@ -170,3 +170,27 @@ describe('R-UX-03/AK4 Dorthin führt kein Weg — die wahre Ursache', () => {
     expect(de.errors.NO_PATH).toContain('keine Land- oder Seeverbindung')
   })
 })
+
+describe('T-M46-15 / VM-01 Teil a: die Moralsperre nennt Zahl und Grenze', () => {
+  const recruit = { type: 'RECRUIT', playerId: 'p1', provinceId: 'prov-x', unitKey: 'infantry', count: 1 } as unknown as Command
+
+  it('nennt die Moral der Provinz und die Grenze, abgerundet (nie „25 von 25“)', () => {
+    const sentence = describeRejection(
+      { code: 'INVALID_TARGET', detail: { reason: 'Moral zu niedrig', morale: 23_825 } },
+      recruit,
+      fakeCtx(),
+    )
+    expect(sentence).toContain('Moral 23 von 25 nötig')
+    const knapp = describeRejection(
+      { code: 'INVALID_TARGET', detail: { reason: 'Moral zu niedrig', morale: 24_999 } },
+      recruit,
+      fakeCtx(),
+    )
+    expect(knapp).toContain('Moral 24 von 25 nötig')
+  })
+
+  it('ohne Zahl im Detail bleibt der alte Satz (alte Spielstände, Fremdaufrufer)', () => {
+    const sentence = describeRejection({ code: 'INVALID_TARGET', detail: { reason: 'Moral zu niedrig' } }, recruit, fakeCtx())
+    expect(sentence).toBe(t('refusal.RECRUIT.lowMorale'))
+  })
+})

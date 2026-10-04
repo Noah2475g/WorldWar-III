@@ -1,8 +1,9 @@
 import { RESOURCE_KEYS, type PublicView } from '@worldwar/core'
 import { SPEED_STOPS } from '../game/speed.ts'
 import { t } from '../i18n/text.ts'
-import { SHORT_REACH_DAYS, amount, formatTime, rate, reachInDays, reachShort, reachText } from './format.ts'
-import { Icon, RESOURCE_ICONS } from './icons.tsx'
+import { SHORT_REACH_DAYS, amount, formatTime, rate, reachInDays, reachText } from './format.ts'
+import { RESOURCE_ICONS } from './icons.tsx'
+import { Icon } from './Icon.tsx'
 import { Meter } from './Meter.tsx'
 import { useScrollableTab } from './useScrollableTab.ts'
 import { MAP_MODES, MAP_MODE_NAMES, type MapMode } from '../map/modes.ts'
@@ -186,6 +187,11 @@ export function activeSpeedStop(speed: number, stops: readonly number[] = SPEED_
   return best
 }
 
+/** Die Tage der Reichweite als Zahl, gerundet wie `reachText`. */
+function roundedReach(days: number): string {
+  return (days < 10 ? Math.round(days * 10) / 10 : Math.round(days)).toLocaleString('de-DE')
+}
+
 export function Header(props: HeaderProps) {
   const activeStop = activeSpeedStop(props.speed)
   const resources = props.view?.self.resources
@@ -200,8 +206,10 @@ export function Header(props: HeaderProps) {
         <span className="header__title">WorldWar</span>
 
         <div className="clock">
+          {/* Die Uhr bleibt ein Satz: Abnahmelauf, Messwerkzeuge und Tests lesen „Tag N · hh:00“ von hier.
+              Das Zeichen davor ist gross (T-M46-17), der Text klein. */}
           <span className="clock__time">
-            <Icon name="clock" size={13} />
+            <Icon name="clock" size={22} />
             {formatTime(props.view?.tick ?? 0, props.ticksPerDay)}
           </span>
 
@@ -321,14 +329,27 @@ export function Header(props: HeaderProps) {
               zwei Knoepfe derselben Gruppe gedrueckt: die Pause und das Abbrechen.
             */}
             {props.fastForwarding ? (
-              <button type="button" className="speed speed--fast speed--running" onClick={props.onAbort}>
-                <Icon name="fastForward" size={11} />
-                {t('header.abort')}
+              <button
+                type="button"
+                className="speed speed--fast speed--running"
+                aria-label={t('header.abort')}
+                title={t('header.abort')}
+                onClick={props.onAbort}
+              >
+                <Icon name="fastForward" size={16} />
               </button>
             ) : (
-              <button type="button" className="speed speed--fast" onClick={props.onFastForward}>
-                <Icon name="fastForward" size={11} />
-                {t('header.fastForward')}
+              /* Nur das Zeichen (T-M46-13): der Name steht als Tooltip und fuers Ohr.
+                 LOESCHVERMERK (Review): bis T-M46-13 trugen beide Knoepfe das Wort daneben —
+                 <Icon name="fastForward" size={11} />{t('header.abort')} bzw. {t('header.fastForward')}. */
+              <button
+                type="button"
+                className="speed speed--fast"
+                aria-label={t('header.fastForward')}
+                title={t('header.fastForward')}
+                onClick={props.onFastForward}
+              >
+                <Icon name="fastForward" size={16} />
               </button>
             )}
           </div>
@@ -345,13 +366,20 @@ export function Header(props: HeaderProps) {
               steht er in der Uhrzeile neben der Uhr (R-UX-02/AK1) und nicht mehr als eigenes
               Kind der oberen Zeile: so bricht die Zeile mit Siegziel nicht mehr um. */}
           {victory && (
-            <Meter
-              label={t('meter.victoryGoal')}
-              value={victory.share}
-              max={victory.goal}
-              text={t('meter.victoryShare', { percent: Math.round(victory.share), goal: Math.round(victory.goal) })}
-              tone={victory.share >= victory.goal ? 'good' : 'neutral'}
-            />
+            /* LOESCHVERMERK (Review): bis T-M46-13 stand das Wort „Siegziel“ als Beschriftung vor dem Balken
+               (Meter ohne labelHidden); jetzt das Pokalzeichen mit Tooltip. */
+            <span className="stat stat--victory" title={t('meter.victoryGoal')}>
+              <Icon name="trophy" size={16} />
+              <Meter
+                label={t('meter.victoryGoal')}
+                labelHidden
+                value={victory.share}
+                max={victory.goal}
+                text={t('meter.victoryShare', { percent: Math.round(victory.share), goal: Math.round(victory.goal) })}
+                shown={`${Math.round(victory.share)} %`}
+                tone={victory.share >= victory.goal ? 'good' : 'neutral'}
+              />
+            </span>
           )}
         </div>
 
@@ -389,11 +417,25 @@ export function Header(props: HeaderProps) {
         {/* Diplomatie, Markt und Lage wohnen seit T-M31-03 im Fuss (D27.6); hier
             bleiben nur Spielstaende und Menue. `onPanel` bleibt fuer die Tastatur. */}
         <div className="header__panels">
-          <button type="button" className="button" onClick={props.onSaves}>
-            {t('saves.title')}
+          {/* LOESCHVERMERK (Review): bis T-M46-13 Textknoepfe — {t('saves.title')} und {t('header.menu')}
+              als sichtbarer Text; jetzt Zeichen mit Tooltip und aria-label. */}
+          <button
+            type="button"
+            className="button button--icon"
+            aria-label={t('saves.title')}
+            title={t('saves.title')}
+            onClick={props.onSaves}
+          >
+            <Icon name="save" size={18} />
           </button>
-          <button type="button" className="button" onClick={props.onMenu}>
-            {t('header.menu')}
+          <button
+            type="button"
+            className="button button--icon"
+            aria-label={t('header.menu')}
+            title={t('header.menu')}
+            onClick={props.onMenu}
+          >
+            <Icon name="menu" size={18} />
           </button>
         </div>
 
@@ -408,10 +450,13 @@ export function Header(props: HeaderProps) {
                 province: props.alarm.provinceName,
                 intruder: props.alarm.intruder,
               })}
+              title={t('header.alarm', { province: props.alarm.provinceName })}
               onClick={() => props.onAlarm?.(props.alarm!.provinceId)}
             >
-              <Icon name="battle" size={13} />
-              {t('header.alarm', { province: props.alarm.provinceName })}
+              {/* Zeichen plus Ortsname (T-M46-17); „Einmarsch:“ steht im Namen fuers Ohr und im Tooltip.
+                  LOESCHVERMERK (Review): bis T-M46-17 stand der ganze Satz {t('header.alarm', { province })} sichtbar im Chip. */}
+              <Icon name="battle" size={22} />
+              {props.alarm.provinceName}
             </button>
           )}
         </div>
@@ -440,18 +485,16 @@ export function Header(props: HeaderProps) {
               className={`resource resource--${key}${toneClass}${groupClass}`}
               title={t(`resources.${key}`)}
             >
-              {/* Das Symbol traegt die Bedeutung fuers Auge, der Name die fuers Ohr —
-                  beides zugleich sichtbar waere derselbe Begriff zweimal. */}
-              <Icon name={RESOURCE_ICONS[key] ?? 'warning'} size={14} />
+              {/* Das Symbol traegt die Bedeutung fuers Auge und - als Name - fuers Ohr (T-M46-17): kein
+                  versteckter Wortknoten mehr daneben.
+                  LOESCHVERMERK (Review): bis T-M46-17 folgten ein <span className="visually-hidden"> mit dem Rohstoffnamen,
+                  der Richtungspfeil als Textzeichen (▲ ▼ –) samt verstecktem Bilanzsatz und die Reichweite als „6 T“-Text. */}
+              <Icon name={RESOURCE_ICONS[key] ?? 'warning'} size={28} title={t(`resources.${key}`)} />
               <b>{resources ? amount(resources[key] ?? 0) : '—'}</b>
-              <span className="visually-hidden">{t(`resources.${key}`)}</span>
               {flow && (
-                // Sichtbar ist nur noch die RICHTUNG (T-M36-02, D36.2): ein Pfeil auf,
-                // ab oder ein Strich. Die Bilanzzahl selbst steht im Tooltip, wo
-                // Produktion und Unterhalt schon standen — sie traegt an einem ruhigen
-                // Tag keine Entscheidung, kostete aber sieben von einundzwanzig
-                // Angaben. Die vier Groessen bleiben vollstaendig in der
-                // Wirtschaftsuebersicht sichtbar (R-ECON-06, R-UI-09).
+                // Sichtbar ist nur die RICHTUNG (T-M36-02, D36.2): ein Pfeil auf, ab oder ein Strich. Die Bilanzzahl
+                // steht im Tooltip und im Namen des Pfeils; die vier Groessen bleiben vollstaendig in der
+                // Wirtschaftsuebersicht (R-ECON-06, R-UI-09).
                 <em
                   className={`resource__dir resource__dir--${tone}`}
                   title={[
@@ -461,21 +504,18 @@ export function Header(props: HeaderProps) {
                     .filter((part) => part !== null)
                     .join(' · ')}
                 >
-                  <span aria-hidden="true">{tone === 'plus' ? '▲' : tone === 'minus' ? '▼' : '–'}</span>
-                  {/* Ein Pfeil ist fuers Ohr nichts — ein Vorleseprogramm sagt
-                      bestenfalls „nach oben zeigendes Dreieck". Fuers Ohr steht deshalb
-                      die Bilanz da, wo das Auge den Pfeil sieht. */}
-                  <span className="visually-hidden">
-                    {`${t('economy.balance')} ${rate(flow.balance)} ${t('economy.perDay')}`}
-                  </span>
+                  <Icon
+                    name={tone === 'plus' ? 'arrowUp' : tone === 'minus' ? 'arrowDown' : 'dash'}
+                    size={16}
+                    title={`${t('economy.balance')} ${rate(flow.balance)} ${t('economy.perDay')}`}
+                  />
                 </em>
               )}
               {short && days !== null && (
-                // Die Zahl, nach der gehandelt wird — und nur dann, wenn gehandelt
-                // werden muss. Kurz fuers Auge, ganz fuers Ohr.
+                // Die Zahl, nach der gehandelt wird - nur dann, wenn gehandelt werden muss: Sanduhr und Tage.
                 <span className="resource__reach">
-                  <span aria-hidden="true">{reachShort(days)}</span>
-                  <span className="visually-hidden">{reachText(days)}</span>
+                  <Icon name="queue" size={16} title={reachText(days)} />
+                  {roundedReach(days)}
                 </span>
               )}
             </li>

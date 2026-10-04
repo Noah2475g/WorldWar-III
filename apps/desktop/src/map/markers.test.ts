@@ -5,10 +5,13 @@ import { zoomAt, type View, type ViewLimits } from './picking.ts'
 import {
   ARMY_BOX,
   ARMY_HIT_BOX,
+  declutter,
   BUILDING_BOX,
   BUILDING_MAX_SCALE,
   BUILDING_OFFSET_Y,
   dominantIcon,
+  FAN_PITCH,
+  fanOut,
   stackSummary,
   marchPoint,
   markersFor,
@@ -419,8 +422,16 @@ describe('T-M30-01 Armeen sind Stapel mit Zahl und Zustand', () => {
 describe('T-M28-13 Deckungsgleiche Stapel', () => {
   const beide = [army('a1', 'alpha'), army('a2', 'alpha')]
 
-  it('liefert die zuletzt gezeichnete — die, die obenauf liegt', () => {
-    expect(pickArmy({ x: 100, y: 100 }, beide, centres, view)).toBe('a2')
+  // LOESCHVERMERK (Review): bis T-M46-03 stand hier „liefert die zuletzt gezeichnete — die, die obenauf liegt“
+  // (pickArmy bei zwei Armeen auf demselben Punkt, Erwartung 'a2'). Seit dem Auffaechern gibt es
+  // keine zwei Marker auf demselben Punkt mehr; der Fall ist unten durch „jede Armee an ihrem Platz“ ersetzt.
+
+  it('waehlt im aufgefaecherten Stapel jede Armee an ihrem eigenen Platz (T-M46-03)', () => {
+    const marker = markersFor(beide, {}, centres, view).filter((m) => m.kind === 'army')
+    expect(marker).toHaveLength(2)
+    for (const m of marker) {
+      expect(pickArmy({ x: m.x, y: m.y }, beide, centres, view), m.armyId).toBe(m.armyId)
+    }
   })
 
   it('bleibt bei ungleichem Abstand bei der naeheren', () => {
@@ -535,5 +546,152 @@ describe('Touch-Bedienung: Trefferflaeche fuer den Finger', () => {
 
     expect(pickArmy(kante, armies, centres, view)).toBe(pickArmy(kante, armies, centres, view, {}, ARMY_HIT_BOX))
     expect(pickArmy(kante, armies, centres, view)).toBe('a1')
+  })
+})
+
+/**
+ * T-M46-03 · Gestapelte Armeen werden aufgefaechert (VM-02).
+ *
+ * Noah: „Die Einheiten sind manchmal uebereinander … man hat Einheiten nicht gesehen.“ Gemessen an
+ * S575G: 208 von 237 Armeemarkern lagen vollstaendig unter einem anderen, bis zu 27 an einem Ort.
+ */
+describe('T-M46-03 Aufgefaecherte Stapel', () => {
+  const kaesten = (liste: readonly { x: number; y: number }[]) =>
+    liste.map((m) => ({ l: m.x - ARMY_BOX.width / 2, t: m.y - ARMY_BOX.height / 2 }))
+  const schneiden = (a: { l: number; t: number }, b: { l: number; t: number }) =>
+    a.l < b.l + ARMY_BOX.width && b.l < a.l + ARMY_BOX.width && a.t < b.t + ARMY_BOX.height && b.t < a.t + ARMY_BOX.height
+
+  it('laesst eine einzelne Armee, wo sie war', () => {
+    const [m] = markersFor([army('a1', 'alpha')], {}, centres, view).filter((x) => x.kind === 'army')
+    expect(m).toMatchObject({ x: 100, y: 100 })
+  })
+
+  it('stellt n Armeen einer Provinz ueberschneidungsfrei nebeneinander — fuer jede Stapelgroesse bis 40', () => {
+    for (const n of [2, 3, 4, 5, 7, 12, 27, 40]) {
+      const armeen = Array.from({ length: n }, (_, i) => army(`a${i}`, 'alpha'))
+      const marker = markersFor(armeen, {}, centres, view).filter((m) => m.kind === 'army')
+      const boxes = kaesten(marker)
+
+      expect(marker, `n=${n}`).toHaveLength(n)
+      for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+          expect(schneiden(boxes[i]!, boxes[j]!), `n=${n}: ${i} deckt ${j}`).toBe(false)
+        }
+      }
+    }
+  })
+
+  it('haelt den Stapel um den gemeinsamen Punkt zentriert', () => {
+    const armeen = Array.from({ length: 9 }, (_, i) => army(`a${i}`, 'alpha'))
+    const marker = markersFor(armeen, {}, centres, view).filter((m) => m.kind === 'army')
+    const mx = marker.reduce((sum, m) => sum + m.x, 0) / marker.length
+    const my = marker.reduce((sum, m) => sum + m.y, 0) / marker.length
+
+    expect(Math.abs(mx - 100)).toBeLessThan(FAN_PITCH.x / 2)
+    expect(Math.abs(my - 100)).toBeLessThan(FAN_PITCH.y / 2)
+  })
+
+  it('haelt die Abstaende in Bildpunkten, unabhaengig von der Vergroesserung', () => {
+    const armeen = [army('a1', 'alpha'), army('a2', 'alpha')]
+    const nah = markersFor(armeen, {}, centres, { x: 0, y: 0, scale: 0.5 }).filter((m) => m.kind === 'army')
+    const fern = markersFor(armeen, {}, centres, { x: 0, y: 0, scale: 8 }).filter((m) => m.kind === 'army')
+
+    expect(Math.abs(nah[0]!.x - nah[1]!.x)).toBe(FAN_PITCH.x)
+    expect(Math.abs(fern[0]!.x - fern[1]!.x)).toBe(FAN_PITCH.x)
+  })
+
+  it('bleibt von Bild zu Bild stabil: dieselbe Eingabe, dieselben Plaetze', () => {
+    const armeen = Array.from({ length: 6 }, (_, i) => army(`a${i}`, 'alpha'))
+    expect(markersFor(armeen, {}, centres, view)).toEqual(markersFor(armeen, {}, centres, view))
+  })
+
+  it('loest eine marschierende Armee vom Stapel, sobald sie unterwegs ist', () => {
+    const marsch = army('a2', 'alpha', { march: { toProvinceId: 'beta', departureTick: 0, arrivalTick: 100 } })
+    const marker = markersFor([army('a1', 'alpha'), marsch], {}, centres, view, { tick: 50 }).filter((m) => m.kind === 'army')
+
+    // a1 steht allein auf der Mitte, a2 auf halbem Weg — keiner von beiden versetzt.
+    expect(marker.find((m) => m.armyId === 'a1')).toMatchObject({ x: 100, y: 100 })
+    expect(marker.find((m) => m.armyId === 'a2')).toMatchObject({ x: 200, y: 150 })
+  })
+
+  it('declutter: 150 Stapel in einem Dutzend dicht liegender Provinzen ueberdecken sich nicht (Nachbesserung U)', () => {
+    // Dicht wie Asien bei Massstab 8: zwoelf Mitten im Abstand von 6 Punkten, zwoelf bis dreizehn Armeen je Mitte.
+    const raw = Array.from({ length: 150 }, (_, i) => ({ x: 400 + (i % 12) * 6, y: 300 + Math.floor((i % 12) / 4) * 5, own: i % 3 === 0 }))
+    const placed = declutter(fanOut(raw))
+    for (let i = 0; i < placed.length; i++) {
+      for (let j = i + 1; j < placed.length; j++) {
+        const dx = Math.abs(placed[i]!.x - placed[j]!.x)
+        const dy = Math.abs(placed[i]!.y - placed[j]!.y)
+        expect(dx >= ARMY_BOX.width || dy >= ARMY_BOX.height, `Stapel ${i} und ${j} ueberdecken sich`).toBe(true)
+      }
+    }
+  })
+
+  it('fanOut ist rein: es veraendert die Eingabe nicht und kennt die leere Liste', () => {
+    expect(fanOut([])).toEqual([])
+    const eingabe = [{ x: 5, y: 5 }, { x: 5, y: 5 }]
+    fanOut(eingabe)
+    expect(eingabe).toEqual([{ x: 5, y: 5 }, { x: 5, y: 5 }])
+  })
+})
+
+describe('T-M46-03 Stapel benachbarter Provinzen decken einander nicht zu', () => {
+  const zehn = Object.fromEntries(Array.from({ length: 10 }, (_, i) => [`p${i}`, { x: 100 + i * 4, y: 100 + (i % 3) * 3 }]))
+  const viele = Array.from({ length: 60 }, (_, i) => army(`a${i}`, `p${i % 10}`, { own: i % 4 !== 0 }))
+  const kaesten = (liste: readonly { x: number; y: number }[]) =>
+    liste.map((m) => ({ l: m.x - ARMY_BOX.width / 2, t: m.y - ARMY_BOX.height / 2 }))
+
+  it('laesst bei keinem Massstab einen Marker vollstaendig verdeckt (Stichprobe wie in ux-bild.mjs)', () => {
+    for (const scale of [0.5, 1, 2, 4, 8]) {
+      const marker = markersFor(viele, {}, zehn, { x: 0, y: 0, scale }).filter((m) => m.kind === 'army')
+      const boxes = kaesten(marker)
+      let verdeckt = 0
+      for (let i = 0; i < boxes.length; i++) {
+        let bedeckt = 0
+        for (let ix = 0; ix < 7; ix++) {
+          for (let iy = 0; iy < 5; iy++) {
+            const px = boxes[i]!.l + ((ix + 0.5) * ARMY_BOX.width) / 7
+            const py = boxes[i]!.t + ((iy + 0.5) * ARMY_BOX.height) / 5
+            if (boxes.slice(i + 1).some((b) => px >= b.l && px <= b.l + ARMY_BOX.width && py >= b.t && py <= b.t + ARMY_BOX.height)) bedeckt++
+          }
+        }
+        if (bedeckt === 35) verdeckt++
+      }
+      expect(marker, `scale ${scale}`).toHaveLength(60)
+      expect(verdeckt, `scale ${scale}`).toBe(0)
+    }
+  })
+
+  it('haelt jede eigene Armee weiter per Klick waehlbar', () => {
+    const marker = markersFor(viele, {}, zehn, { x: 0, y: 0, scale: 4 }).filter((m) => m.kind === 'army' && m.own)
+    expect(marker.length).toBeGreaterThan(0)
+    for (const m of marker) {
+      // Ein Klick genau auf die Mitte eines Markers trifft ihn — nicht einen, der obenauf liegt.
+      expect(pickArmy({ x: m.x, y: m.y }, viele, zehn, { x: 0, y: 0, scale: 4 }), m.armyId).toBe(m.armyId)
+    }
+  })
+
+  it('verschiebt die Anordnung mit dem Ausschnitt, statt sie neu zu wuerfeln', () => {
+    const a = markersFor(viele, {}, zehn, { x: 0, y: 0, scale: 2 }).filter((m) => m.kind === 'army')
+    const b = markersFor(viele, {}, zehn, { x: 40, y: 20, scale: 2 }).filter((m) => m.kind === 'army')
+
+    a.forEach((m, i) => {
+      expect(b[i]!.x).toBeCloseTo(m.x - 20, 6)
+      expect(b[i]!.y).toBeCloseTo(m.y - 10, 6)
+    })
+  })
+
+  it('stellt eigene Armeen vor fremde, wenn der Platz knapp ist', () => {
+    const eng = { a: { x: 100, y: 100 }, b: { x: 101, y: 100 } }
+    const [fremd, eigen] = markersFor(
+      [army('f', 'a', { own: false }), army('e', 'b', { own: true })],
+      {},
+      eng,
+      view,
+    ).filter((m) => m.kind === 'army')
+
+    // Die eigene Armee behaelt ihren Platz, die fremde weicht aus.
+    expect(eigen).toMatchObject({ x: 101, y: 100 })
+    expect(fremd!.x !== 100 || fremd!.y !== 100).toBe(true)
   })
 })

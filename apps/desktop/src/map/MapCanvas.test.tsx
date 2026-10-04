@@ -8,6 +8,7 @@ import { boundsOf } from './picking.ts'
 import type { RenderProvince } from './render.ts'
 import { TOKENS } from '../ui/tokens.ts'
 import { ICON_PATHS } from '../ui/icons.tsx'
+import { GLYPH_PATHS } from '../ui/glyphs.ts'
 import { ART } from '../ui/art.tsx'
 
 /**
@@ -437,7 +438,8 @@ describe('T-M33-04 Die Karte stempelt weiter die NATO-Glyphe', () => {
     // Ohne diese Zeile prueft der Rest sieben Stempel, die es nicht gibt.
     expect(pfade.length, 'Die Karte hat keinen einzigen Stempel gebaut').toBeGreaterThan(0)
 
-    const glyphen = new Set(Object.values(ICON_PATHS))
+    // Einheiten: die NATO-Glyphe; Gebaeude seit T-M46-13: das gefuellte Zeichen von game-icons.net.
+    const glyphen = new Set([...Object.values(ICON_PATHS), ...Object.values(GLYPH_PATHS)])
     const risse = new Set(Object.values(ART).flatMap((bild) => [bild.body, bild.cut]))
     for (const d of pfade) {
       expect(risse.has(d), `Die Karte stempelt einen Schattenriss: ${d.slice(0, 30)}`).toBe(false)
@@ -478,3 +480,83 @@ describe('T-M28-08 Das Gefecht bekommt Schein und Einschlaege', () => {
   })
 })
 
+
+describe('T-M45-04 Die Flaechenebene zeichnet nur, wenn sich ein Pixel aendern kann', () => {
+  /** Ein Commit der Huelle liefert bei jedem Tick eine NEUE Liste; gezeichnet wird nur bei neuer Fuellung. */
+  const gleicheNeueListe = () => provinces.map((province) => ({ ...province }))
+
+  // Wie in der Huelle ist `labelFor` ein gemerkter Wert: eine neue Funktion je Aufruf waere ein anderer Grund zum Neuzeichnen.
+  const labelFor = (id: string) => id
+  const sicht = { x: 0, y: 0, scale: 4 }
+  // speed 100: die Bildschleife steht (motionAllowed=false), der synchrone rAF-Stub rekurriert nicht.
+  const props = (list: RenderProvince[], mode: 'political' | 'morale' = 'political') => ({
+    provinces: list,
+    centres,
+    armies: [],
+    buildings: {},
+    mode,
+    width: world.width,
+    height: world.height,
+    view: sicht,
+    ownershipVersion: 1,
+    selectedProvince: null,
+    speed: 100,
+    onSelect: () => undefined,
+    onViewChange: () => undefined,
+    labelFor,
+  })
+
+  const contextFor = new WeakMap<Recorder, CanvasRenderingContext2D>()
+
+  const fuellungen = (container: HTMLElement, recorders: Map<HTMLCanvasElement, Recorder>) => {
+    const canvas = container.querySelector('canvas.map-layer:not(.map-layer--overlay)') as HTMLCanvasElement
+    return recorders.get(canvas)?.calls.fill ?? 0
+  }
+
+  const start = () => {
+    const recorders = new Map<HTMLCanvasElement, Recorder>()
+    HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement) {
+      let entry = recorders.get(this)
+      if (!entry) {
+        const made = recordingContext()
+        entry = made.recorder
+        recorders.set(this, entry)
+        contextFor.set(entry, made.context)
+      }
+      return contextFor.get(entry)
+    } as never
+    const result = render(<MapCanvas {...props(provinces)} />)
+    return { ...result, recorders }
+  }
+
+  it('zeichnet die Provinzen nicht neu, wenn dieselbe Fuellung in einer neuen Liste ankommt', () => {
+    const { rerender, container, recorders } = start()
+    const nachDemErsten = fuellungen(container, recorders)
+    expect(nachDemErsten).toBeGreaterThan(50)
+
+    // Moral, Staerke und Vorkommen aendern sich bei jedem Tick; im Besitzmodus faerbt keines davon.
+    rerender(<MapCanvas {...props(gleicheNeueListe().map((p) => ({ ...p, morale: (p.morale ?? 0) + 1000 })))} />)
+
+    expect(fuellungen(container, recorders), 'die teure Ebene wurde ohne neue Fuellung neu gezeichnet').toBe(nachDemErsten)
+  })
+
+  it('zeichnet neu, sobald eine Provinz die Farbe wechselt', () => {
+    const { rerender, container, recorders } = start()
+    const nachDemErsten = fuellungen(container, recorders)
+
+    const neu = gleicheNeueListe()
+    neu[1] = { ...neu[1]!, owner: neu[1]!.owner === 'p2' ? 'p3' : 'p2' }
+    rerender(<MapCanvas {...props(neu)} />)
+
+    expect(fuellungen(container, recorders)).toBeGreaterThan(nachDemErsten)
+  })
+
+  it('zeichnet neu, wenn der Modus die Fuellung aus der Moral nimmt', () => {
+    const { rerender, container, recorders } = start()
+    const nachDemErsten = fuellungen(container, recorders)
+
+    rerender(<MapCanvas {...props(gleicheNeueListe().map((p) => ({ ...p, morale: (p.morale ?? 0) + 30_000 })), 'morale')} />)
+
+    expect(fuellungen(container, recorders)).toBeGreaterThan(nachDemErsten)
+  })
+})

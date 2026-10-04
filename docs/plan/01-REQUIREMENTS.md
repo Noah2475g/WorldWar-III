@@ -420,8 +420,13 @@ gemeint ist, steht ihr Name; wo ein Gelände gemeint ist, steht das Wort.
 
 - **R-ASSET-01 — Keine Fremdassets.** Keine Grafiken, Sounds, Texte, Daten oder Codeteile aus
   dem Original. Jedes Asset hat einen Herkunfts- und Lizenzeintrag in `docs/ASSETS.md`.
+- **R-ASSET-02 — Nur freie Lizenzen** (gemeinfrei, CC0, OFL, MIT o. ä., **seit 2026-10-04 auch
+  CC BY**). Kein kostenpflichtiger Dienst, keine Registrierung. Für CC BY gilt die Namensnennung:
+  Urheber, Lizenz und Quelle stehen je Datei in `docs/ASSETS.md` und sichtbar im Spiel (Mitwirkende).
+<!-- LOESCHVERMERK (Review): Wortlaut bis 2026-10-04, geöffnet für CC BY auf Noahs Wort (game-icons.net, DECISIONS 2026-10-04):
 - **R-ASSET-02 — Nur freie Lizenzen** (gemeinfrei, CC0, OFL, MIT o. ä.). Kein kostenpflichtiger
   Dienst, keine Registrierung.
+-->
 
 ### 2.14 Umfang und Meilensteine — maschinenlesbar
 
@@ -520,6 +525,8 @@ scope:
     R-UX-04:    "M44 — Rueckfrage bei folgenschweren Befehlen, erreichbare Ziele zuerst (T-M44-09a, T-M44-09b, T-M44-11)"
     R-UX-05:    "M44 — Einstieg und Dialoge erklaeren sich (T-M44-05, T-M44-13, T-M44-14, T-M44-15, T-M44-16)"
     R-UX-06:    "M44 — WCAG 2.1 AA in der Bedienung (T-M44-08, T-M44-17)"
+    # V3 vom 2026-10-04 (PLAN-V3, Gate G1): Tempo 100 haelt im Spaetspiel.
+    R-PERF-01:  "M45 — Tempo 100 haelt im Spaetspiel am Buendel (T-M45-01, T-M45-03, T-M45-04, T-M45-08)"
   v1_partial:                       # nur ein Teil gehört zu V1
     R-GAME-02: "V1 nur Punkte- und Eroberungssieg; das Zeitlimit bleibt im Kern und ist nur über eine Konfiguration erreichbar (M18)"
     R-DIP-01:  "V1 nur die sechs Zustände; ausgehandelte Verträge mit Provinz-, Karten- und Tributterm sind M18"
@@ -1548,6 +1555,20 @@ WORKFLOW §4 Falle 18). Entwurf: `02-DESIGN.md` D37.
 > - **AK4:** WENN ein Element den Tastaturfokus hat, DANN SOLL der Rahmen ein eigenes Fokus-Token
 >   tragen (nicht die Signalfarbe für Feind und Alarm) und gegen beide Gründe mindestens 3:1 halten.
 -->
+
+### 2.21 Leistung im Spätspiel (M45 „Leistung V3", aufgenommen 2026-10-04) — `R-PERF`
+
+Aus dem Rechnerfenster P0-W (`docs/reports/v3/leistung-ausgang.md`) und Noahs Entscheid an Gate G1
+(`docs/plan/V3-G1-DOSSIER.md`, Frage 1). Stände `test/fixtures/v3/S300.json` und `S575.json`.
+
+- **R-PERF-01 — Tempo 100 hält auch im Spätspiel.**
+- **AK1:** WENN das gebaute Bündel einen der Stände S300 oder S500 lädt und 10 s bei Tempo 100 läuft
+  (Verfahren wie die Uhr an der exe, ruhige Maschine), DANN SOLL die Uhr mindestens 98 Ticks/s schaffen.
+<!-- LOESCHVERMERK (Review): vorher „S300 oder S575“. S575 liegt ~336 Ticks vor dem Sieg, ein 10-s-Fenster
+läuft über das Spielende (Messfehler vom 2026-10-04); Messort S500 auf Noahs Wort G1-8, Grenze unverändert. -->
+- **AK2:** WENN der Langlauf (`apps/headless/test/longrun.slow.test.ts`, Maschine allein) die Partie
+  spielt, DANN SOLL jedes 50-Tage-Fenster vor der Entscheidung höchstens 10 ms je Tick inklusive KI
+  brauchen. Die Ticks nach der Entscheidung sind ausgenommen (G1 Frage 5).
 
 ## 3. Abnahmekriterien für V1 (Definition of Done der Version)
 

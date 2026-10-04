@@ -5850,3 +5850,45 @@ den Deckel. Den Deckel von `stackFullContribution` (20) haelt die KI selbst uebe
 (`SPLIT_ARMY`). Gemessen nach der Entscheidung: groesster stehender Verband 20 (Welt 1815) bzw. 21 an
 einem einzigen Tagesende (Voreinstellung), vorher 95/59. Befund geschlossen (`PROBLEME.md`).
 
+## 2026-10-04 · Gate G1 der V3 · Noahs Entscheide 1–7
+
+Grundlage: `docs/plan/V3-G1-DOSSIER.md` (Empfehlungen mit verworfenen Alternativen), Rechnerfenster P0-W
+(`docs/reports/v3/leistung-ausgang.md`), P0-B1/B2. Noah: „1–7 ja, freigegeben, starte Welle 1".
+
+- **G1-1 ·** Zielwert R-PERF-01: ≥ 98 Ticks/s am Bündel an S300 und S575; Langlauf vor der Entscheidung
+  ≤ 10 ms je Tick in jedem 50-Tage-Fenster. Verfehlt Welle 1 das Ziel, kommt die Zahl zurück an Noah; die
+  Grenze wird nicht gesenkt.
+- **G1-2 ·** Nur verhaltensgleiche Optimierungen in Welle 1; KI-Denktakt nach Lage (vormals T-M45-06) erst
+  auf neues Wort mit voller Messkette.
+- **G1-3 ·** Keine Simulation im Worker in V3 (T-M10-02 bleibt zurückgenommen).
+- **G1-4 ·** Welle 1 neu zugeschnitten: Hülle (T-M45-04), `threat.ts` (T-M45-01 neu), Kern-Hotspots
+  (T-M45-03); Wegesuche (T-M45-02) und Bündel (T-M45-05) nachrangig. H-P1 (Etappe 2) ist widerlegt.
+- **G1-5 ·** Kein Ziel für die Ticks nach dem Sieg (24–32 ms); nur Befund.
+- **G1-6 ·** UX-Auswahl M46: T-M46-10 (Telefon), -01, -05, -06, -11, -08; nicht eingeplant mangels Befund:
+  Kartenlesbarkeit, Mehrfachauswahl, Ladezustand, Protokollfilter am Desktop.
+- **G1-7 ·** Nicht auf den Playtest warten; Noah spielt während Welle 1, Funde werden T-M46-09.
+
+## 2026-10-04 · Noahs Entscheid · R-ASSET-02 für CC BY geöffnet (game-icons.net)
+
+Anlass: Asset-Recherche für M46 („Grafiken und Symbole statt Text“, Playtest V3, `VORMERKUNGEN.md`
+VM-05). game-icons.net deckt Einheiten, Gebäude und Rohstoffe am besten ab, steht aber unter CC BY 3.0.
+Noah: „game-icons.net freigegeben, Regel R-ASSET-02 für CC BY öffnen.“ Folge: CC BY ist zulässig mit
+Namensnennung je Datei in `docs/ASSETS.md` und sichtbar im Spiel (Mitwirkende). Unverändert: kein
+kostenpflichtiger Dienst, keine Registrierung; die übrigen Quellen bleiben CC0/MIT (Kenney, milsymbol,
+Lucide/Tabler). Verworfen blieb freesound.org (Konto, gemischte Lizenzen je Datei).
+
+## 2026-10-04 · Gate G1, Nachtrag · Noahs Entscheide 8, 10–12
+
+Grundlage: Nachtrag in `docs/plan/V3-G1-DOSSIER.md`, Playtest V3 (`docs/reports/playtest-v3.md`),
+`docs/plan/VORMERKUNGEN.md`. Noah: „8, 10–12 ja, freigegeben mit allen Empfehlungen, starte Welle 2“.
+
+- **G1-8 ·** R-PERF-01/AK1 misst an S300 und **S500** (neuer Stand, ~2100 Ticks vor dem Sieg); Grenze ≥ 98 Ticks/s unverändert.
+- **G1-10 ·** Ausheben in eroberten Provinzen (VM-01, Ursache Moralsperre `commands/recruit.ts:46`):
+  (a) Anzeige von Moral und Grenze jetzt in Welle 2 (T-M46-15); (b) Schonfrist für Spieler und KI als
+  eigener PR **nach** dem Merge von V3, mit voller Messkette. Verworfen: Grenze oder Eroberungsmoral senken.
+- **G1-11 ·** Welle 2 in zwei Bahnen: U-Bild (T-M46-13 Symbole statt Text, T-M46-03 Stapel, T-M46-14 Töne)
+  und U-Layout (T-M46-10, T-M46-02, T-M46-15, T-M46-01, T-M46-06, T-M46-11, T-M46-08, zuletzt T-M46-05;
+  wird es knapp, wandert T-M46-05 in die Vormerkungen). Kompletter Design-Umbau aller Dialoge: V4/V5.
+- **G1-12 ·** Mid-Game-Stress erst messen (T-M46-16, Ereignisdichte je Abschnitt), dann UX- oder Balance-Entscheid.
+- **V4 „Gefecht“ vorgemerkt** (VM-07, VM-08): Positionen in der Provinz, Waffenradius — nicht in V3.
+

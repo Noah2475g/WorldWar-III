@@ -156,6 +156,7 @@ export function clearanceAlerts(
         day: String(day),
         hour: String(hour).padStart(2, '0'),
       }),
+      short: nameOf(noticeItem.provinceId),
       provinceId: noticeItem.provinceId,
       armyId: noticeItem.armyId,
     }

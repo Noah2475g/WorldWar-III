@@ -20,6 +20,14 @@
  *                 `vite build` + `vite preview`, WORKFLOW Falle 18)
  * --perf-only     bricht nach der Tempo-100-Messung ab (fuer den Buendellauf; der vorbereitete
  *                 Spielstand braucht den Dev-Server, weil er den Kern per /@fs laedt)
+ * --state <datei> Spaetspiel-Stand (P0-A.5 der V3): legt die Datei (.json oder .json.gz, ein Kern-`serialise`)
+ *                 in IndexedDB `worldwar`/`saves` als `stand-1`, oeffnet sie ueber Spielstaende > Laden und
+ *                 misst bei Tempo 100 `--state-seconds` (Vorgabe 10) Sekunden: Ticks/s aus der Uhr der
+ *                 Kopfleiste (Zeitpunkt der Seite, nicht der Bilder) und Bilder > 50 ms. Mit `--bundle`
+ *                 gegen `vite build` + `vite preview` (Buendel), sonst gegen den Dev-Server unter --url.
+ *                 Schreibt in `messwerte.json` unter `state.<Dateiname>` (mit --merge ergaenzen).
+ *                 Ticks/s ist hier eine Zaehlung (Ticks je Wanduhr der Seite), kein Bench-Beleg:
+ *                 die Zahl gilt nur im Rechnerfenster (Regel 5 der V3).
  * --measure-only  Groessen, die nur als Messwert laufen, ohne Bild (Repo-Groesse, Review Punkt 16:
  *                 fuer docs/ux/after nur 375x667, 1280x800 und die neuen Groessen als Bild)
  *
@@ -82,7 +90,8 @@
 import { spawn, spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { cpus, loadavg, tmpdir } from 'node:os'
-import { dirname, join, resolve } from 'node:path'
+import { basename, dirname, join, resolve } from 'node:path'
+import { gunzipSync } from 'node:zlib'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { chromium } from 'playwright'
 import AxeBuilderModule from '@axe-core/playwright'
@@ -110,6 +119,13 @@ const fsRoot = (path) => { const p = path.split(String.fromCharCode(92)).join('/
 const CHECK_VIEWPORTS = '375x667,667x375,1280x800,1366x768,1920x1080'
 const DEFAULT_VIEWPORTS = '375x667,667x375,1280x800,1366x768,1920x1080,1024x768,768x1024,320x568'
 const MP_VIEWPORTS = parseViewports(arg('mp-viewports', '375x667,1280x800'))
+// Wie lange der Mehrspielerlauf auf einen echten Einmarsch (Alarmchip) wartet, in Sekunden (T-M46-08). 0 = nur einmal
+// nachsehen, ohne zu warten. Der Einmarsch ist ein Ereignis der KI-Maechte; er laesst sich nicht erzwingen, ohne den
+// Gleichschritt zu verfaelschen.
+const MP_ALARM_WAIT_S = Number(arg('mp-alarm-wait', '0'))
+// Den Einmarsch selbst herbeifuehren (T-M46-08): der Gast (der Nachbar des Gastgebers) baut eine Kaserne, hebt Infanterie
+// aus, erklaert den Krieg und marschiert in eine Provinz des Gastgebers - alles ueber die Oberflaeche, im Gleichschritt.
+const MP_FORCE_INTRUSION = flag('mp-force-intrusion')
 // Im Pruefmodus entstehen keine Bilder und nichts im Repo: der Zwischenordner liegt im Temp.
 const OUT = resolve(arg('out', CHECK ? join(tmpdir(), 'ux-check') : 'docs/ux/before'))
 const BASE_URL = arg('url', 'http://localhost:5321/')
@@ -120,6 +136,8 @@ const MERGE = flag('merge')
 const SECTION = arg('section', 'viewports')
 const PERF_ONLY = flag('perf-only')
 const PREVIEW_PORT = Number(arg('preview-port', '5322'))
+const STATE_FILE = arg('state', '')
+const STATE_SECONDS = Number(arg('state-seconds', '10'))
 const ONLY = arg('only', '')
 
 // LOESCHVERMERK (Review): die Fassung von T-M44-01 las die Angaben so (ersetzt durch die Zeilen
@@ -498,7 +516,10 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
     }
   })
   data.perf.load.startDialogInteractiveMs = readyWall
-  data.perf.load.note = 'Dev-Server (vite, unbuendelt) — fuer den Vergleich vorher/nachher, nicht als absolute Zusage.'
+  // Die Notiz sagt, woran gemessen wurde: das Buendel (`vite preview` auf dist) oder den unbuendelten Dev-Server.
+  data.perf.load.note = run.bundle
+    ? 'Buendel (vite build + vite preview, apps/desktop/dist) — die Ladezeit des ausgelieferten Programms, aber im Browser, nicht in der exe.'
+    : 'Dev-Server (vite, unbuendelt) — fuer den Vergleich vorher/nachher, nicht als absolute Zusage.'
 
   await shot('start-neue-partie')
   data.touch.startDialog = await touchTargets(page)
@@ -679,14 +700,14 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
     }
     data.notes.push({ recruitClicks: clicked })
     if (clicked === 0) throw new Error('Infanterie ausheben nicht klickbar')
-    await runUntil(() => [...document.querySelectorAll('aside button')].some((b) => b.textContent?.trim() === 'Auswählen'), null)
+    await runUntil(() => [...document.querySelectorAll('aside button')].some((b) => /^Auswählen/.test((b.getAttribute('aria-label') || b.textContent || '').trim())), null)
     await page.waitForTimeout(300)
     await shot('pause-armee-ausgehoben')
   })
 
   // --- 5. Armee und Marsch ----------------------------------------------------------
   await step('armee-auswahl', async () => {
-    await btn('Auswählen').click({ timeout: 5000 })
+    await btn('Auswählen', false).click({ timeout: 5000 })
     await page.waitForTimeout(300)
     await shot('armee-auswahl')
     data.layout.armyPanel = await layout(page)
@@ -698,7 +719,7 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
         const r = el.getBoundingClientRect()
         return r.top >= 0 && r.bottom <= innerHeight && r.height > 0
       }
-      const march = [...document.querySelectorAll('aside.side button')].find((b) => b.textContent?.includes('Marschieren'))
+      const march = [...document.querySelectorAll('aside.side button')].find((b) => (b.getAttribute('aria-label') || b.textContent || '').includes('Marschieren'))
       return { nameVisible: inView(panel?.querySelector('h2')), marchVisible: inView(march), sideScrollTop: document.querySelector('aside.side')?.scrollTop ?? null }
     })
     await axe(page, 'armyPanel', data.axe)
@@ -750,7 +771,7 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
     await btn('Krieg erklären').click({ timeout: 5000 })
     await page.waitForTimeout(300)
     data.probes.confirm = await page.evaluate(() => {
-      const asks = [...document.querySelectorAll('button')].some((b) => /noch einmal klicken/.test(b.textContent ?? ''))
+      const asks = [...document.querySelectorAll('button')].some((b) => /noch einmal klicken/.test((b.getAttribute('aria-label') || '') + ' ' + (b.textContent ?? '')))
       const sent = document.querySelectorAll('.action__pending').length > 0
       return { asksOnFirstClick: asks, warOnFirstClick: sent }
     })
@@ -760,9 +781,9 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
     await shot('krieg-erklaert-ohne-rueckfrage')
   })
   await step('kampf', async () => {
-    await runUntil(() => /Gefecht (bei|entschieden)|: Gefecht entschieden/.test(document.querySelector('footer, .foot')?.textContent ?? document.body.innerText), null, 90000)
+    await runUntil(() => /Gefecht (bei|entschieden)|: Gefecht entschieden/.test([...document.querySelectorAll('footer *, .foot *')].map((e) => (e.getAttribute('aria-label') || '') + ' ' + (e.getAttribute('title') || '') + ' ' + (e.children.length ? '' : e.textContent || '')).join(' ') || document.body.innerText), null, 90000)
     await page.waitForTimeout(300)
-    await page.getByText(/Gefecht (bei|entschieden)|: Gefecht entschieden/).first().click({ timeout: 3000 }).catch(() => {})
+    await page.getByText(/Gefecht (bei|entschieden)|: Gefecht entschieden/).or(page.locator('footer [aria-label*="Gefecht"], footer [title*="Gefecht"], .foot [aria-label*="Gefecht"], .foot [title*="Gefecht"]')).first().click({ timeout: 3000 }).catch(() => {})
     await page.waitForTimeout(500)
     await shot('kampf-gefecht')
     data.layout.battle = await layout(page)
@@ -933,6 +954,90 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
  * einem Tick den Hash seiner Befehlsnachrichten (nur auf der Leitung, im Browser des Gastes;
  * `packages/netplay` bleibt, wie es ist), und der Gastgeber meldet das Auseinanderlaufen.
  */
+/**
+ * Ein Spaetspiel-Stand im Browser bei Tempo 100 (P0-A.5): Stand in IndexedDB legen, ueber
+ * „Spielstaende > Laden“ oeffnen, `seconds` Sekunden laufen lassen.
+ *
+ * Die Ticks kommen aus der Uhr der Kopfleiste („Tag D · HH:00“, 24 Ticks je Tag) und werden
+ * gegen `performance.now()` der Seite gerechnet; beide Ablesungen stehen im selben `evaluate`.
+ */
+async function runStateViewport(browser, vp, run) {
+  const context = await browser.newContext(contextOptions(vp))
+  const page = await context.newPage()
+  const errors = []
+  page.on('pageerror', (e) => errors.push(String(e).slice(0, 200)))
+  page.on('console', (m) => {
+    if (m.type() === 'error') errors.push(m.text().slice(0, 200))
+  })
+  const data = { file: run.name, bytes: run.text.length, bundle: run.bundle === true }
+  await page.goto(run.url, { waitUntil: 'load' })
+  await page.getByRole('button', { name: 'Partie beginnen' }).waitFor({ state: 'attached', timeout: 30000 })
+  const t0 = Date.now()
+  const nav = await page.evaluate(() => {
+    const n = performance.getEntriesByType('navigation')[0]
+    return { domContentLoadedMs: Math.round(n.domContentLoadedEventEnd), loadEventMs: Math.round(n.loadEventEnd) }
+  })
+  data.load = { ...nav, note: run.bundle ? 'Buendel (vite preview auf dist)' : 'Dev-Server (unbuendelt)' }
+  data.stored = await page.evaluate(
+    (text) =>
+      new Promise((res, rej) => {
+        const r = indexedDB.open('worldwar', 1)
+        r.onupgradeneeded = () => {
+          if (!r.result.objectStoreNames.contains('saves')) r.result.createObjectStore('saves')
+        }
+        r.onerror = () => rej(r.error)
+        r.onsuccess = () => {
+          const tx = r.result.transaction('saves', 'readwrite')
+          tx.objectStore('saves').put(text, 'stand-1')
+          tx.oncomplete = () => {
+            r.result.close()
+            res(true)
+          }
+          tx.onerror = () => rej(tx.error)
+        }
+      }),
+    run.text,
+  )
+  await page.getByRole('button', { name: 'Spielstände', exact: true }).first().click({ timeout: 10000 })
+  await page.waitForTimeout(500)
+  const loadStart = Date.now()
+  await page.getByRole('button', { name: 'Laden', exact: true }).first().click({ timeout: 10000 })
+  const CLOCK = 'Tag\\s+([\\d.]+)\\s+·\\s+(\\d\\d):00'
+  await page.waitForFunction((src) => new RegExp(src).test(document.body.innerText), CLOCK, { timeout: 60000 })
+  data.loadToClockMs = Date.now() - loadStart
+  await page.waitForTimeout(500)
+  const reading = () =>
+    page.evaluate((src) => {
+      const m = new RegExp(src).exec(document.body.innerText)
+      return { t: performance.now(), day: m ? Number(m[1].split('.').join('')) : null, hour: m ? Number(m[2]) : null }
+    }, CLOCK)
+  data.clockStart = await reading()
+  const win = {}
+  data.running100 = await longTasksDuring(page, async () => {
+    await page.getByRole('button', { name: '100', exact: true }).first().click({ timeout: 5000 })
+    await page.waitForTimeout(500) // Anlauf: die ersten Bilder des neuen Tempos zaehlen nicht
+    win.a = await reading()
+    await page.evaluate(() => {
+      window.__uxFrames.length = 0
+      window.__uxLong.length = 0
+    })
+    await page.waitForTimeout(run.seconds * 1000)
+    win.b = await reading()
+  })
+  await page.getByRole('button', { name: 'Pause', exact: true }).first().click({ timeout: 5000 }).catch(() => {})
+  data.window = win
+  if (win.a.day !== null && win.b.day !== null) {
+    data.ticks = (win.b.day - win.a.day) * 24 + (win.b.hour - win.a.hour)
+    data.seconds = +((win.b.t - win.a.t) / 1000).toFixed(3)
+    data.ticksPerSecond = +(data.ticks / ((win.b.t - win.a.t) / 1000)).toFixed(2)
+  }
+  data.machine = { loadAvg1: +loadavg()[0].toFixed(2), cores: cpus().length }
+  data.consoleErrors = errors.slice(0, 20)
+  data.wallMs = Date.now() - t0
+  await context.close()
+  return data
+}
+
 async function runMultiplayerViewport(browser, vp, party) {
   const data = { steps: [], failures: [], axe: {}, touch: {}, keyboard: {}, perf: {}, notes: [], probes: {}, dialogs: {}, layout: {} }
   const errors = []
@@ -1046,6 +1151,84 @@ async function runMultiplayerViewport(browser, vp, party) {
     await axe(host, 'mpRunning', data.axe)
     data.keyboard.mpRunning = await keyboardWalk(host, 30)
     data.perf.mpRunning = await longTasksDuring(host, () => host.waitForTimeout(3000))
+  })
+  // Der Alarmchip in der Kopfleiste der Partie zu zweit (T-M46-08, Rest aus M44): der Pfad ist nicht modusabhaengig
+  // (Header.tsx kennt `alarm` ohne Mehrspielerbezug), aber bewiesen war er nur im Einzelspieler. Der Lauf wartet
+  // `--mp-alarm-wait` Sekunden auf einen echten Einmarsch einer KI-Macht in eine Provinz des Gastgebers.
+  if (MP_FORCE_INTRUSION) {
+    await step('einmarsch-herbeifuehren', guest, async () => {
+      const log = []
+      data.probes.forcedIntrusion = log
+      const gbtn = (name, exact = true) => guest.getByRole('button', { name, exact }).first()
+      const tryStep = async (label, fn) => {
+        try {
+          await fn()
+          log.push(`${label}: ok`)
+          return true
+        } catch (e) {
+          log.push(`${label}: ${String(e).split('\n')[0].slice(0, 160)}`)
+          return false
+        }
+      }
+      await gbtn('Nicht mehr zeigen').click({ timeout: 3000 }).catch(() => {})
+      // 1. Eigene Provinz waehlen (die erste der Liste), Kaserne bauen.
+      const picker = guest.locator('aside select').first()
+      const own = await picker.evaluate((el) => [...el.querySelectorAll('optgroup')[0].querySelectorAll('option')].map((o) => ({ value: o.value, text: o.textContent })))
+      log.push(`eigene Provinzen: ${own.map((o) => o.text).join(', ')}`)
+      await picker.selectOption(own[0].value)
+      await tryStep('Kaserne bauen', () => gbtn('Kaserne bauen').click({ timeout: 8000 }))
+      // 2. Warten, bis die Kaserne steht, dann Infanterie ausheben (bis zu dreimal).
+      await tryStep('Infanterie ausheben', async () => {
+        const recruit = guest.getByRole('button', { name: 'Infanterie ausheben', exact: true }).first()
+        await guest.waitForFunction(() => [...document.querySelectorAll('aside button')].some((b) => /^Infanterie ausheben$/.test(b.getAttribute('aria-label') ?? b.textContent?.trim() ?? '') && !b.disabled), null, { timeout: 90000 })
+        await recruit.click({ timeout: 4000 })
+      })
+      // 3. Krieg erklaeren: Diplomatie, die Macht des Gastgebers, Krieg erklaeren, bestaetigen.
+      await tryStep('Krieg erklaeren', async () => {
+        await gbtn('Diplomatie').click({ timeout: 5000 })
+        await guest.locator('aside .nation-select', { hasText: 'Vereinigte Staaten' }).first().click({ timeout: 5000 })
+        await gbtn('Krieg erklären').click({ timeout: 5000 })
+        await guest.getByRole('button', { name: /noch einmal klicken/ }).first().click({ timeout: 5000 })
+      })
+      await tryStep('Krieg wirksam', () =>
+        guest.waitForFunction(() => [...document.querySelectorAll('tr')].some((r) => /^\s*Vereinigte Staaten/.test(r.innerText) && /Krieg/.test(r.innerText.replace('Krieg erklären', ''))), null, { timeout: 90000 }),
+      )
+      // 4. Die Armee abwarten, auswaehlen und in eine Provinz des Gastgebers marschieren lassen.
+      await tryStep('Armee da', async () => {
+        await picker.selectOption(own[0].value)
+        await guest.waitForFunction(() => [...document.querySelectorAll('aside button')].some((b) => /^Auswählen/.test((b.getAttribute('aria-label') || b.textContent || '').trim())), null, { timeout: 120000 })
+      })
+      await tryStep('Marsch befehlen', async () => {
+        await gbtn('Auswählen', false).click({ timeout: 5000 })
+        await gbtn('Marschieren').click({ timeout: 5000 })
+        const target = guest.locator('aside select').nth(1)
+        const options = await target.evaluate((el) => [...el.options].filter((o) => !o.disabled && /USA/.test(o.textContent ?? '')).map((o) => ({ value: o.value, text: o.textContent })))
+        log.push(`erreichbare Ziele in den USA: ${options.map((o) => o.text).join(' | ')}`)
+        await target.selectOption(options[0].value)
+        await gbtn('Marsch befehlen').click({ timeout: 5000 })
+      })
+    })
+  }
+  await step('alarmchip', host, async () => {
+    const chip = host.locator('.alarm-chip')
+    const waited = Date.now()
+    const seen = await chip
+      .waitFor({ state: 'visible', timeout: Math.max(1, MP_ALARM_WAIT_S * 1000) })
+      .then(() => true, () => false)
+    const view = host.viewportSize()
+    const box = seen ? await chip.boundingBox() : null
+    data.probes.alarmChip = {
+      waitedSeconds: Math.round((Date.now() - waited) / 1000),
+      seen,
+      ...(box && view
+        ? {
+            text: ((await chip.textContent()) ?? '').trim().slice(0, 80),
+            box: { x: Math.round(box.x), y: Math.round(box.y), w: Math.round(box.width), h: Math.round(box.height) },
+            inView: box.x >= 0 && box.y >= 0 && box.x + box.width <= view.width && box.y + box.height <= view.height,
+          }
+        : {}),
+    }
+    if (seen) await shot(host, 'alarmchip')
   })
   await step('vorhang', host, async () => {
     tamper = true
@@ -1165,7 +1348,8 @@ async function main() {
   const needs = sectionsNeeded(ONLY)
   const wantBundle = flag('bundle') || (CHECK && needs.has('bundle'))
   const wantMp = flag('mp') || (CHECK && needs.has('mp'))
-  const wantViewports = CHECK ? needs.has('viewports') : !(flag('bundle') || flag('mp'))
+  const wantState = STATE_FILE !== ''
+  const wantViewports = !wantState && (CHECK ? needs.has('viewports') : !(flag('bundle') || flag('mp')))
   const file = join(OUT, 'messwerte.json')
   const target = MERGE && existsSync(file) ? readJson(file) : result
   if (target !== result) target.updatedAt = result.createdAt
@@ -1192,7 +1376,31 @@ async function main() {
       }
     }
 
-    if (wantBundle) {
+    if (wantState) {
+      const path = resolve(STATE_FILE)
+      const raw = readFileSync(path)
+      const text = (path.endsWith('.gz') ? gunzipSync(raw) : raw).toString('utf8')
+      const name = basename(path).replace(/\.json(\.gz)?$/, '')
+      let url = BASE_URL
+      if (flag('bundle')) {
+        if (!flag('no-build')) {
+          console.log('Baue das Buendel (vite build) ...')
+          build('dist', { WORLDWAR_MULTIPLAYER: '' })
+        }
+        url = await startVite('preview', PREVIEW_PORT)
+        console.log(`vite preview: ${url}`)
+      } else if (!(await reachable(url))) {
+        throw new Error(`${url} antwortet nicht. Erst pnpm dev --port <p> --strictPort starten.`)
+      }
+      target.state = target.state ?? {}
+      const vp = parseViewports(arg('bundle-viewports', '1920x1080'))[0]
+      process.stdout.write(`Stand ${name} (${vp.tag}) ... `)
+      const data = await runStateViewport(browser, vp, { url, text, name, seconds: STATE_SECONDS, bundle: flag('bundle') })
+      target.state[name] = data
+      console.log(`${data.ticks} Ticks in ${data.seconds} s = ${data.ticksPerSecond} Ticks/s, ${data.running100.framesOver50Ms} Bilder > 50 ms, ${data.running100.longTasks} lange Aufgaben`)
+    }
+
+    if (wantBundle && !wantState) {
       // Falle 18: die Uhr wird am gebauten Buendel gemessen. Gebaut wird ohne Mehrspielerflagge,
       // wie das ausgelieferte Programm.
       if (!flag('no-build')) {
@@ -1206,7 +1414,7 @@ async function main() {
       for (const vp of sizes) {
         const started = Date.now()
         process.stdout.write(`Buendel ${vp.tag} ... `)
-        const data = await runViewport(browser, vp, { url, perfOnly: true })
+        const data = await runViewport(browser, vp, { url, perfOnly: true, bundle: true })
         data.durationMs = Date.now() - started
         data.url = url
         target.bundle[vp.tag] = data

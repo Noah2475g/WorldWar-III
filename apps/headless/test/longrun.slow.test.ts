@@ -82,6 +82,13 @@ describe('Abnahmekriterium 6: Langlauf ueber 1000 Spieltage', () => {
     // Die Atempausen zaehlen nicht zur Rechenzeit: sonst misst der Bericht, wie oft
     // die Schleife freigegeben wurde, statt wie schnell der Kern rechnet.
     let paused = 0
+    // Zeitreihe (V3, P0-A.4): Rechenzeit je 50-Tage-Fenster, nur Bericht, keine Schranke. Die Atempausen
+    // sind herausgerechnet; Fenster nach der Entscheidung sind als solche markiert.
+    const WINDOW_TICKS = 50 * rules.constants.ticksPerDay
+    const windows: { fromDay: number; toDay: number; ms: number; ticks: number; afterDecision: boolean; mixed: boolean }[] = []
+    let windowStart = performance.now()
+    let windowPaused = 0
+    let windowFirstTick = 0
 
     for (let i = 0; i < ticks; i++) {
       const { commands, memories } = runAi(state, ctx)
@@ -94,6 +101,21 @@ describe('Abnahmekriterium 6: Langlauf ueber 1000 Spieltage', () => {
         const idle = performance.now()
         await breathe()
         paused += performance.now() - idle
+        windowPaused += performance.now() - idle
+      }
+      if ((i + 1) % WINDOW_TICKS === 0) {
+        const now = performance.now()
+        windows.push({
+          fromDay: windowFirstTick / rules.constants.ticksPerDay,
+          toDay: (i + 1) / rules.constants.ticksPerDay,
+          ms: now - windowStart - windowPaused,
+          ticks: WINDOW_TICKS,
+          afterDecision: ended !== 0 && windowFirstTick >= ended,
+          mixed: ended !== 0 && windowFirstTick < ended && ended <= i + 1,
+        })
+        windowStart = now
+        windowPaused = 0
+        windowFirstTick = i + 1
       }
     }
 
@@ -131,6 +153,16 @@ describe('Abnahmekriterium 6: Langlauf ueber 1000 Spieltage', () => {
         `- Zeit je Tick inkl. KI: ${(elapsed / ticks).toFixed(3)} ms`,
         `- Ereignisprotokoll am Ende: ${state.eventLog.length} Einträge (Ringpuffer greift)`,
         `- Partie entschieden bei Tick: ${ended || 'nicht entschieden'}`,
+        '',
+        '## Zeit je Tick nach 50-Tage-Fenstern (V3, nur Bericht, keine Schranke)',
+        '',
+        'Der Mittelwert oben mischt Ticks nach der Entscheidung; hier steht jedes Fenster einzeln. Die Zahlen gelten nur fuer den Rechner und die Last dieses Laufs.',
+        '',
+        '| Tage | ms je Tick inkl. KI | nach der Entscheidung |',
+        '|---|---|---|',
+        ...windows.map((w) => `| ${w.fromDay}–${w.toDay} | ${(w.ms / w.ticks).toFixed(3)} | ${w.afterDecision ? 'ja' : w.mixed ? 'teils (Entscheidung im Fenster)' : 'nein'} |`),
+        '',
+        `Entscheidungstick: ${ended || 'nicht entschieden'}${ended ? ` (Tag ${Math.floor(ended / rules.constants.ticksPerDay)})` : ''}.`,
         '',
         ...formatStockSection(stockRows(startStocks, snapshotStocks(state), rules.storageLimits, stockEvents), days),
         '',

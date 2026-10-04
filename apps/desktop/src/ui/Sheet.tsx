@@ -1,5 +1,7 @@
-import { useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { t } from '../i18n/text.ts'
+import { Icon } from './Icon.tsx'
+import type { IconName } from './icons.tsx'
 
 /**
  * Das Blatt (T-M44-03b, R-UX-01, Befund B-01): die Seitenleiste des Telefons im Hochformat hat
@@ -74,5 +76,59 @@ export function SheetHandle({
       <span className="sheet__grip" aria-hidden="true" />
       <span>{t(`sheet.snap.${snap}`)}</span>
     </button>
+  )
+}
+
+/** Das Hochformat des Telefons, in dem das Blatt gilt (dieselbe Abfrage wie `touch.css` und der Auto-Schwenk in App.tsx). */
+const PHONE_PORTRAIT = '(max-width: 599px) and (orientation: portrait)'
+
+/** Ist gerade das Blatt des Telefons im Hochformat zu sehen? Ohne `matchMedia` (Tests, Server) nein. */
+export function usePhonePortrait(): boolean {
+  const [matches, setMatches] = useState(() => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia(PHONE_PORTRAIT).matches)
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') return
+    const query = window.matchMedia(PHONE_PORTRAIT)
+    const update = (): void => setMatches(query.matches)
+    update()
+    query.addEventListener('change', update)
+    return () => query.removeEventListener('change', update)
+  }, [])
+  return matches
+}
+
+/** Die Panels, die das Blatt direkt anbietet (T-M46-10): dieselben wie die Knoepfe im Fuss. */
+export type SheetPanel = 'diplomacy' | 'market' | 'armies' | 'espionage' | 'standings'
+
+const SHEET_NAV: readonly { panel: SheetPanel; icon: IconName; label: string }[] = [
+  { panel: 'diplomacy', icon: 'alliance', label: 'header.diplomacy' },
+  { panel: 'market', icon: 'money', label: 'header.market' },
+  { panel: 'armies', icon: 'infantry', label: 'foot.armies' },
+  { panel: 'espionage', icon: 'spyEconomic', label: 'foot.espionage' },
+  { panel: 'standings', icon: 'capital', label: 'foot.standingsOpen' },
+]
+
+/**
+ * Die Panelwahl im Kopf des Blatts (T-M46-10): ist das Blatt halb oder voll offen, deckt es den Fuss (Karte >= 30 %
+ * und Blatt 50 % passen sonst nicht auf 667 px), und mit ihm waeren Diplomatie, Markt, Heer, Spionage und Lage nur
+ * ueber Schliessen oder die Raste Streifen erreichbar. Hier bleiben sie einen Tipp weit weg - nur als Zeichen, der
+ * Name steht im Tooltip und fuers Ohr.
+ */
+export function SheetNav({ active, onPanel }: { active: string | null; onPanel: (panel: SheetPanel) => void }) {
+  return (
+    <nav className="sheet__nav" aria-label={t('sheet.nav')}>
+      {SHEET_NAV.map((entry) => (
+        <button
+          key={entry.panel}
+          type="button"
+          className="sheet__navbutton"
+          aria-pressed={active === entry.panel}
+          aria-label={t(entry.label)}
+          title={t(entry.label)}
+          onClick={() => onPanel(entry.panel)}
+        >
+          <Icon name={entry.icon} size={16} />
+        </button>
+      ))}
+    </nav>
   )
 }

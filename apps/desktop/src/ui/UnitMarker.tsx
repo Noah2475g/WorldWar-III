@@ -1,5 +1,6 @@
 import { ART, type ArtName } from './art.tsx'
-import { ICON_PATHS, type IconName } from './icons.tsx'
+import { type IconName } from './icons.tsx'
+import { unitFrame } from './Icon.tsx'
 
 /**
  * Der NATO-Stapel als SVG fuers Panel (T-M31-02, D27.2, R-UI-10).
@@ -62,14 +63,26 @@ export function UnitMarker({ icon, art, label, count, tone = 'own' }: UnitMarker
           <path d={ART[art].cut} className="unit-marker__art-cut" />
         </g>
       ) : (
-        /* Die Glyphe: 24er-Pfad auf 11 px, links im Kasten. */
-        <g transform="translate(3.5 3.5) scale(0.4583)">
-          <path d={ICON_PATHS[icon]} className="unit-marker__glyph" />
-        </g>
+        /* Das Zeichen (T-M46-13): das NATO-Truppenzeichen aus milsymbol OHNE eigenen Rahmen —
+           den Rahmen macht der Kasten, in der Besitzerfarbe wie auf der Karte.
+           LOESCHVERMERK (Review): bis T-M46-13 stand hier die gezeichnete Glyphe
+           <g transform="translate(3.5 3.5) scale(0.4583)"><path d={ICON_PATHS[icon]} className="unit-marker__glyph" /></g>. */
+        <MarkerSymbol icon={icon} />
       )}
       <text x={27} y={12.5} textAnchor="end" className="unit-marker__count">
         {count}
       </text>
+    </svg>
+  )
+}
+
+/** Das Truppenzeichen links im Kasten: 17 x 13 Einheiten, die Zahl sitzt rechts davon. */
+function MarkerSymbol({ icon }: { icon: IconName }) {
+  const frame = unitFrame(icon, false)
+  if (!frame) return null
+  return (
+    <svg x={2.5} y={2.5} width={16} height={13} viewBox={frame.viewBox} className="unit-marker__sym" aria-hidden="true">
+      <g dangerouslySetInnerHTML={{ __html: frame.inner }} />
     </svg>
   )
 }

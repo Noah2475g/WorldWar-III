@@ -19,6 +19,7 @@ export type Panel =
   | 'market'
   | 'standings'
   | 'espionage'
+  | 'armies'
   | 'events'
   | 'settings'
   | 'debug'

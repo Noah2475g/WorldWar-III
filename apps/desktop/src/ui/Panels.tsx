@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react'
 import { MAX_DEPART_DELAY_DAYS } from '@worldwar/core'
 import type { PublicView, ResourceKey, Terrain, VisibleArmy, VisibleProvince } from '@worldwar/core'
 // Nur der Typ: zur Laufzeit importiert weiterhin events.ts aus Panels.tsx, nicht umgekehrt.
@@ -13,26 +13,31 @@ import { IconRow, type IconItem } from './IconRow.tsx'
 import {
   BUILDING_ICONS,
   BUILDING_ORDER,
-  Icon,
   RELATION_ICONS,
   RESOURCE_ICONS,
   TERRAIN_ICONS,
   type IconName,
 } from './icons.tsx'
+import { Icon, type PictureName } from './Icon.tsx'
 import { Meter, toneForShare, trendOf } from './Meter.tsx'
 import { NationName } from './Nation.tsx'
-import { ART_FOR_ICON, BUILDING_ART, UnitArt, type ArtName, type ArtTone } from './art.tsx'
+// LOESCHVERMERK (Review): `BUILDING_ART` fiel mit T-M46-13 aus dem Import (Bauplaetze zeigen game-icons.net).
+// LOESCHVERMERK (Review): `ART_FOR_ICON` fiel mit T-M46-13 aus dem Import (das Plaettchen traegt das Truppenzeichen).
+import { UnitArt, type ArtName, type ArtTone } from './art.tsx'
 import { UnitMarker } from './UnitMarker.tsx'
 import { Explain } from './Explain.tsx'
 import { ConfirmButton } from './ConfirmButton.tsx'
 import { useInputMode } from './inputMode.ts'
+import { scrollWithin } from './scrollWithin.ts'
 // Die Richtung einer Bilanz als Klassenzusatz - dieselbe Funktion wie in der
 // Kopfleiste (T-M36-05). Zwei Tabellen, die dieselbe Zahl verschieden einfaerben,
 // waeren zwei Aussagen ueber denselben Vorrat.
 import { balanceTone } from './Header.tsx'
 
 /** Die Breite eines Gebaeudebildes im Bauplatzraster (T-M33-03, D33.3). */
-const SLOT_ART_WIDTH = 30
+// LOESCHVERMERK (Review): bis T-M46-13 `const SLOT_ART_WIDTH = 30` (Breite der Bauplatz-Schattenrisse).
+/** Das Zeichen eines Bauplatzes (T-M46-13): game-icons.net statt Schattenriss. */
+const SLOT_ICON_SIZE = 30
 
 /** Morale in the core: fixed-point, 0…100 000 for 0…100 %. */
 const MORALE_SCALE = 100_000
@@ -74,6 +79,11 @@ export interface Action {
    * Befehl anwendet — ein Doppelklick waere sonst ein Doppelbefehl.
    */
   pendingNotice?: string
+  /**
+   * Die Quittung steht nur noch fuers Auge (T-M46-11): der Befehl ist schon angewendet, der Satz bleibt mindestens
+   * anderthalb Sekunden. Der Knopf ist dann nicht mehr gesperrt - ein zweiter Auftrag waere kein Doppelbefehl.
+   */
+  ackOnly?: boolean
   onRun: () => void
 }
 
@@ -176,13 +186,13 @@ export function PanelHead({
       <div className="panel__bar">
         {onBack && (
           <button type="button" className="panel__back" aria-label={t('panel.back')} title={t('panel.back')} onClick={onBack}>
-            <span aria-hidden="true">‹</span>
+            <Icon name="back" size={20} />
           </button>
         )}
         <h2>{title}</h2>
         {onClose && (
           <button type="button" className="panel__close" aria-label={t('panel.close')} title={t('panel.close')} onClick={onClose}>
-            <span aria-hidden="true">×</span>
+            <Icon name="close" size={20} />
           </button>
         )}
       </div>
@@ -217,8 +227,16 @@ function ActionButton({
   artTone = 'ink',
   reasonInGroup = false,
   confirm,
+  iconOnly = false,
+  iconSize = 13,
+  picture,
 }: {
   action: Action
+  /** Nur das Zeichen (T-M46-13): der Name steht als Tooltip und fuers Ohr, nicht im Bild. */
+  iconOnly?: boolean
+  iconSize?: number
+  /** Das Zeichen, wenn es keines aus dem alten Satz sein soll (Haltungen, T-M46-13). */
+  picture?: PictureName
   showReason: boolean
   /** Der Folgesatz, wenn der Befehl nachfragen soll (T-M44-09b): dann ein `ConfirmButton` statt des einfachen Knopfs. */
   confirm?: string | undefined
@@ -243,18 +261,23 @@ function ActionButton({
           Erklaerzeichen eine eigene Reihe einsamer Kreise (in der Sichtpruefung
           zu T-M13-17 gefunden). */}
       <span className="action__head">
-        {confirm !== undefined && action.disabledReason === null && action.pendingNotice === undefined ? (
+        {confirm !== undefined && action.disabledReason === null && (action.pendingNotice === undefined || action.ackOnly === true) ? (
           <ConfirmButton label={action.label} consequence={confirm} onConfirm={action.onRun} />
         ) : (
           <button
             type="button"
             className={primary ? 'button button--primary' : 'button'}
             aria-pressed={pressed}
-            disabled={action.disabledReason !== null || action.pendingNotice !== undefined}
-            title={buttonTitle(action)}
+            disabled={action.disabledReason !== null || (action.pendingNotice !== undefined && action.ackOnly !== true)}
+            // Ein Zeichenknopf traegt seinen Namen im Tooltip (Nachbesserung U): sonst stuende dort nur der Sperrgrund
+            // oder gar nichts, und wer das Zeichen nicht kennt, bekaeme keine Auskunft, was der Knopf tut.
+            title={iconOnly ? [action.label, buttonTitle(action)].filter(Boolean).join(' · ') : buttonTitle(action)}
             // Der Name nennt die Handlung, nicht nur die Sache (T-M22-06, V2-13).
-            aria-label={compact ? (action.aria ?? action.label) : action.aria}
-            aria-describedby={action.disabledReason ? reasonId : undefined}
+            // Bei reinen Zeichenknoepfen (T-M46-17) steht der Grund der Sperre als Beschreibung (aria-description)
+            // statt als versteckter Absatz daneben: der stuende als Text im Dokument, den niemand sieht.
+            aria-label={compact || iconOnly ? (action.aria ?? action.label) : action.aria}
+            aria-description={action.disabledReason && (compact || iconOnly) ? action.disabledReason : undefined}
+            aria-describedby={action.disabledReason && !(compact || iconOnly) ? reasonId : undefined}
             onClick={action.onRun}
           >
             {/* Das Bild geht vor, wo es eines gibt (T-M33-02); sonst die Glyphe wie bisher.
@@ -263,9 +286,9 @@ function ActionButton({
             {action.art ? (
               <UnitArt name={action.art} width={artWidth} tone={artTone} />
             ) : (
-              action.icon && <Icon name={action.icon} size={13} />
+              (picture ?? action.icon) && <Icon name={(picture ?? action.icon)!} size={iconSize} />
             )}
-            {compact ? '+' : action.label}
+            {compact ? '+' : iconOnly ? null : action.label}
           </button>
         )}
         {action.explainKey && <Explain textKey={action.explainKey} subject={action.label} />}
@@ -286,6 +309,7 @@ function ActionButton({
         </p>
       )}
       {action.disabledReason &&
+        !(compact || iconOnly) &&
         (showReason ? (
           <p id={reasonId} className="action__reason">
             {action.disabledReason}
@@ -343,8 +367,14 @@ export function ActionGroup({
   next,
   collectReasons = false,
   confirms,
+  iconOnly = false,
 }: {
   group: ActionGroupSpec
+  /**
+   * Nur die Zeichen (Nachbesserung U, T-M46-17): jede Handlung mit Zeichen wird ein Zeichenknopf, der Name steht als
+   * `aria-label` und Tooltip, der Sperrgrund als `aria-description`. Handlungen ohne Zeichen behalten ihr Wort.
+   */
+  iconOnly?: boolean
   /** Folgesätze je Aktionskennung: diese Knöpfe fragen vor dem Senden nach (T-M44-09b). */
   confirms?: Readonly<Record<string, string>>
   next?: NextUnlock | null | undefined
@@ -385,7 +415,7 @@ export function ActionGroup({
   }
 
   return (
-    <section className="group" aria-label={group.title}>
+    <section className="group" aria-label={group.title} data-group={group.id}>
       <h3 className="group__title">{group.title}</h3>
       {next && <NextUnlockLine next={next} />}
       {shared && <p className="group__reason">{shared}</p>}
@@ -400,7 +430,15 @@ export function ActionGroup({
       )}
       <div className="actions">
         {group.actions.map((action) => (
-          <ActionButton key={action.id} action={action} showReason={showsReason(action)} reasonInGroup={collectReasons} confirm={confirms?.[action.id]} />
+          <ActionButton
+            key={action.id}
+            action={action}
+            showReason={showsReason(action)}
+            reasonInGroup={collectReasons}
+            confirm={confirms?.[action.id]}
+            iconOnly={iconOnly && Boolean(action.icon) && !action.art}
+            iconSize={26}
+          />
         ))}
       </div>
     </section>
@@ -425,8 +463,24 @@ export function ProvincePicker({
 }) {
   return (
     <label className="picker">
-      <span>{t('province.pick')}</span>
-      <select value={value ?? ''} onChange={(event) => onChange(event.target.value || null)}>
+      {/* Das Zeichen traegt den Namen fuers Ohr (T-M46-17); LOESCHVERMERK (Review): bis T-M46-17 <span>{t('province.pick')}</span>. */}
+      <Icon name="place" size={22} title={t('province.pick')} />
+      <select
+        value={value ?? ''}
+        onChange={(event) => onChange(event.target.value || null)}
+        onKeyDown={(event) => {
+          // Eingabe bestaetigt die Wahl und fuehrt den Fokus zu den Handlungen der Provinz (T-M46-05): in einer
+          // Auswahlliste gehoeren die Buchstaben dem Tippen, also kommt man mit B oder E erst von hier weg.
+          if (event.key !== 'Enter') return
+          const first = event.currentTarget
+            .closest('aside')
+            ?.querySelector<HTMLElement>('.panel :is(.slots, [data-group]) button:not(:disabled)')
+          if (first) {
+            event.preventDefault()
+            first.focus()
+          }
+        }}
+      >
         <option value="">{t('province.pickNone')}</option>
         <optgroup label={t('province.pickOwn')}>
           {own.map((province) => (
@@ -500,17 +554,21 @@ export function ProvincePanel(props: ProvincePanelProps) {
           </>
         }
         sub={
-          <p className="panel__sub">
-            {province.kind === 'city' ? t('province.kindCity') : t('province.kindRural')} ·{' '}
-            {/* Das Zeichen vor dem Wort, nicht statt seiner: R-UI-11 verlangt das Symbol,
-                und der Name bleibt daneben stehen, weil ein Bild allein keine Auskunft ist
-                (T-M20-01). Seit T-M29-03 mit dem Bonus, den das Gelaende dem Verteidiger
-                gibt — die Zahl, die der Angreifer wissen will. */}
-            <Icon name={TERRAIN_ICONS[province.terrain]} size={13} />{' '}
-            {t(`terrain.${province.terrain}`)}
-            {defence > 0 ? ` · ${t('province.defenceBonus', { percent: defence / 10 })}` : ''}
-            <Explain textKey={`explain.terrain.${province.terrain}`} subject={t(`terrain.${province.terrain}`)} /> ·{' '}
-            {province.coastal ? t('province.coastal') : t('province.landlocked')}
+          /* Gattung, Gelaende, Kueste als Zeichen (T-M46-17); die Woerter stehen als Tooltip und fuers Ohr.
+             LOESCHVERMERK (Review): bis T-M46-17 der Satz „Landprovinz · Ebene · mit Kueste“ mit
+             t('province.kindCity'/'kindRural'), t(`terrain.${terrain}`), t('province.defenceBonus'), t('province.coastal'). */
+          <p className="panel__sub panel__sub--icons">
+            <Icon
+              name={province.kind === 'city' ? 'city' : 'rural'}
+              size={22}
+              title={province.kind === 'city' ? t('province.kindCity') : t('province.kindRural')}
+            />
+            <span title={defence > 0 ? `${t(`terrain.${province.terrain}`)} · ${t('province.defenceBonus', { percent: defence / 10 })}` : t(`terrain.${province.terrain}`)}>
+              <Icon name={TERRAIN_ICONS[province.terrain]} size={22} title={t(`terrain.${province.terrain}`)} />
+              {defence > 0 ? ` +${defence / 10} %` : ''}
+              <Explain textKey={`explain.terrain.${province.terrain}`} subject={t(`terrain.${province.terrain}`)} />
+            </span>
+            {province.coastal && <Icon name="coast" size={22} title={t('province.coastal')} />}
           </p>
         }
       />
@@ -527,42 +585,57 @@ export function ProvincePanel(props: ProvincePanelProps) {
         </p>
       )}
 
-      <dl className="facts">
-        <dt>{t('province.owner')}</dt>
-        <dd>
-          {props.ownerName && props.ownerColor ? (
-            <NationName color={props.ownerColor}>{props.ownerName}</NationName>
-          ) : (
-            (props.ownerName ?? t('province.neutral'))
-          )}
-        </dd>
+      {/* Zeichen statt Beschriftung (T-M46-13): Fahne = Eigentuemer, Menschen = Bevoelkerung.
+          Der Name steht als Tooltip und fuers Ohr im versteckten Begriff.
+          LOESCHVERMERK (Review): bis T-M46-13 eine <dl className="facts"> mit sichtbaren <dt>-Woertern
+          „Eigentümer“ und „Bevölkerung“ vor den Werten; und die Moral mit sichtbarer Meter-Beschriftung. */}
+      {/* Als Liste mit benannten Zeichen statt <dl> mit versteckten <dt>-Woertern (T-M46-17): der Name steht am
+          Zeichen, kein Wortknoten daneben. LOESCHVERMERK (Review): bis dahin <dl><div><dt className="visually-hidden">. */}
+      <ul className="facts facts--icons">
+        <li title={t('province.owner')}>
+          <Icon name="owner" size={24} title={t('province.owner')} />
+          <span>
+            {props.ownerName && props.ownerColor ? (
+              <NationName color={props.ownerColor}>{props.ownerName}</NationName>
+            ) : (
+              (props.ownerName ?? t('province.neutral'))
+            )}
+          </span>
+        </li>
 
         {province.population !== undefined && (
-          <>
-            <dt>{t('province.population')}</dt>
-            <dd>{population(province.population)}</dd>
-          </>
+          <li title={t('province.population')}>
+            <Icon name="population" size={24} title={t('province.population')} />
+            <span>{population(province.population)}</span>
+          </li>
         )}
-      </dl>
+      </ul>
 
       {/* Moral als Balken statt als Prozentzahl, mit dem Pfeil dorthin, wo sie hinlaeuft
           (R-UI-09). Der Wert allein sagt nicht, ob eine Provinz sich beruhigt oder
           auseinanderfaellt — und genau das ist die Frage. */}
       {province.morale !== undefined && (
-        <Meter
-          label={t('province.morale')}
-          value={province.morale}
-          max={MORALE_SCALE}
-          text={percent(unfix(province.morale))}
-          tone={toneForShare(province.morale / MORALE_SCALE)}
-          trend={trendOf(province.morale, province.moraleTarget, MORALE_SCALE)}
-          segments={10}
-        />
+        <span className="stat" title={t('province.morale')}>
+          <Icon name="morale" size={24} />
+          <Meter
+            label={t('province.morale')}
+            labelHidden
+            value={province.morale}
+            max={MORALE_SCALE}
+            text={percent(unfix(province.morale))}
+            tone={toneForShare(province.morale / MORALE_SCALE)}
+            trend={trendOf(province.morale, province.moraleTarget, MORALE_SCALE)}
+            segments={10}
+          />
+        </span>
       )}
 
       {province.deposits && Object.keys(province.deposits).length > 0 && (
         <>
-          <h3>{t('province.deposits')}</h3>
+          {/* LOESCHVERMERK (Review): bis T-M46-17 <h3>{t('province.deposits')}</h3> als sichtbares Wort. */}
+          <h3 className="panel__icon-title">
+            <Icon name="deposits" size={26} title={t('province.deposits')} />
+          </h3>
           <IconRow items={depositItems(province.deposits)} />
         </>
       )}
@@ -578,8 +651,11 @@ export function ProvincePanel(props: ProvincePanelProps) {
           die der Spieler gar nicht hat. Dann steht hier nichts, wie vor dem Umbau. */}
       {province.buildings !== undefined && (
       <>
-      <h3>{t('province.buildSlots')}</h3>
-      <div className="slots">
+      {/* LOESCHVERMERK (Review): bis T-M46-17 <h3>{t('province.buildSlots')}</h3> als sichtbares Wort. */}
+      <h3 className="panel__icon-title">
+        <Icon name="slots" size={26} title={t('province.buildSlots')} />
+      </h3>
+      <div className="slots" data-group="build">
         {BUILDING_ORDER.map((key) => {
           const level = province.buildings?.[key] ?? 0
           // ALLE Auftraege dieser Art, nicht nur der erste (T-M28-16): der Kern erlaubt
@@ -594,11 +670,11 @@ export function ProvincePanel(props: ProvincePanelProps) {
           if (order) {
             return (
               <div key={key} className="slot slot--queued">
-                <UnitArt name={BUILDING_ART[key]} width={SLOT_ART_WIDTH} tone="building" label={name} />
-                <span className="slot__name">
-                  {name}
-                  {level > 0 && <sup className="slot__level">{level + 1}</sup>}
-                </span>
+                {/* LOESCHVERMERK (Review): bis T-M46-13 <UnitArt name={BUILDING_ART[key]} width={SLOT_ART_WIDTH} tone="building" label={name} /> —
+                    der gezeichnete Schattenriss; ersetzt durch das Zeichen von game-icons.net (an drei Stellen im Raster). */}
+                <Icon name={BUILDING_ICONS[key] ?? 'warning'} size={SLOT_ICON_SIZE} title={name} />
+                {/* LOESCHVERMERK (Review): bis T-M46-17 stand der Name als sichtbares Wort unter dem Zeichen. */}
+                {level > 0 && <sup className="slot__level">{level + 1}</sup>}
                 {orders.map((entry, index) => (
                   <Meter
                     key={`${entry.startedTick}-${entry.completesAtTick}-${index}`}
@@ -618,16 +694,8 @@ export function ProvincePanel(props: ProvincePanelProps) {
             return (
               <div key={key} className="slot slot--built">
                 {/* Die Textfassung wie in der alten Symbolzeile: "2 Fabrik" fuers Ohr. */}
-                <UnitArt
-                  name={BUILDING_ART[key]}
-                  width={SLOT_ART_WIDTH}
-                  tone="building"
-                  label={level > 1 ? `${level} ${name}` : name}
-                />
-                <span className="slot__name">
-                  {name}
-                  {level > 1 && <sup className="slot__level">{level}</sup>}
-                </span>
+                <Icon name={BUILDING_ICONS[key] ?? 'warning'} size={SLOT_ICON_SIZE} title={level > 1 ? `${level} ${name}` : name} />
+                {level > 1 && <sup className="slot__level">{level}</sup>}
                 {/* Die Ausbau-Aktion bleibt erreichbar — als Knopf im gebauten Feld. */}
                 {build && <ActionButton action={build} showReason={false} compact />}
               </div>
@@ -641,13 +709,13 @@ export function ProvincePanel(props: ProvincePanelProps) {
                   Bild neben einem. */}
               {build ? (
                 <ActionButton
-                  action={{ ...build, art: BUILDING_ART[key] }}
-                  artWidth={SLOT_ART_WIDTH}
-                  artTone="building"
+                  action={{ ...build, icon: BUILDING_ICONS[key] ?? 'warning' }}
+                  iconSize={SLOT_ICON_SIZE}
+                  iconOnly
                   showReason={false}
                 />
               ) : (
-                <span className="slot__name">{name}</span>
+                <Icon name={BUILDING_ICONS[key] ?? 'warning'} size={SLOT_ICON_SIZE} title={name} />
               )}
             </div>
           )
@@ -676,18 +744,33 @@ export function ProvincePanel(props: ProvincePanelProps) {
 
       {props.armies && props.armies.length > 0 && (
         <>
-          <h3>{t('army.here')}</h3>
+          {/* LOESCHVERMERK (Review): bis T-M46-17 <h3>{t('army.here')}</h3> als sichtbares Wort. */}
+          <h3 className="panel__icon-title">
+            <Icon name="infantry" size={26} title={t('army.here')} />
+          </h3>
           <ul className="army-list">
             {props.armies.map((army) => (
               <li key={army.id} className={army.id === props.selectedArmy ? 'is-selected' : undefined}>
-                <span>
+                {/* Zeichen der gewaehlten Gattung, Name, Staerke als Zeichen mit Zahl, Wahl als Zeichenknopf
+                    (T-M46-17). LOESCHVERMERK (Review): bis dahin „{name} · Staerke {n}“ und ein Knopf mit dem Wort „Auswaehlen“. */}
+                <span className="army-list__row">
                   {/* Die vorherrschende Gattung — seit M13 fuer die Kartenmarke
                       gerechnet, in dieser Liste bis T-M20-03 nicht gezeigt. */}
-                  {army.icon && <Icon name={army.icon} size={13} />} {army.name} ·{' '}
-                  {t('army.strength')} {amount(army.strength)}
+                  {army.icon && <Icon name={army.icon} size={26} />}
+                  {army.name}
+                  <span title={t('army.strength')} className="army-list__power">
+                    <Icon name="battle" size={18} title={t('army.strength')} />
+                    {amount(army.strength)}
+                  </span>
                 </span>
-                <button type="button" className="button" onClick={() => props.onSelectArmy?.(army.id)}>
-                  {t('army.select')}
+                <button
+                  type="button"
+                  className="button button--icon"
+                  aria-label={`${t('army.select')}: ${army.name}`}
+                  title={t('army.select')}
+                  onClick={() => props.onSelectArmy?.(army.id)}
+                >
+                  <Icon name="select" size={22} />
                 </button>
               </li>
             ))}
@@ -697,7 +780,7 @@ export function ProvincePanel(props: ProvincePanelProps) {
 
       <ActionRow actions={props.actions} />
       {otherGroups.map((group) => (
-        <ActionGroup key={group.id} group={group} next={group.id === 'recruit' ? props.nextUnlock : undefined} />
+        <ActionGroup key={group.id} group={group} next={group.id === 'recruit' ? props.nextUnlock : undefined} iconOnly={group.id === 'espionage'} />
       ))}
     </section>
   )
@@ -794,12 +877,56 @@ const ARMY_ACTION_ICONS: Record<string, IconName> = {
   holdFire: 'battle',
 }
 
+/** Das Zeichen je Armeebefehl in der Zeichenleiste (T-M46-17). */
+const ARMY_COMMAND_PICTURES: Record<string, PictureName> = {
+  march: 'march',
+  stop: 'halt',
+  merge: 'merge',
+  split: 'split',
+  bombard: 'bombard',
+  holdFire: 'holdFire',
+}
+
+/** Die Ankunft in Zahlen (T-M46-17): „5 h“ oder „587 · 20:00“ - der Satz steht im Tooltip. */
+function arrivalShort(nowTick: number, arrivalTick: number, ticksPerDay: number): string {
+  const inHours = arrivalTick - nowTick
+  if (inHours <= 0) return '0'
+  if (inHours < ticksPerDay) return `${Math.round(inHours)} h`
+  const { day, hour } = gameTime(arrivalTick, ticksPerDay)
+  return `${day} · ${String(hour).padStart(2, '0')}:00`
+}
+
 const STANCES = ['aggressive', 'defensive', 'retreat', 'garrison'] as const
+
+/** Das Zeichen je Haltung (T-M46-13): Schwert, Schild, Rueckzugspfeil, Burg. */
+const STANCE_PICTURES: Record<(typeof STANCES)[number], PictureName> = {
+  aggressive: 'stanceAggressive',
+  defensive: 'stanceDefensive',
+  retreat: 'stanceRetreat',
+  garrison: 'stanceGarrison',
+}
 
 export function ArmyPanel(props: ArmyPanelProps) {
   const army = props.army
-  if (!army) return null
   const targeting = props.targeting ?? null
+  // Beginnt die Zielwahl (Knopf „Marschieren“ im Panel oder in der Heeruebersicht, T-M46-01), steht der Fokus
+  // auf der Zielliste: der Knopf, der sie oeffnete, ist verschwunden, und der Fokus waere sonst auf <body>
+  // gefallen - mit Tab ginge es wieder bei der Kopfleiste los (19 Stationen bis zur Seitenleiste).
+  const targetList = useRef<HTMLSelectElement>(null)
+  const choosing = targeting !== null
+  useEffect(() => {
+    if (choosing) targetList.current?.focus()
+  }, [choosing])
+  // Wird eine Armee gewaehlt (Heeruebersicht, Karte, Provinzliste), steht der Fokus auf ihrem ersten Befehl
+  // (T-M46-05): der Knopf „Auswaehlen“ verschwand mit dem Wechsel des Panels, Tab begaenne bei der Kopfleiste.
+  const panelRoot = useRef<HTMLElement>(null)
+  const armyId = props.army?.id
+  useEffect(() => {
+    if (armyId === undefined || choosing) return
+    panelRoot.current?.querySelector<HTMLButtonElement>('.actions--grid button:not(:disabled)')?.focus({ preventScroll: true })
+    // Nur bei einer anderen Armee; Befehle selbst aendern den Fokus nicht.
+  }, [armyId])
+  if (!army) return null
 
   // Die Haltung als Gruppe — seit T-M40-05 vier Knoepfe, zwei mal zwei —, die uebrigen
   // Befehle zweispaltig (D27.6, D30.7).
@@ -811,28 +938,36 @@ export function ArmyPanel(props: ArmyPanelProps) {
     .map((action) => (action.icon || !ARMY_ACTION_ICONS[action.id] ? action : { ...action, icon: ARMY_ACTION_ICONS[action.id]! }))
 
   return (
-    <section className="panel" aria-label={t('army.title')}>
+    <section className="panel" aria-label={t('army.title')} ref={panelRoot}>
       <PanelHead
         title={props.name ?? t('army.title')}
         onBack={props.onBack}
         onClose={props.onClose}
         sub={
+          /* Kampfkraft als Zeichen mit Zahl (T-M46-13); der Name steht im Tooltip und fuers Ohr.
+             LOESCHVERMERK (Review): bis T-M46-13 stand hier der Satz
+             „{t('army.power')} N · {t('army.condition')} P %“ als sichtbarer Text. */
           <p className="panel__sub">
-            {t('army.power')} {amount(army.strength)}
-            {props.condition !== undefined && ` · ${t('army.condition')} ${percent(Math.round(props.condition * 100))}`}
+            <span title={t('army.power')}>
+              <Icon name="battle" size={16} title={t('army.power')} /> {amount(army.strength)}
+            </span>
           </p>
         }
       />
 
       {/* Der Zustand als Balken: Trefferpunkte am Vollstand (T-M31-02, R-UI-09). */}
       {props.condition !== undefined && (
-        <Meter
-          label={t('army.condition')}
-          value={Math.round(props.condition * 100)}
-          max={100}
-          text={percent(Math.round(props.condition * 100))}
-          tone={toneForShare(props.condition)}
-        />
+        <span className="stat" title={t('army.condition')}>
+          <Icon name="morale" size={24} />
+          <Meter
+            label={t('army.condition')}
+            labelHidden
+            value={Math.round(props.condition * 100)}
+            max={100}
+            text={percent(Math.round(props.condition * 100))}
+            tone={toneForShare(props.condition)}
+          />
+        </span>
       )}
 
       {/* Die Zielwahl-Quittung in der Statuszeile (T-M28-02): abgeschickt, noch nicht
@@ -843,43 +978,44 @@ export function ArmyPanel(props: ArmyPanelProps) {
         </p>
       )}
 
-      <dl className="facts">
-        {army.stance && (
-          <>
-            <dt>{t('army.stance')}</dt>
-            <dd>{t(`army.stance${army.stance[0]!.toUpperCase()}${army.stance.slice(1)}`)}</dd>
-          </>
-        )}
-        {army.arrivalTick == null && (
-          <>
-            <dt>{t('army.moving')}</dt>
-            <dd>{t('army.idle')}</dd>
-          </>
-        )}
-      </dl>
+      {/* Die Haltung zeigt der gedrueckte Knopf (T-M46-13), das Stehen die fehlende Marschanzeige.
+          LOESCHVERMERK (Review): bis T-M46-17 sagte hier ein <dl className="facts visually-hidden"> Haltung
+          („Angriff“ ...) und „Marsch: steht“ als versteckten Text - der aber im Dokument stand; ueber die
+          gedrueckten Haltungsknoepfe (aria-pressed) und die Marschanzeige weiss das Ohr dasselbe. */}
 
-      {/* Ein laufender Marsch als Anzeige: wie weit, und wie lange noch (R-UI-09). */}
+      {/* Ein laufender Marsch als Anzeige: wie weit, und wie lange noch (R-UI-09). Fuss-Zeichen vor dem Balken,
+          die Ankunft als Tag und Stunde (T-M46-17); der volle Satz steht im Tooltip. */}
       {army.arrivalTick != null && (
-        <Meter
-          label={t('meter.march')}
-          value={props.currentTick - (army.departureTick ?? props.currentTick)}
-          max={Math.max(1, army.arrivalTick - (army.departureTick ?? props.currentTick))}
-          text={arrival(props.currentTick, army.arrivalTick, props.ticksPerDay)}
-        />
+        <span className="stat" title={arrival(props.currentTick, army.arrivalTick, props.ticksPerDay)}>
+          <Icon name="march" size={22} title={t('meter.march')} />
+          <Meter
+            label={t('meter.march')}
+            labelHidden
+            value={props.currentTick - (army.departureTick ?? props.currentTick)}
+            max={Math.max(1, army.arrivalTick - (army.departureTick ?? props.currentTick))}
+            text={arrival(props.currentTick, army.arrivalTick, props.ticksPerDay)}
+            shown={arrivalShort(props.currentTick, army.arrivalTick, props.ticksPerDay)}
+          />
+        </span>
       )}
 
       {/* Die Einheiten als NATO-Stapel — dieselben Marker wie auf der Karte (T-M31-02). */}
       {props.units && props.units.length > 0 && (
         <>
-          <h3>{t('army.units')}</h3>
+          {/* LOESCHVERMERK (Review): bis T-M46-17 <h3>{t('army.units')}</h3> als sichtbares Wort. */}
+          <h3 className="panel__icon-title">
+            <Icon name="infantry" size={26} title={t('army.units')} />
+          </h3>
           <ul className="units" aria-label={t('army.units')}>
             {props.units.map((item) => (
               <li key={`${item.icon}-${item.label}`}>
                 {/* Bildfassung, wo es ein Bild gibt (T-M33-04); die Karte bleibt bei
                     der Glyphe, das Plaettchen hier hat 44 px Platz. */}
+                {/* LOESCHVERMERK (Review): bis T-M46-13 reichte diese Stelle den Schattenriss
+                    {...(ART_FOR_ICON[item.icon] ? { art: ART_FOR_ICON[item.icon] } : {})} an das Plaettchen;
+                    jetzt traegt es das Truppenzeichen. */}
                 <UnitMarker
                   icon={item.icon}
-                  {...(ART_FOR_ICON[item.icon] ? { art: ART_FOR_ICON[item.icon] } : {})}
                   label={item.label}
                   count={item.count ?? 1}
                 />
@@ -890,11 +1026,14 @@ export function ArmyPanel(props: ArmyPanelProps) {
       )}
 
       {stanceActions.length > 0 && !targeting && (
-        <div className="stances" role="group" aria-label={t('army.stance')}>
+        <div className="stances stances--icons" role="group" aria-label={t('army.stance')}>
           {stanceActions.map((action) => (
             <ActionButton
               key={action.id}
               action={action}
+              iconOnly
+              iconSize={24}
+              picture={STANCE_PICTURES[action.id.slice('stance-'.length) as (typeof STANCES)[number]]}
               showReason={false}
               pressed={army.stance !== undefined && action.id === `stance-${army.stance}`}
             />
@@ -908,6 +1047,7 @@ export function ArmyPanel(props: ArmyPanelProps) {
           <label className="picker">
             <span>{t('army.targetLabel')}</span>
             <select
+              ref={targetList}
               value={targeting.target?.id ?? ''}
               onChange={(event) => targeting.onChoose(event.target.value || null)}
             >
@@ -967,12 +1107,125 @@ export function ArmyPanel(props: ArmyPanelProps) {
         </section>
       ) : (
         commands.length > 0 && (
-          <div className="actions actions--grid" role="group" aria-label={t('army.commands')}>
+          <div className="actions actions--grid actions--icons" role="group" aria-label={t('army.commands')}>
+            {/* Zeichenknoepfe (T-M46-17): der Name samt Sperrgrund steht als Tooltip und Name fuers Ohr.
+                LOESCHVERMERK (Review): bis dahin Knoepfe mit dem Wort und dem Sperrgrund als Absatz darunter
+                (<ActionButton action={action} showReason primary={action.id === 'march'} />). */}
             {commands.map((action) => (
-              <ActionButton key={action.id} action={action} showReason primary={action.id === 'march'} />
+              <ActionButton
+                key={action.id}
+                action={action}
+                iconOnly
+                iconSize={28}
+                {...(ARMY_COMMAND_PICTURES[action.id] ? { picture: ARMY_COMMAND_PICTURES[action.id]! } : {})}
+                showReason={false}
+                primary={action.id === 'march'}
+              />
             ))}
           </div>
         )
+      )}
+    </section>
+  )
+}
+
+/**
+ * Die Heeruebersicht (T-M46-01, R-UX-04): alle eigenen Armeen mit Name, Ort, Staerke und Auftrag,
+ * je Zeile der Sprung zur Karte und der direkte Marschbefehl. Armeen waren nur Pixel auf der Karte
+ * (0 DOM-Elemente, "Auswaehlen" ohne Namen); ohne Maus kostete "Armee bewegen" 46 Tasten, mit Maus 5 Klicks.
+ */
+export type ArmyOrder = 'battle' | 'marching' | 'idle'
+
+export interface ArmyRow {
+  id: string
+  name: string
+  provinceName: string
+  /** Staerke wie im Armeepanel (Festkomma). */
+  strength: number
+  order: ArmyOrder
+  /** Der Auftrag als Satz: "marschiert nach X · Ankunft ...", "im Gefecht", "steht (Angriff)". */
+  orderText: string
+}
+
+export type ArmyFilter = 'all' | ArmyOrder
+
+export const ARMY_FILTERS: readonly ArmyFilter[] = ['all', 'battle', 'marching', 'idle']
+
+/** Zeilen nach Filter; die Reihenfolge der Eingabe bleibt (der Aufrufer sortiert Gefecht, Marsch, Stand). */
+export function filterArmyRows(rows: readonly ArmyRow[], filter: ArmyFilter): ArmyRow[] {
+  return filter === 'all' ? [...rows] : rows.filter((row) => row.order === filter)
+}
+
+export interface ArmiesPanelProps {
+  rows: readonly ArmyRow[]
+  onSelect: (armyId: string) => void
+  onMarch: (armyId: string) => void
+  onClose?: (() => void) | undefined
+}
+
+export function ArmiesPanel(props: ArmiesPanelProps) {
+  const [filter, setFilter] = useState<ArmyFilter>('all')
+  const shown = filterArmyRows(props.rows, filter)
+  const count = (value: ArmyFilter): number => filterArmyRows(props.rows, value).length
+  // Per Kurztaste geoeffnet (A) landet der Fokus auf der ersten Armee: der naechste Tastendruck gehoert ihr.
+  const list = useRef<HTMLUListElement>(null)
+  useEffect(() => {
+    list.current?.querySelector<HTMLButtonElement>('button')?.focus()
+  }, [])
+
+  return (
+    <section className="panel" aria-label={t('armies.title')}>
+      <PanelHead title={`${t('armies.title')} (${props.rows.length})`} onClose={props.onClose} />
+      <div className="log__filters armies__filters" role="group" aria-label={t('alerts.filter')}>
+        {ARMY_FILTERS.map((value) => (
+          <button
+            key={value}
+            type="button"
+            className={filter === value ? 'speed speed--active' : 'speed'}
+            aria-pressed={filter === value}
+            onClick={() => setFilter(value)}
+          >
+            {t(`armies.filter.${value}`, { count: count(value) })}
+          </button>
+        ))}
+      </div>
+      {shown.length === 0 ? (
+        <p className="notice notice--info">{props.rows.length === 0 ? t('armies.none') : t('armies.noneFiltered')}</p>
+      ) : (
+        <ul className="armies" ref={list}>
+          {shown.map((row) => (
+            <li key={row.id} className={`armies__row armies__row--${row.order}`}>
+              <div className="armies__what">
+                <b className="armies__name">{row.name}</b>
+                <span className="armies__where">{row.provinceName}</span>
+                <span className="armies__power">
+                  {t('army.power')} {amount(row.strength)}
+                </span>
+                <span className="armies__order">{row.orderText}</span>
+              </div>
+              <div className="armies__go">
+                <button
+                  type="button"
+                  className="button"
+                  aria-label={t('armies.selectAria', { name: row.name })}
+                  title={t('armies.selectAria', { name: row.name })}
+                  onClick={() => props.onSelect(row.id)}
+                >
+                  {t('army.select')}
+                </button>
+                <button
+                  type="button"
+                  className="button"
+                  aria-label={t('armies.marchAria', { name: row.name })}
+                  title={t('armies.marchAria', { name: row.name })}
+                  onClick={() => props.onMarch(row.id)}
+                >
+                  {t('army.move')}
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
       )}
     </section>
   )
@@ -1028,7 +1281,32 @@ export interface EventEntry {
    * additiven Felder trägt keinen, und die Zeile bleibt, was sie war.
    */
   battle?: BattleReportData
+  /** Die Art des Kernereignisses (T-M46-02) - Grundlage der Sammelzeilen; fehlt bei Zeilen ohne Kernereignis. */
+  type?: string
+  /** Wie wichtig die Zeile ist (T-M46-02, VM-03). Ohne Angabe gilt `normal`. */
+  importance?: EventImportance
+  /** Hat das Ereignis einen Ton - dann pulsiert es auch auf der Karte an seinem Ort (T-M46-02). */
+  audible?: boolean
+  /** Die Teile einer Sammelzeile, jeder mit seinem Sprung (T-M46-02). */
+  parts?: readonly EventPart[]
+  /** Das Zeichen der Zeile (T-M46-17, VM-05): was geschah. Fehlt es, steht das der Rubrik. */
+  symbol?: PictureName
+  /** Das Kurzwort im Bild (T-M46-17): wo oder mit wem. Der Satz `text` bleibt Tooltip und Name fuers Ohr. */
+  short?: string
+  /** Wie viele gleichartige Zeilen diese Sammelzeile zusammenfasst (T-M46-17). */
+  count?: number
 }
+
+/** Ein Teil einer Sammelzeile: eine einzelne Zeile mit ihrem Ort. */
+export interface EventPart {
+  id: string
+  tick: number
+  text: string
+  provinceId?: string
+}
+
+/** Wichtigkeit einer Protokollzeile: `major` verlangt Aufmerksamkeit, `minor` ist Alltag (T-M46-02). */
+export type EventImportance = 'major' | 'normal' | 'minor'
 
 /** Eine Bilanzzeile des Tagesberichts: Rohstoffname und Festkomma-Tagesbilanz. */
 export interface DayReportDelta {
@@ -1055,9 +1333,10 @@ export const CATEGORY_ICONS: Partial<Record<EventCategory, IconName>> = {
   diplomacy: 'alliance',
 }
 
-export type EventFilterKey = EventCategory | 'all' | 'world'
+export type EventFilterKey = EventCategory | 'all' | 'world' | 'important'
 
-export const EVENT_FILTERS: readonly EventFilterKey[] = ['all', 'combat', 'economy', 'diplomacy', 'world']
+/** `important` zuerst und Voreinstellung (T-M46-02): die Alltagszeilen (`minor`) stehen unter „alles". */
+export const EVENT_FILTERS: readonly EventFilterKey[] = ['important', 'all', 'combat', 'economy', 'diplomacy', 'world']
 
 /**
  * Which drawer an event belongs in (T-M13-13, R-GAME-06).
@@ -1192,11 +1471,15 @@ export function EventLog({
   ticksPerDay: number
   onJump: (provinceId: string) => void
 }) {
-  const [filter, setFilter] = useState<EventFilterKey>('all')
+  // LOESCHVERMERK (Review): bis T-M46-02 `useState<EventFilterKey>('all')` - das Protokoll zeigte jede Zeile (35 an einem Tag).
+  const [filter, setFilter] = useState<EventFilterKey>('important')
   const shown =
     filter === 'all'
       ? entries
-      : filter === 'world'
+      : filter === 'important'
+        ? // Wichtig und ueblich; der Alltag (Wegmarken, Beschuss, Auftragsbeginn, fremde Nebensachen) nur unter „alles".
+          entries.filter((entry) => (entry.importance ?? 'normal') !== 'minor')
+        : filter === 'world'
         ? // Weltgeschehen fragt nicht nach der Rubrik, sondern nach der Positivliste des
           // Kerns (R-NEWS-04) — auch wenn es zwischen zwei fremden Mächten geschieht.
           entries.filter((entry) => entry.world === true)
@@ -1204,15 +1487,19 @@ export function EventLog({
 
   const filterBar = (
     <div className="log__filters" role="group" aria-label={t('alerts.filter')}>
+      {/* Zeichen statt Woerter (T-M46-17): der Name der Rubrik steht als Tooltip und fuers Ohr.
+          LOESCHVERMERK (Review): bis T-M46-17 trug jeder Filterknopf das Wort {t(`alerts.${value}`)} im Bild. */}
       {EVENT_FILTERS.map((value) => (
         <button
           key={value}
           type="button"
-          className={filter === value ? 'speed speed--active' : 'speed'}
+          className={filter === value ? 'speed speed--active log__filter' : 'speed log__filter'}
           aria-pressed={filter === value}
+          aria-label={t(`alerts.${value}`)}
+          title={t(`alerts.${value}`)}
           onClick={() => setFilter(value)}
         >
-          {t(`alerts.${value}`)}
+          <Icon name={FILTER_ICONS[value]} size={22} />
         </button>
       ))}
     </div>
@@ -1222,7 +1509,9 @@ export function EventLog({
     return (
       <section className="log" aria-label={t('events_ui.title')}>
         {filterBar}
-        <p className="log__empty">{t('events_ui.empty')}</p>
+        <p className="log__empty" title={t('events_ui.empty')}>
+          <Icon name="logAll" size={22} title={t('events_ui.empty')} />
+        </p>
       </section>
     )
   }
@@ -1231,85 +1520,182 @@ export function EventLog({
     <section className="log" aria-label={t('events_ui.title')}>
       {filterBar}
       <ul>
-        {shown.map((entry) => (
-          <li
-            key={entry.id}
-            className={[
-              'log__row',
-              ...(entry.severity === 'alert' ? ['log__row--alert'] : []),
-              // Der eigene Rueckschlag traegt Balken und Fettung (T-M22-03, V2-07).
-              ...(entry.self ? ['log__row--self'] : []),
-            ].join(' ')}
-          >
-            <time>
-              {Math.floor(entry.tick / ticksPerDay) + 1} ·{' '}
-              {String(entry.tick % ticksPerDay).padStart(2, '0')}:00
-            </time>
-            {/* Symbol und Text teilen sich EINE Rasterspur (T-M22-01, Befund V2-01):
-                als drittes Rasterkind rutschte der Text in die zweite Zeile und erbte
-                dort die 72 px der Zeitspalte — jeder Eintrag brach nach 1-2 Woertern um. */}
-            <span className="log__entry">
-              {CATEGORY_ICONS[entry.category ?? 'other'] && (
-                <Icon
-                  name={CATEGORY_ICONS[entry.category ?? 'other']!}
-                  size={13}
-                  title={t(`alerts.${entry.category ?? 'other'}`)}
-                />
+        {shown.map((entry, index) => {
+          const day = Math.floor(entry.tick / ticksPerDay) + 1
+          const previous = shown[index - 1]
+          // Der Spieltag steht einmal als Trennzeile statt in jeder Zeile (T-M46-17): „575 · 23:00“ vor
+          // jedem Eintrag war die Haelfte des Textes im Protokoll.
+          const newDay = !previous || Math.floor(previous.tick / ticksPerDay) + 1 !== day
+          return (
+            <Fragment key={entry.id}>
+              {newDay && (
+                <li className="log__day" title={`${t('header.day')} ${day}`}>
+                  <Icon name="day" size={20} title={t('header.day')} />
+                  {day}
+                </li>
               )}
-              {entry.body || entry.battle || (entry.deltas && entry.deltas.length > 0) ? (
-                /* Der Tagesbericht klappt auf (T-M24-01, Befund V2-06): die Zeile ist
-                   die Überschrift, der Körper steht dahinter — details/summary reicht,
-                   im Stil der Lagekarte. Seit T-M27-02 nutzt der Kampfbericht dasselbe
-                   Muster, sein Körper ist aber strukturiert: Balken statt Absätze. */
-                <details className="log__report">
-                  <summary>{entry.text}</summary>
-                  {entry.battle && <BattleBody battle={entry.battle} />}
-                  {/* Die Bilanzen als Balken (T-M25-04): DERSELBE DeltaBar wie in der
-                      Wirtschaftstabelle; der groesste Betrag des Tages ist der
-                      Massstab, die Zahl daneben bleibt der zugaengliche Wert. */}
-                  {entry.deltas && entry.deltas.length > 0 && (
-                    <ul className="log__deltas" aria-label={t('dayReport.balance')}>
-                      {entry.deltas.map((delta) => (
-                        <li key={delta.label}>
-                          <span>{delta.label}</span>
-                          <span className="log__delta-value">
-                            {rate(delta.balance)}
-                            <DeltaBar
-                              value={delta.balance}
-                              max={Math.max(...entry.deltas!.map((d) => Math.abs(d.balance)), 1)}
-                            />
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  {entry.body && entry.body.length > 0 && (
-                    <ul>
-                      {entry.body.map((line, lineIndex) => (
-                        <li key={lineIndex}>{line}</li>
-                      ))}
-                    </ul>
-                  )}
-                </details>
-              ) : entry.provinceId ? (
-                <button
-                  type="button"
-                  className="log__jump"
-                  onClick={() => onJump(entry.provinceId!)}
-                  title={t('events_ui.jumpTo')}
-                >
-                  {entry.text}
-                </button>
-              ) : (
-                <span>{entry.text}</span>
-              )}
-            </span>
-          </li>
-        ))}
+              <LogRow entry={entry} ticksPerDay={ticksPerDay} onJump={onJump} />
+            </Fragment>
+          )
+        })}
       </ul>
     </section>
   )
 }
+
+/** Das Zeichen je Filter (T-M46-17). */
+const FILTER_ICONS: Record<EventFilterKey, PictureName> = {
+  important: 'logImportant',
+  all: 'logAll',
+  combat: 'battle',
+  economy: 'money',
+  diplomacy: 'peace',
+  other: 'info',
+  world: 'world',
+}
+
+/**
+ * Eine Protokollzeile (T-M46-17): Uhrzeit, Zeichen der Art, Kurzwort (Ort oder Macht), Anzahl. Der ganze
+ * Satz ist Tooltip und Name fuers Ohr; aufklappbare Zeilen zeichnen ihren Koerper erst, wenn sie offen sind
+ * (ein geschlossenes <details> haelt den Text sonst trotzdem im Dokument).
+ *
+ * LOESCHVERMERK (Review): bis T-M46-17 stand die Zeile als „{Tag} · {hh}:00“ und der ganze Satz {entry.text}
+ * (mit „(+n weitere)“) neben einem 13-px-Zeichen der Rubrik.
+ */
+function LogRow({
+  entry,
+  ticksPerDay,
+  onJump,
+}: {
+  entry: EventEntry
+  ticksPerDay: number
+  onJump: (provinceId: string) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const hasBody = Boolean(entry.body || entry.battle || entry.parts || (entry.deltas && entry.deltas.length > 0))
+  const symbol: PictureName = entry.symbol ?? CATEGORY_ICONS[entry.category ?? 'other'] ?? 'info'
+  const hour = `${String(entry.tick % ticksPerDay).padStart(2, '0')}:00`
+  const face = (
+    <>
+      <Icon name={symbol} size={LOG_ICON} />
+      {entry.short}
+      {entry.count !== undefined && entry.count > 1 && <span className="log__count">×{entry.count}</span>}
+    </>
+  )
+  return (
+    <li
+      className={[
+        'log__row',
+        ...(entry.severity === 'alert' ? ['log__row--alert'] : []),
+        // Der eigene Rueckschlag traegt Balken und Fettung (T-M22-03, V2-07).
+        ...(entry.self ? ['log__row--self'] : []),
+        // Wichtigkeit (T-M46-02): wichtig laut, Alltag leise.
+        ...(entry.importance === 'major' ? ['log__row--major'] : []),
+        ...(entry.importance === 'minor' ? ['log__row--minor'] : []),
+      ].join(' ')}
+    >
+      <time title={`${t('header.day')} ${Math.floor(entry.tick / ticksPerDay) + 1} · ${hour}`}>{hour}</time>
+      {/* Zeichen und Kurzwort teilen sich EINE Rasterspur (T-M22-01, Befund V2-01). */}
+      <span className="log__entry">
+        {hasBody ? (
+          /* Der Tagesbericht klappt auf (T-M24-01, Befund V2-06): die Zeile ist die Ueberschrift, der Koerper
+             steht dahinter. Seit T-M27-02 nutzt der Kampfbericht dasselbe Muster. */
+          <details
+            className={entry.parts ? 'log__report log__group' : 'log__report'}
+            open={open}
+            onToggle={(event) => setOpen(event.currentTarget.open)}
+          >
+            <summary aria-label={entry.text} title={entry.text}>
+              {face}
+            </summary>
+            {open && (
+              <>
+                {entry.battle && <BattleBody battle={entry.battle} />}
+                {/* Die Teile einer Sammelzeile (T-M46-02): jeder mit seiner Zeit und seinem Sprung. */}
+                {entry.parts && (
+                  <ul className="log__parts">
+                    {entry.parts.map((part) => (
+                      <li key={part.id}>
+                        <time>{String(part.tick % ticksPerDay).padStart(2, '0')}:00</time>
+                        {part.provinceId ? (
+                          <button
+                            type="button"
+                            className="log__jump"
+                            onClick={() => onJump(part.provinceId!)}
+                            title={part.text}
+                            aria-label={part.text}
+                          >
+                            {part.text}
+                          </button>
+                        ) : (
+                          <span>{part.text}</span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {/* Die Bilanzen als Balken (T-M25-04): DERSELBE DeltaBar wie in der Wirtschaftstabelle; der
+                    groesste Betrag des Tages ist der Massstab, die Zahl daneben bleibt der zugaengliche Wert. */}
+                {entry.deltas && entry.deltas.length > 0 && (
+                  <ul className="log__deltas" aria-label={t('dayReport.balance')}>
+                    {entry.deltas.map((delta) => (
+                      <li key={delta.label}>
+                        <span>{delta.label}</span>
+                        <span className="log__delta-value">
+                          {rate(delta.balance)}
+                          <DeltaBar value={delta.balance} max={Math.max(...entry.deltas!.map((d) => Math.abs(d.balance)), 1)} />
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {entry.body && entry.body.length > 0 && (
+                  <ul>
+                    {entry.body.map((line, lineIndex) => (
+                      <li key={lineIndex}>{line}</li>
+                    ))}
+                  </ul>
+                )}
+              </>
+            )}
+          </details>
+        ) : entry.provinceId ? (
+          <button
+            type="button"
+            className="log__jump"
+            onClick={() => onJump(entry.provinceId!)}
+            title={entry.text}
+            aria-label={entry.text}
+          >
+            {face}
+          </button>
+        ) : (
+          <span className="log__plain" title={entry.text}>
+            <Icon name={symbol} size={LOG_ICON} title={entry.text} />
+            {entry.short}
+            {entry.count !== undefined && entry.count > 1 && <span className="log__count">×{entry.count}</span>}
+          </span>
+        )}
+        {/* Eine Sammelzeile springt mit einem Klick zum juengsten Ort (T-M46-02): wer nur wissen will, wo es
+            zuletzt war, muss sie nicht erst aufklappen. */}
+        {entry.parts && entry.provinceId && (
+          <button
+            type="button"
+            className="log__goto"
+            onClick={() => onJump(entry.provinceId!)}
+            title={t('events_ui.jumpNewest')}
+            aria-label={t('events_ui.jumpNewest')}
+          >
+            <Icon name="jump" size={18} />
+          </button>
+        )}
+      </span>
+    </li>
+  )
+}
+
+/** Die Groesse des Zeichens einer Protokollzeile (T-M46-17). */
+const LOG_ICON = 20
 
 /**
  * Relations with every other power, and the orders towards the one the player picks
@@ -1399,20 +1785,35 @@ export interface TradeFormSpec {
   evaluate: (partner: string, draft: TradeDraft) => { text: string; action: Action }
 }
 
-function OfferList({ title, rows }: { title: string; rows: readonly OfferRow[] }) {
+/**
+ * Eine Angebotsliste (T-M46-06): ab zwei Angeboten zugeklappt mit der Zahl in der Ueberschrift - drei
+ * Handelsangebote der KI belegten 300 px und schoben die Machtetabelle unter den Falz (gemessen S300, Tempo
+ * 10, 1280x800: die Auswahl „Mexiko“ musste gerollt werden). Die Meldung darueber nennt sie ohnehin einzeln;
+ * `open` erzwingt sie offen, wo der Spieler gerade wegen eines Angebots hergesprungen ist.
+ */
+// LOESCHVERMERK (Review): bis T-M46-06 war die Liste immer offen:
+//   <section className="group offers" aria-label={title}><h3 className="group__title">{title}</h3><ul className="offers">...</ul></section>
+// Grund: drei Handelsangebote belegten 300 px und schoben die Machtetabelle unter den Falz.
+function OfferList({ title, rows, open }: { title: string; rows: readonly OfferRow[]; open: boolean }) {
   if (rows.length === 0) return null
+  const expanded = open || rows.length < 2
   return (
     <section className="group offers" aria-label={title}>
-      <h3 className="group__title">{title}</h3>
-      <ul className="offers">
-        {rows.map((row) => (
-          <li key={row.id} className="offer">
-            <p className="offer__text">{row.text}</p>
-            {row.note && <p className="panel__sub">{row.note}</p>}
-            <ActionRow actions={row.actions} />
-          </li>
-        ))}
-      </ul>
+      {/* Der Schluessel erneuert das Element, wenn sich die Vorgabe aendert; sonst zaehlt, was der Spieler tat. */}
+      <details key={String(expanded)} open={expanded}>
+        <summary className="group__title">
+          {title} ({rows.length})
+        </summary>
+        <ul className="offers">
+          {rows.map((row) => (
+            <li key={row.id} className="offer">
+              <p className="offer__text">{row.text}</p>
+              {row.note && <p className="panel__sub">{row.note}</p>}
+              <ActionRow actions={row.actions} />
+            </li>
+          ))}
+        </ul>
+      </details>
     </section>
   )
 }
@@ -1452,6 +1853,35 @@ export function DiplomacyPanel({
   offers?: { incoming: readonly OfferRow[]; outgoing: readonly OfferRow[] }
   tradeForm?: TradeFormSpec
 }) {
+  // Wer eine Macht waehlt, will handeln (T-M46-06): der Blick springt zum Anfang ihrer Aktionen (Block an den
+  // oberen Rand der Seitenleiste, 1 bis 2 Bildlaeufe weniger), der Fokus auf den ersten Knopf (Tab ginge sonst durch
+  // Tabelle und Kriegsliste). Auch bei erneutem Klick auf die schon gewaehlte Macht, nicht aber beim Oeffnen mit
+  // gewaehlter Macht (Sprung aus einer Meldung): `chosenAt` zaehlt nur die Klicks.
+  const chosenBlock = useRef<HTMLDivElement>(null)
+  const panelRoot = useRef<HTMLElement>(null)
+  // Per Kurztaste D geoeffnet landet der Fokus auf der ersten Macht, mit schon gewaehlter Macht (Sprung aus einer
+  // Meldung) auf ihrer ersten freien Handlung (T-M46-05): vorher 18 bis 24 Tabs bis zur Machtetabelle.
+  useEffect(() => {
+    const root = panelRoot.current
+    if (!root) return
+    const first = chosenBlock.current?.querySelector<HTMLElement>('button:not(:disabled)') ?? root.querySelector<HTMLElement>('.nation-select')
+    first?.focus({ preventScroll: true })
+    // Nur beim Oeffnen: spaeter gehoert der Fokus dem Spieler (und `chosenAt` fuehrt ihn zur gewaehlten Macht).
+  }, [])
+  // Mit schon gewaehlter Macht geoeffnet = der Sprung aus einer Meldung (Angebot): die Angebote stehen offen.
+  const openedWithPartner = useRef(Boolean(chosen))
+  const [chosenAt, setChosenAt] = useState(0)
+  useEffect(() => {
+    if (chosenAt === 0) return
+    const block = chosenBlock.current
+    if (!block) return
+    // LOESCHVERMERK (Review): `scrollIntoView` rollte auch overflow:hidden-Vorfahren, die ganze App stand um die
+    // Kopfhoehe zu hoch (header.y = -82, V3 Nachbesserung U). Ersatz: `scrollWithin` rollt nur die Seitenleiste.
+    // block.scrollIntoView?.({ block: 'start' })
+    scrollWithin(block)
+    block.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus({ preventScroll: true })
+  }, [chosenAt])
+
   if (!view || view.others.length === 0) {
     return (
       <section className="panel" aria-label={t('diplomacy.title')}>
@@ -1466,8 +1896,11 @@ export function DiplomacyPanel({
   const canChoose = Boolean(onChoose)
 
   return (
-    <section className="panel" aria-label={t('diplomacy.title')}>
+    <section className="panel" aria-label={t('diplomacy.title')} ref={panelRoot}>
       <PanelHead title={t('diplomacy.title')} onClose={onClose} />
+      {/* Eingehende zuerst (T-M17-14): so landet der Sprung aus einer Meldung darauf. */}
+      {offers && <OfferList title={t('diplomacy.incoming')} rows={offers.incoming} open={openedWithPartner.current} />}
+      {offers && <OfferList title={t('diplomacy.outgoing')} rows={offers.outgoing} open={false} />}
       {reputationMax !== undefined && (
         <Meter
           label={t('diplomacy.ownReputation')}
@@ -1477,9 +1910,6 @@ export function DiplomacyPanel({
           tone={toneForShare(clamp(view.self.reputation, 0, reputationMax) / reputationMax)}
         />
       )}
-      {/* Eingehende zuerst (T-M17-14): so landet der Sprung aus einer Meldung darauf. */}
-      {offers && <OfferList title={t('diplomacy.incoming')} rows={offers.incoming} />}
-      {offers && <OfferList title={t('diplomacy.outgoing')} rows={offers.outgoing} />}
       {/*
         Befund 1 der Sichtpruefung U (T-M17-14, Nacharbeit, hoch): eine fuenfte Spalte
         "Macht wählen" sprengte bei 380px Seitenleistenbreite den Rahmen (465px Tabelle
@@ -1508,7 +1938,10 @@ export function DiplomacyPanel({
                       type="button"
                       className="nation-select"
                       aria-pressed={other.id === chosen}
-                      onClick={() => onChoose?.(other.id)}
+                      onClick={() => {
+                        onChoose?.(other.id)
+                        setChosenAt((count) => count + 1)
+                      }}
                     >
                       <NationName color={other.color}>{nameOf(other.id)}</NationName>
                     </button>
@@ -1559,8 +1992,12 @@ export function DiplomacyPanel({
           </ul>
         )}
       </section>
+      {/* Die Aktionen der gewaehlten Macht (T-M46-06, Befund 8): gemessen an S575G 1280x800 lagen Krieg, Buendnis,
+          Durchmarsch und Handel nach 1852 px Inhalt in 566 px Hoehe, ein bis zwei Bildlaeufe je Handlung. Wer eine
+          Macht waehlt, wird zum Anfang dieses Blocks gefuehrt (Rollstellung und Fokus, siehe oben). Reihenfolge:
+          Vertraege, Handel, Durchmarsch - was oft gebraucht wird, zuerst. */}
       {chosenAlive && (
-        <>
+        <div className="diplomacy__chosen" ref={chosenBlock}>
           {actionsFor && (
             <ActionGroup
               group={{
@@ -1575,16 +2012,16 @@ export function DiplomacyPanel({
               }}
             />
           )}
+          {tradeForm && (
+            <TradeOfferForm key={chosenAlive.id} partner={chosenAlive.id} partnerName={nameOf(chosenAlive.id)} spec={tradeForm} />
+          )}
           {passageFor && (
             <ActionGroup
               group={{ id: 'passage', title: t('diplomacy.passageGroup'), actions: passageFor(chosenAlive.id) }}
               collectReasons
             />
           )}
-          {tradeForm && (
-            <TradeOfferForm key={chosenAlive.id} partner={chosenAlive.id} partnerName={nameOf(chosenAlive.id)} spec={tradeForm} />
-          )}
-        </>
+        </div>
       )}
     </section>
   )
@@ -1640,7 +2077,17 @@ export function TradeOfferForm({
         {t('trade.title', { nation: partnerName })}
         <Explain textKey="explain.trade" subject={t('trade.titleShort')} />
       </h3>
-      <table className="table trade-form__table">
+      {/* Eingabe in einem Mengenfeld schickt das Angebot ab (T-M46-05): sonst waren es 13 Tabs vom letzten Feld bis
+          zum Knopf. Gilt nur, solange der Knopf frei ist - dieselbe Bedingung, unter der er klickbar ist. */}
+      <table
+        className="table trade-form__table"
+        onKeyDown={(event) => {
+          if (event.key !== 'Enter' || !(event.target instanceof HTMLInputElement)) return
+          event.preventDefault()
+          const action = result.action
+          if (action.disabledReason === null && (action.pendingNotice === undefined || action.ackOnly === true)) action.onRun()
+        }}
+      >
         <thead>
           <tr>
             <th>{t('trade.resource')}</th>
@@ -1668,7 +2115,8 @@ export function TradeOfferForm({
                 />
                 {/* Der Bestand nur in der Geben-Spalte (T-M17-14, Test P7): der Partnerbestand ist der
                     Oberflaeche unbekannt (E10). */}
-                <p className="panel__sub">{t('trade.stock', { amount: amount(spec.stock[key] ?? 0) })}</p>
+                {/* LOESCHVERMERK (Review): bis T-M46-06 `<p className="panel__sub">` unter dem Feld (Zeile 50 px statt 30 px). */}
+                <span className="panel__sub trade-form__stock">{t('trade.stock', { amount: amount(spec.stock[key] ?? 0) })}</span>
               </td>
               <td>
                 <input
@@ -1687,6 +2135,15 @@ export function TradeOfferForm({
           ))}
         </tbody>
       </table>
+      {/* Vorschau, Grenzen und der Knopf stehen direkt unter den Rohstoffen (T-M46-06): sie sind die Handlung. */}
+      <p className="facts__inline">{result.text}</p>
+      <p className="panel__sub">
+        {t('trade.limits', { money: amount(spec.limits.money), resource: amount(spec.limits.resource) })}
+      </p>
+      <ActionRow actions={[result.action]} />
+      {/* Provinzen handeln ist die seltene Ausnahme: zugeklappt, damit das Formular ueber dem Falz bleibt. */}
+      <details className="trade-form__provinces">
+        <summary>{t('trade.provincesToggle')}</summary>
       <label>
         <span>{t('trade.giveProvince')}</span>
         <select
@@ -1751,11 +2208,7 @@ export function TradeOfferForm({
           ))}
         </ul>
       )}
-      <p className="facts__inline">{result.text}</p>
-      <p className="panel__sub">
-        {t('trade.limits', { money: amount(spec.limits.money), resource: amount(spec.limits.resource) })}
-      </p>
-      <ActionRow actions={[result.action]} />
+      </details>
     </section>
   )
 }
@@ -2033,16 +2486,21 @@ export function EconomyPanel({
         onToggle={(event) => rememberEconomyOpen(event.currentTarget.open)}
       >
       <summary>
-        <h2>{t('economy.title')}</h2>
+        {/* LOESCHVERMERK (Review): bis T-M46-17 <h2>{t('economy.title')}</h2> als Wort; die Tabelle stand als Text
+            auch im geschlossenen <details> im Dokument und wird jetzt erst beim Oeffnen gezeichnet. */}
+        <h2>
+          <Icon name="economy" size={28} title={t('economy.title')} />
+        </h2>
       </summary>
+      {open && (
       <table className="table table--numbers">
         <thead>
           <tr>
-            <th>{t('economy.resource')}</th>
-            <th>{t('economy.stock')}</th>
-            <th>{t('economy.production')}</th>
-            <th>{t('economy.consumption')}</th>
-            <th>{t('economy.balance')}</th>
+            <th aria-label={t('economy.resource')} title={t('economy.resource')}><Icon name="deposits" size={20} /></th>
+            <th aria-label={t('economy.stock')} title={t('economy.stock')}><Icon name="stock" size={20} /></th>
+            <th aria-label={t('economy.production')} title={t('economy.production')}><Icon name="factory" size={20} /></th>
+            <th aria-label={t('economy.consumption')} title={t('economy.consumption')}><Icon name="arrowDown" size={20} /></th>
+            <th aria-label={t('economy.balance')} title={t('economy.balance')}><Icon name="market" size={20} /></th>
           </tr>
         </thead>
         <tbody>
@@ -2051,8 +2509,7 @@ export function EconomyPanel({
               <td>
                 {/* Dasselbe Zeichen wie in der Kopfleiste und in der Vorkommenzeile:
                     der Satz ist da, die Tabelle war die letzte Stelle ohne ihn. */}
-                <Icon name={RESOURCE_ICONS[key] ?? 'warning'} size={13} />{' '}
-                {t(`resources.${key}`)}
+                <Icon name={RESOURCE_ICONS[key] ?? 'warning'} size={22} title={t(`resources.${key}`)} />
                 <Explain textKey={`explain.resources.${key}`} subject={t(`resources.${key}`)} />
               </td>
               <td className="eco__stock">
@@ -2101,6 +2558,7 @@ export function EconomyPanel({
           ))}
         </tbody>
       </table>
+      )}
       </details>
     </section>
   )

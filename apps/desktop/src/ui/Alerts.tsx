@@ -1,15 +1,16 @@
+import { useState } from 'react'
 import type { GameEvent, PublicView } from '@worldwar/core'
 import { accusativePronoun, indefiniteArticle, noneOf } from '../i18n/grammar.ts'
 import { t } from '../i18n/text.ts'
 import {
   BUILDING_ICONS,
-  Icon,
   RELATION_ICONS,
   RESOURCE_ICONS,
   SPY_MISSION_ICONS,
   UNIT_ICONS,
   type IconName,
 } from './icons.tsx'
+import { Icon } from './Icon.tsx'
 
 /**
  * What needs looking at, right now (T-M13-13, R-UI-14).
@@ -55,6 +56,11 @@ export interface Alert {
   kind: AlertKind
   icon: IconName
   text: string
+  /**
+   * Das Kurzwort im Bild (T-M46-17): der Ort oder die Macht, nicht der Satz. Der ganze Satz steht als Name des
+   * Zeichens (aria-label) und als Tooltip. Fehlt es, traegt das Zeichen allein die Meldung.
+   */
+  short?: string
   /** Nur Freischaltungen: der Name der Sache, fuer die Sammelzeile (T-M44-12). */
   thing?: string
   provinceId?: string
@@ -240,6 +246,7 @@ function offerAlerts(view: PublicView): Alert[] {
     kind: 'offer',
     icon: 'trade',
     text: t('alerts.tradeOffer', { nation: nationOf(offer.from) }),
+    short: nationOf(offer.from),
     diplomacyWith: offer.from,
   }))
 
@@ -248,6 +255,7 @@ function offerAlerts(view: PublicView): Alert[] {
     kind: 'offer',
     icon: RELATION_ICONS[offer.kind],
     text: t(`alerts.offer.${offer.kind}`, { nation: nationOf(offer.from) }),
+    short: nationOf(offer.from),
     diplomacyWith: offer.from,
   }))
 
@@ -273,6 +281,7 @@ export function alertsFor(
       kind: 'battle',
       icon: 'battle',
       text: t('alerts.battle', { province: nameOf(battle.provinceId) }),
+      short: nameOf(battle.provinceId),
       provinceId: battle.provinceId,
     })
   }
@@ -292,6 +301,7 @@ export function alertsFor(
       kind: 'overrun',
       icon: 'warning',
       text: t('alerts.overrun', { province: nameOf(army.provinceId) }),
+      short: nameOf(army.provinceId),
       provinceId: army.provinceId,
     })
   }
@@ -337,6 +347,7 @@ export function alertsFor(
       kind: 'unrest',
       icon: 'warning',
       text: t('alerts.unrest', { province: province.name }),
+      short: province.name,
       provinceId: province.id,
     })
   }
@@ -357,6 +368,7 @@ export function alertsFor(
           building: t(`buildings.${entry.building}`),
           province: province.name,
         }),
+        short: province.name,
         provinceId: province.id,
       })
     }
@@ -370,6 +382,7 @@ export function alertsFor(
           unit: t(`units.${entry.unitKey}`),
           province: province.name,
         }),
+        short: province.name,
         provinceId: province.id,
       })
     }
@@ -442,6 +455,7 @@ export function espionageAlerts(events: readonly GameEvent[], viewerId: string, 
         kind: 'sabotage',
         icon: event.kind === 'economic' ? 'spyEconomic' : 'spyMilitary',
         text: t(event.kind === 'economic' ? 'alerts.sabotageEconomic' : 'alerts.sabotageMilitary', { province }),
+        short: province,
         provinceId: event.provinceId,
         tick: event.tick,
       })
@@ -457,6 +471,7 @@ export function espionageAlerts(events: readonly GameEvent[], viewerId: string, 
           kind: 'espionage',
           icon: 'spyCounter',
           text: t('alerts.spyCaught', { province, player: naming.player(event.playerId) }),
+          short: province,
           provinceId: event.provinceId,
           tick: event.tick,
         })
@@ -466,6 +481,7 @@ export function espionageAlerts(events: readonly GameEvent[], viewerId: string, 
           kind: 'espionage',
           icon: SPY_MISSION_ICONS[event.mission],
           text: t('alerts.spyExposed', { province, mission: t(`espionage.missions.${event.mission}`) }),
+          short: province,
           provinceId: event.provinceId,
           tick: event.tick,
         })
@@ -477,6 +493,7 @@ export function espionageAlerts(events: readonly GameEvent[], viewerId: string, 
         kind: 'espionage',
         icon: 'money',
         text: t('alerts.spyUnpaid', { province: naming.province(event.provinceId) }),
+        short: naming.province(event.provinceId),
         provinceId: event.provinceId,
         tick: event.tick,
       })
@@ -487,6 +504,7 @@ export function espionageAlerts(events: readonly GameEvent[], viewerId: string, 
         kind: 'espionage',
         icon: SPY_MISSION_ICONS[event.mission],
         text: t('alerts.spyTargetChanged', { province: naming.province(event.provinceId) }),
+        short: naming.province(event.provinceId),
         provinceId: event.provinceId,
         tick: event.tick,
       })
@@ -553,6 +571,44 @@ function targetOf(alert: Alert): JumpTarget | null {
   return null
 }
 
+/**
+ * Eine Sammelzeile (Aufstandshinweise): Zeichen und Zahl; aufgeklappt stehen die Provinzen darunter, jede mit
+ * ihrem Sprung. Die Liste wird erst beim Aufklappen gezeichnet (T-M46-17): als geschlossenes <details> steht ihr
+ * Text trotzdem im Dokument, und Messung wie Vorleseprogramm sehen ihn dann ohne dass jemand ihn aufgeklappt hat.
+ */
+function AlertGroup({ alert, group, onJump }: { alert: Alert; group: readonly Alert[]; onJump: (target: JumpTarget) => void }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <details open={open} onToggle={(event) => setOpen(event.currentTarget.open)}>
+      <summary aria-label={alert.text} title={alert.text}>
+        <Icon name={alert.icon} size={ALERT_ICON} />
+        {alert.short}
+      </summary>
+      {open && (
+        <ul className="alert__parts">
+          {group.map((part) => {
+            const partTarget = targetOf(part)
+            return (
+              <li key={part.id}>
+                {partTarget ? (
+                  <button type="button" className="alert__jump" aria-label={part.text} title={part.text} onClick={() => onJump(partTarget)}>
+                    {part.short ?? part.text}
+                  </button>
+                ) : (
+                  <span>{part.short ?? part.text}</span>
+                )}
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </details>
+  )
+}
+
+/** Die Groesse des Meldungszeichens (T-M46-17): gross genug, dass es und nicht das Kurzwort die Meldung traegt. */
+const ALERT_ICON = 28
+
 export function Alerts({
   alerts,
   onJump,
@@ -568,32 +624,57 @@ export function Alerts({
   // Mehrere Freischaltungen am selben Tag belegten je eine Zeile Panelhoehe (T-M44-12): sie
   // stehen als eine Sammelzeile an der Stelle der ersten, und ein Klick blendet alle aus.
   const unlocks = alerts.filter((alert) => alert.kind === 'unlock')
-  const rows: { alert: Alert; ids: string[] }[] = []
+  // Dasselbe fuer Aufstandshinweise (T-M46-11, Befund 10): sechs Zeilen schoben Provinz- und Armeepanel um
+  // ~190 px nach unten, Bauplaetze lagen abgeschnitten. Ab zwei werden sie eine Zeile mit Zahl, die sich
+  // zu den Provinzen aufklappt - jede mit ihrem Sprung.
+  const unrests = alerts.filter((alert) => alert.kind === 'unrest')
+  const rows: { alert: Alert; ids: string[]; group?: readonly Alert[] }[] = []
   for (const alert of alerts) {
-    if (alert.kind !== 'unlock' || unlocks.length < 2) {
+    if (alert.kind === 'unrest' && unrests.length >= 2) {
+      if (alert === unrests[0]) {
+        rows.push({
+          alert: { ...alert, text: t('alerts.unrestMany', { count: unrests.length }), short: String(unrests.length) },
+          ids: unrests.map((entry) => entry.id),
+          group: unrests,
+        })
+      }
+    } else if (alert.kind !== 'unlock' || unlocks.length < 2) {
       rows.push({ alert, ids: [alert.id] })
     } else if (alert === unlocks[0]) {
       rows.push({
-        alert: { ...alert, text: t('alerts.unlockMany', { things: unlocks.map((entry) => entry.thing ?? entry.text).join(', ') }) },
+        alert: { ...alert, text: t('alerts.unlockMany', { things: unlocks.map((entry) => entry.thing ?? entry.text).join(', ') }), short: String(unlocks.length) },
         ids: unlocks.map((entry) => entry.id),
       })
     }
   }
 
+  // Zeichen gross, Kurzwort klein (T-M46-17): der Satz steht als Name des Zeichens und als Tooltip.
+  // LOESCHVERMERK (Review): bis T-M46-17 stand der ganze Satz neben einem 14-px-Zeichen
+  // (<Icon name={alert.icon} size={14} /> und {alert.text} im Knopf bzw. in der Zusammenfassung).
   return (
     <section className="alerts" aria-label={t('alerts.title')}>
       <ul>
-        {rows.map(({ alert, ids }) => {
+        {rows.map(({ alert, ids, group }) => {
           const target = targetOf(alert)
+          if (group) {
+            return (
+              <li key={alert.id} className={`alert alert--${alert.kind} alert--group`}>
+                <AlertGroup alert={alert} group={group} onJump={onJump} />
+              </li>
+            )
+          }
           return (
             <li key={alert.id} className={`alert alert--${alert.kind}`}>
-              <Icon name={alert.icon} size={14} />
               {target ? (
-                <button type="button" className="alert__jump" onClick={() => onJump(target)}>
-                  {alert.text}
+                <button type="button" className="alert__jump" aria-label={alert.text} title={alert.text} onClick={() => onJump(target)}>
+                  <Icon name={alert.icon} size={ALERT_ICON} />
+                  {alert.short}
                 </button>
               ) : (
-                <span>{alert.text}</span>
+                <span className="alert__plain" title={alert.text}>
+                  <Icon name={alert.icon} size={ALERT_ICON} title={alert.text} />
+                  {alert.short}
+                </span>
               )}
               {/* Leise wie die Meldung (M36): keine Farbe, kein Sprung, kein Ton. */}
               {onDismiss && isDismissible(alert) && (
@@ -604,7 +685,7 @@ export function Alerts({
                   title={t('alerts.dismissTitle')}
                   onClick={() => ids.forEach((id) => onDismiss(id))}
                 >
-                  <span aria-hidden="true">×</span>
+                  <Icon name="close" size={16} />
                 </button>
               )}
             </li>

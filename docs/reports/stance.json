@@ -530,10 +530,10 @@
     },
     "nachher": {
       "adjutant": "D30.4 seit T-M40-10: Verteidigung rueckt nur nach, wenn in ihrer Provinz eine weitere Armee bleibt; Angriff marschiert nie; eine Etappe in eigenes Land; fuenf Tage Ruhe ab dem Abmarsch; seit T-M40-15 zaehlt ein Rueckzug-Klick im selben Tick als Ausruecken",
-      "measuredAtCommit": "12cdb28cbe2e76ced6155b7fb1dbd825dab2e711",
+      "measuredAtCommit": "91faf0320e4b8a2ffeaf39ed8eed26d652fa00a5",
       "measuredDirty": [],
-      "stand": "gemessen auf 12cdb28, Arbeitsbaum sauber",
-      "measuredAt": "2026-10-03T11:54:49.169Z",
+      "stand": "gemessen auf 91faf03, Arbeitsbaum sauber",
+      "measuredAt": "2026-10-04T16:59:06.858Z",
       "ak5": {
         "provinceDays": {
           "garrison": 4082,

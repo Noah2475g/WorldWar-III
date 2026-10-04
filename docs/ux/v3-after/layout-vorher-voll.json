@@ -1,0 +1,273 @@
+{
+  "tag": "vorher-voll",
+  "state": "S575G",
+  "runs": [
+    {
+      "viewport": "375x667",
+      "scenes": {
+        "kopf": {
+          "headerHeight": 97,
+          "topScrollWidth": 1561,
+          "topClientWidth": 375,
+          "controls": 17,
+          "controlsInView": 5,
+          "controlsOutside": [
+            "25",
+            "50",
+            "100",
+            "Vorspulen",
+            "Besitz",
+            "Rohstoffe",
+            "Moral",
+            "Truppenstärke",
+            "Beziehungen",
+            "Spielstände",
+            "Menü",
+            "Einmarsch in Oberägypten"
+          ],
+          "chipInView": false
+        },
+        "protokollKarte": {
+          "present": true,
+          "box": {
+            "h": 44,
+            "w": 375
+          },
+          "entriesInDom": 81,
+          "visibleRows": 1,
+          "filterVisible": false,
+          "filterButtonsInView": 0
+        },
+        "ohnePanel": {
+          "side": {
+            "y": 397,
+            "h": 168,
+            "w": 375
+          },
+          "sideShareOfViewport": 0.252,
+          "sideScrollH": 468,
+          "map": {
+            "y": 97,
+            "h": 300,
+            "w": 375
+          },
+          "mapShare": 0.45,
+          "foot": {
+            "y": 565,
+            "h": 102,
+            "w": 375
+          },
+          "sheet": null,
+          "panelOpen": "closed"
+        },
+        "protokollZeilen": {
+          "rows": 71,
+          "days": 5,
+          "rowsPerDay": {
+            "572": 14,
+            "573": 12,
+            "574": 6,
+            "575": 35,
+            "576": 4
+          },
+          "maxRowsPerDay": 35,
+          "withPlace": 42,
+          "withPlaceShare": 0.592,
+          "collected": 27,
+          "major": 0
+        },
+        "pulse": {
+          "distinctPlaces": 0,
+          "places": []
+        },
+        "hinweise": {
+          "height": 548,
+          "rows": 11,
+          "unrestRows": 8,
+          "unrestTexts": [
+            "Äthiopien steht vor dem Aufstand",
+            "Liberia steht vor dem Aufstand",
+            "Niger steht vor dem Aufstand",
+            "Sudan steht vor dem Aufstand",
+            "Senegal steht vor dem Aufstand",
+            "Sierra Leone steht vor dem Aufstand",
+            "Togo steht vor dem Aufstand",
+            "Tunesien steht vor dem Aufstand"
+          ]
+        },
+        "panel": {
+          "side": {
+            "y": 304,
+            "h": 261,
+            "w": 375
+          },
+          "sideShareOfViewport": 0.392,
+          "sideScrollH": 2490,
+          "map": {
+            "y": 97,
+            "h": 207,
+            "w": 375
+          },
+          "mapShare": 0.31,
+          "foot": {
+            "y": 565,
+            "h": 102,
+            "w": 375
+          },
+          "sheet": "half",
+          "panelOpen": "open"
+        }
+      },
+      "errors": []
+    },
+    {
+      "viewport": "1280x800",
+      "scenes": {
+        "kopf": {
+          "headerHeight": 67,
+          "topScrollWidth": 1280,
+          "topClientWidth": 1280,
+          "controls": 13,
+          "controlsInView": 13,
+          "controlsOutside": [],
+          "chipInView": true
+        },
+        "protokollKarte": {
+          "present": true,
+          "box": {
+            "h": 167,
+            "w": 907
+          },
+          "entriesInDom": 81,
+          "visibleRows": 13,
+          "filterVisible": true,
+          "filterButtonsInView": 5
+        },
+        "ohnePanel": {
+          "side": {
+            "y": 67,
+            "h": 566,
+            "w": 380
+          },
+          "sideShareOfViewport": 0.707,
+          "sideScrollH": 566,
+          "map": {
+            "y": 67,
+            "h": 566,
+            "w": 900
+          },
+          "mapShare": 0.707,
+          "foot": {
+            "y": 632,
+            "h": 168,
+            "w": 1280
+          },
+          "sheet": null,
+          "panelOpen": "closed"
+        },
+        "protokollZeilen": {
+          "rows": 71,
+          "days": 5,
+          "rowsPerDay": {
+            "572": 14,
+            "573": 12,
+            "574": 6,
+            "575": 35,
+            "576": 4
+          },
+          "maxRowsPerDay": 35,
+          "withPlace": 42,
+          "withPlaceShare": 0.592,
+          "collected": 27,
+          "major": 0
+        },
+        "pulse": {
+          "distinctPlaces": 0,
+          "places": []
+        },
+        "hinweise": {
+          "height": 352,
+          "rows": 11,
+          "unrestRows": 8,
+          "unrestTexts": [
+            "Äthiopien steht vor dem Aufstand",
+            "Liberia steht vor dem Aufstand",
+            "Niger steht vor dem Aufstand",
+            "Sudan steht vor dem Aufstand",
+            "Senegal steht vor dem Aufstand",
+            "Sierra Leone steht vor dem Aufstand",
+            "Togo steht vor dem Aufstand",
+            "Tunesien steht vor dem Aufstand"
+          ]
+        },
+        "diplomatieAuswahl": {
+          "sideClientH": 566,
+          "names": 7,
+          "inView": 0,
+          "lastY": 861,
+          "alertsH": 352
+        },
+        "diplomatie": {
+          "sideClientH": 566,
+          "sideScrollH": 1983,
+          "probes": [
+            {
+              "label": "Krieg erklaeren",
+              "found": true,
+              "inView": false,
+              "y": 775
+            },
+            {
+              "label": "Frieden anbieten",
+              "found": true,
+              "inView": false,
+              "y": 775
+            },
+            {
+              "label": "Feld Nahrung geben",
+              "found": true,
+              "inView": false,
+              "y": 1105
+            },
+            {
+              "label": "Feld Material verlangen",
+              "found": true,
+              "inView": false,
+              "y": 1163
+            },
+            {
+              "label": "Handel anbieten",
+              "found": true,
+              "inView": false,
+              "y": 1550
+            }
+          ],
+          "belowFold": 5
+        },
+        "panel": {
+          "side": {
+            "y": 67,
+            "h": 566,
+            "w": 380
+          },
+          "sideShareOfViewport": 0.707,
+          "sideScrollH": 1356,
+          "map": {
+            "y": 67,
+            "h": 566,
+            "w": 900
+          },
+          "mapShare": 0.707,
+          "foot": {
+            "y": 632,
+            "h": 168,
+            "w": 1280
+          },
+          "sheet": "half",
+          "panelOpen": "open"
+        }
+      },
+      "errors": []
+    }
+  ]
+}

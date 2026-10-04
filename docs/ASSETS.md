@@ -1,7 +1,9 @@
 # ASSETS — Herkunft und Lizenz aller Fremdinhalte
 
 Anforderung R-ASSET-01 verbietet Fremdassets ohne freie Lizenz, R-ASSET-02 lässt nur
-gemeinfreie, CC0-, OFL- oder MIT-artige Lizenzen zu. Diese Datei ist der Nachweis. Sie
+gemeinfreie, CC0-, OFL-, MIT-artige und (seit 2026-10-04) CC-BY-Lizenzen zu; bei CC BY stehen
+Urheber, Lizenz und Quelle je Datei hier und im Spiel unter „Mitwirkende“.
+<!-- LOESCHVERMERK (Review): vorher „R-ASSET-02 lässt nur gemeinfreie, CC0-, OFL- oder MIT-artige Lizenzen zu.“ — geöffnet für CC BY auf Noahs Wort, DECISIONS 2026-10-04. --> Diese Datei ist der Nachweis. Sie
 wird von `packages/mapgen/src/sources.test.ts` gegen das Quellenregister im Code geprüft —
 eine Quelle, die hier fehlt, lässt den Testlauf scheitern.
 
@@ -85,9 +87,12 @@ gezeichnet in der Formensprache militärischer Lagekarten — Rechteck mit Diago
 für Infanterie, Oval für Panzer, Winkel für Artillerie. Diese Formensprache ist eine
 gemeinfreie Konvention, kein Werk; übernommen wurde nichts.
 
-**Klänge** (`apps/desktop/src/ui/sound.ts`): keine Aufnahmen, sondern erzeugte Töne über
-die Web-Audio-Schnittstelle — je Ereignis ein Oszillator mit Frequenz, Dauer und
-Hüllkurve. Nichts wird geladen, nichts ist lizenziert, nichts wiegt etwas.
+<!-- LOESCHVERMERK (Review): bis T-M46-14 stand hier „Klänge (`apps/desktop/src/ui/sound.ts`): keine Aufnahmen, sondern
+erzeugte Töne über die Web-Audio-Schnittstelle — je Ereignis ein Oszillator mit Frequenz, Dauer und Hüllkurve. Nichts wird
+geladen, nichts ist lizenziert, nichts wiegt etwas.“ Seit T-M46-14 klingt jede Ereignisart nach einer Aufnahme von Kenney
+(Abschnitt „Klänge von Dritten“ unten); die erzeugten Töne in `sound.ts` bleiben nur als Rückfall. -->
+**Klänge** (`apps/desktop/src/ui/sound.ts`): Aufnahmen von Kenney (CC0), siehe „Klänge von Dritten“ unten; erzeugte
+Töne über die Web-Audio-Schnittstelle bleiben als Rückfall, falls sich eine Datei nicht dekodieren lässt.
 
 ## Anwendungssymbol — Eigenerzeugnis, kein Fremdinhalt
 
@@ -630,3 +635,181 @@ Erzeugt mit `node scripts/ux-capture.mjs --out docs/ux/after --measure-only 1920
 | `docs/ux/after/x-krieg-fragt-nach-1366x768.png` | `scripts/ux-capture.mjs` | krieg fragt nach, 1366x768 |
 | `docs/ux/after/x-krieg-fragt-nach-375x667.png` | `scripts/ux-capture.mjs` | krieg fragt nach, 375x667 |
 | `docs/ux/after/x-krieg-fragt-nach-667x375.png` | `scripts/ux-capture.mjs` | krieg fragt nach, 667x375 |
+
+## Bildschirmfotos der Spaetspiel-Aufnahme (V3 P0-B1, 2026-10-04)
+
+Kein Fremdinhalt — Bildschirmfotos des eigenen Spiels, erzeugt mit `node scripts/ux-late.mjs --out docs/ux/v3-before` (Playwright gegen den Dev-Server, Staende `test/fixtures/v3`). Nur 375x667 und 1280x800 (PLAN-V3 Regel 12). Sie stehen hier, weil `test/guards/no-foreign-assets.test.ts` jede eingecheckte Bilddatei namentlich verlangt. Befunde: `docs/ux/v3-before/messwerte-spaet.json`.
+
+| Datei | Erzeugt von | Zeigt |
+|---|---|---|
+| `docs/ux/v3-before/S100-04-karte-brennpunkt-1280x800.png` | `scripts/ux-late.mjs` | Tag 100: Karte im Brennpunkt der Armeen, 1280x800 |
+| `docs/ux/v3-before/S100-04-karte-brennpunkt-375x667.png` | `scripts/ux-late.mjs` | Tag 100: Karte im Brennpunkt der Armeen, 375x667 |
+| `docs/ux/v3-before/S100-06-protokoll-alles-1280x800.png` | `scripts/ux-late.mjs` | Tag 100: volles Protokoll, 1280x800 |
+| `docs/ux/v3-before/S100-06-protokoll-alles-375x667.png` | `scripts/ux-late.mjs` | Tag 100: volles Protokoll, 375x667 |
+| `docs/ux/v3-before/S100-12-diplomatie-1280x800.png` | `scripts/ux-late.mjs` | Tag 100: Diplomatie, 1280x800 |
+| `docs/ux/v3-before/S100-12-diplomatie-375x667.png` | `scripts/ux-late.mjs` | Tag 100: Diplomatie, 375x667 |
+| `docs/ux/v3-before/S300-04-karte-brennpunkt-1280x800.png` | `scripts/ux-late.mjs` | Tag 300: Karte im Brennpunkt der Armeen, 1280x800 |
+| `docs/ux/v3-before/S300-04-karte-brennpunkt-375x667.png` | `scripts/ux-late.mjs` | Tag 300: Karte im Brennpunkt der Armeen, 375x667 |
+| `docs/ux/v3-before/S300-06-protokoll-alles-1280x800.png` | `scripts/ux-late.mjs` | Tag 300: volles Protokoll, 1280x800 |
+| `docs/ux/v3-before/S300-06-protokoll-alles-375x667.png` | `scripts/ux-late.mjs` | Tag 300: volles Protokoll, 375x667 |
+| `docs/ux/v3-before/S300-12-diplomatie-1280x800.png` | `scripts/ux-late.mjs` | Tag 300: Diplomatie, 1280x800 |
+| `docs/ux/v3-before/S300-12-diplomatie-375x667.png` | `scripts/ux-late.mjs` | Tag 300: Diplomatie, 375x667 |
+| `docs/ux/v3-before/S575-04-karte-brennpunkt-1280x800.png` | `scripts/ux-late.mjs` | Tag 575: Karte im Brennpunkt der Armeen, 1280x800 |
+| `docs/ux/v3-before/S575-04-karte-brennpunkt-375x667.png` | `scripts/ux-late.mjs` | Tag 575: Karte im Brennpunkt der Armeen, 375x667 |
+| `docs/ux/v3-before/S575-06-protokoll-alles-1280x800.png` | `scripts/ux-late.mjs` | Tag 575: volles Protokoll, 1280x800 |
+| `docs/ux/v3-before/S575-06-protokoll-alles-375x667.png` | `scripts/ux-late.mjs` | Tag 575: volles Protokoll, 375x667 |
+| `docs/ux/v3-before/S575-12-diplomatie-1280x800.png` | `scripts/ux-late.mjs` | Tag 575: Diplomatie, 1280x800 |
+| `docs/ux/v3-before/S575-12-diplomatie-375x667.png` | `scripts/ux-late.mjs` | Tag 575: Diplomatie, 375x667 |
+| `docs/ux/v3-before/S575G-01-karte-geladen-1280x800.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Karte nach dem Laden, 1280x800 |
+| `docs/ux/v3-before/S575G-01-karte-geladen-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Karte nach dem Laden, 375x667 |
+| `docs/ux/v3-before/S575G-02-karte-besitz-1280x800.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Karte Besitz, 1280x800 |
+| `docs/ux/v3-before/S575G-02-karte-besitz-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Karte Besitz, 375x667 |
+| `docs/ux/v3-before/S575G-03-karte-truppen-1280x800.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Karte Truppenstaerke, 1280x800 |
+| `docs/ux/v3-before/S575G-03-karte-truppen-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Karte Truppenstaerke, 375x667 |
+| `docs/ux/v3-before/S575G-04-karte-brennpunkt-1280x800.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Karte im Brennpunkt der Armeen, 1280x800 |
+| `docs/ux/v3-before/S575G-04-karte-brennpunkt-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Karte im Brennpunkt der Armeen, 375x667 |
+| `docs/ux/v3-before/S575G-05-karte-zoom-schieben-1280x800.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Karte gezoomt, 1280x800 |
+| `docs/ux/v3-before/S575G-05-karte-zoom-schieben-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Karte gezoomt, 375x667 |
+| `docs/ux/v3-before/S575G-06-protokoll-alles-1280x800.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: volles Protokoll, 1280x800 |
+| `docs/ux/v3-before/S575G-06-protokoll-alles-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: volles Protokoll, 375x667 |
+| `docs/ux/v3-before/S575G-07-protokoll-kaempfe-1280x800.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Protokoll Kaempfe, 1280x800 |
+| `docs/ux/v3-before/S575G-07-protokoll-kaempfe-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Protokoll Kaempfe, 375x667 |
+| `docs/ux/v3-before/S575G-08-provinz-eigene-1280x800.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Provinzpanel, 1280x800 |
+| `docs/ux/v3-before/S575G-08-provinz-eigene-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Provinzpanel, 375x667 |
+| `docs/ux/v3-before/S575G-09-armee-ausheben-1280x800.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Armee ausgehoben, 1280x800 |
+| `docs/ux/v3-before/S575G-09-armee-ausheben-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Armee ausgehoben, 375x667 |
+| `docs/ux/v3-before/S575G-10-armee-panel-1280x800.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Armeepanel, 1280x800 |
+| `docs/ux/v3-before/S575G-10-armee-panel-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Armeepanel, 375x667 |
+| `docs/ux/v3-before/S575G-11-armee-marsch-zielwahl-1280x800.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Marsch-Zielwahl, 1280x800 |
+| `docs/ux/v3-before/S575G-11-armee-marsch-zielwahl-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Marsch-Zielwahl, 375x667 |
+| `docs/ux/v3-before/S575G-12-diplomatie-1280x800.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Diplomatie, 1280x800 |
+| `docs/ux/v3-before/S575G-12-diplomatie-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Diplomatie, 375x667 |
+| `docs/ux/v3-before/S575G-13-diplomatie-macht-1280x800.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Diplomatie mit gewaehlter Macht, 1280x800 |
+| `docs/ux/v3-before/S575G-13-diplomatie-macht-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Diplomatie mit gewaehlter Macht, 375x667 |
+| `docs/ux/v3-before/S575G-14-markt-1280x800.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Markt, 1280x800 |
+| `docs/ux/v3-before/S575G-14-markt-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Markt, 375x667 |
+| `docs/ux/v3-before/S575G-15-spionage-1280x800.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Spionage, 1280x800 |
+| `docs/ux/v3-before/S575G-15-spionage-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Spionage, 375x667 |
+| `docs/ux/v3-before/S575G-16-rangliste-1280x800.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Rangliste, 1280x800 |
+| `docs/ux/v3-before/S575G-16-rangliste-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Rangliste, 375x667 |
+| `docs/ux/v3-before/S575G-17-speichern-laden-1280x800.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Spielstaende speichern, 1280x800 |
+| `docs/ux/v3-before/S575G-17-speichern-laden-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Spielstaende speichern, 375x667 |
+| `docs/ux/v3-before/S575G-18-laden-grosser-stand-1280x800.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Laden eines grossen Standes, 1280x800 |
+| `docs/ux/v3-before/S575G-18-laden-grosser-stand-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Laden eines grossen Standes, 375x667 |
+| `docs/ux/v3-before/S575G-19-tempo-100-alarm-1280x800.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Tempo 100 mit Alarm, 1280x800 |
+| `docs/ux/v3-before/S575G-19-tempo-100-alarm-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Tempo 100 mit Alarm, 375x667 |
+
+## Symbole von Dritten — game-icons.net, milsymbol, Lucide (V3 Welle 2, T-M46-13, 2026-10-04)
+
+Auf Noahs Wort vom 2026-10-04 (DECISIONS) ist R-ASSET-02 für **CC BY 3.0** geöffnet; CC BY verlangt die Nennung
+des Urhebers, und die steht hier **und** sichtbar im Spiel (Menü, Eintrag „Mitwirkende“; Quelle der Texte:
+`CREDITS` in `apps/desktop/src/ui/glyphs.ts`). Die Dateien liegen unverändert wie bezogen vor; das Spiel
+verwendet nur den weißen Pfad und füllt ihn mit der Textfarbe (`apps/desktop/src/ui/Icon.tsx`).
+
+**game-icons.net** — Lizenz Creative Commons Attribution 3.0 (https://creativecommons.org/licenses/by/3.0/),
+Bezug https://github.com/game-icons/icons (Ordner je Urheber), Seite https://game-icons.net. Kein Konto nötig.
+
+| Datei | Urheber | Quelle | Zeigt |
+|---|---|---|---|
+| `apps/desktop/src/ui/glyphs/delapouite_barracks.svg` | Delapouite — CC BY 3.0 | https://game-icons.net/1x1/delapouite/barracks.html | Kaserne |
+| `apps/desktop/src/ui/glyphs/delapouite_factory.svg` | Delapouite — CC BY 3.0 | https://game-icons.net/1x1/delapouite/factory.html | Fabrik |
+| `apps/desktop/src/ui/glyphs/delapouite_control-tower.svg` | Delapouite — CC BY 3.0 | https://game-icons.net/1x1/delapouite/control-tower.html | Flugplatz |
+| `apps/desktop/src/ui/glyphs/delapouite_harbor-dock.svg` | Delapouite — CC BY 3.0 | https://game-icons.net/1x1/delapouite/harbor-dock.html | Hafen |
+| `apps/desktop/src/ui/glyphs/delapouite_crane.svg` | Delapouite — CC BY 3.0 | https://game-icons.net/1x1/delapouite/crane.html | Werft |
+| `apps/desktop/src/ui/glyphs/delapouite_military-fort.svg` | Delapouite — CC BY 3.0 | https://game-icons.net/1x1/delapouite/military-fort.html | Festung |
+| `apps/desktop/src/ui/glyphs/delapouite_railway.svg` | Delapouite — CC BY 3.0 | https://game-icons.net/1x1/delapouite/railway.html | Bahn |
+| `apps/desktop/src/ui/glyphs/lorc_wheat.svg` | Lorc — CC BY 3.0 | https://game-icons.net/1x1/lorc/wheat.html | Nahrung |
+| `apps/desktop/src/ui/glyphs/delapouite_wood-pile.svg` | Delapouite — CC BY 3.0 | https://game-icons.net/1x1/delapouite/wood-pile.html | Material |
+| `apps/desktop/src/ui/glyphs/lorc_metal-bar.svg` | Lorc — CC BY 3.0 | https://game-icons.net/1x1/lorc/metal-bar.html | Eisen |
+| `apps/desktop/src/ui/glyphs/delapouite_coal-pile.svg` | Delapouite — CC BY 3.0 | https://game-icons.net/1x1/delapouite/coal-pile.html | Kohle |
+| `apps/desktop/src/ui/glyphs/skoll_oil-drum.svg` | Skoll — CC BY 3.0 | https://game-icons.net/1x1/skoll/oil-drum.html | Öl |
+| `apps/desktop/src/ui/glyphs/lorc_crystal-cluster.svg` | Lorc — CC BY 3.0 | https://game-icons.net/1x1/lorc/crystal-cluster.html | Seltene Erden |
+| `apps/desktop/src/ui/glyphs/delapouite_coins-pile.svg` | Delapouite — CC BY 3.0 | https://game-icons.net/1x1/delapouite/coins-pile.html | Geld |
+
+**milsymbol** — Måns Beckman (Spatial Illusions), Lizenz **MIT**, https://github.com/spatialillusions/milsymbol,
+npm-Paket `milsymbol` (`apps/desktop/package.json`). Erzeugt zur Laufzeit die NATO-Truppenzeichen (APP-6/MIL-STD-2525)
+für die zehn Einheitenarten; es wird keine Datei eingecheckt.
+
+**Lucide** — Lucide Contributors (Eric Fennis u. a.), Lizenz **ISC**, https://github.com/lucide-icons/lucide,
+npm-Paket `lucide-react` (`apps/desktop/package.json`). Oberflächensymbole (Uhr, Pause, Warnung, Beziehungen,
+Gelände, Spionage); keine Datei eingecheckt.
+
+## Klänge von Dritten — Kenney (V3 Welle 2, T-M46-14, 2026-10-04)
+
+Urheber **Kenney** (www.kenney.nl), Lizenz **CC0 1.0** (https://creativecommons.org/publicdomain/zero/1.0/, gemeinfrei
+gestellt; Nennung freiwillig und im Menü unter „Mitwirkende“ trotzdem geführt). Bezug ohne Konto von
+https://kenney.nl/assets/interface-sounds und https://kenney.nl/assets/impact-sounds (ZIP, 835 kB bzw. 801 kB; daraus
+nur die neun Dateien unten, unverändert, OGG). Sie liegen unter `apps/desktop/src/ui/sfx/` und stehen als Daten-URL im
+Bündel (`sound.ts`, kein `fetch`: `connect-src 'none'`).
+
+| Datei | Paket | Ereignisart | Zweck |
+|---|---|---|---|
+| `apps/desktop/src/ui/sfx/select_002.ogg` | Kenney Interface Sounds (CC0) | `select` | Befehl/Auswahl |
+| `apps/desktop/src/ui/sfx/confirmation_002.ogg` | Kenney Interface Sounds (CC0) | `complete` | Bau fertig |
+| `apps/desktop/src/ui/sfx/error_004.ogg` | Kenney Interface Sounds (CC0) | `shortage` | Rohstoffmangel |
+| `apps/desktop/src/ui/sfx/bong_001.ogg` | Kenney Interface Sounds (CC0) | `intruded` | Alarm: Einmarsch |
+| `apps/desktop/src/ui/sfx/question_002.ogg` | Kenney Interface Sounds (CC0) | `diplomacy` | Diplomatie |
+| `apps/desktop/src/ui/sfx/impactMetal_medium_002.ogg` | Kenney Impact Sounds (CC0) | `recruited` | Aushebung |
+| `apps/desktop/src/ui/sfx/impactMetal_heavy_001.ogg` | Kenney Impact Sounds (CC0) | `battle` | Gefecht |
+| `apps/desktop/src/ui/sfx/impactBell_heavy_003.ogg` | Kenney Impact Sounds (CC0) | `captured` | Eroberung |
+| `apps/desktop/src/ui/sfx/impactPlate_heavy_002.ogg` | Kenney Impact Sounds (CC0) | `war` | Kriegserklärung |
+
+## Bildschirmfotos der Bahn U-Bild (V3 Welle 2, T-M46-13 / T-M46-03, 2026-10-04)
+
+Kein Fremdinhalt — Bildschirmfotos des eigenen Spiels (Stand S575G, Sicht der stärksten Macht, mit den Symbolen aus dem
+Abschnitt oben), erzeugt mit `node scripts/ux-bild.mjs --shots docs/ux/v3-after`. Messwerte dazu:
+`docs/reports/v3/ubild-vorher.json` und `docs/reports/v3/ubild-nachher.json`. Nur 375x667 und 1280x800.
+
+| Datei | Erzeugt von | Zeigt |
+|---|---|---|
+| `docs/ux/v3-after/S575G-armee-1280x800.png` | `scripts/ux-bild.mjs` | Armeepanel mit Haltungen als Zeichen und Truppenzeichen, 1280x800 |
+| `docs/ux/v3-after/S575G-armee-375x667.png` | `scripts/ux-bild.mjs` | Armeepanel mit Haltungen als Zeichen und Truppenzeichen, 375x667 |
+| `docs/ux/v3-after/S575G-brennpunkt-1280x800.png` | `scripts/ux-bild.mjs` | Karte über Asien: aufgefächerte Armeestapel, 1280x800 |
+| `docs/ux/v3-after/S575G-karte-1280x800.png` | `scripts/ux-bild.mjs` | Karte mit der neuen Kopfleiste (Symbole statt Text), 1280x800 |
+| `docs/ux/v3-after/S575G-karte-375x667.png` | `scripts/ux-bild.mjs` | Karte mit der neuen Kopfleiste (Symbole statt Text), 375x667 |
+| `docs/ux/v3-after/S575G-nah-1280x800.png` | `scripts/ux-bild.mjs` | Karte über Asien, vergrößert: aufgefächerte Armeestapel, 1280x800 |
+| `docs/ux/v3-after/S575G-provinz-1280x800.png` | `scripts/ux-bild.mjs` | Provinzpanel mit Zeichen für Eigentümer, Bevölkerung, Moral und Bauplätze, 1280x800 |
+| `docs/ux/v3-after/S575G-provinz-375x667.png` | `scripts/ux-bild.mjs` | Provinzpanel mit Zeichen für Eigentümer, Bevölkerung, Moral und Bauplätze, 375x667 |
+
+## Bildschirmfotos der UX-Welle 2, Bahn U-Layout (V3, 2026-10-04)
+
+Kein Fremdinhalt — Bildschirmfotos des eigenen Spiels, erzeugt mit `node scripts/ux-layout.mjs --out docs/ux/v3-after --tag nachher --shots`
+(Playwright gegen den Dev-Server, Stand `test/fixtures/v3/S575.json` mit der stärksten Macht als Mensch) und `node scripts/ux-capture.mjs --mp
+--mp-force-intrusion` (Partie zu zweit, der Gast marschiert in eine Provinz des Gastgebers). Nur 375x667 und 1280x800 (PLAN-V3 Regel 12).
+Sie stehen hier, weil `test/guards/no-foreign-assets.test.ts` jede eingecheckte Bilddatei namentlich verlangt. Zählwerte dazu:
+`docs/ux/v3-after/layout-nachher.json`, `aufgaben.json`, `mp-alarmchip.json`.
+
+| Datei | Erzeugt von | Zeigt |
+|---|---|---|
+| `docs/ux/v3-after/S575G-nachher-panel-375x667.png` | `scripts/ux-layout.mjs` | T-M46-10: Telefon, Kopfleiste ganz im Bild, Blatt halb (Seitenleiste 50 %), Panelwahl im Blattkopf |
+| `docs/ux/v3-after/S575G-nachher-protokoll-375x667.png` | `scripts/ux-layout.mjs` | T-M46-10/-02: Telefon, Protokoll als aufgeklapptes Blatt mit Filtern |
+| `docs/ux/v3-after/S575G-nachher-puls-1280x800.png` | `scripts/ux-layout.mjs` | T-M46-02: Protokoll nach Wichtigkeit mit Sammelzeilen, Karte mit Puls und Pfeil am Rand |
+| `docs/ux/v3-after/S575G-nachher-diplomatie-1280x800.png` | `scripts/ux-layout.mjs` | T-M46-06/-11: Diplomatie mit gewählter Macht, Handlungen im Bild, Aufstandshinweise gebündelt |
+| `docs/ux/v3-after/mp-alarmchip-375x667.png` | `scripts/ux-capture.mjs` | T-M46-08: Alarmchip in der Partie zu zweit, Telefon |
+| `docs/ux/v3-after/mp-alarmchip-1280x800.png` | `scripts/ux-capture.mjs` | T-M46-08: Alarmchip in der Partie zu zweit, Schreibtisch |
+
+### Nachher-Bilder des Symbol-Durchgangs (T-M46-17, Bahn U-Symbol)
+
+Fünf Bilder des Standes S575G (Mensch = stärkste Macht), erzeugt mit `node scripts/ux-bild.mjs --shots …`, nur 375x667 und
+1280x800 (PLAN-V3 Regel 12). Die Vorher-Bilder sind die gleichnamigen ohne „symbol“ (Bahn U-Bild). Zählwerte dazu:
+`docs/reports/v3/usymbol-vorher.json` und `usymbol-nachher.json`. Keine neue Fremddatei: die Zeichen kommen aus den schon
+genannten Quellen (Lucide ISC, milsymbol MIT, game-icons.net CC BY 3.0).
+
+| Datei | Erzeugt von | Zeigt |
+|---|---|---|
+| `docs/ux/v3-after/S575G-symbol-karte-1280x800.png` | `scripts/ux-bild.mjs` | Kopfleiste, Alarmliste und Protokoll als Zeichen mit Kurzwort, 1280x800 |
+| `docs/ux/v3-after/S575G-symbol-provinz-1280x800.png` | `scripts/ux-bild.mjs` | Provinzpanel: Gattung, Gelände, Küste, Vorkommen, Bauplätze, Armeen als Zeichen, 1280x800 |
+| `docs/ux/v3-after/S575G-symbol-armee-1280x800.png` | `scripts/ux-bild.mjs` | Armeepanel: Befehle und Haltungen als Zeichenknöpfe, Marsch mit Fußzeichen und Zahl, 1280x800 |
+| `docs/ux/v3-after/S575G-symbol-karte-375x667.png` | `scripts/ux-bild.mjs` | Telefon: Kopfleiste mit Zeichen, Alarmliste, Fuß, 375x667 |
+| `docs/ux/v3-after/S575G-symbol-armee-375x667.png` | `scripts/ux-bild.mjs` | Telefon: Armeepanel im halben Blatt, 375x667 |
+
+### Bilder der Nachbesserung U (V3 Phase 2, 2026-10-04)
+
+Drei Bilder des Standes S575G, erzeugt mit `node scripts/ux-nachbesserung-bild.mjs --url http://localhost:5331/ --out docs/ux/v3-after`,
+nur 1280x800 und 375x667 (PLAN-V3 Regel 12). Kein Fremdinhalt: Bildschirmfotos des eigenen Spiels.
+
+| Datei | Erzeugt von | Zeigt |
+|---|---|---|
+| `docs/ux/v3-after/S575G-nachher2-tastenhilfe-1280x800.png` | `scripts/ux-nachbesserung-bild.mjs` | T-M46-05: Tastenhilfe (F1) mit den Kürzeln A, P, B, E neben den alten, 1280x800 |
+| `docs/ux/v3-after/S575G-nachher2-diplomatie-1280x800.png` | `scripts/ux-nachbesserung-bild.mjs` | Diplomatie mit gewählter Macht: Kopfleiste bleibt bei y = 0 (vorher −82), 1280x800 |
+| `docs/ux/v3-after/S575G-nachher2-karte-375x667.png` | `scripts/ux-nachbesserung-bild.mjs` | T-M46-17: Telefon nach der Nachbesserung, größere Zeichen im Kopf und in der Protokollzeile, 375x667 |

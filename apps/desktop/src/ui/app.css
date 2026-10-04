@@ -1568,6 +1568,11 @@ body {
   max-height: 168px;
 }
 
+/* Der Aufklappknopf des Protokolls gehoert dem Telefon im Hochformat (touch.css, T-M46-10). */
+.foot__logtoggle {
+  display: none;
+}
+
 .foot__standings {
   border-left: 1px solid var(--line);
   padding: var(--sp-sm) var(--sp-md);
@@ -2749,4 +2754,186 @@ body {
    Schrift die 4,5:1. Der Rahmen in `accent` hebt den Chip weiter ab. */
 .alarm-chip {
   background: var(--ground);
+}
+
+/* ---- T-M46-02 · Protokoll nach Wichtigkeit, Sammelzeilen, Sprung ---------------------------------
+   Wichtig laut (fett, Zinnoberbalken), Alltag leise (gedaempft); die Sammelzeile traegt ihre Teile als
+   Liste von Sprungknoepfen und einen Pfeil zum juengsten Ort. */
+.log__row--major .log__entry,
+.log__row--major .log__jump {
+  font-weight: 600;
+}
+
+.log__row--minor,
+.log__row--minor .log__jump {
+  color: var(--ink-soft);
+}
+
+.log__parts {
+  margin: var(--sp-xs) 0 var(--sp-sm);
+  padding: 0 0 0 var(--sp-md);
+  list-style: none;
+  border-left: 2px solid var(--line);
+}
+
+.log__parts li {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: var(--sp-md);
+  font-size: 12px;
+}
+
+.log__goto {
+  flex: none;
+  margin-left: auto;
+  padding: 0 var(--sp-sm);
+  background: none;
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  font: inherit;
+  cursor: pointer;
+}
+
+.log__goto:hover,
+.log__goto:focus-visible {
+  color: var(--ink);
+  border-color: var(--ink-soft);
+}
+
+:root[data-input='touch'] .log__goto {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* ---- T-M46-01 · Heeruebersicht ---------------------------------------------------------------
+   Eine Zeile je Armee: links Name, Ort, Staerke, Auftrag; rechts "Auswaehlen" und "Marschieren". Gefecht
+   traegt den Zinnoberbalken (wie eine Rueckschlagzeile im Protokoll), Marsch den Bernsteinbalken. */
+.armies {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.armies__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-md);
+  padding: var(--sp-sm) var(--sp-md);
+  background: var(--paper-sunk);
+  border-left: 3px solid var(--line);
+}
+
+.armies__row--battle {
+  border-left-color: var(--accent);
+}
+
+.armies__row--marching {
+  border-left-color: var(--warn);
+}
+
+.armies__what {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.armies__name {
+  font-size: 13px;
+}
+
+.armies__where,
+.armies__power,
+.armies__order {
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
+}
+
+.armies__go {
+  display: flex;
+  flex: none;
+  gap: var(--sp-xs);
+}
+
+.armies__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-xs);
+}
+
+/* Mitwirkende (T-M46-13): Namensnennung der Symbole und Klaenge von Dritten. */
+.credits {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6em;
+  overflow-wrap: anywhere;
+}
+
+/* ---- T-M46-06 · Diplomatie ueber dem Falz ------------------------------------------------------
+   Das Handelsformular als kompakte Tabelle: der Bestand steht in der Zeile des Rohstoffs statt darunter
+   (7 Zeilen zu 50 px wurden 7 zu 30), die Provinzwahl ist zugeklappt. */
+.trade-form__table td {
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+
+.trade-form__stock {
+  margin-left: var(--sp-sm);
+  white-space: nowrap;
+}
+
+.trade-form__provinces {
+  margin-top: var(--sp-sm);
+}
+
+.trade-form__provinces summary {
+  cursor: pointer;
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+/* ---- T-M46-11 · Aufstandshinweise gebuendelt: eine Zeile mit Zahl, aufklappbar --------------------- */
+.alert--group details {
+  flex: 1 1 auto;
+  min-width: 0;
+  align-self: stretch;
+}
+
+.alert--group summary {
+  display: flex;
+  align-items: center;
+  min-height: 24px;
+  cursor: pointer;
+}
+
+:root[data-input='touch'] .alert--group summary {
+  min-height: 44px;
+}
+
+.alert__parts {
+  margin: var(--sp-xs) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Die Machtetabelle einzeilig je Macht (T-M46-06): der Beziehungszustand samt Erklaerknopf umbrach in der
+   schmalen Spalte, jede Zeile war 43 px hoch, die siebte lag unter dem Falz. */
+.diplomacy-table td.state {
+  white-space: nowrap;
+}
+
+.diplomacy-table .meter {
+  margin: 0;
+}
+
+/* ---- T-M46-11 · Quittung oben in der Seitenleiste, anderthalb Sekunden bei jedem Tempo --------- */
+.notice--ack {
+  border-left-color: var(--good);
 }

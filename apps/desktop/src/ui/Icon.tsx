@@ -1,0 +1,290 @@
+import {
+  ArrowDown,
+  ArrowLeftRight,
+  ArrowUp,
+  ArrowUpRight,
+  Ban,
+  Banknote,
+  Bomb,
+  Building2,
+  CalendarDays,
+  Castle,
+  ChevronLeft,
+  ChevronUp,
+  Clock,
+  Coins,
+  Combine,
+  Crosshair,
+  Eye,
+  FastForward,
+  Flag,
+  Footprints,
+  Gem,
+  Hand,
+  Globe,
+  Hammer,
+  Handshake,
+  HeartPulse,
+  Hourglass,
+  Info,
+  Landmark,
+  LayoutGrid,
+  Link2,
+  List,
+  Lock,
+  Mail,
+  MapPin,
+  MousePointerClick,
+  Package,
+  Menu,
+  Minus,
+  Mountain,
+  Pause,
+  Save,
+  Scale,
+  ScrollText,
+  Search,
+  Shield,
+  ShieldCheck,
+  Siren,
+  Split,
+  Star,
+  Sun,
+  Sword,
+  Swords,
+  TreePine,
+  TriangleAlert,
+  Trophy,
+  Undo2,
+  Users,
+  VenetianMask,
+  Waves,
+  Wheat,
+  X,
+  type LucideIcon,
+} from 'lucide-react'
+import ms from 'milsymbol'
+import { GLYPH_BOX, GLYPH_PATHS } from './glyphs.ts'
+import { Icon as DrawnIcon, type IconName, type IconProps } from './icons.tsx'
+
+/**
+ * Das Symbol des Spiels (T-M46-13, VM-05): „keinen Text als Hauptvordergrund, sondern Grafiken
+ * und Symbole“.
+ *
+ * Drei Quellen, eine Schnittstelle — `name`, `size`, `title` wie bisher in `icons.tsx`:
+ *
+ *  - **Einheiten** als NATO-Truppenzeichen aus milsymbol (MIT), Rahmen und Strich in der
+ *    Textfarbe, damit dasselbe Zeichen im Kopf, im Panel und im Tooltip stimmt;
+ *  - **Gebaeude und Rohstoffe** aus game-icons.net (CC BY 3.0, Urheber in `glyphs.ts` und
+ *    `docs/ASSETS.md`), gefuellt mit der Textfarbe;
+ *  - **Oberflaeche** (Uhr, Pause, Warnung, Beziehungen, Gelaende, Spionage) aus Lucide (ISC).
+ *
+ * Was keine der drei Quellen hat (Rueckzugssperre, Stellungsbogen, Ebene, Landebahn …),
+ * bleibt die selbst gezeichnete Fassung aus `icons.tsx`. Der Text steht NICHT im Bild: jedes
+ * Symbol mit `title` traegt ihn als zugaenglichen Namen und als Tooltip (`<title>`); ohne
+ * `title` ist es Zierde und fuer die Vorlesehilfe unsichtbar.
+ */
+
+/**
+ * Namen, die nur das Bildset kennt: Oberflaechenzeichen ohne Entsprechung in `icons.tsx`
+ * (Knoepfe der Kopfleiste und des Fusses, Haltungen, Kennzahlen des Panels).
+ */
+export type ExtraIconName =
+  | 'save'
+  | 'menu'
+  | 'trophy'
+  | 'dispatch'
+  | 'market'
+  | 'espionage'
+  | 'stanceAggressive'
+  | 'stanceDefensive'
+  | 'stanceRetreat'
+  | 'stanceGarrison'
+  | 'owner'
+  | 'population'
+  | 'morale'
+  | 'logbook'
+  | 'day'
+  | 'arrowUp'
+  | 'arrowDown'
+  | 'dash'
+  | 'jump'
+  | 'back'
+  | 'close'
+  | 'expand'
+  | 'logAll'
+  | 'logImportant'
+  | 'build'
+  | 'world'
+  | 'deposits'
+  | 'slots'
+  | 'economy'
+  | 'lock'
+  | 'march'
+  | 'merge'
+  | 'split'
+  | 'bombard'
+  | 'holdFire'
+  | 'place'
+  | 'info'
+  | 'city'
+  | 'rural'
+  | 'coast'
+  | 'halt'
+  | 'select'
+  | 'stock'
+
+export type PictureName = IconName | ExtraIconName
+
+export type { IconName }
+export type { IconProps }
+
+/** 2525C-Kennungen der zehn Einheitenarten; friend/present/Land bzw. Luft bzw. See. */
+const SIDC: Partial<Record<IconName, string>> = {
+  infantry: 'SFGPUCI-------',
+  motorized: 'SFGPUCIZ------',
+  armour: 'SFGPUCA-------',
+  heavyArmour: 'SFGPUCATH-----',
+  artillery: 'SFGPUCF-------',
+  rocket: 'SFGPUCFR------',
+  aircraft: 'SFAPMFF-------',
+  bomber: 'SFAPMFB-------',
+  ship: 'SFSPCLDD------',
+  transport: 'SFSPXMTO------',
+}
+
+/** Oberflaechensymbole aus Lucide. */
+const LUCIDE: Partial<Record<PictureName, LucideIcon>> = {
+  save: Save,
+  menu: Menu,
+  trophy: Trophy,
+  dispatch: ScrollText,
+  market: Scale,
+  espionage: VenetianMask,
+  stanceAggressive: Sword,
+  stanceDefensive: Shield,
+  stanceRetreat: Undo2,
+  stanceGarrison: Castle,
+  owner: Landmark,
+  population: Users,
+  morale: HeartPulse,
+  logbook: Mail,
+  day: CalendarDays,
+  arrowUp: ArrowUp,
+  arrowDown: ArrowDown,
+  dash: Minus,
+  jump: ArrowUpRight,
+  back: ChevronLeft,
+  close: X,
+  expand: ChevronUp,
+  logAll: List,
+  logImportant: Siren,
+  build: Hammer,
+  world: Globe,
+  deposits: Gem,
+  slots: LayoutGrid,
+  economy: Coins,
+  lock: Lock,
+  march: Footprints,
+  merge: Combine,
+  split: Split,
+  bombard: Crosshair,
+  holdFire: Ban,
+  place: MapPin,
+  info: Info,
+  city: Building2,
+  rural: Wheat,
+  coast: Waves,
+  halt: Hand,
+  select: MousePointerClick,
+  stock: Package,
+  clock: Clock,
+  pause: Pause,
+  fastForward: FastForward,
+  warning: TriangleAlert,
+  battle: Swords,
+  capital: Star,
+  queue: Hourglass,
+  peace: Handshake,
+  truce: Flag,
+  alliance: Link2,
+  sharedMap: Eye,
+  mountain: Mountain,
+  desert: Sun,
+  forest: TreePine,
+  urban: Building2,
+  spyIntel: Search,
+  spyEconomic: Banknote,
+  spyMilitary: Bomb,
+  spyCounter: ShieldCheck,
+  trade: ArrowLeftRight,
+}
+
+export interface Frame {
+  viewBox: string
+  inner: string
+}
+
+const frames = new Map<string, Frame | null>()
+
+/** Das Truppenzeichen als Rahmen + Inhalt; einmal je Art erzeugt, danach aus dem Speicher. */
+export function unitFrame(name: PictureName, framed = true): Frame | null {
+  const key = `${name}:${framed}`
+  if (frames.has(key)) return frames.get(key) ?? null
+  const sidc = SIDC[name as IconName]
+  let frame: Frame | null = null
+  if (sidc) {
+    const svg = new ms.Symbol(sidc, { size: 32, monoColor: 'currentColor', outlineWidth: 0, strokeWidth: 5, frame: framed }).asSVG()
+    const viewBox = /viewBox="([^"]+)"/.exec(svg)?.[1]
+    const inner = /<svg[^>]*>([\s\S]*)<\/svg>/.exec(svg)?.[1]
+    if (viewBox && inner) frame = { viewBox, inner }
+  }
+  frames.set(key, frame)
+  return frame
+}
+
+/** Gibt es fuer diesen Namen ein Bild aus einer der drei Quellen (sonst bleibt die Zeichnung)? */
+export function hasPicture(name: PictureName): boolean {
+  return Boolean(SIDC[name as IconName] || GLYPH_PATHS[name as IconName] || LUCIDE[name])
+}
+
+export interface PictureProps extends Omit<IconProps, 'name'> {
+  name: PictureName
+  className?: string
+}
+
+export function Icon({ name, size = 16, title, className }: PictureProps) {
+  const label = title ? { role: 'img' as const, 'aria-label': title } : { role: 'presentation' as const, 'aria-hidden': true as const }
+
+  const unit = unitFrame(name)
+  if (unit) {
+    // Truppenzeichen sind breiter als hoch; die Hoehe bleibt `size`, der Kasten laesst Platz.
+    return (
+      <svg width={size} height={size} viewBox={unit.viewBox} className={className} {...label}>
+        {title && <title>{title}</title>}
+        <g dangerouslySetInnerHTML={{ __html: unit.inner }} />
+      </svg>
+    )
+  }
+
+  const glyph = GLYPH_PATHS[name as IconName]
+  if (glyph) {
+    return (
+      <svg width={size} height={size} viewBox={`0 0 ${GLYPH_BOX} ${GLYPH_BOX}`} className={className} fill="currentColor" {...label}>
+        {title && <title>{title}</title>}
+        <path d={glyph} />
+      </svg>
+    )
+  }
+
+  const Drawn = LUCIDE[name]
+  if (Drawn) {
+    return (
+      <Drawn size={size} strokeWidth={1.8} className={className} {...label}>
+        {title && <title>{title}</title>}
+      </Drawn>
+    )
+  }
+
+  return <DrawnIcon name={name as IconName} size={size} {...(title ? { title } : {})} />
+}
