@@ -60,7 +60,6 @@ interface Zaehlung {
 }
 
 async function zaehle(seed: number): Promise<Zaehlung> {
-  // eslint-disable-next-line no-restricted-syntax -- days x ticks-per-day, plain integers
   const window = rules.constants.occupationPenaltyDays * rules.constants.ticksPerDay
   let current = createInitialState(integrationConfig(seed), { map, rules })
   const z = { seed, captures: 0, recruits: 0, recruitsInGrace: 0, recruitsInGraceBelowLimit: 0 }
