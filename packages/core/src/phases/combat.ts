@@ -7,7 +7,7 @@ import {
   defenceMultiplier,
   sideAttackValue,
 } from '../rules/combat'
-import { armyHp, pruneEmptyStacks } from '../state/army'
+import { armyHp, presentArmiesByProvince, pruneEmptyStacks } from '../state/army'
 import type { Army, GameState, PlayerId, ProvinceId } from '../state/types'
 import type { Phase, PhaseContext } from './index'
 
@@ -22,13 +22,6 @@ export function atWar(state: GameState, a: PlayerId, b: PlayerId): boolean {
   if (a === b) return false
   const key = a < b ? `${a}|${b}` : `${b}|${a}`
   return state.diplomacy.relations[key]?.state === 'war'
-}
-
-/** Armies that can fight here: present, not at sea, not empty. */
-function combatantsIn(state: GameState, provinceId: ProvinceId): Army[] {
-  return state.armyOrder
-    .map((id) => state.armies[id]!)
-    .filter((army) => army && army.locationProvinceId === provinceId && !army.embarked && army.units.length > 0)
 }
 
 /** Groups the armies present into sides — one per player, in player order. */
@@ -64,9 +57,13 @@ export const combat: Phase = (draft: GameState, ctx: PhaseContext) => {
   const { rules } = ctx
   const battles: GameState['battles'] = []
 
+  // Armies that can fight: present, not at sea, not empty. Grouped once per phase, because
+  // nothing in here moves an army to another province (V3 T-M45-03, hash-identical).
+  const armiesHere = presentArmiesByProvince(draft)
+
   for (const provinceId of draft.provinceOrder) {
-    const present = combatantsIn(draft, provinceId)
-    if (present.length < 2) continue
+    const present = armiesHere.get(provinceId)
+    if (!present || present.length < 2) continue
 
     const sides = sidesIn(draft, present)
     const fighting = sides.filter((side) => sides.some((other) => atWar(draft, side.player, other.player)))

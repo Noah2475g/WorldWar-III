@@ -1,7 +1,8 @@
 import { emit } from '../events/emit'
 import { atWar } from './combat'
 import { addGrievance } from './diplomacy'
-import type { GameState, PlayerId, ProvinceId } from '../state/types'
+import { presentArmiesByProvince } from '../state/army'
+import type { Army, GameState, PlayerId, ProvinceId } from '../state/types'
 import type { Phase, PhaseContext } from './index'
 
 /**
@@ -11,11 +12,7 @@ import type { Phase, PhaseContext } from './index'
  * to defend it. Aircraft and ships cannot take ground — that is what keeps land forces
  * necessary.
  */
-function canOccupy(state: GameState, provinceId: ProvinceId, rules: PhaseContext['rules']): PlayerId | null {
-  const present = state.armyOrder
-    .map((id) => state.armies[id]!)
-    .filter((army) => army.locationProvinceId === provinceId && !army.embarked && army.units.length > 0)
-
+function canOccupy(present: readonly Army[], rules: PhaseContext['rules']): PlayerId | null {
   const withLand = present.filter((army) =>
     army.units.some((stack) => {
       const rule = rules.units[stack.unitKey]
@@ -53,9 +50,14 @@ export function transferProvince(draft: GameState, provinceId: ProvinceId, newOw
 }
 
 export const occupation: Phase = (draft: GameState, ctx: PhaseContext) => {
+  // Grouped once per phase (V3 T-M45-03): a capture changes owners, never where armies stand.
+  const armiesHere = presentArmiesByProvince(draft)
+
   for (const provinceId of draft.provinceOrder) {
+    const present = armiesHere.get(provinceId)
+    if (!present) continue
     const province = draft.provinces[provinceId]!
-    const claimant = canOccupy(draft, provinceId, ctx.rules)
+    const claimant = canOccupy(present, ctx.rules)
     if (!claimant || claimant === province.owner) continue
 
     // Neutral ground can be walked into; owned ground needs a war.
