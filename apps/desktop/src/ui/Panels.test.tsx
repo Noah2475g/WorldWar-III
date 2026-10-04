@@ -848,6 +848,45 @@ describe('R-UX-03/AK1 Sperrgründe der Verträge gebündelt, Leerzustände als F
   })
 })
 
+/**
+ * V3 Nachbesserung U (Messung S575G 1280x800): „Macht waehlen“ schob die ganze App um die Kopfhoehe nach oben
+ * (header.y = -82), weil `scrollIntoView` auch Vorfahren mit `overflow: hidden` rollt. Der Blick darf nur den
+ * Rollrahmen der Seitenleiste bewegen.
+ */
+describe('Diplomatie: Machtwahl rollt nur die Seitenleiste (V3 Nachbesserung U)', () => {
+  it('ruft nie scrollIntoView auf und rollt den naechsten Rollrahmen, nicht den aeusseren', () => {
+    const intoView = vi.fn()
+    Element.prototype.scrollIntoView = intoView
+    const view = diplomacyView({ others: [{ id: 'p2', nation: 'Ostmark' }] })
+    const treaties: Action[] = [{ id: 't6', label: 'Krieg erklären', disabledReason: null, onRun: () => undefined }]
+    const outer = document.createElement('div')
+    outer.style.overflowY = 'hidden'
+    const side = document.createElement('aside')
+    side.style.overflowY = 'auto'
+    outer.append(side)
+    document.body.append(outer)
+    Object.defineProperty(side, 'scrollHeight', { value: 900, configurable: true })
+    Object.defineProperty(side, 'clientHeight', { value: 400, configurable: true })
+    const { container } = render(
+      <DiplomacyPanel view={view} nameOf={() => 'Ostmark'} chosen="p2" onChoose={() => undefined} actionsFor={() => treaties} />,
+      { container: side.appendChild(document.createElement('div')) },
+    )
+    const block = container.querySelector<HTMLElement>('.group') ?? container
+    vi.spyOn(block, 'getBoundingClientRect').mockReturnValue({ top: 300 } as DOMRect)
+    // Der Block steht erst nach dem Klick im Rollrahmen; den Wert setzen wir fuer alle Kinder des Panels.
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      return { top: this === side ? 100 : 300 } as DOMRect
+    })
+    fireEvent.click(screen.getByRole('button', { name: /Ostmark/ }))
+
+    expect(intoView, 'scrollIntoView rollt auch overflow:hidden-Vorfahren').not.toHaveBeenCalled()
+    expect(outer.scrollTop, 'der aeussere Rahmen bleibt stehen').toBe(0)
+    expect(side.scrollTop, 'die Seitenleiste rollt zum Block').toBeGreaterThan(0)
+    vi.restoreAllMocks()
+    outer.remove()
+  })
+})
+
 describe('R-DIP-07 Das Diplomatiepanel (T-M17-14)', () => {
   it('zeigt das Ansehen jeder Macht als Balken', () => {
     const view = diplomacyView({

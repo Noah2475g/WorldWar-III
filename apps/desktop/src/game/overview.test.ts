@@ -4,6 +4,7 @@ import type { GameEvent, MapData } from '@worldwar/core'
 import { describe, expect, it } from 'vitest'
 import { PING_MS, edgeMarker, freshPings, pingFrame } from '../map/pings.ts'
 import type { EventEntry } from '../ui/Panels.tsx'
+import { cueFor } from '../ui/sound.ts'
 import { describeEvent, groupEntries, importanceOf, pingsFor, placeOf } from './events.ts'
 
 /**
@@ -60,6 +61,27 @@ describe('placeOf: jedes hoerbare Ereignis hat einen Ort', () => {
     // Krieg: die Hauptstadt der Gegenseite, aus beiden Richtungen
     expect(placeOf(ev({ type: 'WAR_DECLARED', playerId: 'p2', targetPlayerId: 'p1' }), 'p1', capital)).toBe(b)
     expect(placeOf(ev({ type: 'WAR_DECLARED', playerId: 'p1', targetPlayerId: 'p2' }), 'p1', capital)).toBe(b)
+  })
+
+  it('jede Ereignisart mit Ton hat einen Ort (Quote hoerbar/Ort 100 %, Nachbesserung U)', () => {
+    const audible: Record<string, Record<string, unknown>> = {
+      BATTLE_STARTED: { provinceId: c },
+      PROVINCE_CAPTURED: { provinceId: c },
+      BUILD_COMPLETED: { provinceId: c },
+      UNIT_RECRUITED: { provinceId: c },
+      ARMY_INTRUDED: { provinceId: c },
+      RESOURCE_SHORTAGE: { playerId: 'p1', resource: 'food' },
+      WAR_DECLARED: { playerId: 'p1', targetPlayerId: 'p2' },
+      DIPLOMACY_CHANGED: { playerId: 'p2', targetPlayerId: 'p1', newState: 'truce' },
+    }
+    for (const type of ['battle', 'captured', 'complete', 'recruited', 'diplomacy', 'shortage', 'war', 'intruded']) {
+      expect(Object.keys(audible).some((t) => cueFor(t) === type), `Klang ${type} ohne Beispielereignis`).toBe(true)
+    }
+    for (const [type, fields] of Object.entries(audible)) {
+      expect(cueFor(type), type).not.toBeNull()
+      expect(placeOf(ev({ type, ...fields }), 'p1', capital), `${type} ohne Ort`).toBeDefined()
+      expect(pingsFor([ev({ type, ...fields })], 'p1', capital), `${type} ohne Puls`).toHaveLength(1)
+    }
   })
 
   it('ohne Hauptstadtauskunft und ohne Provinz bleibt es ohne Ort', () => {

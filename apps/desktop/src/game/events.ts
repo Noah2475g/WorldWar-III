@@ -69,7 +69,9 @@ export function placeOf(event: GameEvent, viewer: string | undefined, capital?: 
   if (own) return own
   if (!capital) return undefined
   if (event.type === 'RESOURCE_SHORTAGE') return capital(event.playerId)
-  if (event.type === 'WAR_DECLARED') {
+  // DIPLOMACY_CHANGED (Frieden, Buendnis, Kuendigung, Kriegsbeginn) hat einen Ton, aber keine Provinz: ohne Ort
+  // pulsierte es nicht und liess sich nicht anspringen (Nachbesserung U, Quote hoerbar/Puls+Sprung).
+  if (event.type === 'WAR_DECLARED' || event.type === 'DIPLOMACY_CHANGED') {
     const other = viewer === event.playerId ? event.targetPlayerId : event.playerId
     return capital(other) ?? capital(viewer === event.playerId ? event.playerId : event.targetPlayerId)
   }

@@ -1,0 +1,72 @@
+{
+  "note": "Erzeugt von apps/desktop/src/map/stapel.slow.test.ts (S575, Sicht der staerksten Macht)",
+  "viewer": "p6",
+  "armies": 237,
+  "byScale": {
+    "1": {
+      "markers": 237,
+      "fullyHidden": 0,
+      "partlyCovered": 0,
+      "centreCovered": 0,
+      "ownTotal": 193,
+      "ownHit": 193,
+      "visiblePoints": 6755,
+      "visiblePicked": 6755,
+      "farFromHome48px": 121,
+      "meanMovePx": 52,
+      "maxMovePx": 131
+    },
+    "2": {
+      "markers": 237,
+      "fullyHidden": 0,
+      "partlyCovered": 0,
+      "centreCovered": 0,
+      "ownTotal": 193,
+      "ownHit": 193,
+      "visiblePoints": 6755,
+      "visiblePicked": 6755,
+      "farFromHome48px": 174,
+      "meanMovePx": 75,
+      "maxMovePx": 205
+    },
+    "4": {
+      "markers": 237,
+      "fullyHidden": 0,
+      "partlyCovered": 0,
+      "centreCovered": 0,
+      "ownTotal": 193,
+      "ownHit": 193,
+      "visiblePoints": 6755,
+      "visiblePicked": 6755,
+      "farFromHome48px": 209,
+      "meanMovePx": 118,
+      "maxMovePx": 248
+    },
+    "8": {
+      "markers": 237,
+      "fullyHidden": 0,
+      "partlyCovered": 0,
+      "centreCovered": 0,
+      "ownTotal": 193,
+      "ownHit": 193,
+      "visiblePoints": 6755,
+      "visiblePicked": 6755,
+      "farFromHome48px": 219,
+      "meanMovePx": 155,
+      "maxMovePx": 276
+    },
+    "0.5": {
+      "markers": 237,
+      "fullyHidden": 0,
+      "partlyCovered": 0,
+      "centreCovered": 0,
+      "ownTotal": 193,
+      "ownHit": 193,
+      "visiblePoints": 6755,
+      "visiblePicked": 6755,
+      "farFromHome48px": 96,
+      "meanMovePx": 43,
+      "maxMovePx": 108
+    }
+  }
+}

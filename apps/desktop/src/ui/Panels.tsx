@@ -28,6 +28,7 @@ import { UnitMarker } from './UnitMarker.tsx'
 import { Explain } from './Explain.tsx'
 import { ConfirmButton } from './ConfirmButton.tsx'
 import { useInputMode } from './inputMode.ts'
+import { scrollWithin } from './scrollWithin.ts'
 // Die Richtung einer Bilanz als Klassenzusatz - dieselbe Funktion wie in der
 // Kopfleiste (T-M36-05). Zwei Tabellen, die dieselbe Zahl verschieden einfaerben,
 // waeren zwei Aussagen ueber denselben Vorrat.
@@ -1858,7 +1859,10 @@ export function DiplomacyPanel({
     if (chosenAt === 0) return
     const block = chosenBlock.current
     if (!block) return
-    block.scrollIntoView?.({ block: 'start' })
+    // LOESCHVERMERK (Review): `scrollIntoView` rollte auch overflow:hidden-Vorfahren, die ganze App stand um die
+    // Kopfhoehe zu hoch (header.y = -82, V3 Nachbesserung U). Ersatz: `scrollWithin` rollt nur die Seitenleiste.
+    // block.scrollIntoView?.({ block: 'start' })
+    scrollWithin(block)
     block.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus({ preventScroll: true })
   }, [chosenAt])
 

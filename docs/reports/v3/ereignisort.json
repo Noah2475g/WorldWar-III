@@ -1,0 +1,46 @@
+{
+  "note": "Erzeugt von apps/desktop/src/game/ereignisort.slow.test.ts",
+  "stands": [
+    "S100",
+    "S300",
+    "S575"
+  ],
+  "total": {
+    "audible": 2142,
+    "ping": 2142,
+    "jump": 2142,
+    "both": 2142
+  },
+  "perType": {
+    "PROVINCE_CAPTURED": {
+      "audible": 236,
+      "ping": 236,
+      "jump": 236,
+      "both": 236
+    },
+    "ARMY_INTRUDED": {
+      "audible": 396,
+      "ping": 396,
+      "jump": 396,
+      "both": 396
+    },
+    "BATTLE_STARTED": {
+      "audible": 696,
+      "ping": 696,
+      "jump": 696,
+      "both": 696
+    },
+    "UNIT_RECRUITED": {
+      "audible": 710,
+      "ping": 710,
+      "jump": 710,
+      "both": 710
+    },
+    "BUILD_COMPLETED": {
+      "audible": 104,
+      "ping": 104,
+      "jump": 104,
+      "both": 104
+    }
+  }
+}

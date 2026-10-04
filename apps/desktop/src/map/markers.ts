@@ -170,7 +170,10 @@ export function fanOut<T extends { x: number; y: number }>(markers: readonly T[]
  * Die Suchreihenfolge fuer einen freien Platz: Versaetze im Raster eines halben Kastens, nach
  * Entfernung sortiert, bis `DECLUTTER_RADIUS` Bildpunkte. Einmal gebaut, danach nur gelesen.
  */
-export const DECLUTTER_RADIUS = 96
+export const DECLUTTER_RADIUS = 256
+// LOESCHVERMERK (Review): bis zur Nachbesserung U stand hier `DECLUTTER_RADIUS = 96`; an S575G blieben damit bei
+// Massstab 4 und 8 109 und 145 von 237 Markern teilweise verdeckt (Klickflaeche nur zu 93 % / 80 % sichtbar).
+// export const DECLUTTER_RADIUS = 96
 const DECLUTTER_STEP = { x: ARMY_BOX.width / 2, y: ARMY_BOX.height / 2 } as const
 const SLOT_ORDER: readonly (readonly [number, number])[] = (() => {
   const list: [number, number][] = []
@@ -209,8 +212,12 @@ export function declutter<T extends { x: number; y: number; own?: boolean }>(mar
   const gapX = FAN_PITCH.x
   const gapY = FAN_PITCH.y
   // Raster aus Zellen der Groesse eines Kastens samt Luft: Nachbarn stehen in den 3 x 3 Zellen ringsum.
-  const cells = new Map<string, number[]>()
-  const key = (x: number, y: number): string => `${Math.floor(x / gapX)}:${Math.floor(y / gapY)}`
+  // Zahlenschluessel statt Zeichenketten (Nachbesserung U): der groessere Suchradius ruft `overlapAt` bis zu dreimal
+  // so oft auf (S575G, Massstab 8: 37 871 -> 114 414 Aufrufe), und jeder baute neun Schluessel-Zeichenketten.
+  // Die Zellen liegen in +-32768 (Karte 16 000 px breit bei Massstab 0,5 -> rund 500 Zellen).
+  const cells = new Map<number, number[]>()
+  const cellKey = (cx: number, cy: number): number => (cx + 32768) * 65536 + (cy + 32768)
+  const key = (x: number, y: number): number => cellKey(Math.floor(x / gapX), Math.floor(y / gapY))
 
   const overlapAt = (x: number, y: number): number => {
     const cx = Math.floor(x / gapX)
@@ -218,7 +225,7 @@ export function declutter<T extends { x: number; y: number; own?: boolean }>(mar
     let area = 0
     for (let ix = cx - 1; ix <= cx + 1; ix++) {
       for (let iy = cy - 1; iy <= cy + 1; iy++) {
-        const list = cells.get(`${ix}:${iy}`)
+        const list = cells.get(cellKey(ix, iy))
         if (!list) continue
         for (const other of list) {
           const dx = Math.abs(out[other]!.x - x)

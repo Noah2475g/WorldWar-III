@@ -1,0 +1,295 @@
+{
+ "note": "Szene diplomatie-macht (ux-late.mjs): header.y vorher (docs/ux/v3-after/messwerte-spaet.json, Stand 9be3821) und nachher (Fix scrollWithin, 2026-10-04, Dev-Server 5331)",
+ "vorher": [
+  {
+   "state": "S100",
+   "viewport": "375x667",
+   "headerY": 0,
+   "footY": 0,
+   "side": {
+    "x": 0,
+    "y": 334,
+    "w": 375,
+    "h": 334
+   }
+  },
+  {
+   "state": "S100",
+   "viewport": "1280x800",
+   "headerY": -74,
+   "footY": 530,
+   "side": {
+    "x": 900,
+    "y": 0,
+    "w": 380,
+    "h": 530
+   }
+  },
+  {
+   "state": "S100",
+   "viewport": "1920x1080",
+   "headerY": -78,
+   "footY": 806,
+   "side": {
+    "x": 1540,
+    "y": 0,
+    "w": 380,
+    "h": 806
+   }
+  },
+  {
+   "state": "S300",
+   "viewport": "375x667",
+   "headerY": 0,
+   "footY": 0,
+   "side": {
+    "x": 0,
+    "y": 334,
+    "w": 375,
+    "h": 334
+   }
+  },
+  {
+   "state": "S300",
+   "viewport": "1280x800",
+   "headerY": -74,
+   "footY": 530,
+   "side": {
+    "x": 900,
+    "y": 0,
+    "w": 380,
+    "h": 530
+   }
+  },
+  {
+   "state": "S300",
+   "viewport": "1920x1080",
+   "headerY": -78,
+   "footY": 806,
+   "side": {
+    "x": 1540,
+    "y": 0,
+    "w": 380,
+    "h": 806
+   }
+  },
+  {
+   "state": "S575",
+   "viewport": "375x667",
+   "headerY": 0,
+   "footY": 0,
+   "side": {
+    "x": 0,
+    "y": 334,
+    "w": 375,
+    "h": 334
+   }
+  },
+  {
+   "state": "S575",
+   "viewport": "1280x800",
+   "headerY": -74,
+   "footY": 530,
+   "side": {
+    "x": 900,
+    "y": 0,
+    "w": 380,
+    "h": 530
+   }
+  },
+  {
+   "state": "S575",
+   "viewport": "1920x1080",
+   "headerY": -78,
+   "footY": 806,
+   "side": {
+    "x": 1540,
+    "y": 0,
+    "w": 380,
+    "h": 806
+   }
+  },
+  {
+   "state": "S575G",
+   "viewport": "375x667",
+   "headerY": 0,
+   "footY": 0,
+   "side": {
+    "x": 0,
+    "y": 334,
+    "w": 375,
+    "h": 334
+   }
+  },
+  {
+   "state": "S575G",
+   "viewport": "1280x800",
+   "headerY": -82,
+   "footY": 522,
+   "side": {
+    "x": 900,
+    "y": 0,
+    "w": 380,
+    "h": 522
+   }
+  },
+  {
+   "state": "S575G",
+   "viewport": "1920x1080",
+   "headerY": -82,
+   "footY": 802,
+   "side": {
+    "x": 1540,
+    "y": 0,
+    "w": 380,
+    "h": 802
+   }
+  }
+ ],
+ "nachher": [
+  {
+   "state": "S100",
+   "viewport": "375x667",
+   "headerY": 0,
+   "footY": 0,
+   "side": {
+    "x": 0,
+    "y": 334,
+    "w": 375,
+    "h": 334
+   }
+  },
+  {
+   "state": "S100",
+   "viewport": "1280x800",
+   "headerY": 0,
+   "footY": 604,
+   "side": {
+    "x": 900,
+    "y": 74,
+    "w": 380,
+    "h": 530
+   }
+  },
+  {
+   "state": "S100",
+   "viewport": "1920x1080",
+   "headerY": 0,
+   "footY": 884,
+   "side": {
+    "x": 1540,
+    "y": 78,
+    "w": 380,
+    "h": 806
+   }
+  },
+  {
+   "state": "S300",
+   "viewport": "375x667",
+   "headerY": 0,
+   "footY": 0,
+   "side": {
+    "x": 0,
+    "y": 334,
+    "w": 375,
+    "h": 334
+   }
+  },
+  {
+   "state": "S300",
+   "viewport": "1280x800",
+   "headerY": 0,
+   "footY": 604,
+   "side": {
+    "x": 900,
+    "y": 74,
+    "w": 380,
+    "h": 530
+   }
+  },
+  {
+   "state": "S300",
+   "viewport": "1920x1080",
+   "headerY": 0,
+   "footY": 884,
+   "side": {
+    "x": 1540,
+    "y": 78,
+    "w": 380,
+    "h": 806
+   }
+  },
+  {
+   "state": "S575",
+   "viewport": "375x667",
+   "headerY": 0,
+   "footY": 0,
+   "side": {
+    "x": 0,
+    "y": 334,
+    "w": 375,
+    "h": 334
+   }
+  },
+  {
+   "state": "S575",
+   "viewport": "1280x800",
+   "headerY": 0,
+   "footY": 604,
+   "side": {
+    "x": 900,
+    "y": 74,
+    "w": 380,
+    "h": 530
+   }
+  },
+  {
+   "state": "S575",
+   "viewport": "1920x1080",
+   "headerY": 0,
+   "footY": 884,
+   "side": {
+    "x": 1540,
+    "y": 78,
+    "w": 380,
+    "h": 806
+   }
+  },
+  {
+   "state": "S575G",
+   "viewport": "375x667",
+   "headerY": 0,
+   "footY": 0,
+   "side": {
+    "x": 0,
+    "y": 334,
+    "w": 375,
+    "h": 334
+   }
+  },
+  {
+   "state": "S575G",
+   "viewport": "1280x800",
+   "headerY": 0,
+   "footY": 604,
+   "side": {
+    "x": 900,
+    "y": 82,
+    "w": 380,
+    "h": 522
+   }
+  },
+  {
+   "state": "S575G",
+   "viewport": "1920x1080",
+   "headerY": 0,
+   "footY": 884,
+   "side": {
+    "x": 1540,
+    "y": 82,
+    "w": 380,
+    "h": 802
+   }
+  }
+ ]
+}

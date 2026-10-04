@@ -5,6 +5,7 @@ import { zoomAt, type View, type ViewLimits } from './picking.ts'
 import {
   ARMY_BOX,
   ARMY_HIT_BOX,
+  declutter,
   BUILDING_BOX,
   BUILDING_MAX_SCALE,
   BUILDING_OFFSET_Y,
@@ -611,6 +612,19 @@ describe('T-M46-03 Aufgefaecherte Stapel', () => {
     // a1 steht allein auf der Mitte, a2 auf halbem Weg — keiner von beiden versetzt.
     expect(marker.find((m) => m.armyId === 'a1')).toMatchObject({ x: 100, y: 100 })
     expect(marker.find((m) => m.armyId === 'a2')).toMatchObject({ x: 200, y: 150 })
+  })
+
+  it('declutter: 150 Stapel in einem Dutzend dicht liegender Provinzen ueberdecken sich nicht (Nachbesserung U)', () => {
+    // Dicht wie Asien bei Massstab 8: zwoelf Mitten im Abstand von 6 Punkten, zwoelf bis dreizehn Armeen je Mitte.
+    const raw = Array.from({ length: 150 }, (_, i) => ({ x: 400 + (i % 12) * 6, y: 300 + Math.floor((i % 12) / 4) * 5, own: i % 3 === 0 }))
+    const placed = declutter(fanOut(raw))
+    for (let i = 0; i < placed.length; i++) {
+      for (let j = i + 1; j < placed.length; j++) {
+        const dx = Math.abs(placed[i]!.x - placed[j]!.x)
+        const dy = Math.abs(placed[i]!.y - placed[j]!.y)
+        expect(dx >= ARMY_BOX.width || dy >= ARMY_BOX.height, `Stapel ${i} und ${j} ueberdecken sich`).toBe(true)
+      }
+    }
   })
 
   it('fanOut ist rein: es veraendert die Eingabe nicht und kennt die leere Liste', () => {
