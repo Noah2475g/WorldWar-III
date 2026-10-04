@@ -330,7 +330,8 @@ export function visibleProvinces(state: GameState, playerId: PlayerId): Set<Prov
     if (province.owner === playerId || (province.owner && allies.has(province.owner))) {
       visible.add(id)
       // Own provinces see their immediate surroundings.
-      for (const neighbour of [...province.neighbors, ...province.seaLinks]) visible.add(neighbour)
+      for (const neighbour of province.neighbors) visible.add(neighbour)
+      for (const neighbour of province.seaLinks) visible.add(neighbour)
     }
   }
 
