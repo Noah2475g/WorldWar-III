@@ -36,10 +36,21 @@ Das Budget bei Tempo 100 (10 ms je Tick) hält headless bis zur Entscheidung —
 | S575 | 575 (14 Tage vor der Entscheidung) | **29,9** | 52 | 49 |
 
 Die Stände stammen aus der ausgelieferten Aufstellung (1 Mensch ohne Befehle + 7 KI, Startzahl
-1914, entschieden an Tag 589) — eine **andere Partie** als der Langlauf (8 KI, Tag 394). **Im
-Browser hält Tempo 100 im Spätspiel nicht:** an S575 läuft die Uhr mit 30 statt 100 Ticks/s.
+1914, entschieden an Tag 589) — eine **andere Partie** als der Langlauf (8 KI, Tag 394).
+
+> **Korrektur 2026-10-04 (Bahn P-Hülle):** Der S575-Wert ist **ein Messfehler**. S575 liegt nur
+> 14 Tage (~336 Ticks) vor der Entscheidung; bei Tempo 100 endet die Partie nach rund 290 Ticks mit
+> „Niederlage – Russland hat gewonnen“ (Tag 590), und das 10-s-Fenster misst den Stillstand nach dem
+> Ende mit. 29,9 Ticks/s heißt nur „290 Ticks bis zum Sieg“. Ein Browserprofil im Fenster **vor** dem
+> Ende zeigt den Hauptfaden voll belegt: Ticks 70–75 %, React 16 %, Native 7–11 % — die Hülle kostet
+> also rund **25–30 %**, nicht zwei Drittel; im Browser kostet ein Tick dort ~12,7 ms (Maschine belegt,
+> nur Hinweis). S300 (91,6) ist davon nicht betroffen. Wie S575 künftig gemessen wird: siehe G1-Nachtrag
+> in `docs/plan/V3-G1-DOSSIER.md`.
+<!-- LOESCHVERMERK (Review): falsche Deutung, ersetzt durch die Korrektur oben. Wortlaut:
+**Im Browser hält Tempo 100 im Spätspiel nicht:** an S575 läuft die Uhr mit 30 statt 100 Ticks/s.
 Headless kostet derselbe Stand ~10,7 ms je Tick (Abschnitt 3); der Rest (~20 ms je Tick) liegt
 in der Hülle (Zeichnen, React, Ableitungen je Tick).
+-->
 
 ## 3 · Profil an den Ständen (headless, 240 Ticks mit KI)
 
@@ -65,7 +76,8 @@ Alt 99,80 / 99,88, neu 99,64 / 99,77 Ticks/s (Min/Median) → Normalstreuung.
 
 ## Folgerung für G1
 
-1. Der Hebel liegt **nicht** in Etappe 2, sondern (a) in der **Hülle** (S575: 30 statt 100 Ticks/s,
-   headless ~11 ms) und (b) in `threat.ts` (`distances`/`threatMap`, ~37 % an S575).
+1. Der Hebel liegt **nicht** in Etappe 2, sondern (a) in den **Tickkosten** (Kern und `threat.ts`,
+   ~70–75 % des Hauptfadens im Browser an S575) und (b) in der **Hülle** (~25–30 %). *(Korrigiert
+   2026-10-04; vorher hieß es „Hülle zuerst, S575 30 Ticks/s“ — Messfehler, siehe Abschnitt 2.)*
 2. Die Ticks **nach der Entscheidung** (24–32 ms) sind nur relevant, wenn nach dem Sieg
    weitergespielt wird — eine Frage an Noah, kein Ziel von sich aus.

@@ -108,3 +108,30 @@ Warten kostet Tage ohne Erkenntnis für die Leistung.
 
 **Nach deinem Wort:** DECISIONS-Eintrag, Aufgaben T-M45-xx/T-M46-xx in `tasks.yaml` und `03-TASKS.md`,
 `R-PERF-01` in `01-REQUIREMENTS.md`, `plan-consistency` + `coverage:requirements` grün, dann Welle 1 mit drei Bahnen.
+
+---
+
+## Nachtrag 2026-10-04 · Korrektur der S575-Messung und eine Frage (G1-8)
+
+**Was falsch war:** S575 liegt nur ~336 Ticks vor dem Sieg. Bei Tempo 100 endet die Partie nach ~290
+Ticks; das 10-s-Fenster hat den Stillstand nach dem Spielende mitgemessen. „29,9 Ticks/s“ und „zwei
+Drittel liegen in der Hülle“ waren deshalb falsch. Richtig (Browserprofil vor dem Ende): Ticks 70–75 %,
+Hülle 25–30 %. Gefunden hat das die Bahn P-Hülle; Bericht korrigiert (`leistung-ausgang.md` §2).
+
+**Was das an G1-1 bis G1-7 ändert:** nichts an den Entscheiden. Welle 1 hat alle drei Hebel parallel
+gebaut; der Kern- und KI-Anteil (P-Kern, P-KI) war damit der größere Hebel, nicht der kleinere. Die
+Begründung zu G1-2 („Denktakt trifft nur den kleineren Hebel“) gilt nicht mehr — der Entscheid selbst
+bleibt, weil Welle 1 verhaltensgleich schon viel geholt hat; die Zahl im Rechnerfenster zeigt, ob mehr nötig ist.
+
+### Frage 8 · Wo misst R-PERF-01/AK1 das Spätspiel?
+
+Lage: An S575 lassen sich keine 10 s bei Tempo 100 messen, ohne über das Spielende zu laufen.
+
+**Empfehlung: einen Stand S500 (Tag 500, ~2100 Ticks vor dem Sieg) aus derselben Partie erzeugen und
+AK1 an S300 und S500 messen**, je 10 s wie die Uhr an der exe. S575 bleibt für den Verhaltenstest und das
+Profil. Das ändert das Messverfahren, nicht die Grenze (≥ 98 Ticks/s).
+
+*Verworfen: S575 mit kurzem Fenster (2–3 s).* Ein kurzes Fenster streut stärker als der Abstand, den es
+belegen soll (Falle 18) — eine Schwelle unter der eigenen Streuung ist keine Schwelle.
+*Verworfen: den Stand S575 so ändern, dass der Sieg später fällt.* Ein künstlich verschobener Stand misst
+nicht mehr die ausgelieferte Partie.
