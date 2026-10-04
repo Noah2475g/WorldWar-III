@@ -5850,3 +5850,20 @@ den Deckel. Den Deckel von `stackFullContribution` (20) haelt die KI selbst uebe
 (`SPLIT_ARMY`). Gemessen nach der Entscheidung: groesster stehender Verband 20 (Welt 1815) bzw. 21 an
 einem einzigen Tagesende (Voreinstellung), vorher 95/59. Befund geschlossen (`PROBLEME.md`).
 
+## 2026-10-04 · Gate G1 der V3 · Noahs Entscheide 1–7
+
+Grundlage: `docs/plan/V3-G1-DOSSIER.md` (Empfehlungen mit verworfenen Alternativen), Rechnerfenster P0-W
+(`docs/reports/v3/leistung-ausgang.md`), P0-B1/B2. Noah: „1–7 ja, freigegeben, starte Welle 1".
+
+- **G1-1 ·** Zielwert R-PERF-01: ≥ 98 Ticks/s am Bündel an S300 und S575; Langlauf vor der Entscheidung
+  ≤ 10 ms je Tick in jedem 50-Tage-Fenster. Verfehlt Welle 1 das Ziel, kommt die Zahl zurück an Noah; die
+  Grenze wird nicht gesenkt.
+- **G1-2 ·** Nur verhaltensgleiche Optimierungen in Welle 1; KI-Denktakt nach Lage (vormals T-M45-06) erst
+  auf neues Wort mit voller Messkette.
+- **G1-3 ·** Keine Simulation im Worker in V3 (T-M10-02 bleibt zurückgenommen).
+- **G1-4 ·** Welle 1 neu zugeschnitten: Hülle (T-M45-04), `threat.ts` (T-M45-01 neu), Kern-Hotspots
+  (T-M45-03); Wegesuche (T-M45-02) und Bündel (T-M45-05) nachrangig. H-P1 (Etappe 2) ist widerlegt.
+- **G1-5 ·** Kein Ziel für die Ticks nach dem Sieg (24–32 ms); nur Befund.
+- **G1-6 ·** UX-Auswahl M46: T-M46-10 (Telefon), -01, -05, -06, -11, -08; nicht eingeplant mangels Befund:
+  Kartenlesbarkeit, Mehrfachauswahl, Ladezustand, Protokollfilter am Desktop.
+- **G1-7 ·** Nicht auf den Playtest warten; Noah spielt während Welle 1, Funde werden T-M46-09.
