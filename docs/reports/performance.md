@@ -2,10 +2,39 @@
 
 Lauf: 1000 Spieltage (24000 Ticks), 8 KI-Spieler, Weltkarte (237 Provinzen) — die ausgelieferte Voreinstellung.
 
-- Dauer gesamt: 446767 ms
-- Zeit je Tick inkl. KI: 18.615 ms
+- Dauer gesamt: 88508 ms
+- Zeit je Tick inkl. KI: 3.688 ms
 - Ereignisprotokoll am Ende: 500 Einträge (Ringpuffer greift)
 - Partie entschieden bei Tick: 9456
+
+## Zeit je Tick nach 50-Tage-Fenstern (V3, nur Bericht, keine Schranke)
+
+Der Mittelwert oben mischt Ticks nach der Entscheidung; hier steht jedes Fenster einzeln. Die Zahlen gelten nur fuer den Rechner und die Last dieses Laufs.
+
+| Tage | ms je Tick inkl. KI | nach der Entscheidung |
+|---|---|---|
+| 0–50 | 1.249 | nein |
+| 50–100 | 2.561 | nein |
+| 100–150 | 3.576 | nein |
+| 150–200 | 3.581 | nein |
+| 200–250 | 3.777 | nein |
+| 250–300 | 3.691 | nein |
+| 300–350 | 3.767 | nein |
+| 350–400 | 3.493 | teils (Entscheidung im Fenster) |
+| 400–450 | 3.253 | ja |
+| 450–500 | 3.766 | ja |
+| 500–550 | 4.592 | ja |
+| 550–600 | 4.894 | ja |
+| 600–650 | 3.456 | ja |
+| 650–700 | 3.393 | ja |
+| 700–750 | 3.759 | ja |
+| 750–800 | 3.594 | ja |
+| 800–850 | 4.542 | ja |
+| 850–900 | 4.262 | ja |
+| 900–950 | 4.268 | ja |
+| 950–1000 | 4.282 | ja |
+
+Entscheidungstick: 9456 (Tag 394).
 
 ## Bestände nach 1000 Spieltagen (Befund 58)
 

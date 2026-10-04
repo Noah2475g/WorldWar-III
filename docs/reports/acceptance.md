@@ -1,6 +1,6 @@
 # Abnahmelauf V1
 
-Erzeugt von `scripts/acceptance.mjs` am 2026-10-03 gegen `3ec9a62`.
+Erzeugt von `scripts/acceptance.mjs` am 2026-10-04 gegen `6672743`.
 
 > Dieser Bericht gilt fuer genau diesen Stand. Zeigt `git log --oneline -1` etwas
 > anderes, ist er ueberholt und keine Aussage ueber das Projekt (T-M16-01a).
@@ -16,11 +16,11 @@ Erzeugt von `scripts/acceptance.mjs` am 2026-10-03 gegen `3ec9a62`.
 | MESSGERAET | Haltungs-Messlauf: sauber gemessen, seit dem Messcommit kein Commit an 8 Quellen, AK5 erfüllt (docs/reports/stance.json) | ✅ bestanden |
 | AK-1 | Vollständige Partie: 7 KI-Gegner, entschieden an Tag 589 (1612 Eroberungen, 7 Kriegserklärungen) | ✅ bestanden |
 | AK-2 | pnpm coverage:requirements (Anforderungs-Tor) | ✅ bestanden |
-| AK-3 | Abdeckung gesamt 97.2 % (Schwelle 80 %) | ✅ bestanden |
+| AK-3 | Abdeckung gesamt 96.9 % (Schwelle 80 %) | ✅ bestanden |
 | AK-2 | V1-Anforderungen ohne Test: 0 | ✅ bestanden |
 | AK-5 | Guards für Monetarisierung und Netzwerk | ✅ bestanden |
 | AK-7 | Playtest durch Noah nach `docs/PLAYTEST.md`, Antworten in `docs/reports/playtest-v1.md` | ✅ beantwortet und abgenommen von Noah — Durchführung per /goal-Auftrag vom 2026-09-07 ausdrücklich an Claude delegiert („den Playtest sollst du eigenständig durchführen"); zweiter Durchgang auf Stand a007497 (nach M19–M21) in docs/reports/playtest-2026-09-07-v2.md, Delegationsentscheid in docs/plan/DECISIONS.md (62 Fragen) |
-| AK-8 | Verpackung als Programm (T-M16-05) | ⚠ gemessen am 2026-09-26 gegen `7a6aa47` - seither 49 Datei(en) am Erzeugnis geaendert, siehe `docs/reports/packaging.md`, zaehlt nicht gegen V1 |
+| AK-8 | Verpackung als Programm (T-M16-05) | ⚠ gemessen am 2026-10-03 gegen `1aab3a1` - seither 72 Datei(en) am Erzeugnis geaendert, siehe `docs/reports/packaging.md`, zaehlt nicht gegen V1 |
 | AK-9 | Eine Partie zu zweit ueber einen Link (T-M39-09) | ⏸ M39, noch nicht gemessen, zaehlt nicht gegen V1 |
 
 **12 von 12 maschinellen Prüfungen bestanden.**

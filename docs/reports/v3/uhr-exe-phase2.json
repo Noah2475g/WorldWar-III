@@ -1,0 +1,96 @@
+{
+  "exes": {
+    "main-19b28d3": {
+      "exe": "C:\\Users\\noahh\\Desktop\\Claude-Projekte\\WorldWar\\apps\\desktop\\src-tauri\\target\\release\\worldwar.exe",
+      "results": [
+        {
+          "run": 1,
+          "ticksPerSecond": 99.91,
+          "hours": 1001,
+          "seconds": 10.019399999999441,
+          "measuredAt": "2026-10-04T19:04:04.903Z"
+        },
+        {
+          "run": 2,
+          "ticksPerSecond": 99.79,
+          "hours": 1001,
+          "seconds": 10.030799999999815,
+          "measuredAt": "2026-10-04T19:04:04.903Z"
+        },
+        {
+          "run": 3,
+          "ticksPerSecond": 99.76,
+          "hours": 1000,
+          "seconds": 10.024199999999254,
+          "measuredAt": "2026-10-04T19:04:04.903Z"
+        },
+        {
+          "run": 4,
+          "ticksPerSecond": 99.9,
+          "hours": 1001,
+          "seconds": 10.02,
+          "measuredAt": "2026-10-04T19:04:04.903Z"
+        },
+        {
+          "run": 5,
+          "ticksPerSecond": 99.87,
+          "hours": 1000,
+          "seconds": 10.013399999999441,
+          "measuredAt": "2026-10-04T19:04:04.903Z"
+        }
+      ],
+      "summary": {
+        "runs": 5,
+        "min": 99.76,
+        "median": 99.87,
+        "max": 99.91
+      }
+    },
+    "v3-6672743": {
+      "exe": "C:\\Users\\noahh\\Desktop\\Claude-Projekte\\WorldWar\\.claude\\worktrees\\v3\\apps\\desktop\\src-tauri\\target\\release\\worldwar.exe",
+      "results": [
+        {
+          "run": 1,
+          "ticksPerSecond": 100.63,
+          "hours": 1007,
+          "seconds": 10.00689999999944,
+          "measuredAt": "2026-10-04T19:05:30.353Z"
+        },
+        {
+          "run": 2,
+          "ticksPerSecond": 100.63,
+          "hours": 1007,
+          "seconds": 10.006800000000744,
+          "measuredAt": "2026-10-04T19:05:30.353Z"
+        },
+        {
+          "run": 3,
+          "ticksPerSecond": 100.81,
+          "hours": 1009,
+          "seconds": 10.009299999999813,
+          "measuredAt": "2026-10-04T19:05:30.353Z"
+        },
+        {
+          "run": 4,
+          "ticksPerSecond": 100.66,
+          "hours": 1007,
+          "seconds": 10.003799999999814,
+          "measuredAt": "2026-10-04T19:05:30.353Z"
+        },
+        {
+          "run": 5,
+          "ticksPerSecond": 100.71,
+          "hours": 1008,
+          "seconds": 10.008799999999814,
+          "measuredAt": "2026-10-04T19:05:30.353Z"
+        }
+      ],
+      "summary": {
+        "runs": 5,
+        "min": 100.63,
+        "median": 100.66,
+        "max": 100.81
+      }
+    }
+  }
+}
