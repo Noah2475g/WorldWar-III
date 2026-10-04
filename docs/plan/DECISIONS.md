@@ -5877,3 +5877,18 @@ Namensnennung je Datei in `docs/ASSETS.md` und sichtbar im Spiel (Mitwirkende). 
 kostenpflichtiger Dienst, keine Registrierung; die übrigen Quellen bleiben CC0/MIT (Kenney, milsymbol,
 Lucide/Tabler). Verworfen blieb freesound.org (Konto, gemischte Lizenzen je Datei).
 
+## 2026-10-04 · Gate G1, Nachtrag · Noahs Entscheide 8, 10–12
+
+Grundlage: Nachtrag in `docs/plan/V3-G1-DOSSIER.md`, Playtest V3 (`docs/reports/playtest-v3.md`),
+`docs/plan/VORMERKUNGEN.md`. Noah: „8, 10–12 ja, freigegeben mit allen Empfehlungen, starte Welle 2“.
+
+- **G1-8 ·** R-PERF-01/AK1 misst an S300 und **S500** (neuer Stand, ~2100 Ticks vor dem Sieg); Grenze ≥ 98 Ticks/s unverändert.
+- **G1-10 ·** Ausheben in eroberten Provinzen (VM-01, Ursache Moralsperre `commands/recruit.ts:46`):
+  (a) Anzeige von Moral und Grenze jetzt in Welle 2 (T-M46-15); (b) Schonfrist für Spieler und KI als
+  eigener PR **nach** dem Merge von V3, mit voller Messkette. Verworfen: Grenze oder Eroberungsmoral senken.
+- **G1-11 ·** Welle 2 in zwei Bahnen: U-Bild (T-M46-13 Symbole statt Text, T-M46-03 Stapel, T-M46-14 Töne)
+  und U-Layout (T-M46-10, T-M46-02, T-M46-15, T-M46-01, T-M46-06, T-M46-11, T-M46-08, zuletzt T-M46-05;
+  wird es knapp, wandert T-M46-05 in die Vormerkungen). Kompletter Design-Umbau aller Dialoge: V4/V5.
+- **G1-12 ·** Mid-Game-Stress erst messen (T-M46-16, Ereignisdichte je Abschnitt), dann UX- oder Balance-Entscheid.
+- **V4 „Gefecht“ vorgemerkt** (VM-07, VM-08): Positionen in der Provinz, Waffenradius — nicht in V3.
+

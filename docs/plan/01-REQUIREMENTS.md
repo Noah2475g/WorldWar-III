@@ -1562,8 +1562,10 @@ Aus dem Rechnerfenster P0-W (`docs/reports/v3/leistung-ausgang.md`) und Noahs En
 (`docs/plan/V3-G1-DOSSIER.md`, Frage 1). Stände `test/fixtures/v3/S300.json` und `S575.json`.
 
 - **R-PERF-01 — Tempo 100 hält auch im Spätspiel.**
-- **AK1:** WENN das gebaute Bündel einen der Stände S300 oder S575 lädt und 10 s bei Tempo 100 läuft
+- **AK1:** WENN das gebaute Bündel einen der Stände S300 oder S500 lädt und 10 s bei Tempo 100 läuft
   (Verfahren wie die Uhr an der exe, ruhige Maschine), DANN SOLL die Uhr mindestens 98 Ticks/s schaffen.
+<!-- LOESCHVERMERK (Review): vorher „S300 oder S575“. S575 liegt ~336 Ticks vor dem Sieg, ein 10-s-Fenster
+läuft über das Spielende (Messfehler vom 2026-10-04); Messort S500 auf Noahs Wort G1-8, Grenze unverändert. -->
 - **AK2:** WENN der Langlauf (`apps/headless/test/longrun.slow.test.ts`, Maschine allein) die Partie
   spielt, DANN SOLL jedes 50-Tage-Fenster vor der Entscheidung höchstens 10 ms je Tick inklusive KI
   brauchen. Die Ticks nach der Entscheidung sind ausgenommen (G1 Frage 5).

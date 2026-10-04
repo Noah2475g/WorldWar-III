@@ -8022,3 +8022,61 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Dateien:** `docs/ux/v3-after/aufgaben.json`, `docs/ASSETS.md`
 - **Tests zuerst:** ux-late und ux-tasks nach docs/ux/v3-after.
 - **Fertig wenn:** Jede M46-Aufgabe hat ihren Lauf verbessert (Urteil erfuellt/teilweise/nicht); die Spaetspiel-Uhr ist nicht schlechter; Bilder in docs/ASSETS.md.
+
+### Nachtrag G1 (2026-10-04) — Playtest-Funde und Grafik statt Text
+
+> Noahs Wort zu G1-8 und G1-10 bis G1-12 (`V3-G1-DOSSIER.md`, Nachtrag; `VORMERKUNGEN.md`).
+
+### T-M46-13 · Symbole statt Text: Kopfleiste, Provinz-/Armeepanel, Kartenmarker
+- **Ziel:** Noah (Playtest V3, VM-05): „keinen Text als Hauptvordergrund, sondern Grafiken und Symbole“. Einheiten als milsymbol (MIT), Gebaeude und Rohstoffe aus game-icons.net (CC BY 3.0, R-ASSET-02 seit 2026-10-04), Oberflaeche aus Lucide (ISC); Text nur noch als Beschriftung/Tooltip.
+- **Paket und Priorität:** Bahn U-Bild · P1
+- **Anforderungen:** R-UX-02, R-ASSET-01
+- **Abhängigkeiten:** T-M45-04
+- **Dateien:** `apps/desktop/src/ui/Icon.tsx`, `apps/desktop/src/ui/Header.tsx`, `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/map/MapCanvas.tsx`, `docs/ASSETS.md`
+- **Tests zuerst:** ux-late an S300/S575G: Anteil Textflaeche in Kopf und Panels und Zahl der Symbole je Ansicht als Ausgangswert.
+- **Fertig wenn:** Jede Einheit, jedes Gebaeude und jeder Rohstoff in Kopf, Panels und Karte hat ein Symbol; jede Datei mit Urheber, Lizenz und Quelle in docs/ASSETS.md und sichtbar unter Mitwirkende; Tooltips tragen den Text; Desktop-Tests und no-foreign-assets gruen.
+
+### T-M46-03 · Gestapelte Armeen auffaechern
+- **Ziel:** Noah (VM-02): „Einheiten sind manchmal uebereinander … man hat Einheiten nicht gesehen“.
+- **Paket und Priorität:** Bahn U-Bild · P1
+- **Anforderungen:** R-UX-02
+- **Abhängigkeiten:** T-M46-13
+- **Dateien:** `apps/desktop/src/map/MapCanvas.tsx`, `apps/desktop/src/map/markers.ts`
+- **Tests zuerst:** ux-late an S575G: Zahl sich ueberdeckender Armeemarker als Ausgangswert.
+- **Fertig wenn:** 0 vollstaendig verdeckte Armeemarker an S575G; jede Armee per Klick waehlbar; Bildbudget render.bench haelt.
+
+### T-M46-14 · Soundeffekte je Ereignisart statt Ploppen
+- **Ziel:** Noah (VM-04): „Statt einfach diesen Ploppen, das nervt sehr“. Kenney-Pakete (CC0), eigener Klang je Ereignisart; Tempolimit und Stummschaltung bleiben.
+- **Paket und Priorität:** Bahn U-Bild · P2
+- **Anforderungen:** R-UX-02, R-ASSET-01
+- **Abhängigkeiten:** T-M46-13
+- **Dateien:** `apps/desktop/src/ui/sound.ts`, `apps/desktop/public/sfx`, `docs/ASSETS.md`
+- **Tests zuerst:** Liste der heutigen Klaenge je Ereignisart (sound.ts) als Ausgangswert.
+- **Fertig wenn:** Jede Ereignisart mit eigenem Klang; jede Datei in docs/ASSETS.md; bestehende Ton-Tests gruen.
+
+### T-M46-02 · Ueberblick: Protokoll nach Wichtigkeit, Sprung und Puls am Ort
+- **Ziel:** Noah (VM-03): „Sounds passieren und man weiss nicht, wo etwas passiert, und die Konsole unten ist viel zu ueberfuellt“.
+- **Paket und Priorität:** Bahn U-Layout · P1
+- **Anforderungen:** R-UX-02
+- **Abhängigkeiten:** T-M46-10
+- **Dateien:** `apps/desktop/src/ui/Foot.tsx`, `apps/desktop/src/game/events.ts`, `apps/desktop/src/map/MapCanvas.tsx`
+- **Tests zuerst:** Protokollzeilen je Spieltag an S300/S575G und Anteil Ereignisse mit Ort als Ausgangswert.
+- **Fertig wenn:** Jedes hoerbare Ereignis pulsiert an seinem Ort und ist per Klick anspringbar; Protokoll nach Wichtigkeit mit Sammelzeilen und Filtern; sichtbare Zeilen je Spieltag deutlich weniger.
+
+### T-M46-15 · Moralsperre beim Ausheben mit Zahl und Grenze anzeigen
+- **Ziel:** VM-01 Teil a (G1-10): die Sperre heisst heute nur „Moral zu niedrig“; Noah hielt sie fuer ein fehlendes Gebaeude.
+- **Paket und Priorität:** Bahn U-Layout · P1
+- **Anforderungen:** R-UX-03
+- **Abhängigkeiten:** —
+- **Dateien:** `apps/desktop/src/game/rejections.ts`, `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** Test: gesperrtes Ausheben in eroberter Provinz zeigt heute keine Zahl.
+- **Fertig wenn:** Gesperrtes Ausheben nennt Moral und Grenze (z. B. „Moral 23 von 25 noetig“); keine Kern- oder Regelaenderung.
+
+### T-M46-16 · Ereignisdichte je Spielabschnitt messen (Mid-Game-Stress)
+- **Ziel:** Noah (VM-06): „Das Mid-Game ist sehr, sehr stressig“. Erst messen: Ereignisse, Kriegserklaerungen, Angriffe auf den Menschen je Spieltag nach Spielabschnitt.
+- **Paket und Priorität:** Bahn M-Mess · P2
+- **Anforderungen:** R-UX-02
+- **Abhängigkeiten:** —
+- **Dateien:** `apps/headless/test/ereignisdichte.slow.test.ts`, `docs/reports/v3/ereignisdichte.md`
+- **Tests zuerst:** Vollpartie der ausgelieferten Aufstellung, Zaehlung je 50 Tage.
+- **Fertig wenn:** Bericht mit Ereignisdichte je Abschnitt und Empfehlung UX oder Balance an Noah; keine Spielaenderung.

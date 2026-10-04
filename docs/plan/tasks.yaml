@@ -4210,3 +4210,65 @@ tasks:
     files: [docs/ux/v3-after/aufgaben.json, docs/ASSETS.md]
     tests: [scripts/ux-late.mjs, scripts/ux-tasks.mjs]
     dod: "alle - P1. Jede M46-Aufgabe hat ihren Lauf verbessert (Urteil erfuellt/teilweise/nicht); die Spaetspiel-Uhr ist nicht schlechter; Bilder in docs/ASSETS.md."
+
+  # Nachtrag G1 vom 2026-10-04 (Noahs Wort zu 8, 10-12; Playtest V3, VORMERKUNGEN.md VM-01..06).
+  - id: T-M46-13
+    milestone: M46
+    title: "Symbole statt Text: Kopfleiste, Provinz-/Armeepanel, Kartenmarker"
+    status: todo
+    deps: [T-M45-04]
+    requirements: [R-UX-02, R-ASSET-01]
+    design: []
+    files: [apps/desktop/src/ui/Icon.tsx, apps/desktop/src/ui/Header.tsx, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/map/MapCanvas.tsx, docs/ASSETS.md]
+    tests: [scripts/ux-late.mjs, test/guards/no-foreign-assets.test.ts]
+    dod: "Bahn U-Bild - P1. Jede Einheit, jedes Gebaeude und jeder Rohstoff in Kopf, Panels und Karte hat ein Symbol; jede Datei mit Urheber, Lizenz und Quelle in docs/ASSETS.md und sichtbar unter Mitwirkende; Tooltips tragen den Text; Desktop-Tests und no-foreign-assets gruen."
+  - id: T-M46-03
+    milestone: M46
+    title: "Gestapelte Armeen auffaechern"
+    status: todo
+    deps: [T-M46-13]
+    requirements: [R-UX-02]
+    design: []
+    files: [apps/desktop/src/map/MapCanvas.tsx, apps/desktop/src/map/markers.ts]
+    tests: [scripts/ux-late.mjs]
+    dod: "Bahn U-Bild - P1. 0 vollstaendig verdeckte Armeemarker an S575G; jede Armee per Klick waehlbar; Bildbudget render.bench haelt."
+  - id: T-M46-14
+    milestone: M46
+    title: "Soundeffekte je Ereignisart statt Ploppen"
+    status: todo
+    deps: [T-M46-13]
+    requirements: [R-UX-02, R-ASSET-01]
+    design: []
+    files: [apps/desktop/src/ui/sound.ts, apps/desktop/public/sfx, docs/ASSETS.md]
+    tests: [apps/desktop/src/ui/sound.test.ts]
+    dod: "Bahn U-Bild - P2. Jede Ereignisart mit eigenem Klang; jede Datei in docs/ASSETS.md; bestehende Ton-Tests gruen."
+  - id: T-M46-02
+    milestone: M46
+    title: "Ueberblick: Protokoll nach Wichtigkeit, Sprung und Puls am Ort"
+    status: todo
+    deps: [T-M46-10]
+    requirements: [R-UX-02]
+    design: []
+    files: [apps/desktop/src/ui/Foot.tsx, apps/desktop/src/game/events.ts, apps/desktop/src/map/MapCanvas.tsx]
+    tests: [scripts/ux-late.mjs]
+    dod: "Bahn U-Layout - P1. Jedes hoerbare Ereignis pulsiert an seinem Ort und ist per Klick anspringbar; Protokoll nach Wichtigkeit mit Sammelzeilen und Filtern; sichtbare Zeilen je Spieltag deutlich weniger."
+  - id: T-M46-15
+    milestone: M46
+    title: "Moralsperre beim Ausheben mit Zahl und Grenze anzeigen"
+    status: todo
+    deps: []
+    requirements: [R-UX-03]
+    design: []
+    files: [apps/desktop/src/game/rejections.ts, apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/game/rejections.test.ts]
+    dod: "Bahn U-Layout - P1. Gesperrtes Ausheben nennt Moral und Grenze (z. B. \"Moral 23 von 25 noetig\"); keine Kern- oder Regelaenderung."
+  - id: T-M46-16
+    milestone: M46
+    title: "Ereignisdichte je Spielabschnitt messen (Mid-Game-Stress)"
+    status: todo
+    deps: []
+    requirements: [R-UX-02]
+    design: []
+    files: [apps/headless/test/ereignisdichte.slow.test.ts, docs/reports/v3/ereignisdichte.md]
+    tests: [apps/headless/test/ereignisdichte.slow.test.ts]
+    dod: "Bahn M-Mess - P2. Bericht mit Ereignisdichte je Abschnitt und Empfehlung UX oder Balance an Noah; keine Spielaenderung."

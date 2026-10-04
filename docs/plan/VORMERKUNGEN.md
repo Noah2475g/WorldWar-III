@@ -23,7 +23,7 @@
 - **Noah:** „In der eroberten Provinz konnte ich keine Einheiten bauen, bis ich selber das Gebäude
   gebaut habe … wenn ich der Besitzer bin, muss ich da ja auch Einheiten ausheben können.“
 - **Stand:** Gebäude bleiben im Kern bei der Eroberung an der Provinz (`occupation.ts`), nur der
-  Besitzer wechselt — die Sperre kommt von woanders. Ursache wird untersucht (Zweig `claude/v3-bug-ausheben`).
+  Besitzer wechselt — die Sperre kommt von woanders. Ursache belegt: Moralsperre (`commands/recruit.ts:46`, Eroberung setzt 25 000 = Grenze, erste Tagesabrechnung drückt darunter); Test `recruitConquered.test.ts` (Zweig `claude/v3-bug-ausheben`). Entscheid G1-10: Anzeige T-M46-15 in V3, Schonfrist als eigener PR nach V3.
 - **Plan muss klären:** Ursache (Datei:Zeile), Reparatur, Folgen für KI und Balance; als Kernänderung
   verhaltensändernd → volle Messkette (Turnier, `progress.slow`, 9 Vollpartien, Haltung) und Noahs Wort.
 
