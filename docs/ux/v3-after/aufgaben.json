@@ -1,11 +1,11 @@
 {
-  "erzeugt": "2026-10-04T15:07:32.664Z",
+  "erzeugt": "2026-10-04T16:47:14.881Z",
   "skript": "scripts/ux-tasks.mjs",
   "fenster": "1280x800",
   "stand": "test/fixtures/v3/S300.json",
   "begleitmessungen": {
     "tabfolgeStart": {
-      "stationen": 45,
+      "stationen": 38,
       "provinzlisteAlsNummer": 19,
       "davonImProtokollUndFuss": 15
     },
@@ -13,8 +13,8 @@
     "armeeZeichenImDom": 0,
     "auswaehlenKnoepfe": [
       {
-        "ariaLabel": null,
-        "title": null
+        "ariaLabel": "Auswählen: Armee 3172",
+        "title": "Auswählen"
       }
     ],
     "marschzielliste": {
@@ -23,9 +23,9 @@
       "unerreichbar": 203
     },
     "rueckmeldungJeTempo": {
-      "1": 1678,
-      "10": 1713,
-      "100": 1698,
+      "1": 1658,
+      "10": 1646,
+      "100": 1652,
       "Pause": "bleibt stehen (>3,5 s)"
     }
   },
@@ -48,7 +48,7 @@
         "tasten": 0,
         "hinweis": "Zeichen auf der Karte, Marschieren, Liste (2), Marsch befehlen"
       },
-      "zeitMs": 1452,
+      "zeitMs": 1512,
       "zeitHinweis": "Nebenwert, nicht lastfest",
       "rueckmeldung": [
         "✓ befohlen."
@@ -60,7 +60,7 @@
         "Klick: Marsch befehlen"
       ],
       "einrichtung": [],
-      "beleg": "Provinz — keine — Mittlerer Westen Nordosten der USA Südstaaten Westen der USA Ostkanada Nordkanada Westkanada Kuba Südwestengland und Wales Nordjapan Nordostmexiko Nordwestmexiko Russischer Ferner Osten ✓ befohlen. ‹ Armee 3172 × Kampfkraft 12 · Zustand 100 % Zustand 100 % ✓ befohlen — ausgeführt. ",
+      "beleg": "— keine — Mittlerer Westen Nordosten der USA Südstaaten Westen der USA Ostkanada Nordkanada Westkanada Kuba Südwestengland und Wales Nordjapan Nordostmexiko Nordwestmexiko Russischer Ferner Osten ✓ befohlen. Armee 3172 12 100 % ✓ befohlen — ausgeführt. 380 · 03:00 12",
       "konsolenFehler": [],
       "versuche": 1,
       "titel": "Armee finden und bewegen (Mittlerer Westen nach Südstaaten)"
@@ -82,7 +82,7 @@
         "absichten": 7,
         "hinweis": "Liste fokussieren, tippen, Auswählen, Marschieren, Ziel fokussieren, tippen, Marsch befehlen"
       },
-      "zeitMs": 2355,
+      "zeitMs": 2558,
       "zeitHinweis": "Nebenwert, nicht lastfest",
       "rueckmeldung": [
         "✓ befohlen."
@@ -101,7 +101,7 @@
         "Taste: Enter (Marsch befehlen)"
       ],
       "einrichtung": [],
-      "beleg": "Provinz — keine — Mittlerer Westen Nordosten der USA Südstaaten Westen der USA Ostkanada Nordkanada Westkanada Kuba Südwestengland und Wales Nordjapan Nordostmexiko Nordwestmexiko Russischer Ferner Osten ✓ befohlen. ‹ Armee 3172 × Kampfkraft 12 · Zustand 100 % Zustand 100 % ✓ befohlen — ausgeführt. ",
+      "beleg": "— keine — Mittlerer Westen Nordosten der USA Südstaaten Westen der USA Ostkanada Nordkanada Westkanada Kuba Südwestengland und Wales Nordjapan Nordostmexiko Nordwestmexiko Russischer Ferner Osten ✓ befohlen. Armee 3172 12 100 % ✓ befohlen — ausgeführt. 380 · 10:00 12",
       "konsolenFehler": [],
       "versuche": 1,
       "titel": "Armee finden und bewegen (Mittlerer Westen nach Südstaaten)"
@@ -124,7 +124,7 @@
         "tasten": 0,
         "hinweis": "Zeichen, Teilen, Zusammenlegen"
       },
-      "zeitMs": 1071,
+      "zeitMs": 1118,
       "zeitHinweis": "Nebenwert, nicht lastfest",
       "rueckmeldung": [
         "✓ befohlen: Teilen",
@@ -158,7 +158,7 @@
         "absichten": 6,
         "hinweis": "Liste, tippen, Auswählen, Teilen, Zusammenlegen"
       },
-      "zeitMs": 1691,
+      "zeitMs": 1758,
       "zeitHinweis": "Nebenwert, nicht lastfest",
       "rueckmeldung": [],
       "schritte": [
@@ -195,7 +195,7 @@
         "tasten": 0,
         "hinweis": "Provinz auf der Karte, Kaserne bauen"
       },
-      "zeitMs": 698,
+      "zeitMs": 773,
       "zeitHinweis": "Nebenwert, nicht lastfest",
       "rueckmeldung": [
         "✓ befohlen: Kaserne"
@@ -227,7 +227,7 @@
         "absichten": 4,
         "hinweis": "Liste, tippen, Kaserne bauen"
       },
-      "zeitMs": 893,
+      "zeitMs": 966,
       "zeitHinweis": "Nebenwert, nicht lastfest",
       "rueckmeldung": [
         "✓ befohlen: Kaserne"
@@ -241,7 +241,7 @@
       ],
       "einrichtung": [],
       "beleg": "Rückmeldung gesehen: true; Fortschrittsanzeige (noch N h) im Panel: true",
-      "panel": "Provinz — keine — Mittlerer Westen Nordosten der USA Südstaaten Westen der USA Ostkanada Nordkanada Westkanada Kuba Südwestengland und Wales Nordjapan Nordostmexiko Nordwestmexiko Russischer Ferner Osten Handelsangebot von Brasilien Handelsangebot von Argentinien Handelsangebot von China ✓ befohlen: Kaserne Mittlerer Westen × Großstadt · Ebene? · Binnenland Eigentümer Vereinigte Staaten Bevölkerun",
+      "panel": "— keine — Mittlerer Westen Nordosten der USA Südstaaten Westen der USA Ostkanada Nordkanada Westkanada Kuba Südwestengland und Wales Nordjapan Nordostmexiko Nordwestmexiko Russischer Ferner Osten Brasilien Argentinien China ✓ befohlen: Kaserne Mittlerer Westen ? Vereinigte Staaten 670 Tsd 100 % 5 2 noch 21 h ? ? ? ? ? ? Ausheben Infanterie ? Dafür fehlt das Gebäude: Kaserne. Motorisierte Infanteri",
       "konsolenFehler": [],
       "versuche": 1,
       "titel": "Kaserne bauen (Mittlerer Westen)"
@@ -264,7 +264,7 @@
         "tasten": 0,
         "hinweis": "Provinz auf der Karte, Infanterie ausheben"
       },
-      "zeitMs": 732,
+      "zeitMs": 746,
       "zeitHinweis": "Nebenwert, nicht lastfest",
       "rueckmeldung": [
         "✓ befohlen: Infanterie"
@@ -296,7 +296,7 @@
         "absichten": 4,
         "hinweis": "Liste, tippen, Infanterie ausheben"
       },
-      "zeitMs": 1139,
+      "zeitMs": 1095,
       "zeitHinweis": "Nebenwert, nicht lastfest",
       "rueckmeldung": [
         "✓ befohlen: Infanterie"
@@ -311,7 +311,7 @@
       ],
       "einrichtung": [],
       "beleg": "Rückmeldung gesehen: true; Fortschrittsanzeige (noch N h) im Panel: true",
-      "panel": "Provinz — keine — Mittlerer Westen Nordosten der USA Südstaaten Westen der USA Ostkanada Nordkanada Westkanada Kuba Südwestengland und Wales Nordjapan Nordostmexiko Nordwestmexiko Russischer Ferner Osten ✓ befohlen: Infanterie Mittlerer Westen × Großstadt · Ebene? · Binnenland Eigentümer Vereinigte Staaten Bevölkerung 670 Tsd Moral 100 %▲ steigend Vorkommen 5 2 Bauplätze Kaserne + ? Festung ? Fabr",
+      "panel": "— keine — Mittlerer Westen Nordosten der USA Südstaaten Westen der USA Ostkanada Nordkanada Westkanada Kuba Südwestengland und Wales Nordjapan Nordostmexiko Nordwestmexiko Russischer Ferner Osten ✓ befohlen: Infanterie Mittlerer Westen ? Vereinigte Staaten 670 Tsd 100 % 5 2 + ? ? ? ? ? ? ? 1 × Infanterie noch 11 h Armee 3172 12 Ausheben Infanterie ? ✓ befohlen — ausgeführt. Motorisierte Infanterie",
       "konsolenFehler": [],
       "versuche": 1,
       "titel": "Infanterie ausheben (Mittlerer Westen, Kaserne steht)"
@@ -334,7 +334,7 @@
         "tasten": 0,
         "hinweis": "Diplomatie, Mexiko, Krieg erklären, noch einmal klicken"
       },
-      "zeitMs": 1475,
+      "zeitMs": 1487,
       "zeitHinweis": "Nebenwert, nicht lastfest",
       "rueckmeldung": [
         "✓ befohlen: Krieg erklären"
@@ -368,7 +368,7 @@
         "absichten": 4,
         "hinweis": "D, Mexiko, Krieg erklären, Bestätigung"
       },
-      "zeitMs": 2173,
+      "zeitMs": 2295,
       "zeitHinweis": "Nebenwert, nicht lastfest",
       "rueckmeldung": [
         "✓ befohlen: Krieg erklären"
@@ -407,7 +407,7 @@
         "tasten": 0,
         "hinweis": "Diplomatie, Mexiko, Frieden anbieten"
       },
-      "zeitMs": 1241,
+      "zeitMs": 1171,
       "zeitHinweis": "Nebenwert, nicht lastfest",
       "rueckmeldung": [
         "✓ befohlen: Krieg erklären",
@@ -444,7 +444,7 @@
         "absichten": 3,
         "hinweis": "D, Mexiko, Frieden anbieten"
       },
-      "zeitMs": 957,
+      "zeitMs": 965,
       "zeitHinweis": "Nebenwert, nicht lastfest",
       "rueckmeldung": [
         "✓ befohlen: Frieden anbieten"
@@ -481,7 +481,7 @@
         "tasten": 5,
         "hinweis": "Diplomatie, Mexiko, Feld, 100, Feld, 50, Handel anbieten"
       },
-      "zeitMs": 2635,
+      "zeitMs": 2670,
       "zeitHinweis": "Nebenwert, nicht lastfest",
       "rueckmeldung": [
         "✓ befohlen: Handel anbieten"
@@ -521,7 +521,7 @@
         "absichten": 7,
         "hinweis": "D, Mexiko, Feld, 100, Feld, 50, Handel anbieten"
       },
-      "zeitMs": 3872,
+      "zeitMs": 3651,
       "zeitHinweis": "Nebenwert, nicht lastfest",
       "rueckmeldung": [
         "✓ befohlen: Handel anbieten"
@@ -576,7 +576,7 @@
         "tasten": 0,
         "hinweis": "Liste (2), Aufklärung -- ohne den Umweg über die Spionageübersicht"
       },
-      "zeitMs": 1332,
+      "zeitMs": 1138,
       "zeitHinweis": "Nebenwert, nicht lastfest",
       "rueckmeldung": [
         "✓ befohlen: Aufklärung"
@@ -609,7 +609,7 @@
         "absichten": 4,
         "hinweis": "Liste, tippen, Aufklärung"
       },
-      "zeitMs": 2567,
+      "zeitMs": 2476,
       "zeitHinweis": "Nebenwert, nicht lastfest",
       "rueckmeldung": [
         "✓ befohlen: Aufklärung"
