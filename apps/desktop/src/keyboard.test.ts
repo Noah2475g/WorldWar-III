@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest'
 import { isInteractiveTarget, resolveKey, type KeyContext } from './keyboard.ts'
+import { de } from './i18n/de.ts'
 
 /**
  * Playing without a mouse (T-M10-12, R-UI-06).
@@ -303,5 +304,53 @@ describe('T-M46-05 Tastenkuerzel fuer die Handlungen: A, P, B, E', () => {
     }
     expect(resolveKey({ key: 'a' }, context({ fastForwarding: true }))).toEqual({ type: 'openPanel', panel: 'armies' })
     expect(resolveKey({ key: 'p' }, context({ multiplayer: true }))).toEqual({ type: 'focusZone', zone: 'provinces' })
+  })
+})
+
+/**
+ * Nachbesserung U (T-M46-05, „keine Kollision mit bestehenden Tasten“, „Kuerzel in der Tastenhilfe sichtbar“):
+ * eine ZAEHLUNG ueber die ganze Tastatur statt nur ueber die Buchstaben der letzten Aufgabe.
+ */
+describe('Nachbesserung U: Kollisionstest ueber alle Tasten und Abgleich mit der Tastenhilfe', () => {
+  const letters = 'abcdefghijklmnopqrstuvwxyz'.split('')
+  const others = [' ', '+', '=', '-', '−', 'F1', '?', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'Escape']
+  const everyKey = [...letters, ...letters.map((l) => l.toUpperCase()), ...'0123456789'.split(''), ...others]
+  const meaningOf = (key: string, over: Partial<KeyContext> = {}): string | null => {
+    const shortcut = resolveKey({ key }, context(over))
+    return shortcut ? JSON.stringify(shortcut) : null
+  }
+
+  it('jede Bedeutung gehoert genau einer Taste (Gross-/Kleinschreibung und die drei Doppelnamen ausgenommen)', () => {
+    const owners = new Map<string, Set<string>>()
+    for (const key of everyKey) {
+      const meaning = meaningOf(key)
+      if (!meaning) continue
+      // Gleiche Taste in zwei Schreibweisen, und die drei Doppelnamen: + und =, − und -, F1 und ?.
+      const canonical = key.length === 1 ? key.toLowerCase() : key
+      const name = { '=': '+', '−': '-', '?': 'F1' }[canonical] ?? canonical
+      owners.set(meaning, (owners.get(meaning) ?? new Set()).add(name))
+    }
+    const clashes = [...owners].filter(([, keys]) => keys.size > 1).map(([meaning, keys]) => `${[...keys].join(' und ')} -> ${meaning}`)
+    expect(clashes, 'Tasten mit gleicher Bedeutung').toEqual([])
+    // Gezaehlt: belegte Buchstaben und Bedeutungen insgesamt.
+    const boundLetters = letters.filter((l) => meaningOf(l) !== null)
+    expect(boundLetters.join('')).toBe('abdefhlmps')
+  })
+
+  it('die Tastenhilfe nennt jeden belegten Buchstaben genau einmal, und jede genannte Taste ist belegt', () => {
+    const lines = Object.entries(de.keys).filter(([name]) => name !== 'title').map(([, text]) => String(text))
+    const helpLetters = lines.filter((line) => /^[A-Z] — /.test(line)).map((line) => line[0]!.toLowerCase())
+    const boundLetters = letters.filter((l) => meaningOf(l) !== null)
+    expect([...helpLetters].sort().join('')).toBe(boundLetters.join(''))
+    expect(new Set(helpLetters).size, 'ein Buchstabe doppelt in der Tastenhilfe').toBe(helpLetters.length)
+    // Die uebrigen Zeilen: Leertaste, +, −, Pfeile, Bild, Pos1, F1/?, Escape, Strg+S/L - alle belegt.
+    expect(meaningOf(' ')).not.toBeNull()
+    expect(meaningOf('+')).not.toBeNull()
+    expect(meaningOf('−')).not.toBeNull()
+    expect(meaningOf('PageUp')).not.toBeNull()
+    expect(meaningOf('Home')).not.toBeNull()
+    expect(meaningOf('F1')).not.toBeNull()
+    expect(resolveKey({ key: 's', ctrlKey: true }, context())).toEqual({ type: 'save' })
+    expect(resolveKey({ key: 'l', ctrlKey: true }, context())).toEqual({ type: 'load' })
   })
 })

@@ -802,3 +802,14 @@ genannten Quellen (Lucide ISC, milsymbol MIT, game-icons.net CC BY 3.0).
 | `docs/ux/v3-after/S575G-symbol-armee-1280x800.png` | `scripts/ux-bild.mjs` | Armeepanel: Befehle und Haltungen als Zeichenknöpfe, Marsch mit Fußzeichen und Zahl, 1280x800 |
 | `docs/ux/v3-after/S575G-symbol-karte-375x667.png` | `scripts/ux-bild.mjs` | Telefon: Kopfleiste mit Zeichen, Alarmliste, Fuß, 375x667 |
 | `docs/ux/v3-after/S575G-symbol-armee-375x667.png` | `scripts/ux-bild.mjs` | Telefon: Armeepanel im halben Blatt, 375x667 |
+
+### Bilder der Nachbesserung U (V3 Phase 2, 2026-10-04)
+
+Drei Bilder des Standes S575G, erzeugt mit `node scripts/ux-nachbesserung-bild.mjs --url http://localhost:5331/ --out docs/ux/v3-after`,
+nur 1280x800 und 375x667 (PLAN-V3 Regel 12). Kein Fremdinhalt: Bildschirmfotos des eigenen Spiels.
+
+| Datei | Erzeugt von | Zeigt |
+|---|---|---|
+| `docs/ux/v3-after/S575G-nachher2-tastenhilfe-1280x800.png` | `scripts/ux-nachbesserung-bild.mjs` | T-M46-05: Tastenhilfe (F1) mit den Kürzeln A, P, B, E neben den alten, 1280x800 |
+| `docs/ux/v3-after/S575G-nachher2-diplomatie-1280x800.png` | `scripts/ux-nachbesserung-bild.mjs` | Diplomatie mit gewählter Macht: Kopfleiste bleibt bei y = 0 (vorher −82), 1280x800 |
+| `docs/ux/v3-after/S575G-nachher2-karte-375x667.png` | `scripts/ux-nachbesserung-bild.mjs` | T-M46-17: Telefon nach der Nachbesserung, größere Zeichen im Kopf und in der Protokollzeile, 375x667 |

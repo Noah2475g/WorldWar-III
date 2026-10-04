@@ -1,0 +1,305 @@
+{
+  "tag": "nachbesserung",
+  "state": "S575G",
+  "runs": [
+    {
+      "viewport": "1280x800",
+      "scenes": {
+        "kopf": {
+          "headerHeight": 82,
+          "topScrollWidth": 1280,
+          "topClientWidth": 1280,
+          "controls": 13,
+          "controlsInView": 13,
+          "controlsOutside": [],
+          "chipInView": true
+        },
+        "protokollKarte": {
+          "present": true,
+          "box": {
+            "h": 167,
+            "w": 907
+          },
+          "entriesInDom": 22,
+          "visibleRows": 6,
+          "visibleLogRows": 4,
+          "fullRows": 3,
+          "rowHeight": 27,
+          "footBox": {
+            "h": 168,
+            "w": 1280
+          },
+          "filterVisible": true,
+          "filterButtonsInView": 6
+        },
+        "ohnePanel": {
+          "side": {
+            "y": 82,
+            "h": 550,
+            "w": 380
+          },
+          "sideShareOfViewport": 0.688,
+          "sideScrollH": 550,
+          "map": {
+            "y": 82,
+            "h": 550,
+            "w": 900
+          },
+          "mapShare": 0.688,
+          "foot": {
+            "y": 632,
+            "h": 168,
+            "w": 1280
+          },
+          "sheet": null,
+          "panelOpen": "closed"
+        },
+        "protokollZeilen": {
+          "rows": 22,
+          "days": 8,
+          "rowsPerDay": {
+            "13": 1,
+            "16": 2,
+            "18": 3,
+            "21": 3,
+            "22": 2,
+            "23": 2,
+            "?": 5,
+            "00": 4
+          },
+          "maxRowsPerDay": 5,
+          "withPlace": 15,
+          "withPlaceShare": 0.682,
+          "collected": 13,
+          "major": 7
+        },
+        "pulse": {
+          "distinctPlaces": 9,
+          "places": [
+            "SLE",
+            "NER",
+            "SDN",
+            "BGD",
+            "NGA-NW",
+            "SEN",
+            "MMR",
+            "LBR",
+            "TGO"
+          ]
+        },
+        "hinweise": {
+          "height": 139,
+          "rows": 4,
+          "unrestRows": 1,
+          "unrestTexts": [
+            "8"
+          ]
+        },
+        "diplomatieAuswahl": {
+          "sideClientH": 550,
+          "names": 7,
+          "inView": 5,
+          "lastY": 582,
+          "alertsH": 139
+        },
+        "diplomatie": {
+          "sideClientH": 550,
+          "sideScrollH": 1539,
+          "probes": [
+            {
+              "label": "Krieg erklaeren",
+              "found": true,
+              "inView": true,
+              "y": 108
+            },
+            {
+              "label": "Frieden anbieten",
+              "found": true,
+              "inView": true,
+              "y": 108
+            },
+            {
+              "label": "Feld Nahrung geben",
+              "found": true,
+              "inView": true,
+              "y": 257
+            },
+            {
+              "label": "Feld Material verlangen",
+              "found": true,
+              "inView": true,
+              "y": 286
+            },
+            {
+              "label": "Handel anbieten",
+              "found": true,
+              "inView": true,
+              "y": 509
+            }
+          ],
+          "belowFold": 0
+        },
+        "panel": {
+          "side": {
+            "y": 82,
+            "h": 550,
+            "w": 380
+          },
+          "sideShareOfViewport": 0.688,
+          "sideScrollH": 1114,
+          "map": {
+            "y": 82,
+            "h": 550,
+            "w": 900
+          },
+          "mapShare": 0.688,
+          "foot": {
+            "y": 632,
+            "h": 168,
+            "w": 1280
+          },
+          "sheet": "half",
+          "panelOpen": "open"
+        }
+      },
+      "errors": []
+    },
+    {
+      "viewport": "375x667",
+      "scenes": {
+        "kopf": {
+          "headerHeight": 154,
+          "topScrollWidth": 375,
+          "topClientWidth": 375,
+          "controls": 13,
+          "controlsInView": 13,
+          "controlsOutside": [],
+          "chipInView": true
+        },
+        "protokollKarte": {
+          "present": true,
+          "box": {
+            "h": 44,
+            "w": 375
+          },
+          "entriesInDom": 22,
+          "visibleRows": 2,
+          "visibleLogRows": 1,
+          "fullRows": 0,
+          "rowHeight": 44,
+          "footBox": {
+            "h": 102,
+            "w": 375
+          },
+          "filterVisible": false,
+          "filterButtonsInView": 0
+        },
+        "ohnePanel": {
+          "side": {
+            "y": 454,
+            "h": 111,
+            "w": 375
+          },
+          "sideShareOfViewport": 0.166,
+          "sideScrollH": 218,
+          "map": {
+            "y": 154,
+            "h": 300,
+            "w": 375
+          },
+          "mapShare": 0.45,
+          "foot": {
+            "y": 565,
+            "h": 102,
+            "w": 375
+          },
+          "sheet": null,
+          "panelOpen": "closed"
+        },
+        "protokollZeilen": {
+          "rows": 22,
+          "days": 8,
+          "rowsPerDay": {
+            "13": 1,
+            "16": 2,
+            "18": 3,
+            "21": 3,
+            "22": 2,
+            "23": 2,
+            "?": 5,
+            "00": 4
+          },
+          "maxRowsPerDay": 5,
+          "withPlace": 15,
+          "withPlaceShare": 0.682,
+          "collected": 13,
+          "major": 7
+        },
+        "protokollOffen": {
+          "present": true,
+          "box": {
+            "h": 367,
+            "w": 375
+          },
+          "entriesInDom": 22,
+          "visibleRows": 8,
+          "visibleLogRows": 6,
+          "fullRows": 5,
+          "rowHeight": 44,
+          "footBox": {
+            "h": 58,
+            "w": 375
+          },
+          "filterVisible": true,
+          "filterButtonsInView": 6
+        },
+        "pulse": {
+          "distinctPlaces": 10,
+          "places": [
+            "NER",
+            "NGA-NW",
+            "BGD",
+            "SDN",
+            "TGO",
+            "SEN",
+            "SLE",
+            "ERI",
+            "TUN",
+            "ETH"
+          ]
+        },
+        "hinweise": {
+          "height": 198,
+          "rows": 4,
+          "unrestRows": 1,
+          "unrestTexts": [
+            "8"
+          ]
+        },
+        "panel": {
+          "side": {
+            "y": 334,
+            "h": 334,
+            "w": 375
+          },
+          "sideShareOfViewport": 0.5,
+          "sideScrollH": 2090,
+          "map": {
+            "y": 154,
+            "h": 180,
+            "w": 375
+          },
+          "mapShare": 0.269,
+          "foot": {
+            "y": 0,
+            "h": 0,
+            "w": 0
+          },
+          "sheet": "half",
+          "panelOpen": "open"
+        }
+      },
+      "errors": []
+    }
+  ]
+}
