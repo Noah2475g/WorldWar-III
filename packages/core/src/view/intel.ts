@@ -11,6 +11,22 @@ import { visibleProvinces } from './publicView'
  * fog of war a lie.
  */
 export function updateIntel(draft: GameState): void {
+  // Army strength per province, summed once for all players (V3 T-M45-03). A player sees the
+  // strength of everybody else's armies there, so it is the province total minus their own
+  // share. Hit points are whole numbers, so the subtraction is exact.
+  const strengthHere = new Map<string, { total: number; byOwner: Map<string, number> }>()
+  for (const armyId of draft.armyOrder) {
+    const army = draft.armies[armyId]!
+    const hp = armyHp(army)
+    let entry = strengthHere.get(army.locationProvinceId)
+    if (!entry) {
+      entry = { total: 0, byOwner: new Map() }
+      strengthHere.set(army.locationProvinceId, entry)
+    }
+    entry.total += hp
+    entry.byOwner.set(army.owner, (entry.byOwner.get(army.owner) ?? 0) + hp)
+  }
+
   for (const playerId of draft.playerOrder) {
     const player = draft.players[playerId]!
     if (!player.alive) continue
@@ -20,13 +36,8 @@ export function updateIntel(draft: GameState): void {
       const province = draft.provinces[provinceId]
       if (!province) continue
 
-      let strength = 0
-      for (const armyId of draft.armyOrder) {
-        const army = draft.armies[armyId]!
-        if (army.locationProvinceId === provinceId && army.owner !== playerId) {
-          strength += armyHp(army)
-        }
-      }
+      const here = strengthHere.get(provinceId)
+      const strength = here ? here.total - (here.byOwner.get(playerId) ?? 0) : 0
 
       player.intel[provinceId] = { tick: draft.tick, owner: province.owner, strength }
     }
