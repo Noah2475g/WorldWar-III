@@ -26,6 +26,7 @@
   Besitzer wechselt — die Sperre kommt von woanders. Ursache belegt: Moralsperre (`commands/recruit.ts:46`, Eroberung setzt 25 000 = Grenze, erste Tagesabrechnung drückt darunter); Test `recruitConquered.test.ts` (Zweig `claude/v3-bug-ausheben`). Entscheid G1-10: Anzeige T-M46-15 in V3, Schonfrist als eigener PR nach V3.
 - **Plan muss klären:** Ursache (Datei:Zeile), Reparatur, Folgen für KI und Balance; als Kernänderung
   verhaltensändernd → volle Messkette (Turnier, `progress.slow`, 9 Vollpartien, Haltung) und Noahs Wort.
+- **Eingeplant:** M47, T-M47-01 bis T-M47-03 (2026-10-04, Zweig `claude/vm01-schonfrist`).
 
 ## V3 · Welle 2 (UX, nur Hülle) — Kandidaten aus dem Playtest
 
