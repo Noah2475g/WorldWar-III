@@ -240,6 +240,26 @@ export interface MapCanvasProps {
   labelFor: (provinceId: string) => string
 }
 
+/**
+ * Zeichnen die beiden Listen dasselbe Bild? Gleiche Provinzen mit denselben Umrissen und
+ * dieselbe Fuellung je Provinz — dann bleibt die Liste der Flaechenebene dieselbe
+ * (T-M45-04). Umrisse werden nach Identitaet verglichen: sie kommen aus der Karte und aendern
+ * sich nur mit ihr.
+ */
+function sameShapes(
+  before: readonly RenderProvince[],
+  after: readonly RenderProvince[],
+  beforeFills: readonly string[],
+  afterFills: readonly string[],
+): boolean {
+  if (before.length !== after.length) return false
+  for (let i = 0; i < after.length; i++) {
+    if (before[i]!.id !== after[i]!.id || before[i]!.polygons !== after[i]!.polygons) return false
+    if (beforeFills[i] !== afterFills[i]) return false
+  }
+  return true
+}
+
 export function MapCanvas(props: MapCanvasProps) {
   // Wann die laufende Gefechtsrunde begann (T-M28-08). Die Runden sind die Spielticks;
   // der Blitz haengt daran, nicht an der Bildschirmuhr.
@@ -285,10 +305,30 @@ export function MapCanvas(props: MapCanvasProps) {
   >([])
   const previousOwners = useRef<Record<string, string | null> | null>(null)
 
-  const withBounds = useMemo(
-    () => props.provinces.map((province) => ({ ...province, bounds: province.bounds ?? boundsOf(province.polygons) })),
-    [props.provinces],
-  )
+  // LOESCHVERMERK (T-M45-04): bis dahin stand hier nur
+  //   useMemo(() => props.provinces.map((province) => ({ ...province, bounds: ... })), [props.provinces])
+  // `props.provinces` ist bei jedem Tick eine neue Liste (die Sicht wird neu abgeleitet), also zeichnete die
+  // teure Flaechenebene und die Uebersichtskarte bei JEDEM Commit alle Provinzen neu, auch wenn kein Pixel
+  // sich aenderte. Gemessen am Buendel (S575, CDP-Profil): 7,4 % der Zeit des Hauptfadens.
+  const drawn = useRef<{
+    mode: string
+    fills: readonly string[]
+    provinces: readonly RenderProvince[]
+    result: (RenderProvince & { bounds: NonNullable<RenderProvince['bounds']> })[]
+  } | null>(null)
+  const withBounds = useMemo(() => {
+    const fills = props.provinces.map((province) => fillFor(province, props.mode))
+    const last = drawn.current
+    if (last && last.mode === props.mode && sameShapes(last.provinces, props.provinces, last.fills, fills)) {
+      return last.result
+    }
+    const result = props.provinces.map((province) => ({
+      ...province,
+      bounds: province.bounds ?? boundsOf(province.polygons),
+    }))
+    drawn.current = { mode: props.mode, fills, provinces: props.provinces, result }
+    return result
+  }, [props.provinces, props.mode])
 
   const limits: ViewLimits = useMemo(
     () => ({
