@@ -7895,7 +7895,7 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Paket und Priorität:** Bahn P-Kern · P1
 - **Anforderungen:** R-PERF-01
 - **Abhängigkeiten:** —
-- **Dateien:** `packages/core/src/**`
+- **Dateien:** `packages/core/src/phases/combat.ts`, `packages/core/src/phases/occupation.ts`, `packages/core/src/state/army.ts`, `packages/core/src/state/clone.ts`, `packages/core/src/view/intel.ts`, `packages/core/src/view/publicView.ts`
 - **Tests zuerst:** Anteil, Aufrufzahl und Allokation je Kandidat mit perf-profile.slow messen (Modi calls/cpu), Ausgangswert in den Commit-Text.
 - **Fertig wenn:** Jeder Kandidat mit Ausgangswert und Nachher-Wert (Anteile, Aufrufe, Bytes - keine Millisekunden); Regel-3-Belege a/b/c aus PLAN-V3 gruen (Spaetspiel-Hash unveraendert, Golden Master unveraendert, Turnierbericht zeilengleich); Kern-Tests gruen. Zeitbeleg erst im Rechnerfenster von Phase 2.
 
@@ -8050,7 +8050,7 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Paket und Priorität:** Bahn U-Bild · P2
 - **Anforderungen:** R-UX-02, R-ASSET-01
 - **Abhängigkeiten:** T-M46-13
-- **Dateien:** `apps/desktop/src/ui/sound.ts`, `apps/desktop/public/sfx`, `docs/ASSETS.md`
+- **Dateien:** `apps/desktop/src/ui/sound.ts`, `apps/desktop/src/ui/sfx/`, `docs/ASSETS.md`
 - **Tests zuerst:** Liste der heutigen Klaenge je Ereignisart (sound.ts) als Ausgangswert.
 - **Fertig wenn:** Jede Ereignisart mit eigenem Klang; jede Datei in docs/ASSETS.md; bestehende Ton-Tests gruen.
 
