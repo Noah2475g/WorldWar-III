@@ -2755,3 +2755,52 @@ body {
 .alarm-chip {
   background: var(--ground);
 }
+
+/* ---- T-M46-02 · Protokoll nach Wichtigkeit, Sammelzeilen, Sprung ---------------------------------
+   Wichtig laut (fett, Zinnoberbalken), Alltag leise (gedaempft); die Sammelzeile traegt ihre Teile als
+   Liste von Sprungknoepfen und einen Pfeil zum juengsten Ort. */
+.log__row--major .log__entry,
+.log__row--major .log__jump {
+  font-weight: 600;
+}
+
+.log__row--minor,
+.log__row--minor .log__jump {
+  color: var(--ink-soft);
+}
+
+.log__parts {
+  margin: var(--sp-xs) 0 var(--sp-sm);
+  padding: 0 0 0 var(--sp-md);
+  list-style: none;
+  border-left: 2px solid var(--line);
+}
+
+.log__parts li {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: var(--sp-md);
+  font-size: 12px;
+}
+
+.log__goto {
+  flex: none;
+  margin-left: auto;
+  padding: 0 var(--sp-sm);
+  background: none;
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  font: inherit;
+  cursor: pointer;
+}
+
+.log__goto:hover,
+.log__goto:focus-visible {
+  color: var(--ink);
+  border-color: var(--ink-soft);
+}
+
+:root[data-input='touch'] .log__goto {
+  min-width: 44px;
+  min-height: 44px;
+}

@@ -1028,7 +1028,26 @@ export interface EventEntry {
    * additiven Felder trägt keinen, und die Zeile bleibt, was sie war.
    */
   battle?: BattleReportData
+  /** Die Art des Kernereignisses (T-M46-02) - Grundlage der Sammelzeilen; fehlt bei Zeilen ohne Kernereignis. */
+  type?: string
+  /** Wie wichtig die Zeile ist (T-M46-02, VM-03). Ohne Angabe gilt `normal`. */
+  importance?: EventImportance
+  /** Hat das Ereignis einen Ton - dann pulsiert es auch auf der Karte an seinem Ort (T-M46-02). */
+  audible?: boolean
+  /** Die Teile einer Sammelzeile, jeder mit seinem Sprung (T-M46-02). */
+  parts?: readonly EventPart[]
 }
+
+/** Ein Teil einer Sammelzeile: eine einzelne Zeile mit ihrem Ort. */
+export interface EventPart {
+  id: string
+  tick: number
+  text: string
+  provinceId?: string
+}
+
+/** Wichtigkeit einer Protokollzeile: `major` verlangt Aufmerksamkeit, `minor` ist Alltag (T-M46-02). */
+export type EventImportance = 'major' | 'normal' | 'minor'
 
 /** Eine Bilanzzeile des Tagesberichts: Rohstoffname und Festkomma-Tagesbilanz. */
 export interface DayReportDelta {
@@ -1055,9 +1074,10 @@ export const CATEGORY_ICONS: Partial<Record<EventCategory, IconName>> = {
   diplomacy: 'alliance',
 }
 
-export type EventFilterKey = EventCategory | 'all' | 'world'
+export type EventFilterKey = EventCategory | 'all' | 'world' | 'important'
 
-export const EVENT_FILTERS: readonly EventFilterKey[] = ['all', 'combat', 'economy', 'diplomacy', 'world']
+/** `important` zuerst und Voreinstellung (T-M46-02): die Alltagszeilen (`minor`) stehen unter „alles". */
+export const EVENT_FILTERS: readonly EventFilterKey[] = ['important', 'all', 'combat', 'economy', 'diplomacy', 'world']
 
 /**
  * Which drawer an event belongs in (T-M13-13, R-GAME-06).
@@ -1192,11 +1212,14 @@ export function EventLog({
   ticksPerDay: number
   onJump: (provinceId: string) => void
 }) {
-  const [filter, setFilter] = useState<EventFilterKey>('all')
+  const [filter, setFilter] = useState<EventFilterKey>('important')
   const shown =
     filter === 'all'
       ? entries
-      : filter === 'world'
+      : filter === 'important'
+        ? // Wichtig und ueblich; der Alltag (Wegmarken, Beschuss, Auftragsbeginn, fremde Nebensachen) nur unter „alles".
+          entries.filter((entry) => (entry.importance ?? 'normal') !== 'minor')
+        : filter === 'world'
         ? // Weltgeschehen fragt nicht nach der Rubrik, sondern nach der Positivliste des
           // Kerns (R-NEWS-04) — auch wenn es zwischen zwei fremden Mächten geschieht.
           entries.filter((entry) => entry.world === true)
@@ -1239,6 +1262,9 @@ export function EventLog({
               ...(entry.severity === 'alert' ? ['log__row--alert'] : []),
               // Der eigene Rueckschlag traegt Balken und Fettung (T-M22-03, V2-07).
               ...(entry.self ? ['log__row--self'] : []),
+              // Wichtigkeit (T-M46-02): wichtig laut, Alltag leise.
+              ...(entry.importance === 'major' ? ['log__row--major'] : []),
+              ...(entry.importance === 'minor' ? ['log__row--minor'] : []),
             ].join(' ')}
           >
             <time>
@@ -1256,14 +1282,36 @@ export function EventLog({
                   title={t(`alerts.${entry.category ?? 'other'}`)}
                 />
               )}
-              {entry.body || entry.battle || (entry.deltas && entry.deltas.length > 0) ? (
+              {entry.body || entry.battle || entry.parts || (entry.deltas && entry.deltas.length > 0) ? (
                 /* Der Tagesbericht klappt auf (T-M24-01, Befund V2-06): die Zeile ist
                    die Überschrift, der Körper steht dahinter — details/summary reicht,
                    im Stil der Lagekarte. Seit T-M27-02 nutzt der Kampfbericht dasselbe
                    Muster, sein Körper ist aber strukturiert: Balken statt Absätze. */
-                <details className="log__report">
+                <details className={entry.parts ? 'log__report log__group' : 'log__report'}>
                   <summary>{entry.text}</summary>
                   {entry.battle && <BattleBody battle={entry.battle} />}
+                  {/* Die Teile einer Sammelzeile (T-M46-02): jeder mit seiner Zeit und seinem Sprung. */}
+                  {entry.parts && (
+                    <ul className="log__parts">
+                      {entry.parts.map((part) => (
+                        <li key={part.id}>
+                          <time>{String(part.tick % ticksPerDay).padStart(2, '0')}:00</time>
+                          {part.provinceId ? (
+                            <button
+                              type="button"
+                              className="log__jump"
+                              onClick={() => onJump(part.provinceId!)}
+                              title={t('events_ui.jumpTo')}
+                            >
+                              {part.text}
+                            </button>
+                          ) : (
+                            <span>{part.text}</span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                   {/* Die Bilanzen als Balken (T-M25-04): DERSELBE DeltaBar wie in der
                       Wirtschaftstabelle; der groesste Betrag des Tages ist der
                       Massstab, die Zahl daneben bleibt der zugaengliche Wert. */}
@@ -1302,6 +1350,19 @@ export function EventLog({
                 </button>
               ) : (
                 <span>{entry.text}</span>
+              )}
+              {/* Eine Sammelzeile springt mit einem Klick zum juengsten Ort (T-M46-02): wer nur wissen
+                  will, wo es zuletzt war, muss sie nicht erst aufklappen. */}
+              {entry.parts && entry.provinceId && (
+                <button
+                  type="button"
+                  className="log__goto"
+                  onClick={() => onJump(entry.provinceId!)}
+                  title={t('events_ui.jumpNewest')}
+                  aria-label={t('events_ui.jumpNewest')}
+                >
+                  <span aria-hidden="true">↗</span>
+                </button>
               )}
             </span>
           </li>

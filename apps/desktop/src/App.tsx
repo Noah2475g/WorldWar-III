@@ -116,7 +116,10 @@ import {
   dayReportBody,
   dayReportDeltas,
   describeEvent,
+  groupEntries,
   mergeBattleLines,
+  pingsFor,
+  type MapPing,
   openIntrusion,
   priceSeries,
 } from './game/events.ts'
@@ -553,6 +556,8 @@ export function App(props: AppProps) {
   // How far the event log had been read the last time a sound was played. Without it
   // every render would replay the same battle.
   const soundedUpTo = useRef(0)
+  /** Die Pulse hoerbarer Ereignisse fuer die Karte (T-M46-02): wo es klang. */
+  const [pings, setPings] = useState<readonly MapPing[]>([])
   /** Wie weit die Fuehrung das Protokoll schon gesehen hat (T-M21-02). */
   const tutoredUpTo = useRef(0)
   const [autosave, setAutosave] = useState<AutosaveState>({
@@ -641,6 +646,12 @@ export function App(props: AppProps) {
     // aber nicht deshalb meine Sache.
     const cue = cueForOwnEvents(fresh, viewerId)
     if (cue) play(cue, { enabled: ui.settings.sound, speed }, props.audio)
+
+    // Jedes hoerbare Ereignis pulsiert an seinem Ort (T-M46-02): der Ton nennt keinen, die Karte alle. Nur was der
+    // letzte Tick brachte - ein geladener Stand bringt sein ganzes Protokoll mit.
+    const recent = fresh.filter((event) => event.tick >= state.tick - 1)
+    const newPings = pingsFor(recent, viewerId, (id) => state.players[id]?.capitalProvinceId ?? undefined)
+    if (newPings.length > 0) setPings((old) => [...old, ...newPings].slice(-24))
   }, [state, viewerId, ui.settings.sound, speed, props.audio])
 
   /**
@@ -1997,6 +2008,8 @@ export function App(props: AppProps) {
       army: armyNamer(state.armies, armyNames.current),
       ticksPerDay,
       viewer: viewerId,
+      // Der Ort fuer Ereignisse ohne eigene Provinz (T-M46-02): Mangel und Krieg zeigen auf eine Hauptstadt.
+      capital: (id: string) => state.players[id]?.capitalProvinceId ?? undefined,
     }
     // **Erst deuten, dann zuschneiden** (T-M15-09). Bis zum 2026-09-06 stand hier
     // `.slice(-40)` *vor* allem anderen: das Protokoll wurde auf die letzten vierzig
@@ -2032,7 +2045,11 @@ export function App(props: AppProps) {
     })
     // Neueste zuerst wie das Protokoll; `sort` ist stabil, bei gleichem Tick stehen die Ereignisse vorn.
     // Gleichlautende Gefechtszeilen derselben Provinz und Stunde werden eine Zeile (T-M44-10, R-UX-02/AK4).
-    return mergeBattleLines([...zeilen, ...maersche.reverse()].sort((a, b) => b.tick - a.tick), ticksPerDay)
+    // Danach Sammelzeilen je Art und Spieltag (T-M46-02, VM-03).
+    return groupEntries(
+      mergeBattleLines([...zeilen, ...maersche.reverse()].sort((a, b) => b.tick - a.tick), ticksPerDay),
+      ticksPerDay,
+    )
   }, [state, viewerId, activeMap, nameOf, ticksPerDay, dayBodies, adjutantMarches])
 
   /**
@@ -2413,6 +2430,7 @@ export function App(props: AppProps) {
             ownershipVersion={ui.ownershipVersion}
             selectedProvince={ui.selectedProvince}
             alarmProvince={alarm?.provinceId ?? null}
+            pings={pings}
             capitalProvinceId={view.self.capitalProvinceId}
             battleProvinces={battleProvinces}
             speed={speed}

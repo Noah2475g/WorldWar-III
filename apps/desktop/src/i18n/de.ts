@@ -947,6 +947,9 @@ export const de = {
     adjutantMarch: '{{army}} rückt von selbst nach {{province}} nach.',
     // Gleichlautende Gefechtszeilen derselben Provinz und Stunde als eine Zeile (T-M44-10, R-UX-02/AK4).
     repeated: '{{text}} ({{count}} Mal)',
+    // Sammelzeile (T-M46-02): die juengste Zeile und wie viele gleichartige dazugehoeren.
+    group: '{{text}} (+{{more}} weitere)',
+    jumpNewest: 'Zum jüngsten Ort springen',
     battleReport: 'Kampfbericht',
     attacker: 'Angreifer',
     defender: 'Verteidiger',
@@ -1238,6 +1241,8 @@ export const de = {
     // Eigene Woerter, nicht die der Kopfleiste: zwei Knoepfe namens "Diplomatie" sind
     // fuer eine Vorleseansage (und fuer einen Test) nicht auseinanderzuhalten.
     all: 'alles',
+    // Voreinstellung des Protokolls (T-M46-02): ohne die Alltagszeilen.
+    important: 'Wichtig',
     combat: 'Kämpfe',
     economy: 'Aufbau',
     diplomacy: 'Verträge',

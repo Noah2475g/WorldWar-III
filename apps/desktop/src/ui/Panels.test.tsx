@@ -616,11 +616,11 @@ describe('R-NEWS-04 Weltgeschehen ist der fuenfte Filter', () => {
     ...over,
   })
 
-  it('bietet fuenf Knoepfe an', () => {
+  it('bietet sechs Knoepfe an (Wichtig seit T-M46-02 und die fuenf Rubriken)', () => {
     render(<EventLog entries={[eintrag({})]} ticksPerDay={24} onJump={() => {}} />)
 
     expect(screen.getByRole('button', { name: 'Weltgeschehen' })).toBeTruthy()
-    expect(screen.getAllByRole('button').length).toBe(5)
+    expect(screen.getAllByRole('button').length).toBe(6)
   })
 
   it('zeigt unter Weltgeschehen eine Kriegserklaerung zwischen zwei fremden Maechten', () => {

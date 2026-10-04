@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* global document, window, getComputedStyle, innerWidth, innerHeight */
+/* global document, window, getComputedStyle, innerWidth, innerHeight, indexedDB, MutationObserver */
 /**
  * UX-Zaehlwerte der Bahn U-Layout (PLAN-V3 Welle 2, T-M46-10/02/15/01/06/11/08): Telefon-Layout, Protokoll,
  * Heeruebersicht, Diplomatie. Faehrt den Stand S575G (Mensch = staerkste Macht, test/fixtures/v3) in 375x667
@@ -177,6 +177,39 @@ const logScene = (page) =>
     }
   })
 
+/**
+ * Protokollzeilen je Spieltag und Anteil mit Ort (T-M46-02): aus dem DOM des Protokolls, Zeilen der obersten
+ * Ebene. `rowsPerDay` = Zeilen je Tag der Zeitspalte; `withPlace` = Zeilen mit Sprungknopf; `collected` = Sammelzeilen.
+ */
+const logStats = (page) =>
+  page.evaluate(() => {
+    const rows = [...document.querySelectorAll('.foot .log > ul > li, .log > ul > li')]
+    const perDay = {}
+    let withPlace = 0
+    let collected = 0
+    let important = 0
+    for (const li of rows) {
+      const t = li.querySelector('time')?.textContent ?? ''
+      const m = /^\s*(\d+)/.exec(t)
+      const day = m ? m[1] : '?'
+      perDay[day] = (perDay[day] ?? 0) + 1
+      if (li.querySelector('button.log__jump, button.log__goto')) withPlace += 1
+      if (li.querySelector('.log__more, details.log__report')) collected += 1
+      if (li.classList.contains('log__row--major')) important += 1
+    }
+    const days = Object.keys(perDay)
+    return {
+      rows: rows.length,
+      days: days.length,
+      rowsPerDay: perDay,
+      maxRowsPerDay: Math.max(0, ...Object.values(perDay)),
+      withPlace,
+      withPlaceShare: rows.length ? +(withPlace / rows.length).toFixed(3) : null,
+      collected,
+      major: important,
+    }
+  })
+
 async function runViewport(browser, vp) {
   const context = await browser.newContext({
     viewport: { width: vp.width, height: vp.height },
@@ -200,6 +233,7 @@ async function runViewport(browser, vp) {
   out.scenes.kopf = await headerScene(page)
   out.scenes.protokollKarte = await logScene(page)
   out.scenes.ohnePanel = await sideScene(page)
+  out.scenes.protokollZeilen = await logStats(page)
   await shot('kopf')
 
   // Telefon: das Protokoll klappt auf (T-M46-10) — dann zaehlen Hoehe, Zeilen und Filter im offenen Blatt.
@@ -212,6 +246,27 @@ async function runViewport(browser, vp) {
     await toggle.click({ timeout: 4000 }).catch(() => {})
     await page.waitForTimeout(200)
   }
+
+  // Pulse (T-M46-02): Tempo 10 laufen lassen und zaehlen, an welchen Orten die Karte pulsiert (`data-pings`).
+  await btn('10').click({ timeout: 4000 }).catch(() => {})
+  await page.evaluate(() => {
+    window.__pings = new Set()
+    const wrap = document.querySelector('.map-wrapper')
+    const read = () => (wrap?.getAttribute('data-pings') ?? '').split(',').filter(Boolean).forEach((id) => window.__pings.add(id))
+    new MutationObserver(read).observe(wrap, { attributes: true, attributeFilter: ['data-pings'] })
+  })
+  const deadline = Date.now() + 25000
+  let shotPing = false
+  while (Date.now() < deadline) {
+    await page.waitForTimeout(400)
+    if (!shotPing && (await page.evaluate(() => (document.querySelector('.map-wrapper')?.getAttribute('data-pings') ?? '') !== ''))) {
+      await shot('puls')
+      shotPing = true
+    }
+  }
+  out.scenes.pulse = await page.evaluate(() => ({ distinctPlaces: [...window.__pings].length, places: [...window.__pings].slice(0, 10) }))
+  await btn('Pause').click({ timeout: 4000 }).catch(() => {})
+  await page.waitForTimeout(300)
 
   // Provinz waehlen -> Panel offen.
   const picker = page.locator('aside select').first()
