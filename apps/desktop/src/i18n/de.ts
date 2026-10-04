@@ -708,6 +708,8 @@ export const de = {
     giveProvince: 'Provinz abgeben',
     wantProvince: 'Provinz verlangen',
     pickProvince: 'Provinz wählen …',
+    // Das Provinzenhandeln steht zugeklappt (T-M46-06): die seltene Ausnahme, nicht der Normalfall.
+    provincesToggle: 'Provinzen tauschen …',
     removeProvince: '{{province}} entfernen',
     province: 'Provinz {{name}}',
     nothing: 'nichts',
@@ -1241,6 +1243,8 @@ export const de = {
     completionUnit: '{{unit}} in {{province}} ist ausgehoben',
     shortage: '{{resource}} wird knapp',
     unrest: '{{province}} steht vor dem Aufstand',
+    // Ab zwei Provinzen eine Zeile mit Zahl (T-M46-11); aufgeklappt stehen die Provinzen darunter.
+    unrestMany: '{{count}} Provinzen stehen vor dem Aufstand',
     world: 'Weltgeschehen',
     filter: 'Filter',
     // Eigene Woerter, nicht die der Kopfleiste: zwei Knoepfe namens "Diplomatie" sind

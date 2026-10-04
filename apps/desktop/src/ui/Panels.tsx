@@ -1571,20 +1571,32 @@ export interface TradeFormSpec {
   evaluate: (partner: string, draft: TradeDraft) => { text: string; action: Action }
 }
 
-function OfferList({ title, rows }: { title: string; rows: readonly OfferRow[] }) {
+/**
+ * Eine Angebotsliste (T-M46-06): ab zwei Angeboten zugeklappt mit der Zahl in der Ueberschrift - drei
+ * Handelsangebote der KI belegten 300 px und schoben die Machtetabelle unter den Falz (gemessen S300, Tempo
+ * 10, 1280x800: die Auswahl „Mexiko“ musste gerollt werden). Die Meldung darueber nennt sie ohnehin einzeln;
+ * `open` erzwingt sie offen, wo der Spieler gerade wegen eines Angebots hergesprungen ist.
+ */
+function OfferList({ title, rows, open }: { title: string; rows: readonly OfferRow[]; open: boolean }) {
   if (rows.length === 0) return null
+  const expanded = open || rows.length < 2
   return (
     <section className="group offers" aria-label={title}>
-      <h3 className="group__title">{title}</h3>
-      <ul className="offers">
-        {rows.map((row) => (
-          <li key={row.id} className="offer">
-            <p className="offer__text">{row.text}</p>
-            {row.note && <p className="panel__sub">{row.note}</p>}
-            <ActionRow actions={row.actions} />
-          </li>
-        ))}
-      </ul>
+      {/* Der Schluessel erneuert das Element, wenn sich die Vorgabe aendert; sonst zaehlt, was der Spieler tat. */}
+      <details key={String(expanded)} open={expanded}>
+        <summary className="group__title">
+          {title} ({rows.length})
+        </summary>
+        <ul className="offers">
+          {rows.map((row) => (
+            <li key={row.id} className="offer">
+              <p className="offer__text">{row.text}</p>
+              {row.note && <p className="panel__sub">{row.note}</p>}
+              <ActionRow actions={row.actions} />
+            </li>
+          ))}
+        </ul>
+      </details>
     </section>
   )
 }
@@ -1624,6 +1636,22 @@ export function DiplomacyPanel({
   offers?: { incoming: readonly OfferRow[]; outgoing: readonly OfferRow[] }
   tradeForm?: TradeFormSpec
 }) {
+  // Wer eine Macht waehlt, will handeln (T-M46-06): der Blick springt zum Anfang ihrer Aktionen (Block an den
+  // oberen Rand der Seitenleiste, 1 bis 2 Bildlaeufe weniger), der Fokus auf den ersten Knopf (Tab ginge sonst durch
+  // Tabelle und Kriegsliste). Auch bei erneutem Klick auf die schon gewaehlte Macht, nicht aber beim Oeffnen mit
+  // gewaehlter Macht (Sprung aus einer Meldung): `chosenAt` zaehlt nur die Klicks.
+  const chosenBlock = useRef<HTMLDivElement>(null)
+  // Mit schon gewaehlter Macht geoeffnet = der Sprung aus einer Meldung (Angebot): die Angebote stehen offen.
+  const openedWithPartner = useRef(Boolean(chosen))
+  const [chosenAt, setChosenAt] = useState(0)
+  useEffect(() => {
+    if (chosenAt === 0) return
+    const block = chosenBlock.current
+    if (!block) return
+    block.scrollIntoView?.({ block: 'start' })
+    block.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus({ preventScroll: true })
+  }, [chosenAt])
+
   if (!view || view.others.length === 0) {
     return (
       <section className="panel" aria-label={t('diplomacy.title')}>
@@ -1640,6 +1668,9 @@ export function DiplomacyPanel({
   return (
     <section className="panel" aria-label={t('diplomacy.title')}>
       <PanelHead title={t('diplomacy.title')} onClose={onClose} />
+      {/* Eingehende zuerst (T-M17-14): so landet der Sprung aus einer Meldung darauf. */}
+      {offers && <OfferList title={t('diplomacy.incoming')} rows={offers.incoming} open={openedWithPartner.current} />}
+      {offers && <OfferList title={t('diplomacy.outgoing')} rows={offers.outgoing} open={false} />}
       {reputationMax !== undefined && (
         <Meter
           label={t('diplomacy.ownReputation')}
@@ -1649,9 +1680,6 @@ export function DiplomacyPanel({
           tone={toneForShare(clamp(view.self.reputation, 0, reputationMax) / reputationMax)}
         />
       )}
-      {/* Eingehende zuerst (T-M17-14): so landet der Sprung aus einer Meldung darauf. */}
-      {offers && <OfferList title={t('diplomacy.incoming')} rows={offers.incoming} />}
-      {offers && <OfferList title={t('diplomacy.outgoing')} rows={offers.outgoing} />}
       {/*
         Befund 1 der Sichtpruefung U (T-M17-14, Nacharbeit, hoch): eine fuenfte Spalte
         "Macht wählen" sprengte bei 380px Seitenleistenbreite den Rahmen (465px Tabelle
@@ -1680,7 +1708,10 @@ export function DiplomacyPanel({
                       type="button"
                       className="nation-select"
                       aria-pressed={other.id === chosen}
-                      onClick={() => onChoose?.(other.id)}
+                      onClick={() => {
+                        onChoose?.(other.id)
+                        setChosenAt((count) => count + 1)
+                      }}
                     >
                       <NationName color={other.color}>{nameOf(other.id)}</NationName>
                     </button>
@@ -1731,8 +1762,12 @@ export function DiplomacyPanel({
           </ul>
         )}
       </section>
+      {/* Die Aktionen der gewaehlten Macht (T-M46-06, Befund 8): gemessen an S575G 1280x800 lagen Krieg, Buendnis,
+          Durchmarsch und Handel nach 1852 px Inhalt in 566 px Hoehe, ein bis zwei Bildlaeufe je Handlung. Wer eine
+          Macht waehlt, wird zum Anfang dieses Blocks gefuehrt (Rollstellung und Fokus, siehe oben). Reihenfolge:
+          Vertraege, Handel, Durchmarsch - was oft gebraucht wird, zuerst. */}
       {chosenAlive && (
-        <>
+        <div className="diplomacy__chosen" ref={chosenBlock}>
           {actionsFor && (
             <ActionGroup
               group={{
@@ -1747,16 +1782,16 @@ export function DiplomacyPanel({
               }}
             />
           )}
+          {tradeForm && (
+            <TradeOfferForm key={chosenAlive.id} partner={chosenAlive.id} partnerName={nameOf(chosenAlive.id)} spec={tradeForm} />
+          )}
           {passageFor && (
             <ActionGroup
               group={{ id: 'passage', title: t('diplomacy.passageGroup'), actions: passageFor(chosenAlive.id) }}
               collectReasons
             />
           )}
-          {tradeForm && (
-            <TradeOfferForm key={chosenAlive.id} partner={chosenAlive.id} partnerName={nameOf(chosenAlive.id)} spec={tradeForm} />
-          )}
-        </>
+        </div>
       )}
     </section>
   )
@@ -1840,7 +1875,7 @@ export function TradeOfferForm({
                 />
                 {/* Der Bestand nur in der Geben-Spalte (T-M17-14, Test P7): der Partnerbestand ist der
                     Oberflaeche unbekannt (E10). */}
-                <p className="panel__sub">{t('trade.stock', { amount: amount(spec.stock[key] ?? 0) })}</p>
+                <span className="panel__sub trade-form__stock">{t('trade.stock', { amount: amount(spec.stock[key] ?? 0) })}</span>
               </td>
               <td>
                 <input
@@ -1859,6 +1894,15 @@ export function TradeOfferForm({
           ))}
         </tbody>
       </table>
+      {/* Vorschau, Grenzen und der Knopf stehen direkt unter den Rohstoffen (T-M46-06): sie sind die Handlung. */}
+      <p className="facts__inline">{result.text}</p>
+      <p className="panel__sub">
+        {t('trade.limits', { money: amount(spec.limits.money), resource: amount(spec.limits.resource) })}
+      </p>
+      <ActionRow actions={[result.action]} />
+      {/* Provinzen handeln ist die seltene Ausnahme: zugeklappt, damit das Formular ueber dem Falz bleibt. */}
+      <details className="trade-form__provinces">
+        <summary>{t('trade.provincesToggle')}</summary>
       <label>
         <span>{t('trade.giveProvince')}</span>
         <select
@@ -1923,11 +1967,7 @@ export function TradeOfferForm({
           ))}
         </ul>
       )}
-      <p className="facts__inline">{result.text}</p>
-      <p className="panel__sub">
-        {t('trade.limits', { money: amount(spec.limits.money), resource: amount(spec.limits.resource) })}
-      </p>
-      <ActionRow actions={[result.action]} />
+      </details>
     </section>
   )
 }

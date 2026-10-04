@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* global document, window, getComputedStyle, innerWidth, innerHeight, indexedDB, MutationObserver */
+/* global document, window, getComputedStyle, innerWidth, innerHeight, indexedDB, MutationObserver, HTMLElement */
 /**
  * UX-Zaehlwerte der Bahn U-Layout (PLAN-V3 Welle 2, T-M46-10/02/15/01/06/11/08): Telefon-Layout, Protokoll,
  * Heeruebersicht, Diplomatie. Faehrt den Stand S575G (Mensch = staerkste Macht, test/fixtures/v3) in 375x667
@@ -26,6 +26,10 @@ const OUT = resolve(arg('out', 'docs/ux/v3-after'))
 const TAG = arg('tag', 'nachher')
 const STATE = arg('state', 'S575G')
 const SHOTS = process.argv.includes('--shots')
+/** Ein fertiger Stand statt der Fixture (z. B. der Stand der Aufgabenlaeufe mit Armeen): --file Pfad */
+const FILE = arg('file', '')
+/** Tempo vor der Messung (Aufgabenlaeufe starten bei 10): --tempo 10 */
+const TEMPO = arg('tempo', '')
 const VIEWPORTS = arg('viewports', '375x667,1280x800')
   .split(',')
   .map((v) => {
@@ -39,6 +43,7 @@ const ROOTFS = (() => {
   return p.startsWith('/') ? p : `/${p}`
 })()
 const readState = (rawName) => {
+  if (FILE) return readFileSync(resolve(FILE), 'utf8')
   const name = rawName.replace(/G$/, '')
   const dir = resolve(ROOT, 'test/fixtures/v3')
   const plain = join(dir, `${name}.json`)
@@ -210,6 +215,32 @@ const logStats = (page) =>
     }
   })
 
+/**
+ * Diplomatie mit gewaehlter Macht (T-M46-06): liegen die Handlungen ueber dem Falz der Seitenleiste?
+ * `inView` = Knopf/Feld liegt ganz im sichtbaren Teil der Seitenleiste UND des Fensters, ohne Bildlauf.
+ */
+const diplomacyScene = (page) =>
+  page.evaluate(() => {
+    const side = document.querySelector('aside.side')
+    const sr = side.getBoundingClientRect()
+    const top = Math.max(sr.top, 0)
+    const bottom = Math.min(sr.bottom, innerHeight)
+    const find = (sel, text) => [...side.querySelectorAll(sel)].find((el) => text.test((el.getAttribute('aria-label') || el.textContent || '').trim()))
+    const probe = (label, el) => {
+      if (!el) return { label, found: false }
+      const r = el.getBoundingClientRect()
+      return { label, found: true, inView: r.top >= top - 0.5 && r.bottom <= bottom + 0.5, y: Math.round(r.top - sr.top) }
+    }
+    const rows = [
+      probe('Krieg erklaeren', find('button', /^Krieg erklären$/)),
+      probe('Frieden anbieten', find('button', /^Frieden anbieten$/)),
+      probe('Feld Nahrung geben', find('input', /Nahrung geben/)),
+      probe('Feld Material verlangen', find('input', /Material verlangen/)),
+      probe('Handel anbieten', find('button', /^Handel anbieten$/)),
+    ]
+    return { sideClientH: side.clientHeight, sideScrollH: side.scrollHeight, probes: rows, belowFold: rows.filter((r) => r.found && !r.inView).length }
+  })
+
 async function runViewport(browser, vp) {
   const context = await browser.newContext({
     viewport: { width: vp.width, height: vp.height },
@@ -230,6 +261,11 @@ async function runViewport(browser, vp) {
   await btn('Nicht mehr zeigen').click({ timeout: 3000 }).catch(() => {})
   await page.waitForTimeout(300)
 
+  if (TEMPO) {
+    await btn(TEMPO).click({ timeout: 4000 }).catch(() => {})
+    await page.waitForTimeout(300)
+    await page.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur())
+  }
   out.scenes.kopf = await headerScene(page)
   out.scenes.protokollKarte = await logScene(page)
   out.scenes.ohnePanel = await sideScene(page)
@@ -267,6 +303,45 @@ async function runViewport(browser, vp) {
   out.scenes.pulse = await page.evaluate(() => ({ distinctPlaces: [...window.__pings].length, places: [...window.__pings].slice(0, 10) }))
   await btn('Pause').click({ timeout: 4000 }).catch(() => {})
   await page.waitForTimeout(300)
+
+  // Aufstandshinweise (T-M46-11): Hoehe der Meldungsliste und Zahl der Zeilen in der Seitenleiste.
+  out.scenes.hinweise = await page.evaluate(() => {
+    const box = document.querySelector('aside.side .alerts')
+    const rows = [...document.querySelectorAll('aside.side .alerts > ul > li')]
+    return {
+      height: box ? Math.round(box.getBoundingClientRect().height) : 0,
+      rows: rows.length,
+      unrestRows: rows.filter((li) => li.classList.contains('alert--unrest')).length,
+      unrestTexts: rows.filter((li) => li.classList.contains('alert--unrest')).map((li) => li.textContent.trim().slice(0, 60)),
+    }
+  })
+
+  // Diplomatie (T-M46-06): Foot-Knopf, erste Macht waehlen, dann messen.
+  if (vp.width >= 900) {
+    await btn('Diplomatie').click({ timeout: 4000 }).catch(() => {})
+    await page.waitForTimeout(300)
+    // Vor der Wahl: liegt die Auswahl (die Machtnamen) im Bild?
+    out.scenes.diplomatieAuswahl = await page.evaluate(() => {
+      const side = document.querySelector('aside.side')
+      const sr = side.getBoundingClientRect()
+      const bottom = Math.min(sr.bottom, innerHeight)
+      const names = [...side.querySelectorAll('.nation-select')]
+      return {
+        sideClientH: side.clientHeight,
+        names: names.length,
+        inView: names.filter((el) => el.getBoundingClientRect().bottom <= bottom + 0.5).length,
+        lastY: names.length ? Math.round(names[names.length - 1].getBoundingClientRect().top - sr.top) : null,
+        alertsH: Math.round(side.querySelector('.alerts')?.getBoundingClientRect().height ?? 0),
+      }
+    })
+    await shot('diplomatie-auswahl')
+    await page.locator('aside .nation-select').first().click({ timeout: 4000 }).catch(() => {})
+    await page.waitForTimeout(300)
+    out.scenes.diplomatie = await diplomacyScene(page)
+    await shot('diplomatie')
+    await page.keyboard.press('Escape')
+    await page.waitForTimeout(200)
+  }
 
   // Provinz waehlen -> Panel offen.
   const picker = page.locator('aside select').first()

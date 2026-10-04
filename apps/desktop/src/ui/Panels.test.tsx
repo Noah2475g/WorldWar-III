@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { readFileSync } from 'node:fs'
+import { useState } from 'react'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { TEST_RULES } from '@worldwar/testkit'
 import { defenceMultiplier, type Province, type PublicView, type Terrain, type VisibleArmy, type VisibleProvince } from '@worldwar/core'
@@ -909,6 +910,50 @@ describe('R-DIP-07 Das Diplomatiepanel (T-M17-14)', () => {
 
     fireEvent.click(within(incoming).getByRole('button', { name: 'Angebot annehmen' }))
     expect(onRun).toHaveBeenCalledTimes(1)
+  })
+
+  it('T-M46-06: ab zwei Angeboten sind die Angebote zugeklappt, mit der Zahl in der Ueberschrift', () => {
+    const view = diplomacyView({ others: [{ id: 'p2', nation: 'Ostmark' }] })
+    const action = (label: string, id: string): Action => ({ id, label, disabledReason: null, onRun: () => undefined })
+    const row = (id: string): OfferRow => ({ id, text: `Angebot ${id}`, actions: [action('Angebot annehmen', `a-${id}`)] })
+    const { container } = render(
+      <DiplomacyPanel view={view} nameOf={() => 'Ostmark'} offers={{ incoming: [row('1'), row('2'), row('3')], outgoing: [row('4')] }} />,
+    )
+    const incoming = container.querySelector('section[aria-label="Eingehende Angebote"] details')!
+    expect(incoming.hasAttribute('open')).toBe(false)
+    expect(incoming.querySelector('summary')!.textContent).toBe('Eingehende Angebote (3)')
+    // Ein einzelnes Angebot bleibt offen.
+    expect(container.querySelector('section[aria-label="Ausgehende Angebote"] details')!.hasAttribute('open')).toBe(true)
+  })
+
+  it('T-M46-06: kommt der Spieler mit gewaehlter Macht her (Sprung aus einer Meldung), stehen die Angebote offen', () => {
+    const view = diplomacyView({ others: [{ id: 'p2', nation: 'Ostmark' }] })
+    const action = (label: string, id: string): Action => ({ id, label, disabledReason: null, onRun: () => undefined })
+    const row = (id: string): OfferRow => ({ id, text: `Angebot ${id}`, actions: [action('Angebot annehmen', `a-${id}`)] })
+    const { container } = render(
+      <DiplomacyPanel view={view} nameOf={() => 'Ostmark'} chosen="p2" offers={{ incoming: [row('1'), row('2')], outgoing: [] }} />,
+    )
+    expect(container.querySelector('section[aria-label="Eingehende Angebote"] details')!.hasAttribute('open')).toBe(true)
+  })
+
+  it('T-M46-06: die Wahl einer Macht setzt den Fokus auf den ersten Knopf ihrer Aktionen', () => {
+    const view = diplomacyView({ others: [{ id: 'p2', nation: 'Ostmark' }] })
+    const action = (label: string, id: string): Action => ({ id, label, disabledReason: null, onRun: () => undefined })
+    function Host() {
+      const [chosen, setChosen] = useState<string | null>(null)
+      return (
+        <DiplomacyPanel
+          view={view}
+          nameOf={() => 'Ostmark'}
+          chosen={chosen}
+          onChoose={setChosen}
+          actionsFor={() => [action('Krieg erklären', 'w'), action('Frieden anbieten', 'p')]}
+        />
+      )
+    }
+    render(<Host />)
+    fireEvent.click(screen.getByRole('button', { name: /Ostmark/ }))
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Krieg erklären' }))
   })
 
   it('zeigt keine Regionen fuer Angebote, wenn es keine gibt', () => {

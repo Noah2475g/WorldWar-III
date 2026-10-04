@@ -2875,3 +2875,51 @@ body {
   gap: 0.6em;
   overflow-wrap: anywhere;
 }
+
+/* ---- T-M46-06 · Diplomatie ueber dem Falz ------------------------------------------------------
+   Das Handelsformular als kompakte Tabelle: der Bestand steht in der Zeile des Rohstoffs statt darunter
+   (7 Zeilen zu 50 px wurden 7 zu 30), die Provinzwahl ist zugeklappt. */
+.trade-form__table td {
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+
+.trade-form__stock {
+  margin-left: var(--sp-sm);
+  white-space: nowrap;
+}
+
+.trade-form__provinces {
+  margin-top: var(--sp-sm);
+}
+
+.trade-form__provinces summary {
+  cursor: pointer;
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+/* ---- T-M46-11 · Aufstandshinweise gebuendelt: eine Zeile mit Zahl, aufklappbar --------------------- */
+.alert--group details {
+  min-width: 0;
+}
+
+.alert--group summary {
+  cursor: pointer;
+}
+
+.alert__parts {
+  margin: var(--sp-xs) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Die Machtetabelle einzeilig je Macht (T-M46-06): der Beziehungszustand samt Erklaerknopf umbrach in der
+   schmalen Spalte, jede Zeile war 43 px hoch, die siebte lag unter dem Falz. */
+.diplomacy-table td.state {
+  white-space: nowrap;
+}
+
+.diplomacy-table .meter {
+  margin: 0;
+}

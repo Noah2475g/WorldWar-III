@@ -251,11 +251,15 @@ class Run {
       const x = Math.min(Math.max(r.left + r.width / 2, 1), innerWidth - 1)
       const y = Math.min(Math.max(r.top + r.height / 2, 1), innerHeight - 1)
       const hit = document.elementFromPoint(x, y)
-      return !(hit && (el === hit || el.contains(hit) || hit.contains(el))) || r.top < 0 || r.bottom > innerHeight
+      const covered = !(hit && (el === hit || el.contains(hit) || hit.contains(el)))
+      return covered || r.top < 0 || r.bottom > innerHeight
+        ? { covered, top: Math.round(r.top), bottom: Math.round(r.bottom), hit: hit ? `${hit.tagName.toLowerCase()}.${String(hit.className).split(' ')[0]}` : null }
+        : null
     })
     if (hidden && scrollOk) {
+      if (process.env.UX_DEBUG_SHOT) await this.page.screenshot({ path: process.env.UX_DEBUG_SHOT })
       if (this.counting) this.bildlaeufe += 1
-      this.note('Bildlauf', label)
+      this.note('Bildlauf', `${label} (${hidden.covered ? `verdeckt von ${hidden.hit}` : 'ausserhalb'}, oben ${hidden.top}, unten ${hidden.bottom})`)
       await loc.scrollIntoViewIfNeeded()
     }
     if (!(await loc.isEnabled())) {
@@ -331,7 +335,12 @@ class Run {
   }
 
   /** Tab, bis das Ziel den Fokus hat (je Druck ein Zaehler). `test` bekommt {tag,name,cls}. */
-  async tabTo(test, label, { max = 250, back = false } = {}) {
+  async tabTo(test, label, { max = 250, back = false, checkFirst = false } = {}) {
+    // `checkFirst`: hat das Ziel den Fokus schon (die Oberflaeche hat ihn gesetzt), kostet es keine Taste (T-M46-06).
+    if (checkFirst && test(await this.focusInfo())) {
+      this.note('Fokus', `${label} schon beim Oeffnen`)
+      return true
+    }
     for (let i = 0; i < max; i++) {
       await this.key(back ? 'Shift+Tab' : 'Tab')
       const f = await this.focusInfo()
