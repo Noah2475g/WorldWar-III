@@ -1,4 +1,5 @@
-import { Icon, type IconName } from './icons.tsx'
+import { type IconName } from './icons.tsx'
+import { Icon } from './Icon.tsx'
 
 /**
  * A row of things, as symbols with their counts (T-M13-01, R-UI-10).

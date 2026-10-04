@@ -695,3 +695,38 @@ Kein Fremdinhalt — Bildschirmfotos des eigenen Spiels, erzeugt mit `node scrip
 | `docs/ux/v3-before/S575G-18-laden-grosser-stand-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Laden eines grossen Standes, 375x667 |
 | `docs/ux/v3-before/S575G-19-tempo-100-alarm-1280x800.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Tempo 100 mit Alarm, 1280x800 |
 | `docs/ux/v3-before/S575G-19-tempo-100-alarm-375x667.png` | `scripts/ux-late.mjs` | Tag 575 aus Sicht der staerksten Macht: Tempo 100 mit Alarm, 375x667 |
+
+## Symbole von Dritten — game-icons.net, milsymbol, Lucide (V3 Welle 2, T-M46-13, 2026-10-04)
+
+Auf Noahs Wort vom 2026-10-04 (DECISIONS) ist R-ASSET-02 für **CC BY 3.0** geöffnet; CC BY verlangt die Nennung
+des Urhebers, und die steht hier **und** sichtbar im Spiel (Menü, Eintrag „Mitwirkende“; Quelle der Texte:
+`CREDITS` in `apps/desktop/src/ui/glyphs.ts`). Die Dateien liegen unverändert wie bezogen vor; das Spiel
+verwendet nur den weißen Pfad und füllt ihn mit der Textfarbe (`apps/desktop/src/ui/Icon.tsx`).
+
+**game-icons.net** — Lizenz Creative Commons Attribution 3.0 (https://creativecommons.org/licenses/by/3.0/),
+Bezug https://github.com/game-icons/icons (Ordner je Urheber), Seite https://game-icons.net. Kein Konto nötig.
+
+| Datei | Urheber | Quelle | Zeigt |
+|---|---|---|---|
+| `apps/desktop/src/ui/glyphs/delapouite_barracks.svg` | Delapouite — CC BY 3.0 | https://game-icons.net/1x1/delapouite/barracks.html | Kaserne |
+| `apps/desktop/src/ui/glyphs/delapouite_factory.svg` | Delapouite — CC BY 3.0 | https://game-icons.net/1x1/delapouite/factory.html | Fabrik |
+| `apps/desktop/src/ui/glyphs/delapouite_control-tower.svg` | Delapouite — CC BY 3.0 | https://game-icons.net/1x1/delapouite/control-tower.html | Flugplatz |
+| `apps/desktop/src/ui/glyphs/delapouite_harbor-dock.svg` | Delapouite — CC BY 3.0 | https://game-icons.net/1x1/delapouite/harbor-dock.html | Hafen |
+| `apps/desktop/src/ui/glyphs/delapouite_crane.svg` | Delapouite — CC BY 3.0 | https://game-icons.net/1x1/delapouite/crane.html | Werft |
+| `apps/desktop/src/ui/glyphs/delapouite_military-fort.svg` | Delapouite — CC BY 3.0 | https://game-icons.net/1x1/delapouite/military-fort.html | Festung |
+| `apps/desktop/src/ui/glyphs/delapouite_railway.svg` | Delapouite — CC BY 3.0 | https://game-icons.net/1x1/delapouite/railway.html | Bahn |
+| `apps/desktop/src/ui/glyphs/lorc_wheat.svg` | Lorc — CC BY 3.0 | https://game-icons.net/1x1/lorc/wheat.html | Nahrung |
+| `apps/desktop/src/ui/glyphs/delapouite_wood-pile.svg` | Delapouite — CC BY 3.0 | https://game-icons.net/1x1/delapouite/wood-pile.html | Material |
+| `apps/desktop/src/ui/glyphs/lorc_metal-bar.svg` | Lorc — CC BY 3.0 | https://game-icons.net/1x1/lorc/metal-bar.html | Eisen |
+| `apps/desktop/src/ui/glyphs/delapouite_coal-pile.svg` | Delapouite — CC BY 3.0 | https://game-icons.net/1x1/delapouite/coal-pile.html | Kohle |
+| `apps/desktop/src/ui/glyphs/skoll_oil-drum.svg` | Skoll — CC BY 3.0 | https://game-icons.net/1x1/skoll/oil-drum.html | Öl |
+| `apps/desktop/src/ui/glyphs/lorc_crystal-cluster.svg` | Lorc — CC BY 3.0 | https://game-icons.net/1x1/lorc/crystal-cluster.html | Seltene Erden |
+| `apps/desktop/src/ui/glyphs/delapouite_coins-pile.svg` | Delapouite — CC BY 3.0 | https://game-icons.net/1x1/delapouite/coins-pile.html | Geld |
+
+**milsymbol** — Måns Beckman (Spatial Illusions), Lizenz **MIT**, https://github.com/spatialillusions/milsymbol,
+npm-Paket `milsymbol` (`apps/desktop/package.json`). Erzeugt zur Laufzeit die NATO-Truppenzeichen (APP-6/MIL-STD-2525)
+für die zehn Einheitenarten; es wird keine Datei eingecheckt.
+
+**Lucide** — Lucide Contributors (Eric Fennis u. a.), Lizenz **ISC**, https://github.com/lucide-icons/lucide,
+npm-Paket `lucide-react` (`apps/desktop/package.json`). Oberflächensymbole (Uhr, Pause, Warnung, Beziehungen,
+Gelände, Spionage); keine Datei eingecheckt.

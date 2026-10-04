@@ -29,7 +29,8 @@ import {
   type Targeting,
   type TradeFormSpec,
 } from './Panels.tsx'
-import { BUILDING_ICONS, BUILDING_ORDER, ICON_PATHS, RESOURCE_ICONS, UNIT_ICONS } from './icons.tsx'
+import { BUILDING_ICONS, BUILDING_ORDER, RESOURCE_ICONS, UNIT_ICONS } from './icons.tsx'
+import { GLYPH_PATHS } from './glyphs.ts'
 import { ART, ART_FOR_ICON, BUILDING_ART, UNIT_ART } from './art.tsx'
 import { UnitMarker, type MarkerTone } from './UnitMarker.tsx'
 import type { BattleReportData } from '../game/events.ts'
@@ -1555,8 +1556,8 @@ describe('R-UI-05 Der Markt zeigt das Zeichen des gewaehlten Rohstoffs', () => {
       <MarketPanel resources={['wood', 'iron', 'oil'] as never} stock={{}} preview={handel} />,
     )
 
-    expect(zeichnung(container, 'give')).toBe(ICON_PATHS[RESOURCE_ICONS.wood!])
-    expect(zeichnung(container, 'want')).toBe(ICON_PATHS[RESOURCE_ICONS.iron!])
+    expect(zeichnung(container, 'give')).toBe(GLYPH_PATHS[RESOURCE_ICONS.wood!]!)
+    expect(zeichnung(container, 'want')).toBe(GLYPH_PATHS[RESOURCE_ICONS.iron!]!)
   })
 
   it('wechselt das Zeichen mit der Auswahl', () => {
@@ -1566,7 +1567,7 @@ describe('R-UI-05 Der Markt zeigt das Zeichen des gewaehlten Rohstoffs', () => {
 
     fireEvent.change(container.querySelector('#market-give')!, { target: { value: 'oil' } })
 
-    expect(zeichnung(container, 'give')).toBe(ICON_PATHS[RESOURCE_ICONS.oil!])
+    expect(zeichnung(container, 'give')).toBe(GLYPH_PATHS[RESOURCE_ICONS.oil!]!)
   })
 })
 

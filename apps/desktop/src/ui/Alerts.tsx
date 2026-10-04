@@ -3,13 +3,13 @@ import { accusativePronoun, indefiniteArticle, noneOf } from '../i18n/grammar.ts
 import { t } from '../i18n/text.ts'
 import {
   BUILDING_ICONS,
-  Icon,
   RELATION_ICONS,
   RESOURCE_ICONS,
   SPY_MISSION_ICONS,
   UNIT_ICONS,
   type IconName,
 } from './icons.tsx'
+import { Icon } from './Icon.tsx'
 
 /**
  * What needs looking at, right now (T-M13-13, R-UI-14).

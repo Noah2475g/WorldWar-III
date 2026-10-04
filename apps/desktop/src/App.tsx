@@ -59,6 +59,7 @@ import { useMapTooltip } from './ui/useMapTooltip.ts'
 import { Sidebar } from './ui/Sidebar.tsx'
 import { OrientationHint } from './ui/OrientationHint.tsx'
 import { MENU_ENTRIES } from './ui/menuEntries.ts'
+import { CreditsDialog } from './ui/Credits.tsx'
 import { armyNamer, createArmyNameMemory, nationNamer, provinceNamer } from './game/names.ts'
 import { armyRows } from './game/armies.ts'
 import { Foot, latestReport } from './ui/Foot.tsx'
@@ -509,7 +510,7 @@ export function App(props: AppProps) {
     trigger: GameEvent | null
   }>({ running: false, ticksRun: 0, reason: null, trigger: null })
   const [dialog, setDialog] = useState<
-    'new' | 'menu' | 'saves' | 'settings' | 'keys' | 'report' | 'netplayEnd' | null
+    'new' | 'menu' | 'saves' | 'settings' | 'keys' | 'credits' | 'report' | 'netplayEnd' | null
   >('new')
   /** Bis zu welchem Tick der Spieler das Protokoll zuletzt gesehen hat — die Neu-Marke (T-M31-03). */
   const [seenTick, setSeenTick] = useState(-1)
@@ -2707,6 +2708,7 @@ export function App(props: AppProps) {
         />
       )}
       {dialog === 'keys' && <KeyboardHelp onClose={() => setDialog(null)} />}
+      {dialog === 'credits' && <CreditsDialog onClose={() => setDialog(null)} />}
       {/* Die Depesche (T-M31-03): der juengste Tagesbericht, wie er im Protokoll steht. */}
       {dialog === 'report' &&
         (() => {
