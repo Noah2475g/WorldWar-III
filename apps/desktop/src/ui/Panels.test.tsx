@@ -887,6 +887,30 @@ describe('Diplomatie: Machtwahl rollt nur die Seitenleiste (V3 Nachbesserung U)'
   })
 })
 
+describe('ActionGroup iconOnly (Nachbesserung U, Textanteil): Zeichenknoepfe tragen Tooltip und Namen', () => {
+  it('Handlungen mit Zeichen werden Zeichenknoepfe, solche ohne Zeichen behalten das Wort', () => {
+    const group = {
+      id: 'espionage',
+      title: 'Spionage',
+      actions: [
+        { id: 'a', label: 'Aufklärung', icon: 'espionage', disabledReason: null, onRun: () => undefined },
+        { id: 'b', label: 'Wirtschaftssabotage', icon: 'espionage', disabledReason: 'Kein Agent frei.', onRun: () => undefined },
+        { id: 'c', label: 'Ohne Zeichen', disabledReason: null, onRun: () => undefined },
+      ],
+    } as unknown as Parameters<typeof ActionGroup>[0]['group']
+    render(<ActionGroup group={group} iconOnly />)
+
+    for (const label of ['Aufklärung', 'Wirtschaftssabotage']) {
+      const button = screen.getByRole('button', { name: label })
+      expect(button.textContent, label).toBe('')
+      expect(button.getAttribute('title'), label).toContain(label)
+      expect(button.querySelector('svg'), label).toBeTruthy()
+    }
+    expect(screen.getByRole('button', { name: 'Wirtschaftssabotage' }).getAttribute('aria-description')).toBe('Kein Agent frei.')
+    expect(screen.getByRole('button', { name: 'Ohne Zeichen' }).textContent).toBe('Ohne Zeichen')
+  })
+})
+
 describe('R-DIP-07 Das Diplomatiepanel (T-M17-14)', () => {
   it('zeigt das Ansehen jeder Macht als Balken', () => {
     const view = diplomacyView({

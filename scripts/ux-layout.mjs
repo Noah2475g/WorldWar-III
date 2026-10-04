@@ -177,6 +177,20 @@ const logScene = (page) =>
       visibleRows: visible.length,
       // T-M46-17: nur die Protokollzeilen (.log__row), ohne die li der geschlossenen Berichte und Trennzeilen.
       visibleLogRows: visible.filter((li) => li.classList.contains('log__row')).length,
+      // Nachbesserung U (T-M46-02): EIN Messverfahren fuer „Sichtzeilen“ - Protokollzeilen (.log__row), die GANZ im
+      // Rollrahmen des Protokolls und im Fenster liegen (1 px Toleranz). Die Zahlen `visibleRows` (alle li, auch
+      // verschachtelte Teile und Bilanzen, die den Kasten nur streifen) und ux-late `visibleRows` (alle li im Fenster,
+      // ohne den Kasten) zaehlten Verschiedenes und widersprachen sich (20 gegen 6).
+      fullRows: items.filter((li) => {
+        if (!li.classList.contains('log__row')) return false
+        const b = li.getBoundingClientRect()
+        return b.height > 0 && b.top >= r.top - 1 && b.bottom <= r.bottom + 1 && b.top >= 0 && b.bottom <= innerHeight
+      }).length,
+      rowHeight: Math.round(items.filter((li) => li.classList.contains('log__row')).slice(0, 5).reduce((a, li) => a + li.getBoundingClientRect().height, 0) / Math.max(1, Math.min(5, items.filter((li) => li.classList.contains('log__row')).length))),
+      footBox: (() => {
+        const f = document.querySelector('.foot')
+        return f ? { h: Math.round(f.getBoundingClientRect().height), w: Math.round(f.getBoundingClientRect().width) } : null
+      })(),
       filterVisible: Boolean(filters && fs.display !== 'none' && filters.getBoundingClientRect().height > 0),
       filterButtonsInView: filterButtons.filter((b) => {
         const q = b.getBoundingClientRect()

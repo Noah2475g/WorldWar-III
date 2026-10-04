@@ -269,7 +269,9 @@ function ActionButton({
             className={primary ? 'button button--primary' : 'button'}
             aria-pressed={pressed}
             disabled={action.disabledReason !== null || (action.pendingNotice !== undefined && action.ackOnly !== true)}
-            title={buttonTitle(action)}
+            // Ein Zeichenknopf traegt seinen Namen im Tooltip (Nachbesserung U): sonst stuende dort nur der Sperrgrund
+            // oder gar nichts, und wer das Zeichen nicht kennt, bekaeme keine Auskunft, was der Knopf tut.
+            title={iconOnly ? [action.label, buttonTitle(action)].filter(Boolean).join(' · ') : buttonTitle(action)}
             // Der Name nennt die Handlung, nicht nur die Sache (T-M22-06, V2-13).
             // Bei reinen Zeichenknoepfen (T-M46-17) steht der Grund der Sperre als Beschreibung (aria-description)
             // statt als versteckter Absatz daneben: der stuende als Text im Dokument, den niemand sieht.
@@ -365,8 +367,14 @@ export function ActionGroup({
   next,
   collectReasons = false,
   confirms,
+  iconOnly = false,
 }: {
   group: ActionGroupSpec
+  /**
+   * Nur die Zeichen (Nachbesserung U, T-M46-17): jede Handlung mit Zeichen wird ein Zeichenknopf, der Name steht als
+   * `aria-label` und Tooltip, der Sperrgrund als `aria-description`. Handlungen ohne Zeichen behalten ihr Wort.
+   */
+  iconOnly?: boolean
   /** Folgesätze je Aktionskennung: diese Knöpfe fragen vor dem Senden nach (T-M44-09b). */
   confirms?: Readonly<Record<string, string>>
   next?: NextUnlock | null | undefined
@@ -422,7 +430,15 @@ export function ActionGroup({
       )}
       <div className="actions">
         {group.actions.map((action) => (
-          <ActionButton key={action.id} action={action} showReason={showsReason(action)} reasonInGroup={collectReasons} confirm={confirms?.[action.id]} />
+          <ActionButton
+            key={action.id}
+            action={action}
+            showReason={showsReason(action)}
+            reasonInGroup={collectReasons}
+            confirm={confirms?.[action.id]}
+            iconOnly={iconOnly && Boolean(action.icon) && !action.art}
+            iconSize={26}
+          />
         ))}
       </div>
     </section>
@@ -764,7 +780,7 @@ export function ProvincePanel(props: ProvincePanelProps) {
 
       <ActionRow actions={props.actions} />
       {otherGroups.map((group) => (
-        <ActionGroup key={group.id} group={group} next={group.id === 'recruit' ? props.nextUnlock : undefined} />
+        <ActionGroup key={group.id} group={group} next={group.id === 'recruit' ? props.nextUnlock : undefined} iconOnly={group.id === 'espionage'} />
       ))}
     </section>
   )
@@ -1679,7 +1695,7 @@ function LogRow({
 }
 
 /** Die Groesse des Zeichens einer Protokollzeile (T-M46-17). */
-const LOG_ICON = 26
+const LOG_ICON = 20
 
 /**
  * Relations with every other power, and the orders towards the one the player picks

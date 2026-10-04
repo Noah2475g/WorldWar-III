@@ -158,6 +158,25 @@ function measureArea(page, selector) {
   }, [selector, DETAIL])
 }
 
+/**
+ * Zaehlung der Knoepfe im Seitenpanel (Nachbesserung U, T-M46-17): wie viele sind reine Zeichenknoepfe (ohne sichtbares
+ * Wort), und wie viele davon tragen Tooltip (`title`) UND zugaenglichen Namen (`aria-label`).
+ */
+const buttonCensus = (page) =>
+  page.evaluate(() => {
+    const buttons = [...document.querySelectorAll('aside button')].filter((b) => b.getBoundingClientRect().width > 0)
+    const iconOnly = buttons.filter((b) => !b.textContent.replace(/\s+/g, '').trim() && b.querySelector('svg, canvas, img'))
+    return {
+      total: buttons.length,
+      iconOnly: iconOnly.length,
+      iconOnlyWithTitle: iconOnly.filter((b) => (b.getAttribute('title') ?? '').trim()).length,
+      iconOnlyWithAria: iconOnly.filter((b) => (b.getAttribute('aria-label') ?? '').trim()).length,
+      iconOnlyWithBoth: iconOnly.filter((b) => (b.getAttribute('title') ?? '').trim() && (b.getAttribute('aria-label') ?? '').trim()).length,
+      withWord: buttons.length - iconOnly.length,
+      words: buttons.filter((b) => b.textContent.trim()).map((b) => b.textContent.trim().slice(0, 30)),
+    }
+  })
+
 // T-M46-17: Alarmliste (.alerts) und Protokoll (.log) kommen dazu; fehlt der Bereich (keine Meldung), steht null.
 const AREAS = { kopf: 'header', panel: 'aside', alarme: '.alerts', protokoll: '.log' }
 async function measureViews(page, vp, name, stackProvince) {
@@ -176,6 +195,16 @@ async function measureViews(page, vp, name, stackProvince) {
     }
   }
   await snap('karte')
+  // Nachbesserung U: auf dem Telefon auch das aufgeklappte Protokoll-Blatt messen (Knopf rechts am Fuss).
+  if (vp.width < 600) {
+    const toggle = page.locator('.foot__logtoggle').first()
+    if (await toggle.isVisible().catch(() => false)) {
+      await toggle.click({ timeout: 4000 }).catch(() => {})
+      await page.waitForTimeout(300)
+      await snap('protokollOffen')
+      await toggle.click({ timeout: 4000 }).catch(() => {})
+    }
+  }
   // Wie ux-late.mjs „karte-brennpunkt“: ueber die Uebersichtskarte nach Asien, wo die Armeen stehen (T-M46-03).
   if (stackProvince) {
     const mini = page.locator('canvas.map-overview').first()
@@ -205,10 +234,12 @@ async function measureViews(page, vp, name, stackProvince) {
     if (await selectBtn().isVisible().catch(() => false)) break
   }
   await snap('provinz')
+  out.provinz.knoepfe = await buttonCensus(page)
   if (await selectBtn().isVisible().catch(() => false)) {
     await selectBtn().click({ timeout: 4000 })
     await page.waitForTimeout(300)
     await snap('armee')
+    out.armee.knoepfe = await buttonCensus(page)
   }
   return out
 }

@@ -171,18 +171,20 @@ ul.facts--icons > li {
   font-variant-numeric: tabular-nums;
 }
 
-/* Der Fuss braucht fuer die groesseren Protokollzeilen etwas mehr Hoehe (vorher 168 px, rund sieben Textzeilen). */
+/* Die Fusshoehe bleibt 168 px (Nachbesserung U): bis dahin stand hier 196 px fuer 26-px-Zeichen in 33-px-Zeilen
+   (nur 3 ganze Zeilen). Mit 20-px-Zeichen (Textanteil des Protokolls 0,435) sind die Zeilen 27 px hoch, die Karte
+   behaelt ihre 28 px. */
 .foot,
 .foot .log {
-  max-height: 196px;
+  max-height: 168px;
 }
 
 /* Telefon (375 px): die grossen Zeichen der Kopfleiste bleiben so klein wie vorher, sonst bricht die Rohstoffleiste
    in drei statt zwei Zeilen und die Karte verliert ueber 60 px (T-M46-10 misst Kopfhoehe und Kartenanteil). */
 @media (max-width: 600px) {
   .resource > svg {
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
   }
   :root:root .resource {
     gap: 3px;
@@ -196,20 +198,38 @@ ul.facts--icons > li {
     width: 11px;
     height: 11px;
   }
-  .clock__time > svg,
+  /* Nachbesserung U (Textanteil auf dem Telefon): was in einem ohnehin 44 px hohen Knopf oder in einer Zeile liegt, die
+     schon so hoch ist, darf gross gezeichnet werden - das kostet keine Hoehe. Vorher 14/18/11/16 px, Textanteil der
+     Kopfleiste 0,610 (S575G) und 0,563 (S300). */
+  .clock__time > svg {
+    width: 16px;
+    height: 16px;
+  }
   .alarm-chip > svg {
-    width: 14px;
-    height: 14px;
+    width: 26px;
+    height: 26px;
+  }
+  .header .button--icon svg {
+    width: 28px;
+    height: 28px;
+  }
+  .speed svg {
+    width: 22px;
+    height: 22px;
+  }
+  .clock__time {
+    font-size: 11px;
   }
 }
 
 /* Telefon: das Protokoll haelt seine Zeilenzahl (T-M46-10 misst die sichtbaren Zeilen des aufgeklappten Blattes);
-   die Zeichen sind hier klein, gross sind sie auf dem Schreibtisch, wo die Messung des Textanteils gilt. */
+   Nachbesserung U: die Zeilen sind ohnehin 44 px hoch (Touchziel), das Zeichen darf 28 px gross sein (vorher 14 px,
+   Textanteil 0,759 geschlossen, 0,694 aufgeklappt). */
 @media (max-width: 600px) {
   .log__entry svg,
   .log__day svg {
-    width: 14px;
-    height: 14px;
+    width: 28px;
+    height: 28px;
   }
   .log__row {
     min-height: 0;
@@ -240,4 +260,10 @@ ul.facts--icons > li {
     width: 12px;
     height: 12px;
   }
+}
+
+/* Panelueberschrift 16 statt 18 px (Nachbesserung U): der Name einer Provinz mit zwei, drei Woertern war mit 4 228 px2
+   der groesste Einzeltext im Seitenpanel (Textanteil S300-Provinz 0,647). */
+.panel h2 {
+  font-size: 16px;
 }
