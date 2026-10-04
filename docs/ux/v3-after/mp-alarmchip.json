@@ -1,0 +1,57 @@
+{
+  "erzeugt": "2026-10-04T14:58:59.417Z",
+  "skript": "scripts/ux-capture.mjs --mp --mp-force-intrusion --mp-alarm-wait 180",
+  "partie": "Gastgeber Vereinigte Staaten, Gast Kanada, 6 Computergegner, feste Rate 10 h/s",
+  "alarmchip": {
+    "375x667": {
+      "probe": {
+        "waitedSeconds": 49,
+        "seen": true,
+        "text": "Einmarsch: Nordosten der USA",
+        "box": {
+          "x": 8,
+          "y": 132,
+          "w": 169,
+          "h": 44
+        },
+        "inView": true
+      },
+      "herbeigefuehrt": [
+        "eigene Provinzen: Ostkanada, Nordkanada, Westkanada",
+        "Kaserne bauen: ok",
+        "Infanterie ausheben: ok",
+        "Krieg erklaeren: ok",
+        "Krieg wirksam: ok",
+        "Armee da: ok",
+        "erreichbare Ziele in den USA: Nordosten der USA — Ankunft Tag 26 | Westen der USA — Ankunft Tag 56",
+        "Marsch befehlen: ok"
+      ],
+      "fehlschritte": []
+    },
+    "1280x800": {
+      "probe": {
+        "waitedSeconds": 49,
+        "seen": true,
+        "text": "Einmarsch: Nordosten der USA",
+        "box": {
+          "x": 1077,
+          "y": 7,
+          "w": 182,
+          "h": 24
+        },
+        "inView": true
+      },
+      "herbeigefuehrt": [
+        "eigene Provinzen: Ostkanada, Nordkanada, Westkanada",
+        "Kaserne bauen: ok",
+        "Infanterie ausheben: ok",
+        "Krieg erklaeren: ok",
+        "Krieg wirksam: ok",
+        "Armee da: ok",
+        "erreichbare Ziele in den USA: Nordosten der USA — Ankunft Tag 26 | Westen der USA — Ankunft Tag 56",
+        "Marsch befehlen: ok"
+      ],
+      "fehlschritte": []
+    }
+  }
+}

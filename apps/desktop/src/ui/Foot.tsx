@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { t } from '../i18n/text.ts'
 import { amount } from './format.ts'
 import { EventLog, type EventEntry } from './Panels.tsx'
@@ -65,17 +66,30 @@ export interface FootProps {
   seenTick: number
   onJump: (provinceId: string) => void
   onDispatch: () => void
-  onPanel: (panel: 'diplomacy' | 'market' | 'standings' | 'espionage') => void
+  onPanel: (panel: 'diplomacy' | 'market' | 'standings' | 'espionage' | 'armies') => void
 }
 
 export function Foot(props: FootProps) {
   const unread = unreadCount(props.entries, props.seenTick)
   const ranked = footRowsWithLeader(props.rows)
   const report = latestReport(props.entries)
+  // Telefon im Hochformat (T-M46-10): das Protokoll ist eine Zeile hoch und klappt auf Knopfdruck als
+  // Blatt ueber den Fuss auf — mit Filtern. Auf dem Schreibtisch ist der Knopf unsichtbar (touch.css).
+  const [logOpen, setLogOpen] = useState(false)
 
   return (
-    <footer className="foot">
+    <footer className="foot" data-log={logOpen ? 'open' : 'closed'}>
       <EventLog entries={props.entries} ticksPerDay={props.ticksPerDay} onJump={props.onJump} />
+      <button
+        type="button"
+        className="foot__logtoggle"
+        aria-expanded={logOpen}
+        aria-label={logOpen ? t('foot.logClose') : t('foot.logOpen')}
+        title={logOpen ? t('foot.logClose') : t('foot.logOpen')}
+        onClick={() => setLogOpen((open) => !open)}
+      >
+        <span aria-hidden="true">{logOpen ? '×' : '▴'}</span>
+      </button>
 
       <section className="foot__standings" aria-label={t('foot.standings')}>
         <h3 className="foot__title">{t('foot.standings')}</h3>
@@ -102,6 +116,9 @@ export function Foot(props: FootProps) {
             {t('header.market')}
           </button>
         </span>
+        <button type="button" className="button foot__button" onClick={() => props.onPanel('armies')}>
+          {t('foot.armies')}
+        </button>
         <button type="button" className="button foot__button" onClick={() => props.onPanel('espionage')}>
           {t('foot.espionage')}
         </button>

@@ -770,3 +770,20 @@ Abschnitt oben), erzeugt mit `node scripts/ux-bild.mjs --shots docs/ux/v3-after`
 | `docs/ux/v3-after/S575G-nah-1280x800.png` | `scripts/ux-bild.mjs` | Karte über Asien, vergrößert: aufgefächerte Armeestapel, 1280x800 |
 | `docs/ux/v3-after/S575G-provinz-1280x800.png` | `scripts/ux-bild.mjs` | Provinzpanel mit Zeichen für Eigentümer, Bevölkerung, Moral und Bauplätze, 1280x800 |
 | `docs/ux/v3-after/S575G-provinz-375x667.png` | `scripts/ux-bild.mjs` | Provinzpanel mit Zeichen für Eigentümer, Bevölkerung, Moral und Bauplätze, 375x667 |
+
+## Bildschirmfotos der UX-Welle 2, Bahn U-Layout (V3, 2026-10-04)
+
+Kein Fremdinhalt — Bildschirmfotos des eigenen Spiels, erzeugt mit `node scripts/ux-layout.mjs --out docs/ux/v3-after --tag nachher --shots`
+(Playwright gegen den Dev-Server, Stand `test/fixtures/v3/S575.json` mit der stärksten Macht als Mensch) und `node scripts/ux-capture.mjs --mp
+--mp-force-intrusion` (Partie zu zweit, der Gast marschiert in eine Provinz des Gastgebers). Nur 375x667 und 1280x800 (PLAN-V3 Regel 12).
+Sie stehen hier, weil `test/guards/no-foreign-assets.test.ts` jede eingecheckte Bilddatei namentlich verlangt. Zählwerte dazu:
+`docs/ux/v3-after/layout-nachher.json`, `aufgaben.json`, `mp-alarmchip.json`.
+
+| Datei | Erzeugt von | Zeigt |
+|---|---|---|
+| `docs/ux/v3-after/S575G-nachher-panel-375x667.png` | `scripts/ux-layout.mjs` | T-M46-10: Telefon, Kopfleiste ganz im Bild, Blatt halb (Seitenleiste 50 %), Panelwahl im Blattkopf |
+| `docs/ux/v3-after/S575G-nachher-protokoll-375x667.png` | `scripts/ux-layout.mjs` | T-M46-10/-02: Telefon, Protokoll als aufgeklapptes Blatt mit Filtern |
+| `docs/ux/v3-after/S575G-nachher-puls-1280x800.png` | `scripts/ux-layout.mjs` | T-M46-02: Protokoll nach Wichtigkeit mit Sammelzeilen, Karte mit Puls und Pfeil am Rand |
+| `docs/ux/v3-after/S575G-nachher-diplomatie-1280x800.png` | `scripts/ux-layout.mjs` | T-M46-06/-11: Diplomatie mit gewählter Macht, Handlungen im Bild, Aufstandshinweise gebündelt |
+| `docs/ux/v3-after/mp-alarmchip-375x667.png` | `scripts/ux-capture.mjs` | T-M46-08: Alarmchip in der Partie zu zweit, Telefon |
+| `docs/ux/v3-after/mp-alarmchip-1280x800.png` | `scripts/ux-capture.mjs` | T-M46-08: Alarmchip in der Partie zu zweit, Schreibtisch |

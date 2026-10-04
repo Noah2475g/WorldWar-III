@@ -850,3 +850,46 @@ describe('R-UX-02 T-M44-12 Neu-Meldungen als eine Sammelzeile', () => {
     expect(container.textContent).toContain('Neu ab heute: Hafen. Sie können ihn jetzt bauen.')
   })
 })
+
+describe('T-M46-11 Aufstandshinweise gebuendelt: eine Zeile mit Zahl', () => {
+  const unrest = (names: string[]) =>
+    alertsFor(
+      view({
+        capital: null,
+        provinces: names.map((name, i) => ({ id: `P${i}`, name, owner: 'p1', morale: UNREST_MORALE - 1000 })),
+      }),
+    )
+
+  it('sechs Hinweise werden eine Zeile „6 Provinzen stehen vor dem Aufstand“ (vorher sechs Zeilen, ~190 px)', () => {
+    render(<Alerts alerts={unrest(['A1', 'B2', 'C3', 'D4', 'E5', 'F6'])} onJump={() => undefined} />)
+    expect(screen.getAllByRole('listitem').filter((li) => li.classList.contains('alert')).length).toBe(1)
+    expect(screen.getByText('6 Provinzen stehen vor dem Aufstand')).toBeTruthy()
+  })
+
+  it('die Provinzen stehen dahinter, jede mit ihrem Sprung', () => {
+    const onJump = vi.fn()
+    render(<Alerts alerts={unrest(['Alpha', 'Beta'])} onJump={onJump} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Beta steht vor dem Aufstand' }))
+    expect(onJump).toHaveBeenCalledWith({ kind: 'province', provinceId: 'P1' })
+  })
+
+  it('eine einzelne Provinz bleibt eine eigene Zeile', () => {
+    render(<Alerts alerts={unrest(['Alpha'])} onJump={() => undefined} />)
+    expect(screen.getByRole('button', { name: 'Alpha steht vor dem Aufstand' })).toBeTruthy()
+    expect(screen.queryByText(/Provinzen stehen/)).toBeNull()
+  })
+
+  it('andere Meldungen stehen weiter einzeln neben der Sammelzeile', () => {
+    const alerts = alertsFor(
+      view({
+        shortages: ['iron'],
+        provinces: [
+          { id: 'A', name: 'Alpha', owner: 'p1', morale: UNREST_MORALE - 1000 },
+          { id: 'B', name: 'Beta', owner: 'p1', morale: UNREST_MORALE - 1000 },
+        ],
+      }),
+    )
+    render(<Alerts alerts={alerts} onJump={() => undefined} />)
+    expect(screen.getAllByRole('listitem').filter((li) => li.classList.contains('alert')).length).toBe(2)
+  })
+})

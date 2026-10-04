@@ -783,8 +783,26 @@ describe('R-UI-05 Jeder Befehl quittiert sofort sichtbar', () => {
     // Staaten erklaeren in der Mehrzahl (T-M23-02, V2-11).
     fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
     expect(log()).toMatch(/erklären .* den Krieg/)
-    expect(screen.getByRole('region', { name: 'Diplomatie' }).textContent).not.toContain('befohlen')
+    // Seit T-M46-11 bleibt die Quittung mindestens anderthalb Sekunden stehen, auch wenn der Tick den Befehl schon
+    // angewendet hat - dann als „ausgeführt“ und ohne den Knopf zu sperren.
+    const nachher = screen.getByRole('region', { name: 'Diplomatie' }).textContent ?? ''
+    expect(nachher).toContain('befohlen — ausgeführt')
+    expect(nachher).not.toContain('wirkt beim Weiterlaufen')
   })
+
+  it('T-M46-11: die Quittung verschwindet erst nach anderthalb Sekunden (vorher: mit dem Tick, bei Tempo 100 nach ~100 ms)', async () => {
+    startGame({ storage: new MemoryStorage() })
+    fireEvent.keyDown(window, { key: 'd' })
+    const panel = screen.getByRole('region', { name: 'Diplomatie' })
+    waehleErsteMacht(panel)
+    klickeKrieg(within(panel))
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+    const text = () => screen.getByRole('region', { name: 'Diplomatie' }).textContent ?? ''
+    expect(text()).toContain('befohlen — ausgeführt')
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+    expect(text()).toContain('befohlen — ausgeführt')
+    await waitFor(() => expect(text()).not.toContain('befohlen'), { timeout: 2500 })
+  }, 10_000)
 
   it('sperrt den Knopf, solange sein Befehl aussteht — ein Doppelklick ist kein Doppelbefehl', () => {
     startGame({ storage: new MemoryStorage() })
@@ -806,7 +824,7 @@ describe('R-UI-05 Jeder Befehl quittiert sofort sichtbar', () => {
    * `pendingCommands`-Sammlung. Gerendert wie main.tsx in StrictMode — die Falle vom
    * 2026-09-08 (doppelt gerufene Updater) sieht nur dieser Weg.
    */
-  it('quittiert die Zielwahl in der Armee-Statuszeile (StrictMode wie main.tsx)', () => {
+  it('quittiert die Zielwahl in der Armee-Statuszeile (StrictMode wie main.tsx)', async () => {
     render(
       <StrictMode>
         <App map={world} rules={TEST_RULES} maps={maps} skipTutorial />
@@ -846,7 +864,11 @@ describe('R-UI-05 Jeder Befehl quittiert sofort sichtbar', () => {
     // Der nächste Tick wendet den Befehl an; die Quittung verschwindet wieder.
     fastForward(1)
     expect(log()).toContain('marschiert nach')
-    expect(within(screen.getByRole('region', { name: 'Armee' })).queryByRole('status')).toBeNull()
+    // Die Quittung bleibt anderthalb Sekunden (T-M46-11) - als „ausgeführt“ - und geht dann.
+    expect(within(screen.getByRole('region', { name: 'Armee' })).getByRole('status').textContent).toContain('ausgeführt')
+    await waitFor(() => expect(within(screen.getByRole('region', { name: 'Armee' })).queryByRole('status')).toBeNull(), {
+      timeout: 2500,
+    })
   }, 20_000)
 })
 

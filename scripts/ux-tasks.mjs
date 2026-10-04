@@ -251,11 +251,15 @@ class Run {
       const x = Math.min(Math.max(r.left + r.width / 2, 1), innerWidth - 1)
       const y = Math.min(Math.max(r.top + r.height / 2, 1), innerHeight - 1)
       const hit = document.elementFromPoint(x, y)
-      return !(hit && (el === hit || el.contains(hit) || hit.contains(el))) || r.top < 0 || r.bottom > innerHeight
+      const covered = !(hit && (el === hit || el.contains(hit) || hit.contains(el)))
+      return covered || r.top < 0 || r.bottom > innerHeight
+        ? { covered, top: Math.round(r.top), bottom: Math.round(r.bottom), hit: hit ? `${hit.tagName.toLowerCase()}.${String(hit.className).split(' ')[0]}` : null }
+        : null
     })
     if (hidden && scrollOk) {
+      if (process.env.UX_DEBUG_SHOT) await this.page.screenshot({ path: process.env.UX_DEBUG_SHOT })
       if (this.counting) this.bildlaeufe += 1
-      this.note('Bildlauf', label)
+      this.note('Bildlauf', `${label} (${hidden.covered ? `verdeckt von ${hidden.hit}` : 'ausserhalb'}, oben ${hidden.top}, unten ${hidden.bottom})`)
       await loc.scrollIntoViewIfNeeded()
     }
     if (!(await loc.isEnabled())) {
@@ -331,7 +335,12 @@ class Run {
   }
 
   /** Tab, bis das Ziel den Fokus hat (je Druck ein Zaehler). `test` bekommt {tag,name,cls}. */
-  async tabTo(test, label, { max = 250, back = false } = {}) {
+  async tabTo(test, label, { max = 250, back = false, checkFirst = false } = {}) {
+    // `checkFirst`: hat das Ziel den Fokus schon (die Oberflaeche hat ihn gesetzt), kostet es keine Taste (T-M46-06).
+    if (checkFirst && test(await this.focusInfo())) {
+      this.note('Fokus', `${label} schon beim Oeffnen`)
+      return true
+    }
     for (let i = 0; i < max; i++) {
       await this.key(back ? 'Shift+Tab' : 'Tab')
       const f = await this.focusInfo()
@@ -365,6 +374,30 @@ class Run {
     await this.page.waitForTimeout(250)
     await this.checkNotice(label)
     return true
+  }
+
+  /**
+   * In einer fokussierten Auswahlliste mit der Pfeiltaste nach unten bis zum Eintrag gehen (je Druck ein Zaehler).
+   * Der ehrliche Weg, wenn die Liste nach Naehe sortiert ist und das Ziel weit vorn steht (T-M46-01).
+   */
+  async arrowSelect(match, label, { max = 60 } = {}) {
+    for (let i = 0; i < max; i++) {
+      const cur = await this.page.evaluate(() => {
+        const el = document.activeElement
+        return el instanceof HTMLSelectElement ? (el.selectedOptions[0]?.text ?? '') : null
+      })
+      if (cur === null) {
+        this.detour(label, 'Fokus nicht auf einer Liste')
+        return false
+      }
+      if (cur.trim().toLowerCase().startsWith(match.toLowerCase())) {
+        this.note('Fokus', `${label} = ${cur.trim()} nach ${i} Pfeil-ab`)
+        return true
+      }
+      await this.key('ArrowDown', `${label} Pfeil ab`)
+    }
+    this.detour(label, `Eintrag "${match}" nach ${max} Pfeil-ab nicht erreicht`)
+    return false
   }
 
   async result(reached, extra = {}) {
@@ -469,7 +502,13 @@ async function extras(browser, base, armies) {
     await context.close()
   }
   // 3. Wie lange steht "befohlen" im Bild, je Tempo? (Kaserne bauen in Mittlerer Westen)
-  out.rueckmeldungJeTempo = {}
+  out.rueckmeldungJeTempo = await ackPerSpeed(browser, base)
+  return out
+}
+
+/** Die Sichtdauer der Quittung je Tempo in ms (Nebenwert, T-M46-11): bleibt sie stehen (Pause), steht es da. */
+async function ackPerSpeed(browser, base) {
+  const out = {}
   for (const tempo of ['Pause', '1', '10', '100']) {
     const { page, context } = await openState(browser, base)
     if (tempo !== 'Pause') await page.getByRole('button', { name: tempo, exact: true }).first().click()
@@ -477,11 +516,11 @@ async function extras(browser, base, armies) {
     await page.waitForTimeout(300)
     await page.evaluate(() => { window.__ack = [] })
     await page.getByRole('button', { name: 'Kaserne bauen' }).click()
-    await page.waitForTimeout(2500)
+    await page.waitForTimeout(3500)
     const log = await page.evaluate(() => window.__ack)
     const on = log.find((e) => e.on)
     const off = log.find((e) => !e.on && on && e.t > on.t)
-    out.rueckmeldungJeTempo[tempo] = on ? (off ? off.t - on.t : 'bleibt stehen (>2,5 s)') : 'nie gesehen'
+    out[tempo] = on ? (off ? off.t - on.t : 'bleibt stehen (>3,5 s)') : 'nie gesehen'
     await context.close()
   }
   return out
@@ -504,6 +543,13 @@ async function main() {
       console.log(`ok: ${prep.armiesBlock?.replace(/\s+/g, ' ')}`)
     }
     if (flag('prepare-only')) return
+    if (flag('rueckmeldung')) {
+      const ack = await ackPerSpeed(browser, base)
+      mkdirSync(OUT, { recursive: true })
+      writeFileSync(join(OUT, 'rueckmeldung.json'), JSON.stringify({ erzeugt: new Date().toISOString(), skript: 'scripts/ux-tasks.mjs --rueckmeldung', rueckmeldungJeTempoMs: ack }, null, 2) + '\n')
+      console.log(JSON.stringify(ack))
+      return
+    }
     const armies = readFileSync(armiesFile, 'utf8')
     const results = []
     const { TASKS } = await import('./ux-tasks.defs.mjs')

@@ -106,11 +106,34 @@ describe('R-UX-01/AK1: Karte oben, Seitenleiste darunter, Kartenanteil aus den S
   })
 })
 
-describe('R-UX-01/AK2: Kopfleiste einzeilig und wischbar, Fuss kompakt', () => {
-  it('haelt die Kopfleiste in einer Zeile, die seitlich rollt', () => {
+// LOESCHVERMERK (Review): bis T-M46-10 pruefte der erste Fall `flex-wrap: nowrap` und `overflow-x: auto` an `.header__top`
+// ("haelt die Kopfleiste in einer Zeile, die seitlich rollt"), und der Siegziel-Fall `expect(portrait).not.toMatch(/\.meter\s*[,{]/)`.
+describe('R-UX-01/AK2: Kopfleiste ganz im Bild (T-M46-10), Fuss kompakt', () => {
+  it('bricht die Kopfleiste um, statt sie seitlich rollen zu lassen', () => {
+    // Vorher (T-M44-03b): eine 1561 px breite Wischzeile, 12 von 17 Bedienelementen ausserhalb des Bildes.
     const header = declarationsOf(portrait, ':root:root .header__top')
-    expect(header).toMatch(/flex-wrap:\s*nowrap/)
-    expect(header).toMatch(/overflow-x:\s*auto/)
+    expect(header).toMatch(/flex-wrap:\s*wrap/)
+    expect(header).not.toMatch(/overflow-x:\s*auto/)
+  })
+
+  it('zeigt alle neun Tempostufen in gleich breiten Feldern und die Modi als Auswahl', () => {
+    expect(declarationsOf(portrait, ':root:root .speeds .speed')).toMatch(/flex:\s*1 1 0/)
+    expect(declarationsOf(portrait, ':root:root .modes')).toMatch(/display:\s*none/)
+    expect(declarationsOf(portrait, ':root:root .modes-select')).toMatch(/display:\s*inline-block/)
+  })
+
+  it('gibt der Seitenleiste in der halben Raste die halbe Fensterhoehe, der Karte den Rest (>= 30 %)', () => {
+    const half = declarationsOf(portrait, `:root:root .app[data-panel="open"][data-sheet='half'] .main`)
+    expect(half).toMatch(/grid-template-rows:\s*minmax\(96px,\s*1fr\)\s+minmax\(0,\s*50dvh\)/)
+    // Das Blatt deckt dabei den Fuss; in der Raste Streifen bleibt er sichtbar.
+    expect(declarationsOf(portrait, `:root:root .app[data-panel="open"]:not([data-sheet='peek']) .foot`)).toMatch(
+      /display:\s*none/,
+    )
+  })
+
+  it('klappt das Protokoll als Blatt mit Filtern auf', () => {
+    expect(declarationsOf(portrait, ":root:root .foot[data-log='open'] .log")).toMatch(/position:\s*fixed/)
+    expect(declarationsOf(portrait, ":root:root .foot[data-log='open'] .log__filters")).toMatch(/display:\s*flex/)
   })
 
   it('laesst jedes Kind der Kopfleiste seine Breite behalten, statt zu stauchen', () => {
@@ -129,7 +152,8 @@ describe('R-UX-01/AK2: Kopfleiste einzeilig und wischbar, Fuss kompakt', () => {
     // Die Aufnahme (--mp) wartet auf das Siegziel; eine ausgeblendete Auskunft machte aus
     // „wischbar“ ein „nicht da“.
     expect(declarationsOf(portrait, ':root:root .header__title')).toMatch(/display:\s*none/)
-    expect(portrait).not.toMatch(/\.meter\s*[,{]/)
+    // Seit T-M46-10 steht es in einer eigenen schmalen Zeile (Ordnung, Groesse) - ausgeblendet wird es nie.
+    expect(declarationsOf(portrait, ':root:root .clock .meter')).not.toMatch(/display:\s*none/)
   })
 
   it('zeichnet die Uebersichtskarte nicht: sie nimmt einem 300 px hohen Kartenstreifen ein Viertel', () => {

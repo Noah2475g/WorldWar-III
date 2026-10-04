@@ -275,3 +275,33 @@ describe('R-MP-02/AK2 Tempotasten und Vorspulen sind zu zweit unwirksam', () => 
     expect(resolveKey(auf, context())).toEqual({ type: 'togglePause' })
   })
 })
+
+describe('T-M46-05 Tastenkuerzel fuer die Handlungen: A, P, B, E', () => {
+  it('A oeffnet das Heer, P/B/E springen in die Seitenleiste', () => {
+    expect(resolveKey({ key: 'a' }, context())).toEqual({ type: 'openPanel', panel: 'armies' })
+    expect(resolveKey({ key: 'P' }, context())).toEqual({ type: 'focusZone', zone: 'provinces' })
+    expect(resolveKey({ key: 'b' }, context())).toEqual({ type: 'focusZone', zone: 'build' })
+    expect(resolveKey({ key: 'E' }, context())).toEqual({ type: 'focusZone', zone: 'recruit' })
+  })
+
+  it('laesst die Buchstaben im Textfeld, im Dialog und mit Strg in Ruhe', () => {
+    for (const key of ['a', 'p', 'b', 'e']) {
+      expect(resolveKey({ key }, context({ typing: true })), `${key} im Feld`).toBeNull()
+      expect(resolveKey({ key }, context({ dialogOpen: true })), `${key} im Dialog`).toBeNull()
+      expect(resolveKey({ key, ctrlKey: true }, context()), `Strg+${key}`).toBeNull()
+    }
+  })
+
+  it('keine Kollision: jede Taste hat genau eine Bedeutung, auch beim Vorspulen und zu zweit', () => {
+    const seen = new Map<string, string>()
+    for (const key of 'abdefhlmps') {
+      const shortcut = resolveKey({ key }, context())
+      expect(shortcut, key).not.toBeNull()
+      const meaning = JSON.stringify(shortcut)
+      expect(seen.has(meaning), `${key} doppelt belegt wie ${seen.get(meaning)}`).toBe(false)
+      seen.set(meaning, key)
+    }
+    expect(resolveKey({ key: 'a' }, context({ fastForwarding: true }))).toEqual({ type: 'openPanel', panel: 'armies' })
+    expect(resolveKey({ key: 'p' }, context({ multiplayer: true }))).toEqual({ type: 'focusZone', zone: 'provinces' })
+  })
+})

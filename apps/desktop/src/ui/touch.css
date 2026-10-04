@@ -472,6 +472,10 @@ select,
   display: none;
 }
 
+.sheet__bar {
+  display: none;
+}
+
 @media (max-width: 599px) and (orientation: portrait) {
   :root:root .app {
     --map-h: 45vh;
@@ -499,26 +503,72 @@ select,
     --map-h: 12dvh;
   }
 
-  /* Der Griff klebt am oberen Rand der Seitenleiste, 44 px hoch, und nimmt dem Browser das
-     Wischen ab: ein Wisch am Griff schaltet die Raste, er schiebt weder Seite noch Karte. */
-  :root:root .sheet__handle {
+  /* Halbe Raste (T-M46-10): die Seitenleiste bekommt die halbe Fensterhoehe (gemessen vorher: 261 von 667 px = 39 %),
+     die Karte den Rest, mindestens 96 px. Streifen und voll bleiben bei `--map-h`. */
+  :root:root .app[data-panel="open"][data-sheet='half'] .main {
+    grid-template-rows: minmax(96px, 1fr) minmax(0, 50vh);
+    grid-template-rows: minmax(96px, 1fr) minmax(0, 50dvh);
+  }
+
+  /* Mit halb oder voll geoeffnetem Blatt deckt es den Fuss: Protokoll und Knoepfe kommen mit der Raste
+     „Streifen" oder dem Schliessen des Panels zurueck. So bleibt Platz fuer Karte (>= 30 %) UND Blatt (50 %). */
+  :root:root .app[data-panel="open"]:not([data-sheet='peek']) .foot {
+    display: none;
+  }
+
+  /* Die Leiste des Blatts (T-M46-10): Griff und Panelwahl nebeneinander, klebt am oberen Rand der Seitenleiste.
+     Der Griff nimmt dem Browser das Wischen ab: ein Wisch am Griff schaltet die Raste, er schiebt weder Seite
+     noch Karte. LOESCHVERMERK (Review): vorher klebte der Griff selbst (`position: sticky; top: calc(-1 * var(--sp-md));
+     margin: calc(-1 * var(--sp-md)) calc(-1 * var(--sp-md)) 0; border-bottom`), jetzt die Leiste darum. */
+  :root:root .sheet__bar {
     display: flex;
     position: sticky;
     top: calc(-1 * var(--sp-md));
     z-index: 2;
     flex: none;
+    margin: calc(-1 * var(--sp-md)) calc(-1 * var(--sp-md)) 0;
+    border-bottom: 1px solid var(--line);
+    background: var(--paper);
+  }
+
+  :root:root .sheet__handle {
+    display: flex;
+    flex: 1 1 auto;
+    min-width: 0;
     align-items: center;
     justify-content: center;
     gap: var(--sp-sm);
     min-height: 44px;
-    margin: calc(-1 * var(--sp-md)) calc(-1 * var(--sp-md)) 0;
-    padding: 0 var(--sp-md);
+    margin: 0;
+    padding: 0 var(--sp-sm);
     border: 0;
-    border-bottom: 1px solid var(--line);
     background: var(--paper);
     color: var(--ink-soft);
     font-size: 11px;
     touch-action: none;
+  }
+
+  :root:root .sheet__nav {
+    display: flex;
+    flex: none;
+  }
+
+  :root:root .sheet__navbutton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    border-left: 1px solid var(--line);
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  :root:root .sheet__navbutton[aria-pressed='true'] {
+    background: var(--warn);
+    color: var(--on-warn);
   }
 
   :root:root .sheet__grip {
@@ -528,35 +578,137 @@ select,
     background: var(--ink-soft);
   }
 
-  /* Kopfleiste: eine Zeile, seitlich wischbar; ihre Kinder behalten ihre Breite. */
+  /* LOESCHVERMERK (Review): bis T-M46-10 stand hier die wischbare Einzeile (T-M44-03b):
+       :root:root .header__top { flex-wrap: nowrap; overflow-x: auto; gap: var(--sp-md); padding: var(--sp-xs) var(--sp-md); scrollbar-width: none; }
+       :root:root .header__top > * { flex: none; }
+       :root:root .header__title { display: none; }
+       :root:root .clock { white-space: nowrap; }
+       :root:root .header__panels { margin-left: 0; }
+     Grund: 5 von 17 Bedienelementen im Bild (docs/ux/v3-before/messwerte-spaet.json); Zaehlwerte in docs/ux/v3-after/layout-vorher.json. */
+
+  /* Kopfleiste (T-M46-10, R-UX-01): zwei Zeilen statt einer 1561 px breiten Wischzeile — gemessen an
+     S575G, 375x667: vorher 5 von 17 Bedienelementen im Bild (Tempo 25-100, Vorspulen, Kartenmodi,
+     Spielstaende, Menue und Alarmchip lagen rechts ausserhalb). Jetzt: oben alle neun Tempostufen in
+     gleich breiten Feldern (Vorspulen nur als Zeichen, der Name bleibt fuers Ohr), darunter Uhr,
+     Kartenmodus als Auswahl, Spielstaende und Menue; das Siegziel in einer schmalen Zeile. Der
+     Alarmchip liegt ueber dem oberen Kartenrand (kein Zeilenumbruch beim ersten Einmarsch). `.clock`
+     loest sich auf (`display: contents`), damit Uhr, Tempo und Siegziel mit ihren Geschwistern ordnen. */
+  :root:root .header {
+    position: relative;
+  }
+
   :root:root .header__top {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    gap: var(--sp-md);
-    padding: var(--sp-xs) var(--sp-md);
-    scrollbar-width: none;
+    flex-wrap: wrap;
+    overflow: visible;
+    gap: 0 var(--sp-sm);
+    padding: 0 var(--sp-md);
   }
 
   :root:root .header__top > * {
     flex: none;
   }
 
-  /* Der Titel entfaellt; das Siegziel (`.meter`) BLEIBT in der wischbaren Zeile - es ist eine
-     Auskunft, kein Schmuck, und die Aufnahme (--mp) wartet auf sein Erscheinen. */
+  /* Der Titel entfaellt; das Siegziel (`.meter`) BLEIBT - es ist eine Auskunft, kein Schmuck, und die
+     Aufnahme (--mp) wartet auf sein Erscheinen. */
   :root:root .header__title {
     display: none;
   }
 
   :root:root .clock {
+    display: contents;
+  }
+
+  :root:root .speeds {
+    order: 1;
+    flex: 1 1 100%;
+    margin: 0 calc(-1 * var(--sp-xs));
+  }
+
+  :root:root .speeds .speed {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0;
+  }
+
+  :root:root .clock__time {
+    order: 2;
+    white-space: nowrap;
+    margin-right: auto;
+  }
+
+  :root:root .clock__fixed,
+  :root:root .clock__stalled,
+  :root:root .clock__pause,
+  :root:root .clock__lost,
+  :root:root .header__notice,
+  :root:root .clock .button {
+    order: 5;
+  }
+
+  /* Zu zweit (feste Rate): Rate und Pausenantrag teilen sich eine Zeile - 215 + 137 px passen nicht in 359, 200 + 137 schon. */
+  :root:root .clock__fixed {
+    font-size: 11px;
+  }
+
+  :root:root .clock .meter {
+    order: 6;
+    flex: 1 1 100%;
+    margin: 0;
+    font-size: 11px;
+    line-height: 1;
+  }
+
+  /* Das Vorspulen traegt nur sein Zeichen; der Name steht weiter im Dokument (Vorleser, Tooltip). */
+  :root:root .speed__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
     white-space: nowrap;
   }
 
+  /* Die fuenf Kartenmodi als Auswahl (~150 px gegen 382 px Knoepfe). */
+  :root:root .modes {
+    display: none;
+  }
+
+  :root:root .modes-select {
+    display: inline-block;
+    order: 3;
+    flex: 1 1 0;
+    min-width: 0;
+    height: 44px;
+    font-size: 12px;
+  }
+
   :root:root .header__panels {
+    order: 4;
     margin-left: 0;
   }
 
+  /* Der Einmarsch-Alarm sitzt auf dem oberen Kartenrand, links der Zoomknoepfe (4 x 44 + 2 x 2 px = 182 px). */
+  :root:root .header__alarm {
+    position: absolute;
+    top: 100%;
+    left: var(--sp-md);
+    right: calc(182px + 2 * var(--sp-md));
+    z-index: 6;
+    border: 0;
+    padding: 0;
+  }
+
+  :root:root .header__alarm .alarm-chip {
+    width: 100%;
+    justify-content: flex-start;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
   :root:root .resource {
-    padding: 2px 6px;
+    padding: 1px 6px;
+    line-height: 1.15;
   }
 
   /* Die Rohstoffleiste bricht um statt zu rollen (R-UX-01/AK2, gemessen 2026-10-03: 452 px
@@ -594,21 +746,87 @@ select,
     flex: 1 1 0;
   }
 
-  /* Fuss: das Protokoll eine Zeile hoch, darunter die Knoepfe als wischbare Reihe;
-     die Rangliste steht in der Lage (Knopf „Rangliste / Sieg"). */
+  /* LOESCHVERMERK (Review): bis T-M46-10 ohne Aufklappknopf und ohne Positionierung:
+       :root:root .foot { grid-template-columns: minmax(0, 1fr); max-height: none; }
+       :root:root .foot .log { max-height: 44px; padding: 0 var(--sp-md); }
+     Grund: das Protokoll war 44 px hoch, ohne Filter. */
+
+  /* Fuss: das Protokoll eine Zeile hoch, darunter die Knoepfe als Reihe; die Rangliste steht in der Lage
+     (Knopf „Rangliste / Sieg"). T-M46-10: ein Knopf klappt das Protokoll als Blatt (55 dvh) ueber den Fuss
+     auf — mit allen fuenf Filtern, vorher nur 44 px und ohne Filter. */
   :root:root .foot {
+    position: relative;
     grid-template-columns: minmax(0, 1fr);
     max-height: none;
   }
 
   :root:root .foot .log {
     max-height: 44px;
-    padding: 0 var(--sp-md);
+    padding: 0 calc(44px + var(--sp-md)) 0 var(--sp-md);
   }
 
   :root:root .foot .log__filters,
   :root:root .foot__standings {
     display: none;
+  }
+
+  :root:root .foot__logtoggle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    border-left: 1px solid var(--line);
+    background: var(--ground);
+    color: var(--ink);
+    font-size: 20px;
+    line-height: 1;
+  }
+
+  :root:root .foot[data-log='open'] .log {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    height: 55vh;
+    height: 55dvh;
+    max-height: none;
+    padding: 0 var(--sp-md) var(--sp-md);
+    border-top: 1px solid var(--line);
+    box-shadow: 0 -4px 12px color-mix(in srgb, var(--water) 70%, transparent);
+  }
+
+  :root:root .foot[data-log='open'] .log__filters {
+    display: flex;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    gap: var(--sp-xs);
+    min-height: 44px;
+    align-items: center;
+    padding-right: 44px;
+    background: var(--ground);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  :root:root .foot[data-log='open'] .log__filters > * {
+    flex: none;
+  }
+
+  :root:root .foot[data-log='open'] .foot__logtoggle {
+    position: fixed;
+    top: auto;
+    right: 0;
+    bottom: calc(55dvh - 44px);
+    z-index: 21;
   }
 
   :root:root .foot__buttons {

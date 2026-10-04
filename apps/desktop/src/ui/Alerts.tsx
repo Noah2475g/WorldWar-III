@@ -568,9 +568,21 @@ export function Alerts({
   // Mehrere Freischaltungen am selben Tag belegten je eine Zeile Panelhoehe (T-M44-12): sie
   // stehen als eine Sammelzeile an der Stelle der ersten, und ein Klick blendet alle aus.
   const unlocks = alerts.filter((alert) => alert.kind === 'unlock')
-  const rows: { alert: Alert; ids: string[] }[] = []
+  // Dasselbe fuer Aufstandshinweise (T-M46-11, Befund 10): sechs Zeilen schoben Provinz- und Armeepanel um
+  // ~190 px nach unten, Bauplaetze lagen abgeschnitten. Ab zwei werden sie eine Zeile mit Zahl, die sich
+  // zu den Provinzen aufklappt - jede mit ihrem Sprung.
+  const unrests = alerts.filter((alert) => alert.kind === 'unrest')
+  const rows: { alert: Alert; ids: string[]; group?: readonly Alert[] }[] = []
   for (const alert of alerts) {
-    if (alert.kind !== 'unlock' || unlocks.length < 2) {
+    if (alert.kind === 'unrest' && unrests.length >= 2) {
+      if (alert === unrests[0]) {
+        rows.push({
+          alert: { ...alert, text: t('alerts.unrestMany', { count: unrests.length }) },
+          ids: unrests.map((entry) => entry.id),
+          group: unrests,
+        })
+      }
+    } else if (alert.kind !== 'unlock' || unlocks.length < 2) {
       rows.push({ alert, ids: [alert.id] })
     } else if (alert === unlocks[0]) {
       rows.push({
@@ -583,8 +595,34 @@ export function Alerts({
   return (
     <section className="alerts" aria-label={t('alerts.title')}>
       <ul>
-        {rows.map(({ alert, ids }) => {
+        {rows.map(({ alert, ids, group }) => {
           const target = targetOf(alert)
+          if (group) {
+            return (
+              <li key={alert.id} className={`alert alert--${alert.kind} alert--group`}>
+                <Icon name={alert.icon} size={14} />
+                <details>
+                  <summary>{alert.text}</summary>
+                  <ul className="alert__parts">
+                    {group.map((part) => {
+                      const partTarget = targetOf(part)
+                      return (
+                        <li key={part.id}>
+                          {partTarget ? (
+                            <button type="button" className="alert__jump" onClick={() => onJump(partTarget)}>
+                              {part.text}
+                            </button>
+                          ) : (
+                            <span>{part.text}</span>
+                          )}
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </details>
+              </li>
+            )
+          }
           return (
             <li key={alert.id} className={`alert alert--${alert.kind}`}>
               <Icon name={alert.icon} size={14} />

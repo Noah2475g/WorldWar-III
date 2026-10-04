@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { MAX_DEPART_DELAY_DAYS } from '@worldwar/core'
 import type { PublicView, ResourceKey, Terrain, VisibleArmy, VisibleProvince } from '@worldwar/core'
 // Nur der Typ: zur Laufzeit importiert weiterhin events.ts aus Panels.tsx, nicht umgekehrt.
@@ -78,6 +78,11 @@ export interface Action {
    * Befehl anwendet — ein Doppelklick waere sonst ein Doppelbefehl.
    */
   pendingNotice?: string
+  /**
+   * Die Quittung steht nur noch fuers Auge (T-M46-11): der Befehl ist schon angewendet, der Satz bleibt mindestens
+   * anderthalb Sekunden. Der Knopf ist dann nicht mehr gesperrt - ein zweiter Auftrag waere kein Doppelbefehl.
+   */
+  ackOnly?: boolean
   onRun: () => void
 }
 
@@ -255,14 +260,14 @@ function ActionButton({
           Erklaerzeichen eine eigene Reihe einsamer Kreise (in der Sichtpruefung
           zu T-M13-17 gefunden). */}
       <span className="action__head">
-        {confirm !== undefined && action.disabledReason === null && action.pendingNotice === undefined ? (
+        {confirm !== undefined && action.disabledReason === null && (action.pendingNotice === undefined || action.ackOnly === true) ? (
           <ConfirmButton label={action.label} consequence={confirm} onConfirm={action.onRun} />
         ) : (
           <button
             type="button"
             className={primary ? 'button button--primary' : 'button'}
             aria-pressed={pressed}
-            disabled={action.disabledReason !== null || action.pendingNotice !== undefined}
+            disabled={action.disabledReason !== null || (action.pendingNotice !== undefined && action.ackOnly !== true)}
             title={buttonTitle(action)}
             // Der Name nennt die Handlung, nicht nur die Sache (T-M22-06, V2-13).
             aria-label={compact || iconOnly ? (action.aria ?? action.label) : action.aria}
@@ -397,7 +402,7 @@ export function ActionGroup({
   }
 
   return (
-    <section className="group" aria-label={group.title}>
+    <section className="group" aria-label={group.title} data-group={group.id}>
       <h3 className="group__title">{group.title}</h3>
       {next && <NextUnlockLine next={next} />}
       {shared && <p className="group__reason">{shared}</p>}
@@ -438,7 +443,22 @@ export function ProvincePicker({
   return (
     <label className="picker">
       <span>{t('province.pick')}</span>
-      <select value={value ?? ''} onChange={(event) => onChange(event.target.value || null)}>
+      <select
+        value={value ?? ''}
+        onChange={(event) => onChange(event.target.value || null)}
+        onKeyDown={(event) => {
+          // Eingabe bestaetigt die Wahl und fuehrt den Fokus zu den Handlungen der Provinz (T-M46-05): in einer
+          // Auswahlliste gehoeren die Buchstaben dem Tippen, also kommt man mit B oder E erst von hier weg.
+          if (event.key !== 'Enter') return
+          const first = event.currentTarget
+            .closest('aside')
+            ?.querySelector<HTMLElement>('.panel :is(.slots, [data-group]) button:not(:disabled)')
+          if (first) {
+            event.preventDefault()
+            first.focus()
+          }
+        }}
+      >
         <option value="">{t('province.pickNone')}</option>
         <optgroup label={t('province.pickOwn')}>
           {own.map((province) => (
@@ -603,7 +623,7 @@ export function ProvincePanel(props: ProvincePanelProps) {
       {province.buildings !== undefined && (
       <>
       <h3>{t('province.buildSlots')}</h3>
-      <div className="slots">
+      <div className="slots" data-group="build">
         {BUILDING_ORDER.map((key) => {
           const level = province.buildings?.[key] ?? 0
           // ALLE Auftraege dieser Art, nicht nur der erste (T-M28-16): der Kern erlaubt
@@ -826,8 +846,25 @@ const STANCE_PICTURES: Record<(typeof STANCES)[number], PictureName> = {
 
 export function ArmyPanel(props: ArmyPanelProps) {
   const army = props.army
-  if (!army) return null
   const targeting = props.targeting ?? null
+  // Beginnt die Zielwahl (Knopf „Marschieren“ im Panel oder in der Heeruebersicht, T-M46-01), steht der Fokus
+  // auf der Zielliste: der Knopf, der sie oeffnete, ist verschwunden, und der Fokus waere sonst auf <body>
+  // gefallen - mit Tab ginge es wieder bei der Kopfleiste los (19 Stationen bis zur Seitenleiste).
+  const targetList = useRef<HTMLSelectElement>(null)
+  const choosing = targeting !== null
+  useEffect(() => {
+    if (choosing) targetList.current?.focus()
+  }, [choosing])
+  // Wird eine Armee gewaehlt (Heeruebersicht, Karte, Provinzliste), steht der Fokus auf ihrem ersten Befehl
+  // (T-M46-05): der Knopf „Auswaehlen“ verschwand mit dem Wechsel des Panels, Tab begaenne bei der Kopfleiste.
+  const panelRoot = useRef<HTMLElement>(null)
+  const armyId = props.army?.id
+  useEffect(() => {
+    if (armyId === undefined || choosing) return
+    panelRoot.current?.querySelector<HTMLButtonElement>('.actions--grid button:not(:disabled)')?.focus({ preventScroll: true })
+    // Nur bei einer anderen Armee; Befehle selbst aendern den Fokus nicht.
+  }, [armyId])
+  if (!army) return null
 
   // Die Haltung als Gruppe — seit T-M40-05 vier Knoepfe, zwei mal zwei —, die uebrigen
   // Befehle zweispaltig (D27.6, D30.7).
@@ -839,7 +876,7 @@ export function ArmyPanel(props: ArmyPanelProps) {
     .map((action) => (action.icon || !ARMY_ACTION_ICONS[action.id] ? action : { ...action, icon: ARMY_ACTION_ICONS[action.id]! }))
 
   return (
-    <section className="panel" aria-label={t('army.title')}>
+    <section className="panel" aria-label={t('army.title')} ref={panelRoot}>
       <PanelHead
         title={props.name ?? t('army.title')}
         onBack={props.onBack}
@@ -954,6 +991,7 @@ export function ArmyPanel(props: ArmyPanelProps) {
           <label className="picker">
             <span>{t('army.targetLabel')}</span>
             <select
+              ref={targetList}
               value={targeting.target?.id ?? ''}
               onChange={(event) => targeting.onChoose(event.target.value || null)}
             >
@@ -1024,6 +1062,108 @@ export function ArmyPanel(props: ArmyPanelProps) {
   )
 }
 
+/**
+ * Die Heeruebersicht (T-M46-01, R-UX-04): alle eigenen Armeen mit Name, Ort, Staerke und Auftrag,
+ * je Zeile der Sprung zur Karte und der direkte Marschbefehl. Armeen waren nur Pixel auf der Karte
+ * (0 DOM-Elemente, "Auswaehlen" ohne Namen); ohne Maus kostete "Armee bewegen" 46 Tasten, mit Maus 5 Klicks.
+ */
+export type ArmyOrder = 'battle' | 'marching' | 'idle'
+
+export interface ArmyRow {
+  id: string
+  name: string
+  provinceName: string
+  /** Staerke wie im Armeepanel (Festkomma). */
+  strength: number
+  order: ArmyOrder
+  /** Der Auftrag als Satz: "marschiert nach X · Ankunft ...", "im Gefecht", "steht (Angriff)". */
+  orderText: string
+}
+
+export type ArmyFilter = 'all' | ArmyOrder
+
+export const ARMY_FILTERS: readonly ArmyFilter[] = ['all', 'battle', 'marching', 'idle']
+
+/** Zeilen nach Filter; die Reihenfolge der Eingabe bleibt (der Aufrufer sortiert Gefecht, Marsch, Stand). */
+export function filterArmyRows(rows: readonly ArmyRow[], filter: ArmyFilter): ArmyRow[] {
+  return filter === 'all' ? [...rows] : rows.filter((row) => row.order === filter)
+}
+
+export interface ArmiesPanelProps {
+  rows: readonly ArmyRow[]
+  onSelect: (armyId: string) => void
+  onMarch: (armyId: string) => void
+  onClose?: (() => void) | undefined
+}
+
+export function ArmiesPanel(props: ArmiesPanelProps) {
+  const [filter, setFilter] = useState<ArmyFilter>('all')
+  const shown = filterArmyRows(props.rows, filter)
+  const count = (value: ArmyFilter): number => filterArmyRows(props.rows, value).length
+  // Per Kurztaste geoeffnet (A) landet der Fokus auf der ersten Armee: der naechste Tastendruck gehoert ihr.
+  const list = useRef<HTMLUListElement>(null)
+  useEffect(() => {
+    list.current?.querySelector<HTMLButtonElement>('button')?.focus()
+  }, [])
+
+  return (
+    <section className="panel" aria-label={t('armies.title')}>
+      <PanelHead title={`${t('armies.title')} (${props.rows.length})`} onClose={props.onClose} />
+      <div className="log__filters armies__filters" role="group" aria-label={t('alerts.filter')}>
+        {ARMY_FILTERS.map((value) => (
+          <button
+            key={value}
+            type="button"
+            className={filter === value ? 'speed speed--active' : 'speed'}
+            aria-pressed={filter === value}
+            onClick={() => setFilter(value)}
+          >
+            {t(`armies.filter.${value}`, { count: count(value) })}
+          </button>
+        ))}
+      </div>
+      {shown.length === 0 ? (
+        <p className="notice notice--info">{props.rows.length === 0 ? t('armies.none') : t('armies.noneFiltered')}</p>
+      ) : (
+        <ul className="armies" ref={list}>
+          {shown.map((row) => (
+            <li key={row.id} className={`armies__row armies__row--${row.order}`}>
+              <div className="armies__what">
+                <b className="armies__name">{row.name}</b>
+                <span className="armies__where">{row.provinceName}</span>
+                <span className="armies__power">
+                  {t('army.power')} {amount(row.strength)}
+                </span>
+                <span className="armies__order">{row.orderText}</span>
+              </div>
+              <div className="armies__go">
+                <button
+                  type="button"
+                  className="button"
+                  aria-label={t('armies.selectAria', { name: row.name })}
+                  title={t('armies.selectAria', { name: row.name })}
+                  onClick={() => props.onSelect(row.id)}
+                >
+                  {t('army.select')}
+                </button>
+                <button
+                  type="button"
+                  className="button"
+                  aria-label={t('armies.marchAria', { name: row.name })}
+                  title={t('armies.marchAria', { name: row.name })}
+                  onClick={() => props.onMarch(row.id)}
+                >
+                  {t('army.move')}
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}
+
 export interface EventEntry {
   id: string
   tick: number
@@ -1074,7 +1214,26 @@ export interface EventEntry {
    * additiven Felder trägt keinen, und die Zeile bleibt, was sie war.
    */
   battle?: BattleReportData
+  /** Die Art des Kernereignisses (T-M46-02) - Grundlage der Sammelzeilen; fehlt bei Zeilen ohne Kernereignis. */
+  type?: string
+  /** Wie wichtig die Zeile ist (T-M46-02, VM-03). Ohne Angabe gilt `normal`. */
+  importance?: EventImportance
+  /** Hat das Ereignis einen Ton - dann pulsiert es auch auf der Karte an seinem Ort (T-M46-02). */
+  audible?: boolean
+  /** Die Teile einer Sammelzeile, jeder mit seinem Sprung (T-M46-02). */
+  parts?: readonly EventPart[]
 }
+
+/** Ein Teil einer Sammelzeile: eine einzelne Zeile mit ihrem Ort. */
+export interface EventPart {
+  id: string
+  tick: number
+  text: string
+  provinceId?: string
+}
+
+/** Wichtigkeit einer Protokollzeile: `major` verlangt Aufmerksamkeit, `minor` ist Alltag (T-M46-02). */
+export type EventImportance = 'major' | 'normal' | 'minor'
 
 /** Eine Bilanzzeile des Tagesberichts: Rohstoffname und Festkomma-Tagesbilanz. */
 export interface DayReportDelta {
@@ -1101,9 +1260,10 @@ export const CATEGORY_ICONS: Partial<Record<EventCategory, IconName>> = {
   diplomacy: 'alliance',
 }
 
-export type EventFilterKey = EventCategory | 'all' | 'world'
+export type EventFilterKey = EventCategory | 'all' | 'world' | 'important'
 
-export const EVENT_FILTERS: readonly EventFilterKey[] = ['all', 'combat', 'economy', 'diplomacy', 'world']
+/** `important` zuerst und Voreinstellung (T-M46-02): die Alltagszeilen (`minor`) stehen unter „alles". */
+export const EVENT_FILTERS: readonly EventFilterKey[] = ['important', 'all', 'combat', 'economy', 'diplomacy', 'world']
 
 /**
  * Which drawer an event belongs in (T-M13-13, R-GAME-06).
@@ -1238,11 +1398,15 @@ export function EventLog({
   ticksPerDay: number
   onJump: (provinceId: string) => void
 }) {
-  const [filter, setFilter] = useState<EventFilterKey>('all')
+  // LOESCHVERMERK (Review): bis T-M46-02 `useState<EventFilterKey>('all')` - das Protokoll zeigte jede Zeile (35 an einem Tag).
+  const [filter, setFilter] = useState<EventFilterKey>('important')
   const shown =
     filter === 'all'
       ? entries
-      : filter === 'world'
+      : filter === 'important'
+        ? // Wichtig und ueblich; der Alltag (Wegmarken, Beschuss, Auftragsbeginn, fremde Nebensachen) nur unter „alles".
+          entries.filter((entry) => (entry.importance ?? 'normal') !== 'minor')
+        : filter === 'world'
         ? // Weltgeschehen fragt nicht nach der Rubrik, sondern nach der Positivliste des
           // Kerns (R-NEWS-04) — auch wenn es zwischen zwei fremden Mächten geschieht.
           entries.filter((entry) => entry.world === true)
@@ -1285,6 +1449,9 @@ export function EventLog({
               ...(entry.severity === 'alert' ? ['log__row--alert'] : []),
               // Der eigene Rueckschlag traegt Balken und Fettung (T-M22-03, V2-07).
               ...(entry.self ? ['log__row--self'] : []),
+              // Wichtigkeit (T-M46-02): wichtig laut, Alltag leise.
+              ...(entry.importance === 'major' ? ['log__row--major'] : []),
+              ...(entry.importance === 'minor' ? ['log__row--minor'] : []),
             ].join(' ')}
           >
             <time>
@@ -1302,14 +1469,36 @@ export function EventLog({
                   title={t(`alerts.${entry.category ?? 'other'}`)}
                 />
               )}
-              {entry.body || entry.battle || (entry.deltas && entry.deltas.length > 0) ? (
+              {entry.body || entry.battle || entry.parts || (entry.deltas && entry.deltas.length > 0) ? (
                 /* Der Tagesbericht klappt auf (T-M24-01, Befund V2-06): die Zeile ist
                    die Überschrift, der Körper steht dahinter — details/summary reicht,
                    im Stil der Lagekarte. Seit T-M27-02 nutzt der Kampfbericht dasselbe
                    Muster, sein Körper ist aber strukturiert: Balken statt Absätze. */
-                <details className="log__report">
+                <details className={entry.parts ? 'log__report log__group' : 'log__report'}>
                   <summary>{entry.text}</summary>
                   {entry.battle && <BattleBody battle={entry.battle} />}
+                  {/* Die Teile einer Sammelzeile (T-M46-02): jeder mit seiner Zeit und seinem Sprung. */}
+                  {entry.parts && (
+                    <ul className="log__parts">
+                      {entry.parts.map((part) => (
+                        <li key={part.id}>
+                          <time>{String(part.tick % ticksPerDay).padStart(2, '0')}:00</time>
+                          {part.provinceId ? (
+                            <button
+                              type="button"
+                              className="log__jump"
+                              onClick={() => onJump(part.provinceId!)}
+                              title={t('events_ui.jumpTo')}
+                            >
+                              {part.text}
+                            </button>
+                          ) : (
+                            <span>{part.text}</span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                   {/* Die Bilanzen als Balken (T-M25-04): DERSELBE DeltaBar wie in der
                       Wirtschaftstabelle; der groesste Betrag des Tages ist der
                       Massstab, die Zahl daneben bleibt der zugaengliche Wert. */}
@@ -1348,6 +1537,19 @@ export function EventLog({
                 </button>
               ) : (
                 <span>{entry.text}</span>
+              )}
+              {/* Eine Sammelzeile springt mit einem Klick zum juengsten Ort (T-M46-02): wer nur wissen
+                  will, wo es zuletzt war, muss sie nicht erst aufklappen. */}
+              {entry.parts && entry.provinceId && (
+                <button
+                  type="button"
+                  className="log__goto"
+                  onClick={() => onJump(entry.provinceId!)}
+                  title={t('events_ui.jumpNewest')}
+                  aria-label={t('events_ui.jumpNewest')}
+                >
+                  <span aria-hidden="true">↗</span>
+                </button>
               )}
             </span>
           </li>
@@ -1445,20 +1647,35 @@ export interface TradeFormSpec {
   evaluate: (partner: string, draft: TradeDraft) => { text: string; action: Action }
 }
 
-function OfferList({ title, rows }: { title: string; rows: readonly OfferRow[] }) {
+/**
+ * Eine Angebotsliste (T-M46-06): ab zwei Angeboten zugeklappt mit der Zahl in der Ueberschrift - drei
+ * Handelsangebote der KI belegten 300 px und schoben die Machtetabelle unter den Falz (gemessen S300, Tempo
+ * 10, 1280x800: die Auswahl „Mexiko“ musste gerollt werden). Die Meldung darueber nennt sie ohnehin einzeln;
+ * `open` erzwingt sie offen, wo der Spieler gerade wegen eines Angebots hergesprungen ist.
+ */
+// LOESCHVERMERK (Review): bis T-M46-06 war die Liste immer offen:
+//   <section className="group offers" aria-label={title}><h3 className="group__title">{title}</h3><ul className="offers">...</ul></section>
+// Grund: drei Handelsangebote belegten 300 px und schoben die Machtetabelle unter den Falz.
+function OfferList({ title, rows, open }: { title: string; rows: readonly OfferRow[]; open: boolean }) {
   if (rows.length === 0) return null
+  const expanded = open || rows.length < 2
   return (
     <section className="group offers" aria-label={title}>
-      <h3 className="group__title">{title}</h3>
-      <ul className="offers">
-        {rows.map((row) => (
-          <li key={row.id} className="offer">
-            <p className="offer__text">{row.text}</p>
-            {row.note && <p className="panel__sub">{row.note}</p>}
-            <ActionRow actions={row.actions} />
-          </li>
-        ))}
-      </ul>
+      {/* Der Schluessel erneuert das Element, wenn sich die Vorgabe aendert; sonst zaehlt, was der Spieler tat. */}
+      <details key={String(expanded)} open={expanded}>
+        <summary className="group__title">
+          {title} ({rows.length})
+        </summary>
+        <ul className="offers">
+          {rows.map((row) => (
+            <li key={row.id} className="offer">
+              <p className="offer__text">{row.text}</p>
+              {row.note && <p className="panel__sub">{row.note}</p>}
+              <ActionRow actions={row.actions} />
+            </li>
+          ))}
+        </ul>
+      </details>
     </section>
   )
 }
@@ -1498,6 +1715,32 @@ export function DiplomacyPanel({
   offers?: { incoming: readonly OfferRow[]; outgoing: readonly OfferRow[] }
   tradeForm?: TradeFormSpec
 }) {
+  // Wer eine Macht waehlt, will handeln (T-M46-06): der Blick springt zum Anfang ihrer Aktionen (Block an den
+  // oberen Rand der Seitenleiste, 1 bis 2 Bildlaeufe weniger), der Fokus auf den ersten Knopf (Tab ginge sonst durch
+  // Tabelle und Kriegsliste). Auch bei erneutem Klick auf die schon gewaehlte Macht, nicht aber beim Oeffnen mit
+  // gewaehlter Macht (Sprung aus einer Meldung): `chosenAt` zaehlt nur die Klicks.
+  const chosenBlock = useRef<HTMLDivElement>(null)
+  const panelRoot = useRef<HTMLElement>(null)
+  // Per Kurztaste D geoeffnet landet der Fokus auf der ersten Macht, mit schon gewaehlter Macht (Sprung aus einer
+  // Meldung) auf ihrer ersten freien Handlung (T-M46-05): vorher 18 bis 24 Tabs bis zur Machtetabelle.
+  useEffect(() => {
+    const root = panelRoot.current
+    if (!root) return
+    const first = chosenBlock.current?.querySelector<HTMLElement>('button:not(:disabled)') ?? root.querySelector<HTMLElement>('.nation-select')
+    first?.focus({ preventScroll: true })
+    // Nur beim Oeffnen: spaeter gehoert der Fokus dem Spieler (und `chosenAt` fuehrt ihn zur gewaehlten Macht).
+  }, [])
+  // Mit schon gewaehlter Macht geoeffnet = der Sprung aus einer Meldung (Angebot): die Angebote stehen offen.
+  const openedWithPartner = useRef(Boolean(chosen))
+  const [chosenAt, setChosenAt] = useState(0)
+  useEffect(() => {
+    if (chosenAt === 0) return
+    const block = chosenBlock.current
+    if (!block) return
+    block.scrollIntoView?.({ block: 'start' })
+    block.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus({ preventScroll: true })
+  }, [chosenAt])
+
   if (!view || view.others.length === 0) {
     return (
       <section className="panel" aria-label={t('diplomacy.title')}>
@@ -1512,8 +1755,11 @@ export function DiplomacyPanel({
   const canChoose = Boolean(onChoose)
 
   return (
-    <section className="panel" aria-label={t('diplomacy.title')}>
+    <section className="panel" aria-label={t('diplomacy.title')} ref={panelRoot}>
       <PanelHead title={t('diplomacy.title')} onClose={onClose} />
+      {/* Eingehende zuerst (T-M17-14): so landet der Sprung aus einer Meldung darauf. */}
+      {offers && <OfferList title={t('diplomacy.incoming')} rows={offers.incoming} open={openedWithPartner.current} />}
+      {offers && <OfferList title={t('diplomacy.outgoing')} rows={offers.outgoing} open={false} />}
       {reputationMax !== undefined && (
         <Meter
           label={t('diplomacy.ownReputation')}
@@ -1523,9 +1769,6 @@ export function DiplomacyPanel({
           tone={toneForShare(clamp(view.self.reputation, 0, reputationMax) / reputationMax)}
         />
       )}
-      {/* Eingehende zuerst (T-M17-14): so landet der Sprung aus einer Meldung darauf. */}
-      {offers && <OfferList title={t('diplomacy.incoming')} rows={offers.incoming} />}
-      {offers && <OfferList title={t('diplomacy.outgoing')} rows={offers.outgoing} />}
       {/*
         Befund 1 der Sichtpruefung U (T-M17-14, Nacharbeit, hoch): eine fuenfte Spalte
         "Macht wählen" sprengte bei 380px Seitenleistenbreite den Rahmen (465px Tabelle
@@ -1554,7 +1797,10 @@ export function DiplomacyPanel({
                       type="button"
                       className="nation-select"
                       aria-pressed={other.id === chosen}
-                      onClick={() => onChoose?.(other.id)}
+                      onClick={() => {
+                        onChoose?.(other.id)
+                        setChosenAt((count) => count + 1)
+                      }}
                     >
                       <NationName color={other.color}>{nameOf(other.id)}</NationName>
                     </button>
@@ -1605,8 +1851,12 @@ export function DiplomacyPanel({
           </ul>
         )}
       </section>
+      {/* Die Aktionen der gewaehlten Macht (T-M46-06, Befund 8): gemessen an S575G 1280x800 lagen Krieg, Buendnis,
+          Durchmarsch und Handel nach 1852 px Inhalt in 566 px Hoehe, ein bis zwei Bildlaeufe je Handlung. Wer eine
+          Macht waehlt, wird zum Anfang dieses Blocks gefuehrt (Rollstellung und Fokus, siehe oben). Reihenfolge:
+          Vertraege, Handel, Durchmarsch - was oft gebraucht wird, zuerst. */}
       {chosenAlive && (
-        <>
+        <div className="diplomacy__chosen" ref={chosenBlock}>
           {actionsFor && (
             <ActionGroup
               group={{
@@ -1621,16 +1871,16 @@ export function DiplomacyPanel({
               }}
             />
           )}
+          {tradeForm && (
+            <TradeOfferForm key={chosenAlive.id} partner={chosenAlive.id} partnerName={nameOf(chosenAlive.id)} spec={tradeForm} />
+          )}
           {passageFor && (
             <ActionGroup
               group={{ id: 'passage', title: t('diplomacy.passageGroup'), actions: passageFor(chosenAlive.id) }}
               collectReasons
             />
           )}
-          {tradeForm && (
-            <TradeOfferForm key={chosenAlive.id} partner={chosenAlive.id} partnerName={nameOf(chosenAlive.id)} spec={tradeForm} />
-          )}
-        </>
+        </div>
       )}
     </section>
   )
@@ -1686,7 +1936,17 @@ export function TradeOfferForm({
         {t('trade.title', { nation: partnerName })}
         <Explain textKey="explain.trade" subject={t('trade.titleShort')} />
       </h3>
-      <table className="table trade-form__table">
+      {/* Eingabe in einem Mengenfeld schickt das Angebot ab (T-M46-05): sonst waren es 13 Tabs vom letzten Feld bis
+          zum Knopf. Gilt nur, solange der Knopf frei ist - dieselbe Bedingung, unter der er klickbar ist. */}
+      <table
+        className="table trade-form__table"
+        onKeyDown={(event) => {
+          if (event.key !== 'Enter' || !(event.target instanceof HTMLInputElement)) return
+          event.preventDefault()
+          const action = result.action
+          if (action.disabledReason === null && (action.pendingNotice === undefined || action.ackOnly === true)) action.onRun()
+        }}
+      >
         <thead>
           <tr>
             <th>{t('trade.resource')}</th>
@@ -1714,7 +1974,8 @@ export function TradeOfferForm({
                 />
                 {/* Der Bestand nur in der Geben-Spalte (T-M17-14, Test P7): der Partnerbestand ist der
                     Oberflaeche unbekannt (E10). */}
-                <p className="panel__sub">{t('trade.stock', { amount: amount(spec.stock[key] ?? 0) })}</p>
+                {/* LOESCHVERMERK (Review): bis T-M46-06 `<p className="panel__sub">` unter dem Feld (Zeile 50 px statt 30 px). */}
+                <span className="panel__sub trade-form__stock">{t('trade.stock', { amount: amount(spec.stock[key] ?? 0) })}</span>
               </td>
               <td>
                 <input
@@ -1733,6 +1994,15 @@ export function TradeOfferForm({
           ))}
         </tbody>
       </table>
+      {/* Vorschau, Grenzen und der Knopf stehen direkt unter den Rohstoffen (T-M46-06): sie sind die Handlung. */}
+      <p className="facts__inline">{result.text}</p>
+      <p className="panel__sub">
+        {t('trade.limits', { money: amount(spec.limits.money), resource: amount(spec.limits.resource) })}
+      </p>
+      <ActionRow actions={[result.action]} />
+      {/* Provinzen handeln ist die seltene Ausnahme: zugeklappt, damit das Formular ueber dem Falz bleibt. */}
+      <details className="trade-form__provinces">
+        <summary>{t('trade.provincesToggle')}</summary>
       <label>
         <span>{t('trade.giveProvince')}</span>
         <select
@@ -1797,11 +2067,7 @@ export function TradeOfferForm({
           ))}
         </ul>
       )}
-      <p className="facts__inline">{result.text}</p>
-      <p className="panel__sub">
-        {t('trade.limits', { money: amount(spec.limits.money), resource: amount(spec.limits.resource) })}
-      </p>
-      <ActionRow actions={[result.action]} />
+      </details>
     </section>
   )
 }

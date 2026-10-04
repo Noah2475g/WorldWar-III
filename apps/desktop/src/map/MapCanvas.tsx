@@ -61,7 +61,10 @@ import { ICON_PATHS, type IconName } from '../ui/icons.tsx'
 import { GLYPH_BOX, GLYPH_PATHS } from '../ui/glyphs.ts'
 import { labelsFor } from './labels.ts'
 import { OWNERSHIP_FADE_MS, battleFlash, fadeProgress, motionAllowed, ringRadius } from '../ui/motion.ts'
+import { CUE_SPEED_LIMIT } from '../ui/sound.ts'
 import { fillFor, mixColors, strengthByProvince, type MapMode } from './modes.ts'
+import { PING_MS, edgeMarker, freshPings, pingFrame } from './pings.ts'
+import type { MapPing } from '../game/events.ts'
 
 /**
  * The map (T-M10-03a/b, R-UI-03).
@@ -213,6 +216,11 @@ export interface MapCanvasProps {
   capitalProvinceId?: string | null
   /** Provinzen, in denen gerade gekaempft wird (aus der Sicht, nicht aus den Armeen). */
   battleProvinces?: readonly string[]
+  /**
+   * Die Pulse hoerbarer Ereignisse (T-M46-02, VM-03): jedes Ereignis mit Ton pulsiert an seinem Ort. Neue
+   * Kennungen starten einen Ring; bekannte tun nichts, die Liste darf also stehen bleiben.
+   */
+  pings?: readonly MapPing[]
   /** Spielstunden je Sekunde — darueber hoert jede Bewegung auf (T-M13-16). */
   speed?: number
   /**
@@ -316,6 +324,24 @@ export function MapCanvas(props: MapCanvasProps) {
     { id: string; from: string | null; to: string | null; startedMs: number | null }[]
   >([])
   const previousOwners = useRef<Record<string, string | null> | null>(null)
+
+  /** Laufende Pulse (T-M46-02): `startedMs` bleibt null bis zum ersten Bild, wie bei den Farbwellen. */
+  const [rings, setRings] = useState<
+    { id: string; provinceId: string; tone: MapPing['tone']; startedMs: number | null }[]
+  >([])
+  const seenPings = useRef(new Set<string>())
+  useEffect(() => {
+    const incoming = props.pings ?? []
+    const fresh = freshPings(incoming, seenPings.current, props.tick, (props.speed ?? 0) <= CUE_SPEED_LIMIT)
+    // Auch Veraltetes und Verbotenes gilt als gesehen: sonst blitzte es auf, sobald das Tempo sinkt.
+    for (const ping of incoming) seenPings.current.add(ping.id)
+    if (fresh.length === 0) return
+    setRings((old) => [
+      ...old.filter((ring) => !fresh.some((ping) => ping.provinceId === ring.provinceId)).slice(-6),
+      ...fresh.map((ping) => ({ id: ping.id, provinceId: ping.provinceId, tone: ping.tone, startedMs: null })),
+    ])
+    // props.tick und speed gehoeren zur Beurteilung der neuen Pulse, nicht zum Ausloeser: nur eine neue Liste startet.
+  }, [props.pings])
 
   // LOESCHVERMERK (T-M45-04): bis dahin stand hier nur
   //   useMemo(() => props.provinces.map((province) => ({ ...province, bounds: ... })), [props.provinces])
@@ -487,6 +513,7 @@ export function MapCanvas(props: MapCanvasProps) {
   }, [props.provinces, props.speed])
 
   const fading = fades.length > 0
+  const pinging = rings.length > 0
 
   useEffect(() => {
     // Die Schleife laeuft, solange irgendetwas sich bewegt: ein Gefecht atmet, eine
@@ -494,7 +521,7 @@ export function MapCanvas(props: MapCanvasProps) {
     // Animationsschleife ohne Grund ist ein Ventilator (T-M13-16).
     const fighting = (props.battleProvinces ?? []).length > 0
     const marching = props.armies.some((army) => army.march !== undefined)
-    if ((!fighting && !marching && !fading) || !motionAllowed(props.speed ?? 0)) return
+    if ((!fighting && !marching && !fading && !pinging) || !motionAllowed(props.speed ?? 0)) return
 
     let running = true
     const step = (time: number): void => {
@@ -522,13 +549,37 @@ export function MapCanvas(props: MapCanvasProps) {
         })
         return changed ? next : old
       })
+      // Pulse beginnen mit dem ersten Bild und enden nach PING_MS (T-M46-02).
+      setRings((old) => {
+        if (old.length === 0) return old
+        let changed = false
+        const next = old.flatMap((ring) => {
+          if (ring.startedMs === null) {
+            changed = true
+            return [{ ...ring, startedMs: time }]
+          }
+          if (time - ring.startedMs >= PING_MS) {
+            changed = true
+            return []
+          }
+          return [ring]
+        })
+        return changed ? next : old
+      })
       requestAnimationFrame(step)
     }
     requestAnimationFrame(step)
     return () => {
       running = false
     }
-  }, [props.battleProvinces, props.armies, props.speed, fading])
+  }, [props.battleProvinces, props.armies, props.speed, fading, pinging])
+
+  // Ohne Bewegung (Systemeinstellung) laeuft keine Bildschleife: der stehende Ring verschwindet per Zeitgeber.
+  useEffect(() => {
+    if (rings.length === 0 || motionAllowed(props.speed ?? 0)) return
+    const timer = setTimeout(() => setRings([]), PING_MS)
+    return () => clearTimeout(timer)
+  }, [rings, props.speed])
 
   // The cheap layer: armies, selection, labels.
   useEffect(() => {
@@ -681,6 +732,43 @@ export function MapCanvas(props: MapCanvasProps) {
           context.stroke()
         }
       }
+    }
+
+    // Die Pulse hoerbarer Ereignisse (T-M46-02): ein Ring an ihrem Ort, ueber den Flaechen und unter den Markern.
+    const moving = motionAllowed(props.speed ?? 0)
+    for (const ring of rings) {
+      const centre = props.centres[ring.provinceId]
+      if (!centre) continue
+      const frame = pingFrame(ring.startedMs === null ? 0 : clock - ring.startedMs, moving)
+      if (!frame) continue
+      const at = toScreen(centre, props.view)
+      const colour = ring.tone === 'alert' ? TOKENS.accent : ring.tone === 'good' ? TOKENS.good : TOKENS.warn
+      context.globalAlpha = frame.alpha
+      context.strokeStyle = colour
+      context.fillStyle = colour
+      context.lineWidth = 3
+      const edge = edgeMarker(at, size.width, size.height)
+      if (edge) {
+        // Ausserhalb des Bildes: ein Pfeil am Rand zeigt die Richtung (T-M46-02).
+        context.save()
+        context.translate(edge.x, edge.y)
+        context.rotate(edge.angle)
+        context.beginPath()
+        context.moveTo(11, 0)
+        context.lineTo(-7, -8)
+        context.lineTo(-7, 8)
+        context.closePath()
+        context.fill()
+        context.restore()
+        context.beginPath()
+        context.arc(edge.x, edge.y, frame.radius * 0.5, 0, Math.PI * 2)
+        context.stroke()
+      } else {
+        context.beginPath()
+        context.arc(at.x, at.y, frame.radius, 0, Math.PI * 2)
+        context.stroke()
+      }
+      context.globalAlpha = 1
     }
 
     // Die sichtbare Gesamtstaerke je Provinz, fuer die Intensitaet der Gefechtsringe.
@@ -843,6 +931,7 @@ export function MapCanvas(props: MapCanvasProps) {
     }
   }, [
     fades,
+    rings,
     props.armies,
     props.buildings,
     props.anchors,
@@ -1192,6 +1281,8 @@ export function MapCanvas(props: MapCanvasProps) {
       data-view-y={Math.round(props.view.y)}
       data-view-scale={props.view.scale.toFixed(4)}
       data-selected-province={props.selectedProvince ?? ''}
+      // Die Orte der laufenden Pulse (T-M46-02), fuer dieselbe Messung ohne Bilderkennung.
+      data-pings={rings.map((ring) => ring.provinceId).join(',')}
     >
       <canvas ref={shapesRef} width={bitmap.width} height={bitmap.height} className="map-layer" aria-hidden="true" />
       <canvas

@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { readFileSync } from 'node:fs'
+import { useState } from 'react'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { TEST_RULES } from '@worldwar/testkit'
 import { defenceMultiplier, type Province, type PublicView, type Terrain, type VisibleArmy, type VisibleProvince } from '@worldwar/core'
@@ -617,11 +618,12 @@ describe('R-NEWS-04 Weltgeschehen ist der fuenfte Filter', () => {
     ...over,
   })
 
-  it('bietet fuenf Knoepfe an', () => {
+  // LOESCHVERMERK (Review): bis T-M46-02 hiess der Fall 'bietet fuenf Knoepfe an' und erwartete 5 Knoepfe.
+  it('bietet sechs Knoepfe an (Wichtig seit T-M46-02 und die fuenf Rubriken)', () => {
     render(<EventLog entries={[eintrag({})]} ticksPerDay={24} onJump={() => {}} />)
 
     expect(screen.getByRole('button', { name: 'Weltgeschehen' })).toBeTruthy()
-    expect(screen.getAllByRole('button').length).toBe(5)
+    expect(screen.getAllByRole('button').length).toBe(6)
   })
 
   it('zeigt unter Weltgeschehen eine Kriegserklaerung zwischen zwei fremden Maechten', () => {
@@ -911,6 +913,50 @@ describe('R-DIP-07 Das Diplomatiepanel (T-M17-14)', () => {
     expect(onRun).toHaveBeenCalledTimes(1)
   })
 
+  it('T-M46-06: ab zwei Angeboten sind die Angebote zugeklappt, mit der Zahl in der Ueberschrift', () => {
+    const view = diplomacyView({ others: [{ id: 'p2', nation: 'Ostmark' }] })
+    const action = (label: string, id: string): Action => ({ id, label, disabledReason: null, onRun: () => undefined })
+    const row = (id: string): OfferRow => ({ id, text: `Angebot ${id}`, actions: [action('Angebot annehmen', `a-${id}`)] })
+    const { container } = render(
+      <DiplomacyPanel view={view} nameOf={() => 'Ostmark'} offers={{ incoming: [row('1'), row('2'), row('3')], outgoing: [row('4')] }} />,
+    )
+    const incoming = container.querySelector('section[aria-label="Eingehende Angebote"] details')!
+    expect(incoming.hasAttribute('open')).toBe(false)
+    expect(incoming.querySelector('summary')!.textContent).toBe('Eingehende Angebote (3)')
+    // Ein einzelnes Angebot bleibt offen.
+    expect(container.querySelector('section[aria-label="Ausgehende Angebote"] details')!.hasAttribute('open')).toBe(true)
+  })
+
+  it('T-M46-06: kommt der Spieler mit gewaehlter Macht her (Sprung aus einer Meldung), stehen die Angebote offen', () => {
+    const view = diplomacyView({ others: [{ id: 'p2', nation: 'Ostmark' }] })
+    const action = (label: string, id: string): Action => ({ id, label, disabledReason: null, onRun: () => undefined })
+    const row = (id: string): OfferRow => ({ id, text: `Angebot ${id}`, actions: [action('Angebot annehmen', `a-${id}`)] })
+    const { container } = render(
+      <DiplomacyPanel view={view} nameOf={() => 'Ostmark'} chosen="p2" offers={{ incoming: [row('1'), row('2')], outgoing: [] }} />,
+    )
+    expect(container.querySelector('section[aria-label="Eingehende Angebote"] details')!.hasAttribute('open')).toBe(true)
+  })
+
+  it('T-M46-06: die Wahl einer Macht setzt den Fokus auf den ersten Knopf ihrer Aktionen', () => {
+    const view = diplomacyView({ others: [{ id: 'p2', nation: 'Ostmark' }] })
+    const action = (label: string, id: string): Action => ({ id, label, disabledReason: null, onRun: () => undefined })
+    function Host() {
+      const [chosen, setChosen] = useState<string | null>(null)
+      return (
+        <DiplomacyPanel
+          view={view}
+          nameOf={() => 'Ostmark'}
+          chosen={chosen}
+          onChoose={setChosen}
+          actionsFor={() => [action('Krieg erklären', 'w'), action('Frieden anbieten', 'p')]}
+        />
+      )
+    }
+    render(<Host />)
+    fireEvent.click(screen.getByRole('button', { name: /Ostmark/ }))
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Krieg erklären' }))
+  })
+
   it('zeigt keine Regionen fuer Angebote, wenn es keine gibt', () => {
     const view = diplomacyView({ others: [{ id: 'p2', nation: 'Ostmark' }] })
     render(<DiplomacyPanel view={view} nameOf={() => 'Ostmark'} offers={{ incoming: [], outgoing: [] }} />)
@@ -1086,6 +1132,42 @@ describe('R-DIP-07 Das Diplomatiepanel (T-M17-14)', () => {
 
     render(<TradeOfferForm partner="p2" partnerName="Ostmark" spec={spec} />)
     expect(screen.getAllByText('Bestand 12')).toHaveLength(1)
+  })
+
+  it('T-M46-05: Eingabe in einem Mengenfeld schickt das Angebot ab, solange der Knopf frei ist', () => {
+    const onRun = vi.fn()
+    const action: Action = { id: 'trade-offer', label: 'Handel anbieten', disabledReason: null, onRun }
+    const spec: TradeFormSpec = {
+      resources: ['iron', 'money'],
+      stock: { iron: 12000 },
+      limits: { money: 507650, resource: 152295 },
+      ownProvinces: [],
+      provincesOf: () => [],
+      evaluate: () => ({ text: '', action }),
+    }
+    render(<TradeOfferForm partner="p2" partnerName="Ostmark" spec={spec} />)
+    fireEvent.keyDown(screen.getByLabelText('Geld verlangen'), { key: 'Enter' })
+    expect(onRun).toHaveBeenCalledTimes(1)
+  })
+
+  it('T-M46-05: gesperrt oder noch ausstehend schickt Eingabe nichts', () => {
+    const onRun = vi.fn()
+    const gesperrt: Action = { id: 'trade-offer', label: 'Handel anbieten', disabledReason: 'Kein Angebot', onRun }
+    const ausstehend: Action = { id: 'trade-offer', label: 'Handel anbieten', disabledReason: null, pendingNotice: '✓ befohlen', onRun }
+    for (const action of [gesperrt, ausstehend]) {
+      const spec: TradeFormSpec = {
+        resources: ['iron'],
+        stock: {},
+        limits: { money: 1, resource: 1 },
+        ownProvinces: [],
+        provincesOf: () => [],
+        evaluate: () => ({ text: '', action }),
+      }
+      const { unmount } = render(<TradeOfferForm partner="p2" partnerName="Ostmark" spec={spec} />)
+      fireEvent.keyDown(screen.getByLabelText('Eisen geben'), { key: 'Enter' })
+      unmount()
+    }
+    expect(onRun).not.toHaveBeenCalled()
   })
 })
 
