@@ -172,7 +172,7 @@ describe('R-ASSET-01 Kein Asset ohne Herkunfts- und Lizenzeintrag', () => {
     // Jeder Bildsatz: selbst gezeichnetes Inline-SVG, keine Datei, kein Zeichensatz-Symbol.
     expect(withoutInlineDrawing(drawingFiles(sourceFiles(), readSource), readSource)).toEqual([])
 
-    // Klaenge: erzeugt, nicht aufgenommen.
+    // Klaenge: seit T-M46-14 Aufnahmen (Kenney, CC0, in ASSETS.md); die erzeugten Toene bleiben als Rueckfall.
     const sound = readFileSync(join(ROOT, 'apps/desktop/src/ui/sound.ts'), 'utf8')
     expect(sound).toMatch(/createOscillator/)
     expect(sound).not.toMatch(ASSET_FILE)

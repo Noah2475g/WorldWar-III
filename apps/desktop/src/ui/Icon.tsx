@@ -3,22 +3,36 @@ import {
   Banknote,
   Bomb,
   Building2,
+  Castle,
   Clock,
   Eye,
   FastForward,
   Flag,
   Handshake,
+  HeartPulse,
   Hourglass,
+  Landmark,
   Link2,
+  Mail,
+  Menu,
   Mountain,
   Pause,
+  Save,
+  Scale,
+  ScrollText,
   Search,
+  Shield,
   ShieldCheck,
   Star,
   Sun,
+  Sword,
   Swords,
   TreePine,
+  Trophy,
   TriangleAlert,
+  Undo2,
+  Users,
+  VenetianMask,
   type LucideIcon,
 } from 'lucide-react'
 import ms from 'milsymbol'
@@ -43,7 +57,30 @@ import { Icon as DrawnIcon, type IconName, type IconProps } from './icons.tsx'
  * `title` ist es Zierde und fuer die Vorlesehilfe unsichtbar.
  */
 
-export type { IconName, IconProps }
+/**
+ * Namen, die nur das Bildset kennt: Oberflaechenzeichen ohne Entsprechung in `icons.tsx`
+ * (Knoepfe der Kopfleiste und des Fusses, Haltungen, Kennzahlen des Panels).
+ */
+export type ExtraIconName =
+  | 'save'
+  | 'menu'
+  | 'trophy'
+  | 'dispatch'
+  | 'market'
+  | 'espionage'
+  | 'stanceAggressive'
+  | 'stanceDefensive'
+  | 'stanceRetreat'
+  | 'stanceGarrison'
+  | 'owner'
+  | 'population'
+  | 'morale'
+  | 'logbook'
+
+export type PictureName = IconName | ExtraIconName
+
+export type { IconName }
+export type { IconProps }
 
 /** 2525C-Kennungen der zehn Einheitenarten; friend/present/Land bzw. Luft bzw. See. */
 const SIDC: Partial<Record<IconName, string>> = {
@@ -60,7 +97,21 @@ const SIDC: Partial<Record<IconName, string>> = {
 }
 
 /** Oberflaechensymbole aus Lucide. */
-const LUCIDE: Partial<Record<IconName, LucideIcon>> = {
+const LUCIDE: Partial<Record<PictureName, LucideIcon>> = {
+  save: Save,
+  menu: Menu,
+  trophy: Trophy,
+  dispatch: ScrollText,
+  market: Scale,
+  espionage: VenetianMask,
+  stanceAggressive: Sword,
+  stanceDefensive: Shield,
+  stanceRetreat: Undo2,
+  stanceGarrison: Castle,
+  owner: Landmark,
+  population: Users,
+  morale: HeartPulse,
+  logbook: Mail,
   clock: Clock,
   pause: Pause,
   fastForward: FastForward,
@@ -83,34 +134,36 @@ const LUCIDE: Partial<Record<IconName, LucideIcon>> = {
   trade: ArrowLeftRight,
 }
 
-interface Frame {
+export interface Frame {
   viewBox: string
   inner: string
 }
 
-const frames = new Map<IconName, Frame | null>()
+const frames = new Map<string, Frame | null>()
 
 /** Das Truppenzeichen als Rahmen + Inhalt; einmal je Art erzeugt, danach aus dem Speicher. */
-function unitFrame(name: IconName): Frame | null {
-  if (frames.has(name)) return frames.get(name) ?? null
-  const sidc = SIDC[name]
+export function unitFrame(name: PictureName, framed = true): Frame | null {
+  const key = `${name}:${framed}`
+  if (frames.has(key)) return frames.get(key) ?? null
+  const sidc = SIDC[name as IconName]
   let frame: Frame | null = null
   if (sidc) {
-    const svg = new ms.Symbol(sidc, { size: 32, monoColor: 'currentColor', outlineWidth: 0, strokeWidth: 5 }).asSVG()
+    const svg = new ms.Symbol(sidc, { size: 32, monoColor: 'currentColor', outlineWidth: 0, strokeWidth: 5, frame: framed }).asSVG()
     const viewBox = /viewBox="([^"]+)"/.exec(svg)?.[1]
     const inner = /<svg[^>]*>([\s\S]*)<\/svg>/.exec(svg)?.[1]
     if (viewBox && inner) frame = { viewBox, inner }
   }
-  frames.set(name, frame)
+  frames.set(key, frame)
   return frame
 }
 
 /** Gibt es fuer diesen Namen ein Bild aus einer der drei Quellen (sonst bleibt die Zeichnung)? */
-export function hasPicture(name: IconName): boolean {
-  return Boolean(SIDC[name] || GLYPH_PATHS[name] || LUCIDE[name])
+export function hasPicture(name: PictureName): boolean {
+  return Boolean(SIDC[name as IconName] || GLYPH_PATHS[name as IconName] || LUCIDE[name])
 }
 
-export interface PictureProps extends IconProps {
+export interface PictureProps extends Omit<IconProps, 'name'> {
+  name: PictureName
   className?: string
 }
 
@@ -128,7 +181,7 @@ export function Icon({ name, size = 16, title, className }: PictureProps) {
     )
   }
 
-  const glyph = GLYPH_PATHS[name]
+  const glyph = GLYPH_PATHS[name as IconName]
   if (glyph) {
     return (
       <svg width={size} height={size} viewBox={`0 0 ${GLYPH_BOX} ${GLYPH_BOX}`} className={className} fill="currentColor" {...label}>
@@ -147,5 +200,5 @@ export function Icon({ name, size = 16, title, className }: PictureProps) {
     )
   }
 
-  return <DrawnIcon name={name} size={size} {...(title ? { title } : {})} />
+  return <DrawnIcon name={name as IconName} size={size} {...(title ? { title } : {})} />
 }

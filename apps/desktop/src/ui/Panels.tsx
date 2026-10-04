@@ -18,10 +18,12 @@ import {
   TERRAIN_ICONS,
   type IconName,
 } from './icons.tsx'
-import { Icon } from './Icon.tsx'
+import { Icon, type PictureName } from './Icon.tsx'
 import { Meter, toneForShare, trendOf } from './Meter.tsx'
 import { NationName } from './Nation.tsx'
-import { ART_FOR_ICON, BUILDING_ART, UnitArt, type ArtName, type ArtTone } from './art.tsx'
+// LOESCHVERMERK (Review): `BUILDING_ART` fiel mit T-M46-13 aus dem Import (Bauplaetze zeigen game-icons.net).
+// LOESCHVERMERK (Review): `ART_FOR_ICON` fiel mit T-M46-13 aus dem Import (das Plaettchen traegt das Truppenzeichen).
+import { UnitArt, type ArtName, type ArtTone } from './art.tsx'
 import { UnitMarker } from './UnitMarker.tsx'
 import { Explain } from './Explain.tsx'
 import { ConfirmButton } from './ConfirmButton.tsx'
@@ -32,7 +34,9 @@ import { useInputMode } from './inputMode.ts'
 import { balanceTone } from './Header.tsx'
 
 /** Die Breite eines Gebaeudebildes im Bauplatzraster (T-M33-03, D33.3). */
-const SLOT_ART_WIDTH = 30
+// LOESCHVERMERK (Review): bis T-M46-13 `const SLOT_ART_WIDTH = 30` (Breite der Bauplatz-Schattenrisse).
+/** Das Zeichen eines Bauplatzes (T-M46-13): game-icons.net statt Schattenriss. */
+const SLOT_ICON_SIZE = 30
 
 /** Morale in the core: fixed-point, 0…100 000 for 0…100 %. */
 const MORALE_SCALE = 100_000
@@ -217,8 +221,16 @@ function ActionButton({
   artTone = 'ink',
   reasonInGroup = false,
   confirm,
+  iconOnly = false,
+  iconSize = 13,
+  picture,
 }: {
   action: Action
+  /** Nur das Zeichen (T-M46-13): der Name steht als Tooltip und fuers Ohr, nicht im Bild. */
+  iconOnly?: boolean
+  iconSize?: number
+  /** Das Zeichen, wenn es keines aus dem alten Satz sein soll (Haltungen, T-M46-13). */
+  picture?: PictureName
   showReason: boolean
   /** Der Folgesatz, wenn der Befehl nachfragen soll (T-M44-09b): dann ein `ConfirmButton` statt des einfachen Knopfs. */
   confirm?: string | undefined
@@ -253,7 +265,7 @@ function ActionButton({
             disabled={action.disabledReason !== null || action.pendingNotice !== undefined}
             title={buttonTitle(action)}
             // Der Name nennt die Handlung, nicht nur die Sache (T-M22-06, V2-13).
-            aria-label={compact ? (action.aria ?? action.label) : action.aria}
+            aria-label={compact || iconOnly ? (action.aria ?? action.label) : action.aria}
             aria-describedby={action.disabledReason ? reasonId : undefined}
             onClick={action.onRun}
           >
@@ -263,9 +275,9 @@ function ActionButton({
             {action.art ? (
               <UnitArt name={action.art} width={artWidth} tone={artTone} />
             ) : (
-              action.icon && <Icon name={action.icon} size={13} />
+              (picture ?? action.icon) && <Icon name={(picture ?? action.icon)!} size={iconSize} />
             )}
-            {compact ? '+' : action.label}
+            {compact ? '+' : iconOnly ? null : action.label}
           </button>
         )}
         {action.explainKey && <Explain textKey={action.explainKey} subject={action.label} />}
@@ -527,21 +539,29 @@ export function ProvincePanel(props: ProvincePanelProps) {
         </p>
       )}
 
-      <dl className="facts">
-        <dt>{t('province.owner')}</dt>
-        <dd>
-          {props.ownerName && props.ownerColor ? (
-            <NationName color={props.ownerColor}>{props.ownerName}</NationName>
-          ) : (
-            (props.ownerName ?? t('province.neutral'))
-          )}
-        </dd>
+      {/* Zeichen statt Beschriftung (T-M46-13): Fahne = Eigentuemer, Menschen = Bevoelkerung.
+          Der Name steht als Tooltip und fuers Ohr im versteckten Begriff.
+          LOESCHVERMERK (Review): bis T-M46-13 eine <dl className="facts"> mit sichtbaren <dt>-Woertern
+          „Eigentümer“ und „Bevölkerung“ vor den Werten; und die Moral mit sichtbarer Meter-Beschriftung. */}
+      <dl className="facts facts--icons">
+        <div title={t('province.owner')}>
+          <dt className="visually-hidden">{t('province.owner')}</dt>
+          <Icon name="owner" size={18} />
+          <dd>
+            {props.ownerName && props.ownerColor ? (
+              <NationName color={props.ownerColor}>{props.ownerName}</NationName>
+            ) : (
+              (props.ownerName ?? t('province.neutral'))
+            )}
+          </dd>
+        </div>
 
         {province.population !== undefined && (
-          <>
-            <dt>{t('province.population')}</dt>
+          <div title={t('province.population')}>
+            <dt className="visually-hidden">{t('province.population')}</dt>
+            <Icon name="population" size={18} />
             <dd>{population(province.population)}</dd>
-          </>
+          </div>
         )}
       </dl>
 
@@ -549,15 +569,19 @@ export function ProvincePanel(props: ProvincePanelProps) {
           (R-UI-09). Der Wert allein sagt nicht, ob eine Provinz sich beruhigt oder
           auseinanderfaellt — und genau das ist die Frage. */}
       {province.morale !== undefined && (
-        <Meter
-          label={t('province.morale')}
-          value={province.morale}
-          max={MORALE_SCALE}
-          text={percent(unfix(province.morale))}
-          tone={toneForShare(province.morale / MORALE_SCALE)}
-          trend={trendOf(province.morale, province.moraleTarget, MORALE_SCALE)}
-          segments={10}
-        />
+        <span className="stat" title={t('province.morale')}>
+          <Icon name="morale" size={18} />
+          <Meter
+            label={t('province.morale')}
+            labelHidden
+            value={province.morale}
+            max={MORALE_SCALE}
+            text={percent(unfix(province.morale))}
+            tone={toneForShare(province.morale / MORALE_SCALE)}
+            trend={trendOf(province.morale, province.moraleTarget, MORALE_SCALE)}
+            segments={10}
+          />
+        </span>
       )}
 
       {province.deposits && Object.keys(province.deposits).length > 0 && (
@@ -594,7 +618,9 @@ export function ProvincePanel(props: ProvincePanelProps) {
           if (order) {
             return (
               <div key={key} className="slot slot--queued">
-                <UnitArt name={BUILDING_ART[key]} width={SLOT_ART_WIDTH} tone="building" label={name} />
+                {/* LOESCHVERMERK (Review): bis T-M46-13 <UnitArt name={BUILDING_ART[key]} width={SLOT_ART_WIDTH} tone="building" label={name} /> —
+                    der gezeichnete Schattenriss; ersetzt durch das Zeichen von game-icons.net (an drei Stellen im Raster). */}
+                <Icon name={BUILDING_ICONS[key] ?? 'warning'} size={SLOT_ICON_SIZE} title={name} />
                 <span className="slot__name">
                   {name}
                   {level > 0 && <sup className="slot__level">{level + 1}</sup>}
@@ -618,12 +644,7 @@ export function ProvincePanel(props: ProvincePanelProps) {
             return (
               <div key={key} className="slot slot--built">
                 {/* Die Textfassung wie in der alten Symbolzeile: "2 Fabrik" fuers Ohr. */}
-                <UnitArt
-                  name={BUILDING_ART[key]}
-                  width={SLOT_ART_WIDTH}
-                  tone="building"
-                  label={level > 1 ? `${level} ${name}` : name}
-                />
+                <Icon name={BUILDING_ICONS[key] ?? 'warning'} size={SLOT_ICON_SIZE} title={level > 1 ? `${level} ${name}` : name} />
                 <span className="slot__name">
                   {name}
                   {level > 1 && <sup className="slot__level">{level}</sup>}
@@ -641,9 +662,8 @@ export function ProvincePanel(props: ProvincePanelProps) {
                   Bild neben einem. */}
               {build ? (
                 <ActionButton
-                  action={{ ...build, art: BUILDING_ART[key] }}
-                  artWidth={SLOT_ART_WIDTH}
-                  artTone="building"
+                  action={{ ...build, icon: BUILDING_ICONS[key] ?? 'warning' }}
+                  iconSize={SLOT_ICON_SIZE}
                   showReason={false}
                 />
               ) : (
@@ -683,7 +703,7 @@ export function ProvincePanel(props: ProvincePanelProps) {
                 <span>
                   {/* Die vorherrschende Gattung — seit M13 fuer die Kartenmarke
                       gerechnet, in dieser Liste bis T-M20-03 nicht gezeigt. */}
-                  {army.icon && <Icon name={army.icon} size={13} />} {army.name} ·{' '}
+                  {army.icon && <Icon name={army.icon} size={22} />} {army.name} ·{' '}
                   {t('army.strength')} {amount(army.strength)}
                 </span>
                 <button type="button" className="button" onClick={() => props.onSelectArmy?.(army.id)}>
@@ -796,6 +816,14 @@ const ARMY_ACTION_ICONS: Record<string, IconName> = {
 
 const STANCES = ['aggressive', 'defensive', 'retreat', 'garrison'] as const
 
+/** Das Zeichen je Haltung (T-M46-13): Schwert, Schild, Rueckzugspfeil, Burg. */
+const STANCE_PICTURES: Record<(typeof STANCES)[number], PictureName> = {
+  aggressive: 'stanceAggressive',
+  defensive: 'stanceDefensive',
+  retreat: 'stanceRetreat',
+  garrison: 'stanceGarrison',
+}
+
 export function ArmyPanel(props: ArmyPanelProps) {
   const army = props.army
   if (!army) return null
@@ -817,22 +845,33 @@ export function ArmyPanel(props: ArmyPanelProps) {
         onBack={props.onBack}
         onClose={props.onClose}
         sub={
+          /* Kampfkraft als Zeichen mit Zahl (T-M46-13); der Name steht im Tooltip und fuers Ohr.
+             LOESCHVERMERK (Review): bis T-M46-13 stand hier der Satz
+             „{t('army.power')} N · {t('army.condition')} P %“ als sichtbarer Text. */
           <p className="panel__sub">
-            {t('army.power')} {amount(army.strength)}
-            {props.condition !== undefined && ` · ${t('army.condition')} ${percent(Math.round(props.condition * 100))}`}
+            <span title={t('army.power')}>
+              <Icon name="battle" size={16} title={t('army.power')} /> {amount(army.strength)}
+            </span>
+            {props.condition !== undefined && (
+              <span className="visually-hidden">{` ${t('army.condition')} ${percent(Math.round(props.condition * 100))}`}</span>
+            )}
           </p>
         }
       />
 
       {/* Der Zustand als Balken: Trefferpunkte am Vollstand (T-M31-02, R-UI-09). */}
       {props.condition !== undefined && (
-        <Meter
-          label={t('army.condition')}
-          value={Math.round(props.condition * 100)}
-          max={100}
-          text={percent(Math.round(props.condition * 100))}
-          tone={toneForShare(props.condition)}
-        />
+        <span className="stat" title={t('army.condition')}>
+          <Icon name="morale" size={18} />
+          <Meter
+            label={t('army.condition')}
+            labelHidden
+            value={Math.round(props.condition * 100)}
+            max={100}
+            text={percent(Math.round(props.condition * 100))}
+            tone={toneForShare(props.condition)}
+          />
+        </span>
       )}
 
       {/* Die Zielwahl-Quittung in der Statuszeile (T-M28-02): abgeschickt, noch nicht
@@ -843,7 +882,9 @@ export function ArmyPanel(props: ArmyPanelProps) {
         </p>
       )}
 
-      <dl className="facts">
+      {/* Die Haltung zeigt der gedrueckte Knopf (T-M46-13); der Satz bleibt fuers Ohr.
+          LOESCHVERMERK (Review): bis T-M46-13 sichtbar als Zeilen „Haltung“ und „Marsch“. */}
+      <dl className="facts visually-hidden">
         {army.stance && (
           <>
             <dt>{t('army.stance')}</dt>
@@ -877,9 +918,11 @@ export function ArmyPanel(props: ArmyPanelProps) {
               <li key={`${item.icon}-${item.label}`}>
                 {/* Bildfassung, wo es ein Bild gibt (T-M33-04); die Karte bleibt bei
                     der Glyphe, das Plaettchen hier hat 44 px Platz. */}
+                {/* LOESCHVERMERK (Review): bis T-M46-13 reichte diese Stelle den Schattenriss
+                    {...(ART_FOR_ICON[item.icon] ? { art: ART_FOR_ICON[item.icon] } : {})} an das Plaettchen;
+                    jetzt traegt es das Truppenzeichen. */}
                 <UnitMarker
                   icon={item.icon}
-                  {...(ART_FOR_ICON[item.icon] ? { art: ART_FOR_ICON[item.icon] } : {})}
                   label={item.label}
                   count={item.count ?? 1}
                 />
@@ -890,11 +933,14 @@ export function ArmyPanel(props: ArmyPanelProps) {
       )}
 
       {stanceActions.length > 0 && !targeting && (
-        <div className="stances" role="group" aria-label={t('army.stance')}>
+        <div className="stances stances--icons" role="group" aria-label={t('army.stance')}>
           {stanceActions.map((action) => (
             <ActionButton
               key={action.id}
               action={action}
+              iconOnly
+              iconSize={24}
+              picture={STANCE_PICTURES[action.id.slice('stance-'.length) as (typeof STANCES)[number]]}
               showReason={false}
               pressed={army.stance !== undefined && action.id === `stance-${army.stance}`}
             />

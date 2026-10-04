@@ -1,0 +1,81 @@
+/*
+ * Bahn U-Bild (V3 Welle 2, T-M46-13 / T-M46-03): Symbole statt Text.
+ * Eigene Datei, damit sie neben den anderen Bahnen an app.css keinen Merge-Konflikt erzeugt.
+ */
+
+/* Mitwirkende (Namensnennung der Symbole und Klaenge von Dritten). */
+.credits {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6em;
+  overflow-wrap: anywhere;
+}
+
+/* Ein Zeichen vor einem Balken oder Wert: das Zeichen traegt die Bedeutung, der Name steht als Tooltip. */
+.stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  min-width: 0;
+}
+.stat .meter {
+  flex: 1;
+  min-width: 0;
+}
+.stat > svg {
+  flex: none;
+}
+
+/* Knoepfe, die nur ein Zeichen tragen. */
+.button--icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding-inline: 0.6em;
+}
+
+/* Die Haltungen als Zeichenreihe. */
+.stances--icons {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.4em;
+}
+.stances--icons .action {
+  display: block;
+}
+.stances--icons .button {
+  width: 100%;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Kennzahlen mit Zeichen statt Beschriftung (Eigentuemer, Bevoelkerung, Moral). */
+.facts--icons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4em 1.2em;
+  align-items: center;
+  margin: 0.4em 0;
+}
+.facts--icons > div {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+}
+
+/* Gebaeude im Bauplatzraster: das Zeichen ist die Hauptsache, der Name klein darunter. */
+.slot__glyph {
+  display: flex;
+  justify-content: center;
+  color: var(--building, currentColor);
+}
+
+/* Das Truppenzeichen im Plaettchen des Armeepanels: Strich in der Farbe des Kastens. */
+.unit-marker__sym {
+  color: currentColor;
+  overflow: visible;
+}

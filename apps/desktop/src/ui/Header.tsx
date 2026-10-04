@@ -322,14 +322,27 @@ export function Header(props: HeaderProps) {
               zwei Knoepfe derselben Gruppe gedrueckt: die Pause und das Abbrechen.
             */}
             {props.fastForwarding ? (
-              <button type="button" className="speed speed--fast speed--running" onClick={props.onAbort}>
-                <Icon name="fastForward" size={11} />
-                {t('header.abort')}
+              <button
+                type="button"
+                className="speed speed--fast speed--running"
+                aria-label={t('header.abort')}
+                title={t('header.abort')}
+                onClick={props.onAbort}
+              >
+                <Icon name="fastForward" size={16} />
               </button>
             ) : (
-              <button type="button" className="speed speed--fast" onClick={props.onFastForward}>
-                <Icon name="fastForward" size={11} />
-                {t('header.fastForward')}
+              /* Nur das Zeichen (T-M46-13): der Name steht als Tooltip und fuers Ohr.
+                 LOESCHVERMERK (Review): bis T-M46-13 trugen beide Knoepfe das Wort daneben —
+                 <Icon name="fastForward" size={11} />{t('header.abort')} bzw. {t('header.fastForward')}. */
+              <button
+                type="button"
+                className="speed speed--fast"
+                aria-label={t('header.fastForward')}
+                title={t('header.fastForward')}
+                onClick={props.onFastForward}
+              >
+                <Icon name="fastForward" size={16} />
               </button>
             )}
           </div>
@@ -346,13 +359,19 @@ export function Header(props: HeaderProps) {
               steht er in der Uhrzeile neben der Uhr (R-UX-02/AK1) und nicht mehr als eigenes
               Kind der oberen Zeile: so bricht die Zeile mit Siegziel nicht mehr um. */}
           {victory && (
-            <Meter
-              label={t('meter.victoryGoal')}
-              value={victory.share}
-              max={victory.goal}
-              text={t('meter.victoryShare', { percent: Math.round(victory.share), goal: Math.round(victory.goal) })}
-              tone={victory.share >= victory.goal ? 'good' : 'neutral'}
-            />
+            /* LOESCHVERMERK (Review): bis T-M46-13 stand das Wort „Siegziel“ als Beschriftung vor dem Balken
+               (Meter ohne labelHidden); jetzt das Pokalzeichen mit Tooltip. */
+            <span className="stat stat--victory" title={t('meter.victoryGoal')}>
+              <Icon name="trophy" size={16} />
+              <Meter
+                label={t('meter.victoryGoal')}
+                labelHidden
+                value={victory.share}
+                max={victory.goal}
+                text={t('meter.victoryShare', { percent: Math.round(victory.share), goal: Math.round(victory.goal) })}
+                tone={victory.share >= victory.goal ? 'good' : 'neutral'}
+              />
+            </span>
           )}
         </div>
 
@@ -390,11 +409,25 @@ export function Header(props: HeaderProps) {
         {/* Diplomatie, Markt und Lage wohnen seit T-M31-03 im Fuss (D27.6); hier
             bleiben nur Spielstaende und Menue. `onPanel` bleibt fuer die Tastatur. */}
         <div className="header__panels">
-          <button type="button" className="button" onClick={props.onSaves}>
-            {t('saves.title')}
+          {/* LOESCHVERMERK (Review): bis T-M46-13 Textknoepfe — {t('saves.title')} und {t('header.menu')}
+              als sichtbarer Text; jetzt Zeichen mit Tooltip und aria-label. */}
+          <button
+            type="button"
+            className="button button--icon"
+            aria-label={t('saves.title')}
+            title={t('saves.title')}
+            onClick={props.onSaves}
+          >
+            <Icon name="save" size={18} />
           </button>
-          <button type="button" className="button" onClick={props.onMenu}>
-            {t('header.menu')}
+          <button
+            type="button"
+            className="button button--icon"
+            aria-label={t('header.menu')}
+            title={t('header.menu')}
+            onClick={props.onMenu}
+          >
+            <Icon name="menu" size={18} />
           </button>
         </div>
 
@@ -443,7 +476,7 @@ export function Header(props: HeaderProps) {
             >
               {/* Das Symbol traegt die Bedeutung fuers Auge, der Name die fuers Ohr —
                   beides zugleich sichtbar waere derselbe Begriff zweimal. */}
-              <Icon name={RESOURCE_ICONS[key] ?? 'warning'} size={14} />
+              <Icon name={RESOURCE_ICONS[key] ?? 'warning'} size={20} />
               <b>{resources ? amount(resources[key] ?? 0) : '—'}</b>
               <span className="visually-hidden">{t(`resources.${key}`)}</span>
               {flow && (

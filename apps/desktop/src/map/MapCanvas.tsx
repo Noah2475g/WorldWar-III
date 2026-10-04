@@ -58,6 +58,7 @@ import {
 } from './markers.ts'
 import type { Anchor } from './anchors.ts'
 import { ICON_PATHS, type IconName } from '../ui/icons.tsx'
+import { GLYPH_BOX, GLYPH_PATHS } from '../ui/glyphs.ts'
 import { labelsFor } from './labels.ts'
 import { OWNERSHIP_FADE_MS, battleFlash, fadeProgress, motionAllowed, ringRadius } from '../ui/motion.ts'
 import { fillFor, mixColors, strengthByProvince, type MapMode } from './modes.ts'
@@ -88,6 +89,17 @@ function drawIcon(
   size: number,
 ): void {
   if (typeof Path2D !== 'function') return
+  // Gebaeude und Rohstoffe: die gefuellten Zeichen von game-icons.net (T-M46-13), Kasten 512.
+  const glyph = GLYPH_PATHS[name]
+  if (glyph) {
+    context.save()
+    context.translate(x - size / 2, y - size / 2)
+    context.scale(size / GLYPH_BOX, size / GLYPH_BOX)
+    context.fillStyle = context.strokeStyle
+    context.fill(new Path2D(glyph))
+    context.restore()
+    return
+  }
   const scale = size / 24
   context.save()
   context.translate(x - size / 2, y - size / 2)
