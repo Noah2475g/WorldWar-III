@@ -16,8 +16,11 @@
 > 2 offen (durch Tests gedeckt), Abgleich: alle Maßnahmen erfüllt; T-M44-20 am Bündel 0 Bilder > 50 ms.
 > Noahs Entscheide E1–E5 in `DECISIONS.md` (2026-10-03). Artillerie verbraucht weiter Öl (E1).
 >
-> **Nächste Version: `docs/plan/PLAN-V3.md`** (Uhr-Abschluss an der exe, dann Leistung M45 und UX V3 M46).
-> Ein Orchestrator braucht nur diese Datei; sie beginnt mit der Uhr-Messung an der exe (Schritt 0).
+> **V3 ist abgeschlossen und gemerged (PR #21, 2026-10-04):** `docs/plan/PLAN-V3.md`, Berichte in
+> `docs/reports/v3/`, Präsentation `docs/praesentation/v3-abschluss.html`. **Was danach kommt:**
+> `docs/plan/VORMERKUNGEN.md` (VM-01 Schonfrist zuerst, dann V4 „Gefecht“).
+<!-- LOESCHVERMERK (Review): vorher „Nächste Version: `docs/plan/PLAN-V3.md` (Uhr-Abschluss an der exe, dann Leistung M45
+und UX V3 M46). Ein Orchestrator braucht nur diese Datei; sie beginnt mit der Uhr-Messung an der exe (Schritt 0).“ -->
 >
 > **Was jetzt auf Noah wartet:** Freigabe der
 > Liste `docs/plan/LOESCHVERMERKE.md`, **AK-9**, Befund M42-09-a, AK-8 neu messen (49 Dateien am
@@ -82,10 +85,14 @@ unfertigen wip/-Zweige der Cloud-Sitzung — erledigt mit PR #15. -->
 git log --oneline -1 && git status --short
 ```
 
-**Die Spitze liegt auf `main`** (`b80b236`, PR #20 „Uhr bei Tempo 100 an der neuen exe“, gemerged
-2026-10-04 auf Noahs Wort; davor PR #15–#19). Wer einen Worktree anlegt, zweigt von `main` ab.
-**V3 läuft** auf dem Versionszweig `claude/v3-leistung-ux` (PLAN-V3: Schritt 0 und P0-W fertig,
-P0-B läuft, dann Gate G1) — er ist nicht die Spitze, bis Noah ihn merged.
+**Die Spitze liegt auf `main`** (`84051b1`, PR #21 „V3: Leistung im Spätspiel (M45) und UX V3 (M46)“,
+gemerged 2026-10-04 auf Noahs Wort; R-PERF-01 erfüllt, `pnpm acceptance` 12 von 12). Wer einen Worktree
+anlegt, zweigt von `main` ab. **Was als Nächstes kommt, steht in `docs/plan/VORMERKUNGEN.md`:** zuerst die
+Schonfrist fürs Ausheben in eroberten Provinzen (VM-01, verhaltensändernd, eigener PR), dann V4 „Gefecht“.
+Offener Befund: die Uhr der V3-exe misst 100,66 Ticks/s (`docs/reports/v3/leistung-endstand.md`).
+<!-- LOESCHVERMERK (Review): bis zum Merge von PR #21 stand hier: „Die Spitze liegt auf `main` (`b80b236`, PR #20 …).
+V3 läuft auf dem Versionszweig `claude/v3-leistung-ux` (PLAN-V3: Schritt 0 und P0-W fertig, P0-B läuft, dann Gate G1)
+— er ist nicht die Spitze, bis Noah ihn merged.“ -->
 <!-- LOESCHVERMERK (Review): vorher: „Die Spitze liegt auf `main`. PR #15 (Etappe 2 von M42/M43 und M44 „UX V2“,
 `pnpm acceptance` 12 von 12 gegen `3ec9a62`) ist am 2026-10-03 auf Noahs ausdrückliches Wort gemerged.“ -->
 
