@@ -17,14 +17,18 @@ export interface ThreatMap {
 }
 
 /** Distance in provinces, over land and sea, up to a limit. */
-function distances(view: PublicView, from: ProvinceId, limit: number): Map<ProvinceId, number> {
+function distances(
+  index: ReadonlyMap<ProvinceId, PublicView['provinces'][number]>,
+  from: ProvinceId,
+  limit: number,
+): Map<ProvinceId, number> {
   const result = new Map<ProvinceId, number>([[from, 0]])
   let frontier = [from]
 
   for (let depth = 1; depth <= limit; depth++) {
     const next: ProvinceId[] = []
     for (const id of frontier) {
-      const province = view.provinces.find((entry) => entry.id === id)
+      const province = index.get(id)
       if (!province) continue
       for (const neighbour of [...province.neighbors, ...province.seaLinks]) {
         if (result.has(neighbour)) continue
@@ -44,6 +48,23 @@ function distances(view: PublicView, from: ProvinceId, limit: number): Map<Provi
  * away it is — pressure is a matter of distance, not just presence.
  */
 export function threatMap(view: PublicView, range: number): ThreatMap {
+  // Ein Denkschritt fragt dieselbe Sicht mehrfach (Wirtschaft, Ziele, Militaer); die Antwort
+  // haengt nur an Sicht und Reichweite, die Aufrufer lesen nur. Einmal je Sicht berechnen.
+  let perRange = threatCache.get(view)
+  if (!perRange) {
+    perRange = new Map()
+    threatCache.set(view, perRange)
+  }
+  const known = perRange.get(range)
+  if (known) return known
+  const computed = computeThreatMap(view, range)
+  perRange.set(range, computed)
+  return computed
+}
+
+const threatCache = new WeakMap<PublicView, Map<number, ThreatMap>>()
+
+function computeThreatMap(view: PublicView, range: number): ThreatMap {
   const byProvince: Record<ProvinceId, Fixed> = {}
   let peak = 0
 
@@ -52,10 +73,13 @@ export function threatMap(view: PublicView, range: number): ThreatMap {
     return view.relations[army.owner]?.state === 'war'
   })
 
+  const index = new Map(view.provinces.map((entry) => [entry.id, entry]))
+
   for (const province of view.provinces) {
     if (province.owner !== view.playerId) continue
 
-    const reach = distances(view, province.id, range)
+    // Ohne feindliche Armee ist der Druck ueberall 0 - die Suche kaeme zum selben Ergebnis.
+    const reach = hostile.length === 0 ? new Map<ProvinceId, number>() : distances(index, province.id, range)
     let pressure = 0
     for (const army of hostile) {
       const distance = reach.get(army.provinceId)
