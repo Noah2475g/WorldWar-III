@@ -29,8 +29,9 @@ function cloneProvince(province: Province): Province {
     targetMorale: province.targetMorale,
     deposits: { ...province.deposits },
     buildings: { ...province.buildings },
-    buildQueue: province.buildQueue.map((order) => ({ ...order })),
-    recruitQueue: province.recruitQueue.map((order) => ({ ...order })),
+    // Empty queues are the common case; skip the callback for them (V3 T-M45-03).
+    buildQueue: province.buildQueue.length === 0 ? [] : province.buildQueue.map((order) => ({ ...order })),
+    recruitQueue: province.recruitQueue.length === 0 ? [] : province.recruitQueue.map((order) => ({ ...order })),
     occupiedSince: province.occupiedSince,
     productionRemainder: { ...province.productionRemainder },
   }
