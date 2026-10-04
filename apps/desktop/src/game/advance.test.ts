@@ -70,3 +70,17 @@ describe('R-AI-01 Die KI kommt jede Stunde zu Wort', () => {
     expect(advance(decided as never, 5, ctx).tick).toBe(state.tick)
   })
 })
+
+describe('T-M45-04 Ticks in Haeppchen sind dieselben Ticks wie in einem Rutsch', () => {
+  it('liefert nach 6 Ticks einzeln denselben Zustand wie nach 6 Ticks zusammen', () => {
+    // Die Uhr der Huelle rechnet seit T-M45-04 Tick fuer Tick (Zeitbudget) statt `due` Ticks auf einmal.
+    // Das ist nur dann dieselbe Partie, wenn beides denselben Zustand ergibt.
+    const start = fresh()
+    const together = advance(start, 6, ctx)
+    let piecewise = start
+    for (let i = 0; i < 6; i++) piecewise = advance(piecewise, 1, ctx)
+
+    expect(piecewise.tick).toBe(together.tick)
+    expect(JSON.stringify(piecewise)).toBe(JSON.stringify(together))
+  })
+})

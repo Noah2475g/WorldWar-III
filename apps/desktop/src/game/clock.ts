@@ -46,3 +46,62 @@ export function clockStep(owed: number, dtMs: number, speed: number): ClockStep 
   const due = Math.floor(total + EPSILON)
   return { due, owed: Math.max(0, total - due) }
 }
+
+/**
+ * The clock with a time budget (T-M45-04, R-PERF-01).
+ *
+ * `clockStep` says how many ticks are owed; this says how many of them may run NOW. At the
+ * late-game state S575 one tick costs about 11 ms, so five ticks in one animation frame
+ * block the thread for 55 ms and the frame loop settles at 6 frames per second — each frame
+ * runs the five ticks `clockCap` allows and then waits for the browser to draw. The ticks
+ * run on one thread; the rest of the frame (style, paint, raster) happens beside it. Measured
+ * at the bundle (2026-10-04): 4.8 ticks per frame, 6 frames per second, 29 ticks per second,
+ * while the profile shows the main thread idle for half of the time.
+ *
+ * So the driver runs ticks one at a time and stops when the budget of this call is spent.
+ * What it did not run stays owed, up to `clockCap` — the same bound that keeps the game from
+ * freezing after a stall (D5, R-TIME). The caller may call it as often as it likes: from the
+ * animation frame (which also draws) and, in between, from short timer slices. Time that
+ * passes is credited exactly once, whoever asks.
+ */
+export interface ClockDriver {
+  /** Credits the time since the last call and runs owed ticks until `budgetMs` is spent. Returns the ticks run. */
+  advance(budgetMs: number): number
+  /** Milliseconds until another whole tick is owed; 0 when one is owed already. */
+  msToNextTick(): number
+}
+
+export function createClockDriver(options: {
+  readonly speed: number
+  /** Milliseconds, any origin (`performance.now`). */
+  readonly now: () => number
+  /** Runs exactly one tick. */
+  readonly run: () => void
+}): ClockDriver {
+  const { speed, now, run } = options
+  let last = now()
+  let owed = 0
+  return {
+    advance(budgetMs) {
+      const start = now()
+      const next = clockStep(owed, start - last, speed)
+      last = start
+      let left = next.due
+      let ran = 0
+      while (left > 0) {
+        run()
+        ran += 1
+        left -= 1
+        // At least one tick per call; after that the budget decides.
+        if (left > 0 && now() - start >= budgetMs) break
+      }
+      // Unrun ticks stay owed, bounded by the cap: no backlog beyond what a single frame may credit.
+      owed = Math.min(next.owed + left, clockCap(speed))
+      return ran
+    },
+    msToNextTick() {
+      if (!(speed > 0)) return Infinity
+      return owed >= 1 - EPSILON ? 0 : Math.max(0, ((1 - owed) / speed) * 1000 - (now() - last))
+    },
+  }
+}

@@ -56,3 +56,10 @@ jeweils **LÖSCHEN**, sobald Noah Paket B abgenommen hat (der Wortlaut bleibt in
 - 2026-10-03 (Bahn K): `docs/plan/01-REQUIREMENTS.md` R-AI-12/AK4 — abgeschwächter Wortlaut (61d1477, "Vorrats-Horizont") ersetzt durch den alten Wortlaut; der alte Text steht als HTML-Kommentar mit LOESCHVERMERK dort. Grund: T-M42-14 zurückgenommen (H1–H3), kein Wort von Noah (E1).
 - 2026-10-04 (V3 Schritt 0): `docs/reports/packaging.md`, Abschnitt „Grenzen dieser Messung“ — Satz „Die Uhr bei Tempo 100 wurde nicht neu gemessen“ ersetzt durch den Verweis auf den neuen Abschnitt „Uhr bei Tempo 100 (2026-10-04)“; alter Wortlaut als HTML-Kommentar mit LOESCHVERMERK dort. Grund: Uhr an der neuen exe gemessen (Normalstreuung).
 - 2026-10-04 (Merge PR #20): `docs/plan/WORKFLOW.md` §0 — Satz zur Spitze nach PR #15 ersetzt durch den Stand nach PR #20 und den Hinweis auf den V3-Zweig; alter Wortlaut als HTML-Kommentar mit LOESCHVERMERK dort.
+
+## Nachtrag V3 Welle 1 (Bahn P-Hülle, 2026-10-04)
+
+| # | Datei:Zeile | Inhalt kurz | Empfehlung | Begründung |
+|---|---|---|---|---|
+| 31 | `apps/desktop/src/App.tsx` (`stateRef`) | die Zeile `stateRef.current = state` im Render | **LÖSCHEN**, sobald Noah T-M45-04 abgenommen hat | Die Uhr schreibt den Spiegel jetzt zwischen zwei Bildern fort und gibt React den Stand am Bildende (`flushState`); ein Render mit dem alten React-Stand hätte den Spiegel zurückgedreht. Alle Schreiber laufen über `commitState`. Wortlaut als Kommentar an der Stelle. |
+| 32 | `apps/desktop/src/map/MapCanvas.tsx` (`withBounds`) | `useMemo` allein auf `props.provinces` | **LÖSCHEN**, sobald Noah T-M45-04 abgenommen hat | Ersetzt durch die Fassung, die dieselbe Liste behält, solange Umrisse und Füllung gleich bleiben (`sameShapes`); Test `MapCanvas.test.tsx` „T-M45-04“. Wortlaut als Kommentar an der Stelle. |
