@@ -41,15 +41,18 @@ const parseViewports = (list) =>
 
 const URL_ = arg('url', 'http://localhost:5341/')
 const OUT = resolve(arg('out', 'docs/ux/v3-before'))
-const STATES = arg('states', 'S100,S300,S575').split(',')
-const FULL = arg('full', 'S300').split(',')
+const STATES = arg('states', 'S100,S300,S575,S575G').split(',')
+const FULL = arg('full', 'S575G').split(',')
 const VIEWPORTS = parseViewports(arg('viewports', '375x667,1280x800'))
 const MEASURE_ONLY = parseViewports(arg('measure-only', '1920x1080'))
 const CONTRAST_ONLY = flag('contrast')
 const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
 mkdirSync(OUT, { recursive: true })
 
-const readState = (name) => {
+/** `S575G` = derselbe Stand, aber der Mensch ist die staerkste Macht (Sicht eines Spielers mit grossem Reich). */
+const baseName = (name) => name.replace(/G$/, '')
+const readState = (rawName) => {
+  const name = baseName(rawName)
   const dir = resolve(ROOT, 'test/fixtures/v3')
   const plain = join(dir, `${name}.json`)
   const p = existsSync(plain) ? plain : join(dir, `${name}.json.gz`)
@@ -57,6 +60,7 @@ const readState = (name) => {
   return p.endsWith('.gz') ? gunzipSync(raw).toString('utf8') : raw.toString('utf8')
 }
 
+const ROOTFS = (() => { const p = ROOT.split(String.fromCharCode(92)).join('/'); return p.startsWith('/') ? p : `/${p}` })()
 const contextOptions = (vp) => ({
   viewport: { width: vp.width, height: vp.height },
   deviceScaleFactor: 1,
@@ -196,7 +200,7 @@ const CLOCK = 'Tag\\s+([\\d.]+)\\s+·\\s+(\\d\\d):00'
 async function openState(page, name) {
   await page.goto(URL_, { waitUntil: 'load' })
   await page.getByRole('button', { name: 'Partie beginnen' }).waitFor({ state: 'attached', timeout: 30000 })
-  await putState(page, readState(name))
+  await putState(page, name.endsWith('G') ? await strongestViewer(page, readState(name)) : readState(name))
   await page.getByRole('button', { name: 'Spielstände', exact: true }).first().click({ timeout: 10000 })
   await page.waitForTimeout(400)
   const t0 = Date.now()
@@ -205,6 +209,28 @@ async function openState(page, name) {
   const ms = Date.now() - t0
   await page.waitForTimeout(800)
   return ms
+}
+
+/**
+ * Derselbe Stand, aber der Mensch ist die Macht mit den meisten Provinzen: nur `kind` zweier Spieler wird getauscht
+ * und der Stand mit dem `serialise` des Kerns neu versiegelt (Muster von ux-capture.mjs, Kern unveraendert).
+ */
+async function strongestViewer(page, text) {
+  return page.evaluate(
+    async ({ origin, root, raw }) => {
+      const core = await import(/* @vite-ignore */ `${origin}/@fs${root}/packages/core/src/index.ts`)
+      const state = core.deserialise(raw)
+      const count = {}
+      for (const id of state.provinceOrder) {
+        const o = state.provinces[id].owner
+        if (o) count[o] = (count[o] ?? 0) + 1
+      }
+      const top = Object.keys(count).sort((a, b) => count[b] - count[a])[0]
+      for (const id of state.playerOrder) state.players[id].kind = id === top ? 'human' : 'ai'
+      return core.serialise(state)
+    },
+    { origin: new URL(URL_).origin, root: ROOTFS, raw: text },
+  )
 }
 
 /** Pixelprobe fuer axe-„unvollstaendig“: Vordergrund aus der Gestaltung, Hintergrund aus dem Bild ohne den Text. */
@@ -355,12 +381,12 @@ async function runState(browser, name, vp, measureOnly) {
   await scene(
     'karte-geladen',
     async () => ({ tutorialShown: await page.getByRole('button', { name: 'Nicht mehr zeigen' }).isVisible().catch(() => false) }),
-    { core: true },
+    {},
   )
   await btn('Nicht mehr zeigen').click({ timeout: 3000 }).catch(() => {})
   await page.waitForTimeout(300)
 
-  await scene('karte-besitz', async () => ({}), { core: true })
+  await scene('karte-besitz', async () => ({}), {})
   await scene(
     'karte-truppen',
     async () => {
@@ -368,7 +394,30 @@ async function runState(browser, name, vp, measureOnly) {
       await page.waitForTimeout(500)
       return {}
     },
-    { core: true },
+    {},
+  )
+  await scene(
+    'karte-brennpunkt',
+    async () => {
+      // Dorthin springen, wo die Armeen der KI stehen: ueber die Uebersichtskarte nach Asien.
+      const mini = page.locator('canvas.map-overview').first()
+      const b = await mini.boundingBox()
+      if (!b) throw new Error('keine Uebersichtskarte')
+      await mini.click({ position: { x: b.width * 0.72, y: b.height * 0.4 }, timeout: 4000 })
+      await page.waitForTimeout(500)
+      const map = page.locator('.map-layer--overlay').first()
+      const mb = await map.boundingBox()
+      const zoom = await longTasksDuring(page, async () => {
+        await page.mouse.move(mb.x + mb.width / 2, mb.y + mb.height / 2)
+        for (let i = 0; i < 4; i++) {
+          await page.mouse.wheel(0, -240)
+          await page.waitForTimeout(60)
+        }
+      })
+      await page.waitForTimeout(300)
+      return { zoom }
+    },
+    { core: true, axeToo: false },
   )
   await scene(
     'karte-zoom-schieben',
@@ -445,10 +494,19 @@ async function runState(browser, name, vp, measureOnly) {
     return { optionCount: await picker.locator('option').count(), buttons }
   })
 
-  // Armee des Menschen: im Stand hat der Mensch keine; eine Kaserne gibt es oder wird gebaut, dann ausheben.
+  // Armee des Menschen: Provinz mit eigener Armee suchen; gibt es keine, Kaserne bauen und ausheben.
   await scene(
     'armee-ausheben',
     async () => {
+      const picker = page.locator('aside select').first()
+      const n = Math.min(await picker.locator('option').count(), 40)
+      for (let i = 1; i < n; i++) {
+        await picker.selectOption({ index: i }, { timeout: 5000 })
+        await page.waitForTimeout(150)
+        if (await btn('Auswählen').isVisible().catch(() => false)) return { builtBarracks: false, foundArmyInOption: i, optionsScanned: i }
+      }
+      await picker.selectOption({ index: 1 }, { timeout: 5000 })
+      await page.waitForTimeout(300)
       const recruit = page.getByRole('button', { name: 'Infanterie ausheben', exact: true }).first()
       let builtBarracks = false
       if (!(await recruit.isEnabled().catch(() => false))) {
@@ -474,7 +532,7 @@ async function runState(browser, name, vp, measureOnly) {
       } finally {
         await btn('Pause').click({ timeout: 5000 }).catch(() => {})
       }
-      return { builtBarracks }
+      return { builtBarracks, foundArmyInOption: null }
     },
     { axeToo: false },
   )
@@ -527,7 +585,7 @@ async function runState(browser, name, vp, measureOnly) {
           return { text: (d?.innerText ?? '').replace(/\s+/g, ' ').slice(0, 300) }
         })
       },
-      { core: key === 'diplomatie' || key === 'rangliste' },
+      { core: key === 'diplomatie' },
     )
     if (key === 'diplomatie') {
       await scene('diplomatie-macht', async () => {
@@ -574,7 +632,7 @@ async function runState(browser, name, vp, measureOnly) {
       )
       return { save, rows }
     },
-    { core: true },
+    {},
   )
   await scene(
     'laden-grosser-stand',
@@ -615,7 +673,7 @@ async function runState(browser, name, vp, measureOnly) {
       await btn('Pause').click({ timeout: 5000 }).catch(() => {})
       return { run, ...chip, dayStart: a.day, dayEnd: b.day }
     },
-    { core: true },
+    {},
   )
 
   data.consoleErrors = errors.slice(0, 10)
