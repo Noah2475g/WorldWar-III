@@ -420,8 +420,13 @@ gemeint ist, steht ihr Name; wo ein Gelände gemeint ist, steht das Wort.
 
 - **R-ASSET-01 — Keine Fremdassets.** Keine Grafiken, Sounds, Texte, Daten oder Codeteile aus
   dem Original. Jedes Asset hat einen Herkunfts- und Lizenzeintrag in `docs/ASSETS.md`.
+- **R-ASSET-02 — Nur freie Lizenzen** (gemeinfrei, CC0, OFL, MIT o. ä., **seit 2026-10-04 auch
+  CC BY**). Kein kostenpflichtiger Dienst, keine Registrierung. Für CC BY gilt die Namensnennung:
+  Urheber, Lizenz und Quelle stehen je Datei in `docs/ASSETS.md` und sichtbar im Spiel (Mitwirkende).
+<!-- LOESCHVERMERK (Review): Wortlaut bis 2026-10-04, geöffnet für CC BY auf Noahs Wort (game-icons.net, DECISIONS 2026-10-04):
 - **R-ASSET-02 — Nur freie Lizenzen** (gemeinfrei, CC0, OFL, MIT o. ä.). Kein kostenpflichtiger
   Dienst, keine Registrierung.
+-->
 
 ### 2.14 Umfang und Meilensteine — maschinenlesbar
 

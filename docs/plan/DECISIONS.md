@@ -5867,3 +5867,13 @@ Grundlage: `docs/plan/V3-G1-DOSSIER.md` (Empfehlungen mit verworfenen Alternativ
 - **G1-6 ·** UX-Auswahl M46: T-M46-10 (Telefon), -01, -05, -06, -11, -08; nicht eingeplant mangels Befund:
   Kartenlesbarkeit, Mehrfachauswahl, Ladezustand, Protokollfilter am Desktop.
 - **G1-7 ·** Nicht auf den Playtest warten; Noah spielt während Welle 1, Funde werden T-M46-09.
+
+## 2026-10-04 · Noahs Entscheid · R-ASSET-02 für CC BY geöffnet (game-icons.net)
+
+Anlass: Asset-Recherche für M46 („Grafiken und Symbole statt Text“, Playtest V3, `VORMERKUNGEN.md`
+VM-05). game-icons.net deckt Einheiten, Gebäude und Rohstoffe am besten ab, steht aber unter CC BY 3.0.
+Noah: „game-icons.net freigegeben, Regel R-ASSET-02 für CC BY öffnen.“ Folge: CC BY ist zulässig mit
+Namensnennung je Datei in `docs/ASSETS.md` und sichtbar im Spiel (Mitwirkende). Unverändert: kein
+kostenpflichtiger Dienst, keine Registrierung; die übrigen Quellen bleiben CC0/MIT (Kenney, milsymbol,
+Lucide/Tabler). Verworfen blieb freesound.org (Konto, gemischte Lizenzen je Datei).
+

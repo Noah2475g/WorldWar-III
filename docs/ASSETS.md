@@ -1,7 +1,9 @@
 # ASSETS — Herkunft und Lizenz aller Fremdinhalte
 
 Anforderung R-ASSET-01 verbietet Fremdassets ohne freie Lizenz, R-ASSET-02 lässt nur
-gemeinfreie, CC0-, OFL- oder MIT-artige Lizenzen zu. Diese Datei ist der Nachweis. Sie
+gemeinfreie, CC0-, OFL-, MIT-artige und (seit 2026-10-04) CC-BY-Lizenzen zu; bei CC BY stehen
+Urheber, Lizenz und Quelle je Datei hier und im Spiel unter „Mitwirkende“.
+<!-- LOESCHVERMERK (Review): vorher „R-ASSET-02 lässt nur gemeinfreie, CC0-, OFL- oder MIT-artige Lizenzen zu.“ — geöffnet für CC BY auf Noahs Wort, DECISIONS 2026-10-04. --> Diese Datei ist der Nachweis. Sie
 wird von `packages/mapgen/src/sources.test.ts` gegen das Quellenregister im Code geprüft —
 eine Quelle, die hier fehlt, lässt den Testlauf scheitern.
 
