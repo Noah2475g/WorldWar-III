@@ -390,7 +390,7 @@ export function ActionGroup({
   }
 
   return (
-    <section className="group" aria-label={group.title}>
+    <section className="group" aria-label={group.title} data-group={group.id}>
       <h3 className="group__title">{group.title}</h3>
       {next && <NextUnlockLine next={next} />}
       {shared && <p className="group__reason">{shared}</p>}
@@ -431,7 +431,22 @@ export function ProvincePicker({
   return (
     <label className="picker">
       <span>{t('province.pick')}</span>
-      <select value={value ?? ''} onChange={(event) => onChange(event.target.value || null)}>
+      <select
+        value={value ?? ''}
+        onChange={(event) => onChange(event.target.value || null)}
+        onKeyDown={(event) => {
+          // Eingabe bestaetigt die Wahl und fuehrt den Fokus zu den Handlungen der Provinz (T-M46-05): in einer
+          // Auswahlliste gehoeren die Buchstaben dem Tippen, also kommt man mit B oder E erst von hier weg.
+          if (event.key !== 'Enter') return
+          const first = event.currentTarget
+            .closest('aside')
+            ?.querySelector<HTMLElement>('.panel :is(.slots, [data-group]) button:not(:disabled)')
+          if (first) {
+            event.preventDefault()
+            first.focus()
+          }
+        }}
+      >
         <option value="">{t('province.pickNone')}</option>
         <optgroup label={t('province.pickOwn')}>
           {own.map((province) => (
@@ -584,7 +599,7 @@ export function ProvincePanel(props: ProvincePanelProps) {
       {province.buildings !== undefined && (
       <>
       <h3>{t('province.buildSlots')}</h3>
-      <div className="slots">
+      <div className="slots" data-group="build">
         {BUILDING_ORDER.map((key) => {
           const level = province.buildings?.[key] ?? 0
           // ALLE Auftraege dieser Art, nicht nur der erste (T-M28-16): der Kern erlaubt
@@ -812,6 +827,15 @@ export function ArmyPanel(props: ArmyPanelProps) {
   useEffect(() => {
     if (choosing) targetList.current?.focus()
   }, [choosing])
+  // Wird eine Armee gewaehlt (Heeruebersicht, Karte, Provinzliste), steht der Fokus auf ihrem ersten Befehl
+  // (T-M46-05): der Knopf „Auswaehlen“ verschwand mit dem Wechsel des Panels, Tab begaenne bei der Kopfleiste.
+  const panelRoot = useRef<HTMLElement>(null)
+  const armyId = props.army?.id
+  useEffect(() => {
+    if (armyId === undefined || choosing) return
+    panelRoot.current?.querySelector<HTMLButtonElement>('.actions--grid button:not(:disabled)')?.focus({ preventScroll: true })
+    // Nur bei einer anderen Armee; Befehle selbst aendern den Fokus nicht.
+  }, [armyId])
   if (!army) return null
 
   // Die Haltung als Gruppe — seit T-M40-05 vier Knoepfe, zwei mal zwei —, die uebrigen
@@ -824,7 +848,7 @@ export function ArmyPanel(props: ArmyPanelProps) {
     .map((action) => (action.icon || !ARMY_ACTION_ICONS[action.id] ? action : { ...action, icon: ARMY_ACTION_ICONS[action.id]! }))
 
   return (
-    <section className="panel" aria-label={t('army.title')}>
+    <section className="panel" aria-label={t('army.title')} ref={panelRoot}>
       <PanelHead
         title={props.name ?? t('army.title')}
         onBack={props.onBack}
@@ -1646,6 +1670,16 @@ export function DiplomacyPanel({
   // Tabelle und Kriegsliste). Auch bei erneutem Klick auf die schon gewaehlte Macht, nicht aber beim Oeffnen mit
   // gewaehlter Macht (Sprung aus einer Meldung): `chosenAt` zaehlt nur die Klicks.
   const chosenBlock = useRef<HTMLDivElement>(null)
+  const panelRoot = useRef<HTMLElement>(null)
+  // Per Kurztaste D geoeffnet landet der Fokus auf der ersten Macht, mit schon gewaehlter Macht (Sprung aus einer
+  // Meldung) auf ihrer ersten freien Handlung (T-M46-05): vorher 18 bis 24 Tabs bis zur Machtetabelle.
+  useEffect(() => {
+    const root = panelRoot.current
+    if (!root) return
+    const first = chosenBlock.current?.querySelector<HTMLElement>('button:not(:disabled)') ?? root.querySelector<HTMLElement>('.nation-select')
+    first?.focus({ preventScroll: true })
+    // Nur beim Oeffnen: spaeter gehoert der Fokus dem Spieler (und `chosenAt` fuehrt ihn zur gewaehlten Macht).
+  }, [])
   // Mit schon gewaehlter Macht geoeffnet = der Sprung aus einer Meldung (Angebot): die Angebote stehen offen.
   const openedWithPartner = useRef(Boolean(chosen))
   const [chosenAt, setChosenAt] = useState(0)
@@ -1671,7 +1705,7 @@ export function DiplomacyPanel({
   const canChoose = Boolean(onChoose)
 
   return (
-    <section className="panel" aria-label={t('diplomacy.title')}>
+    <section className="panel" aria-label={t('diplomacy.title')} ref={panelRoot}>
       <PanelHead title={t('diplomacy.title')} onClose={onClose} />
       {/* Eingehende zuerst (T-M17-14): so landet der Sprung aus einer Meldung darauf. */}
       {offers && <OfferList title={t('diplomacy.incoming')} rows={offers.incoming} open={openedWithPartner.current} />}
@@ -1852,7 +1886,17 @@ export function TradeOfferForm({
         {t('trade.title', { nation: partnerName })}
         <Explain textKey="explain.trade" subject={t('trade.titleShort')} />
       </h3>
-      <table className="table trade-form__table">
+      {/* Eingabe in einem Mengenfeld schickt das Angebot ab (T-M46-05): sonst waren es 13 Tabs vom letzten Feld bis
+          zum Knopf. Gilt nur, solange der Knopf frei ist - dieselbe Bedingung, unter der er klickbar ist. */}
+      <table
+        className="table trade-form__table"
+        onKeyDown={(event) => {
+          if (event.key !== 'Enter' || !(event.target instanceof HTMLInputElement)) return
+          event.preventDefault()
+          const action = result.action
+          if (action.disabledReason === null && (action.pendingNotice === undefined || action.ackOnly === true)) action.onRun()
+        }}
+      >
         <thead>
           <tr>
             <th>{t('trade.resource')}</th>

@@ -135,7 +135,26 @@ export const TASKS = [
       const ok = await until(page, () => [...document.querySelectorAll('aside.side button')].some((b) => b.textContent?.trim() === 'Zusammenlegen' && b.disabled), null, 5000)
       return run.result(geteilt && ok, { beleg: `geteilt=${geteilt}, wieder eine Armee=${ok}` })
     },
+    // T-M46-05: A oeffnet die Heeruebersicht, Eingabe waehlt die erste Armee, der Fokus steht auf ihrem ersten Befehl.
+    // Der Weg ueber die Provinzliste (40 Tasten, docs/ux/v3-before) bleibt als `tastaturAlt` erhalten (Regel 1).
     async tastatur(run, page) {
+      await clockOn(page)
+      run.start()
+      await run.key('a', 'Heeruebersicht')
+      await sleep(page, 300)
+      await run.key('Enter', 'Auswählen (erste Armee)')
+      await sleep(page, 300)
+      if (!(await run.tabTo(isButton(/^Teilen$/), 'Teilen', { checkFirst: true }))) return (run.stop(), run.result(false))
+      await run.key('Enter', 'Teilen')
+      const geteilt = await until(page, () => [...document.querySelectorAll('aside.side button')].some((b) => b.textContent?.trim() === 'Zusammenlegen' && !b.disabled), null, 5000)
+      if (!geteilt) run.detour('Teilen', 'Zusammenlegen wurde nach 5 s nicht frei')
+      if (!(await run.tabTo(isButton(/^Zusammenlegen$/), 'Zusammenlegen', { max: 40, back: true }))) return (run.stop(), run.result(false))
+      await run.key('Enter', 'Zusammenlegen')
+      run.stop()
+      const ok = await until(page, () => [...document.querySelectorAll('aside.side button')].some((b) => b.textContent?.trim() === 'Zusammenlegen' && b.disabled), null, 5000)
+      return run.result(geteilt && ok, { beleg: `geteilt=${geteilt}, wieder eine Armee=${ok}` })
+    },
+    async tastaturAlt(run, page) {
       await clockOn(page)
       run.start()
       if (!(await kbSelectArmy(run, page))) return (run.stop(), run.result(false))
@@ -167,7 +186,23 @@ export const TASKS = [
       const ok = wirkt && (await accepted(run, page))
       return run.result(ok, { beleg: `Rückmeldung gesehen: ${await accepted(run, page)}; Fortschrittsanzeige (noch N h) im Panel: ${wirkt}` })
     },
+    // T-M46-05: P springt in die Provinzliste, B zu den Bauknoepfen (docs/ux/v3-before: 19 Tasten, 17 Tab; `tastaturAlt`).
     async tastatur(run, page) {
+      await clockOn(page)
+      run.start()
+      await run.key('p', 'Provinzliste')
+      if (!(await run.typeSelect('Mittlerer Westen', 'Provinz'))) return (run.stop(), run.result(false))
+      await run.key('Enter', 'Wahl bestaetigen (Fokus zu den Handlungen der Provinz)')
+      if (!(await run.tabTo(isButton(/^Kaserne bauen$/), 'Kaserne bauen', { checkFirst: true }))) return (run.stop(), run.result(false))
+      await run.key('Enter', 'Kaserne bauen')
+      // Sofort nachsehen (T-M46-05): die Restzeit steht nur so lange im Panel, wie der Bau laeuft (12 h = 1,2 s bei Tempo 10).
+      const wirkt = await until(page, asideHas, 'noch \\d+ [hd]', 4000)
+      await run.checkNotice('Kaserne bauen')
+      run.stop()
+      const ok = wirkt && (await accepted(run, page))
+      return run.result(ok, { beleg: `Rückmeldung gesehen: ${await accepted(run, page)}; Fortschrittsanzeige (noch N h) im Panel: ${wirkt}`, panel: (await page.evaluate(() => document.querySelector('aside.side')?.innerText ?? '')).replace(/\s+/g, ' ').slice(0, 400) })
+    },
+    async tastaturAlt(run, page) {
       await clockOn(page)
       run.start()
       if (!(await run.tabTo(isProvinceSelect, 'Provinzliste'))) return (run.stop(), run.result(false))
@@ -198,7 +233,25 @@ export const TASKS = [
       const ok = wirkt && (await accepted(run, page))
       return run.result(ok, { beleg: `Rückmeldung gesehen: ${await accepted(run, page)}; Fortschrittsanzeige (noch N h) im Panel: ${wirkt}` })
     },
+    // T-M46-05: P Provinzliste, E zu den Aushebeknoepfen (docs/ux/v3-before: 31 Tasten, 29 Tab; `tastaturAlt`).
     async tastatur(run, page) {
+      await clockOn(page)
+      run.start()
+      await run.key('p', 'Provinzliste')
+      if (!(await run.typeSelect('Mittlerer Westen', 'Provinz'))) return (run.stop(), run.result(false))
+      await run.key('Enter', 'Wahl bestaetigen (Fokus zu den Handlungen der Provinz)')
+      // Der Fokus steht auf dem ersten freien Bauplatz; E springt zu den Aushebeknoepfen.
+      await run.key('e', 'Aushebeknoepfe')
+      if (!(await run.tabTo(isButton(/^Infanterie ausheben$/), 'Infanterie ausheben', { checkFirst: true }))) return (run.stop(), run.result(false))
+      await run.key('Enter', 'Infanterie ausheben')
+      // Sofort nachsehen (T-M46-05): die Restzeit steht nur so lange im Panel, wie der Bau laeuft (12 h = 1,2 s bei Tempo 10).
+      const wirkt = await until(page, asideHas, 'noch \\d+ [hd]', 4000)
+      await run.checkNotice('Infanterie ausheben')
+      run.stop()
+      const ok = wirkt && (await accepted(run, page))
+      return run.result(ok, { beleg: `Rückmeldung gesehen: ${await accepted(run, page)}; Fortschrittsanzeige (noch N h) im Panel: ${wirkt}`, panel: (await page.evaluate(() => document.querySelector('aside.side')?.innerText ?? '')).replace(/\s+/g, ' ').slice(0, 400) })
+    },
+    async tastaturAlt(run, page) {
       await clockOn(page)
       run.start()
       if (!(await run.tabTo(isProvinceSelect, 'Provinzliste'))) return (run.stop(), run.result(false))
@@ -235,7 +288,7 @@ export const TASKS = [
       run.start()
       await run.key('d', 'Diplomatie')
       await sleep(page, 300)
-      if (!(await run.tabTo(isButton(/^Mexiko$/), 'Mexiko'))) return (run.stop(), run.result(false))
+      if (!(await run.tabTo(isButton(/^Mexiko$/), 'Mexiko', { checkFirst: true }))) return (run.stop(), run.result(false))
       await run.key('Enter', 'Mexiko')
       await sleep(page, 300)
       if (!(await run.tabTo(isButton(/^Krieg erklären$/), 'Krieg erklären', { checkFirst: true }))) return (run.stop(), run.result(false))
@@ -289,9 +342,13 @@ export const TASKS = [
       run.start()
       await run.key('d', 'Diplomatie')
       await sleep(page, 300)
-      if (!(await run.tabTo(isButton(/^Mexiko$/), 'Mexiko'))) return (run.stop(), run.result(false))
-      await run.key('Enter', 'Mexiko')
-      await sleep(page, 300)
+      // Ist Mexiko schon die gewaehlte Macht (die Einrichtung hat den Krieg erklaert), steht der Fokus beim Oeffnen auf
+      // ihrer ersten freien Handlung - dann entfaellt die Wahl (T-M46-05).
+      if (!isButton(/^Frieden anbieten$/)(await run.focusInfo())) {
+        if (!(await run.tabTo(isButton(/^Mexiko$/), 'Mexiko', { checkFirst: true }))) return (run.stop(), run.result(false))
+        await run.key('Enter', 'Mexiko')
+        await sleep(page, 300)
+      }
       if (!(await run.tabTo(isButton(/^Frieden anbieten$/), 'Frieden anbieten', { checkFirst: true }))) return (run.stop(), run.result(false))
       await run.key('Enter', 'Frieden anbieten')
       await sleep(page, 300)
@@ -326,15 +383,15 @@ export const TASKS = [
       run.start()
       await run.key('d', 'Diplomatie')
       await sleep(page, 300)
-      if (!(await run.tabTo(isButton(/^Mexiko$/), 'Mexiko'))) return (run.stop(), run.result(false))
+      if (!(await run.tabTo(isButton(/^Mexiko$/), 'Mexiko', { checkFirst: true }))) return (run.stop(), run.result(false))
       await run.key('Enter', 'Mexiko')
       await sleep(page, 300)
       if (!(await run.tabTo(isInput(/Nahrung geben/), 'Feld Nahrung geben', { checkFirst: true }))) return (run.stop(), run.result(false))
       for (const ch of '100') await run.key(ch, 'Menge')
       if (!(await run.tabTo(isInput(/Material verlangen/), 'Feld Material verlangen'))) return (run.stop(), run.result(false))
       for (const ch of '50') await run.key(ch, 'Menge')
-      if (!(await run.tabTo(isButton(/^Handel anbieten$/), 'Handel anbieten'))) return (run.stop(), run.result(false))
-      await run.key('Enter', 'Handel anbieten')
+      // T-M46-05: Eingabe in einem Mengenfeld schickt das Angebot ab (vorher 13 Tab bis zum Knopf).
+      await run.key('Enter', 'Handel anbieten (im Mengenfeld)')
       await sleep(page, 300)
       await run.checkNotice('Handel anbieten')
       run.stop()
@@ -364,13 +421,11 @@ export const TASKS = [
     async tastatur(run, page) {
       await clockOn(page)
       run.start()
-      await run.key('s', 'Spionageübersicht')
-      await sleep(page, 300)
-      const leer = await page.evaluate(() => /keine Spione/.test(document.body.innerText))
-      if (leer) run.detour('Spionageübersicht', 'Übersicht ist leer; sie sagt "Anwerben können Sie in der Provinzleiste"')
-      if (!(await run.tabTo(isProvinceSelect, 'Provinzliste'))) return (run.stop(), run.result(false))
+      // T-M46-05: P springt in die Provinzliste; der Umweg ueber die leere Spionageuebersicht (S) entfaellt.
+      await run.key('p', 'Provinzliste')
       if (!(await run.typeSelect('Nordostmexiko', 'Provinz'))) return (run.stop(), run.result(false))
-      if (!(await run.tabTo(isButton(/^Spion für Aufklärung anwerben$/), 'Aufklärung anwerben'))) return (run.stop(), run.result(false))
+      await run.key('Enter', 'Wahl bestaetigen (Fokus zu den Handlungen der Provinz)')
+      if (!(await run.tabTo(isButton(/^Spion für Aufklärung anwerben$/), 'Aufklärung anwerben', { checkFirst: true }))) return (run.stop(), run.result(false))
       await run.key('Enter', 'Aufklärung anwerben')
       await sleep(page, 300)
       await run.checkNotice('Aufklärung anwerben')

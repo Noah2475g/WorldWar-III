@@ -119,6 +119,13 @@ const fsRoot = (path) => { const p = path.split(String.fromCharCode(92)).join('/
 const CHECK_VIEWPORTS = '375x667,667x375,1280x800,1366x768,1920x1080'
 const DEFAULT_VIEWPORTS = '375x667,667x375,1280x800,1366x768,1920x1080,1024x768,768x1024,320x568'
 const MP_VIEWPORTS = parseViewports(arg('mp-viewports', '375x667,1280x800'))
+// Wie lange der Mehrspielerlauf auf einen echten Einmarsch (Alarmchip) wartet, in Sekunden (T-M46-08). 0 = nur einmal
+// nachsehen, ohne zu warten. Der Einmarsch ist ein Ereignis der KI-Maechte; er laesst sich nicht erzwingen, ohne den
+// Gleichschritt zu verfaelschen.
+const MP_ALARM_WAIT_S = Number(arg('mp-alarm-wait', '0'))
+// Den Einmarsch selbst herbeifuehren (T-M46-08): der Gast (der Nachbar des Gastgebers) baut eine Kaserne, hebt Infanterie
+// aus, erklaert den Krieg und marschiert in eine Provinz des Gastgebers - alles ueber die Oberflaeche, im Gleichschritt.
+const MP_FORCE_INTRUSION = flag('mp-force-intrusion')
 // Im Pruefmodus entstehen keine Bilder und nichts im Repo: der Zwischenordner liegt im Temp.
 const OUT = resolve(arg('out', CHECK ? join(tmpdir(), 'ux-check') : 'docs/ux/before'))
 const BASE_URL = arg('url', 'http://localhost:5321/')
@@ -1144,6 +1151,84 @@ async function runMultiplayerViewport(browser, vp, party) {
     await axe(host, 'mpRunning', data.axe)
     data.keyboard.mpRunning = await keyboardWalk(host, 30)
     data.perf.mpRunning = await longTasksDuring(host, () => host.waitForTimeout(3000))
+  })
+  // Der Alarmchip in der Kopfleiste der Partie zu zweit (T-M46-08, Rest aus M44): der Pfad ist nicht modusabhaengig
+  // (Header.tsx kennt `alarm` ohne Mehrspielerbezug), aber bewiesen war er nur im Einzelspieler. Der Lauf wartet
+  // `--mp-alarm-wait` Sekunden auf einen echten Einmarsch einer KI-Macht in eine Provinz des Gastgebers.
+  if (MP_FORCE_INTRUSION) {
+    await step('einmarsch-herbeifuehren', guest, async () => {
+      const log = []
+      data.probes.forcedIntrusion = log
+      const gbtn = (name) => guest.getByRole('button', { name, exact: true }).first()
+      const tryStep = async (label, fn) => {
+        try {
+          await fn()
+          log.push(`${label}: ok`)
+          return true
+        } catch (e) {
+          log.push(`${label}: ${String(e).split('\n')[0].slice(0, 160)}`)
+          return false
+        }
+      }
+      await gbtn('Nicht mehr zeigen').click({ timeout: 3000 }).catch(() => {})
+      // 1. Eigene Provinz waehlen (die erste der Liste), Kaserne bauen.
+      const picker = guest.locator('aside select').first()
+      const own = await picker.evaluate((el) => [...el.querySelectorAll('optgroup')[0].querySelectorAll('option')].map((o) => ({ value: o.value, text: o.textContent })))
+      log.push(`eigene Provinzen: ${own.map((o) => o.text).join(', ')}`)
+      await picker.selectOption(own[0].value)
+      await tryStep('Kaserne bauen', () => gbtn('Kaserne bauen').click({ timeout: 8000 }))
+      // 2. Warten, bis die Kaserne steht, dann Infanterie ausheben (bis zu dreimal).
+      await tryStep('Infanterie ausheben', async () => {
+        const recruit = guest.getByRole('button', { name: 'Infanterie ausheben', exact: true }).first()
+        await guest.waitForFunction(() => [...document.querySelectorAll('aside button')].some((b) => /^Infanterie ausheben$/.test(b.getAttribute('aria-label') ?? b.textContent?.trim() ?? '') && !b.disabled), null, { timeout: 90000 })
+        await recruit.click({ timeout: 4000 })
+      })
+      // 3. Krieg erklaeren: Diplomatie, die Macht des Gastgebers, Krieg erklaeren, bestaetigen.
+      await tryStep('Krieg erklaeren', async () => {
+        await gbtn('Diplomatie').click({ timeout: 5000 })
+        await guest.locator('aside .nation-select', { hasText: 'Vereinigte Staaten' }).first().click({ timeout: 5000 })
+        await gbtn('Krieg erklären').click({ timeout: 5000 })
+        await guest.getByRole('button', { name: /noch einmal klicken/ }).first().click({ timeout: 5000 })
+      })
+      await tryStep('Krieg wirksam', () =>
+        guest.waitForFunction(() => [...document.querySelectorAll('tr')].some((r) => /^\s*Vereinigte Staaten/.test(r.innerText) && /Krieg/.test(r.innerText.replace('Krieg erklären', ''))), null, { timeout: 90000 }),
+      )
+      // 4. Die Armee abwarten, auswaehlen und in eine Provinz des Gastgebers marschieren lassen.
+      await tryStep('Armee da', async () => {
+        await picker.selectOption(own[0].value)
+        await guest.waitForFunction(() => [...document.querySelectorAll('aside button')].some((b) => b.textContent?.trim() === 'Auswählen'), null, { timeout: 120000 })
+      })
+      await tryStep('Marsch befehlen', async () => {
+        await gbtn('Auswählen').click({ timeout: 5000 })
+        await gbtn('Marschieren').click({ timeout: 5000 })
+        const target = guest.locator('aside select').nth(1)
+        const options = await target.evaluate((el) => [...el.options].filter((o) => !o.disabled && /USA/.test(o.textContent ?? '')).map((o) => ({ value: o.value, text: o.textContent })))
+        log.push(`erreichbare Ziele in den USA: ${options.map((o) => o.text).join(' | ')}`)
+        await target.selectOption(options[0].value)
+        await gbtn('Marsch befehlen').click({ timeout: 5000 })
+      })
+    })
+  }
+  await step('alarmchip', host, async () => {
+    const chip = host.locator('.alarm-chip')
+    const waited = Date.now()
+    const seen = await chip
+      .waitFor({ state: 'visible', timeout: Math.max(1, MP_ALARM_WAIT_S * 1000) })
+      .then(() => true, () => false)
+    const view = host.viewportSize()
+    const box = seen ? await chip.boundingBox() : null
+    data.probes.alarmChip = {
+      waitedSeconds: Math.round((Date.now() - waited) / 1000),
+      seen,
+      ...(box && view
+        ? {
+            text: ((await chip.textContent()) ?? '').trim().slice(0, 80),
+            box: { x: Math.round(box.x), y: Math.round(box.y), w: Math.round(box.width), h: Math.round(box.height) },
+            inView: box.x >= 0 && box.y >= 0 && box.x + box.width <= view.width && box.y + box.height <= view.height,
+          }
+        : {}),
+    }
+    if (seen) await shot(host, 'alarmchip')
   })
   await step('vorhang', host, async () => {
     tamper = true

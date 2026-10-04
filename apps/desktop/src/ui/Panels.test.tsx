@@ -1132,6 +1132,42 @@ describe('R-DIP-07 Das Diplomatiepanel (T-M17-14)', () => {
     render(<TradeOfferForm partner="p2" partnerName="Ostmark" spec={spec} />)
     expect(screen.getAllByText('Bestand 12')).toHaveLength(1)
   })
+
+  it('T-M46-05: Eingabe in einem Mengenfeld schickt das Angebot ab, solange der Knopf frei ist', () => {
+    const onRun = vi.fn()
+    const action: Action = { id: 'trade-offer', label: 'Handel anbieten', disabledReason: null, onRun }
+    const spec: TradeFormSpec = {
+      resources: ['iron', 'money'],
+      stock: { iron: 12000 },
+      limits: { money: 507650, resource: 152295 },
+      ownProvinces: [],
+      provincesOf: () => [],
+      evaluate: () => ({ text: '', action }),
+    }
+    render(<TradeOfferForm partner="p2" partnerName="Ostmark" spec={spec} />)
+    fireEvent.keyDown(screen.getByLabelText('Geld verlangen'), { key: 'Enter' })
+    expect(onRun).toHaveBeenCalledTimes(1)
+  })
+
+  it('T-M46-05: gesperrt oder noch ausstehend schickt Eingabe nichts', () => {
+    const onRun = vi.fn()
+    const gesperrt: Action = { id: 'trade-offer', label: 'Handel anbieten', disabledReason: 'Kein Angebot', onRun }
+    const ausstehend: Action = { id: 'trade-offer', label: 'Handel anbieten', disabledReason: null, pendingNotice: '✓ befohlen', onRun }
+    for (const action of [gesperrt, ausstehend]) {
+      const spec: TradeFormSpec = {
+        resources: ['iron'],
+        stock: {},
+        limits: { money: 1, resource: 1 },
+        ownProvinces: [],
+        provincesOf: () => [],
+        evaluate: () => ({ text: '', action }),
+      }
+      const { unmount } = render(<TradeOfferForm partner="p2" partnerName="Ostmark" spec={spec} />)
+      fireEvent.keyDown(screen.getByLabelText('Eisen geben'), { key: 'Enter' })
+      unmount()
+    }
+    expect(onRun).not.toHaveBeenCalled()
+  })
 })
 
 /**

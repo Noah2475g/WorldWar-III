@@ -26,6 +26,7 @@ const OUT = resolve(arg('out', 'docs/ux/v3-after'))
 const TAG = arg('tag', 'nachher')
 const STATE = arg('state', 'S575G')
 const SHOTS = process.argv.includes('--shots')
+const flag = (name) => process.argv.includes(`--${name}`)
 /** Ein fertiger Stand statt der Fixture (z. B. der Stand der Aufgabenlaeufe mit Armeen): --file Pfad */
 const FILE = arg('file', '')
 /** Tempo vor der Messung (Aufgabenlaeufe starten bei 10): --tempo 10 */
@@ -341,6 +342,23 @@ async function runViewport(browser, vp) {
     await shot('diplomatie')
     await page.keyboard.press('Escape')
     await page.waitForTimeout(200)
+  }
+
+  // Tastaturweg zum Bauen (T-M46-05, nur mit --probe-build): P, Provinz tippen, Eingabe, Eingabe - und beobachten.
+  if (flag('probe-build')) {
+    await btn('10').click({ timeout: 4000 }).catch(() => {})
+    await page.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur())
+    await page.keyboard.press('p')
+    await page.keyboard.type('m')
+    await page.keyboard.press('Enter')
+    const focus1 = await page.evaluate(() => document.activeElement?.getAttribute('aria-label') ?? document.activeElement?.textContent?.trim())
+    await page.keyboard.press('Enter')
+    const seen = []
+    for (let i = 0; i < 20; i++) {
+      await page.waitForTimeout(250)
+      seen.push(await page.evaluate(() => (document.querySelector('aside.side')?.innerText ?? '').replace(/\s+/g, ' ').match(/Bauplätze.{0,80}/)?.[0] ?? '-'))
+    }
+    out.scenes.probeBuild = { focus1, seen }
   }
 
   // Provinz waehlen -> Panel offen.

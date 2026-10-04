@@ -133,7 +133,7 @@ import { createStorage } from './storage/createStorage'
 import { UNIT_ICONS } from './ui/icons.tsx'
 import type { IconItem } from './ui/IconRow.tsx'
 import { Tutorial } from './ui/Tutorial.tsx'
-import { SheetHandle, type SheetSnap } from './ui/Sheet.tsx'
+import { SheetHandle, SheetNav, usePhonePortrait, type SheetSnap } from './ui/Sheet.tsx'
 import { Legend } from './ui/Legend.tsx'
 import { StandingsPanel, VictoryDialog } from './ui/Standings.tsx'
 import {
@@ -1448,6 +1448,18 @@ export function App(props: AppProps) {
     [centres, ui.view, activeMap, tutor, centreView],
   )
 
+  /** Nur auf dem Telefon im Hochformat gibt es die Panelwahl im Kopf des Blatts (T-M46-10). */
+  const phonePortrait = usePhonePortrait()
+
+  /** Ein Panel aus Fuss oder Blattleiste oeffnen. Die Lage oeffnen heisst: gesehen, die Neu-Marke faellt auf null. */
+  const openFootPanel = useCallback(
+    (panel: 'diplomacy' | 'market' | 'standings' | 'espionage' | 'armies') => {
+      if (panel === 'standings' && state) setSeenTick(state.tick)
+      dispatch({ type: 'openPanel', panel })
+    },
+    [state],
+  )
+
   // Auto-Schwenk (T-M44-03b): im Hochformat des Telefons bleibt die gewaehlte Provinz im sichtbaren
   // Kartenteil — bei jeder neuen Auswahl und jedem Rastenwechsel des Blatts wird auf sie zentriert.
   useEffect(() => {
@@ -1568,6 +1580,20 @@ export function App(props: AppProps) {
         case 'centreCapital':
           if (view?.self.capitalProvinceId) jumpTo(view.self.capitalProvinceId)
           break
+        case 'focusZone': {
+          // Der Fokus springt in die Seitenleiste (T-M46-05). Bau- und Aushebeknoepfe gibt es nur bei offenem
+          // Provinzpanel; fehlt es, ist die Provinzliste der naechste sinnvolle Halt.
+          const side = document.querySelector('aside.side')
+          const target =
+            shortcut.zone === 'provinces'
+              ? null
+              : side?.querySelector<HTMLElement>(
+                  `section[data-group="${shortcut.zone}"] button:not(:disabled)`,
+                ) ?? null
+          const picker = side?.querySelector<HTMLElement>('.picker select') ?? null
+          ;(target ?? picker)?.focus()
+          break
+        }
         case 'multiplayerLocked':
           // Die Leertaste wird zum Pausenantrag, sobald wirklich ein Mitspieler da ist
           // (T-M37-11, D28.7). Ohne Sitzung bleibt es beim Hinweis.
@@ -2542,7 +2568,15 @@ export function App(props: AppProps) {
         {/* LOESCHVERMERK (Review): bis T-M44-02b stand hier `<aside className="side">` mit denselben sechs Kindern direkt in dieser Datei. */}
         <Sidebar
           scrollKey={`${ui.panel}:${ui.selectedProvince}:${ui.selectedArmy}`}
-          handle={ui.panel ? <SheetHandle snap={sheetSnap} onSnap={setSheetSnap} onClose={() => dispatch({ type: 'closePanel' })} /> : null}
+          handle={
+            ui.panel ? (
+              // Griff und Panelwahl in einer Leiste (T-M46-10): das Blatt deckt den Fuss, die Wahl bleibt erreichbar.
+              <div className="sheet__bar">
+                <SheetHandle snap={sheetSnap} onSnap={setSheetSnap} onClose={() => dispatch({ type: 'closePanel' })} />
+                {phonePortrait && <SheetNav active={ui.panel} onPanel={openFootPanel} />}
+              </div>
+            ) : null
+          }
           picker={
               <ProvincePicker
                 own={ownProvinces}
@@ -2714,11 +2748,7 @@ export function App(props: AppProps) {
         seenTick={seenTick}
         onJump={jumpTo}
         onDispatch={() => setDialog('report')}
-        onPanel={(panel) => {
-          // Die Lage oeffnen heisst: gesehen. Die Marke faellt auf null.
-          if (panel === 'standings') setSeenTick(state.tick)
-          dispatch({ type: 'openPanel', panel })
-        }}
+        onPanel={openFootPanel}
       />
 
       <Tutorial

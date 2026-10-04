@@ -2901,11 +2901,20 @@ body {
 
 /* ---- T-M46-11 · Aufstandshinweise gebuendelt: eine Zeile mit Zahl, aufklappbar --------------------- */
 .alert--group details {
+  flex: 1 1 auto;
   min-width: 0;
+  align-self: stretch;
 }
 
 .alert--group summary {
+  display: flex;
+  align-items: center;
+  min-height: 24px;
   cursor: pointer;
+}
+
+:root[data-input='touch'] .alert--group summary {
+  min-height: 44px;
 }
 
 .alert__parts {

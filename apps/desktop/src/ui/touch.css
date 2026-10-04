@@ -472,6 +472,10 @@ select,
   display: none;
 }
 
+.sheet__bar {
+  display: none;
+}
+
 @media (max-width: 599px) and (orientation: portrait) {
   :root:root .app {
     --map-h: 45vh;
@@ -512,26 +516,59 @@ select,
     display: none;
   }
 
-  /* Der Griff klebt am oberen Rand der Seitenleiste, 44 px hoch, und nimmt dem Browser das
-     Wischen ab: ein Wisch am Griff schaltet die Raste, er schiebt weder Seite noch Karte. */
-  :root:root .sheet__handle {
+  /* Die Leiste des Blatts (T-M46-10): Griff und Panelwahl nebeneinander, klebt am oberen Rand der Seitenleiste.
+     Der Griff nimmt dem Browser das Wischen ab: ein Wisch am Griff schaltet die Raste, er schiebt weder Seite
+     noch Karte. LOESCHVERMERK (Review): vorher klebte der Griff selbst (`position: sticky; top: calc(-1 * var(--sp-md));
+     margin: calc(-1 * var(--sp-md)) calc(-1 * var(--sp-md)) 0; border-bottom`), jetzt die Leiste darum. */
+  :root:root .sheet__bar {
     display: flex;
     position: sticky;
     top: calc(-1 * var(--sp-md));
     z-index: 2;
     flex: none;
+    margin: calc(-1 * var(--sp-md)) calc(-1 * var(--sp-md)) 0;
+    border-bottom: 1px solid var(--line);
+    background: var(--paper);
+  }
+
+  :root:root .sheet__handle {
+    display: flex;
+    flex: 1 1 auto;
+    min-width: 0;
     align-items: center;
     justify-content: center;
     gap: var(--sp-sm);
     min-height: 44px;
-    margin: calc(-1 * var(--sp-md)) calc(-1 * var(--sp-md)) 0;
-    padding: 0 var(--sp-md);
+    margin: 0;
+    padding: 0 var(--sp-sm);
     border: 0;
-    border-bottom: 1px solid var(--line);
     background: var(--paper);
     color: var(--ink-soft);
     font-size: 11px;
     touch-action: none;
+  }
+
+  :root:root .sheet__nav {
+    display: flex;
+    flex: none;
+  }
+
+  :root:root .sheet__navbutton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    border-left: 1px solid var(--line);
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  :root:root .sheet__navbutton[aria-pressed='true'] {
+    background: var(--warn);
+    color: var(--on-warn);
   }
 
   :root:root .sheet__grip {
@@ -555,7 +592,7 @@ select,
   :root:root .header__top {
     flex-wrap: wrap;
     overflow: visible;
-    gap: 0 var(--sp-md);
+    gap: 0 var(--sp-sm);
     padding: 0 var(--sp-md);
   }
 
@@ -598,6 +635,11 @@ select,
   :root:root .header__notice,
   :root:root .clock .button {
     order: 5;
+  }
+
+  /* Zu zweit (feste Rate): Rate und Pausenantrag teilen sich eine Zeile - 215 + 137 px passen nicht in 359, 200 + 137 schon. */
+  :root:root .clock__fixed {
+    font-size: 11px;
   }
 
   :root:root .clock .meter {

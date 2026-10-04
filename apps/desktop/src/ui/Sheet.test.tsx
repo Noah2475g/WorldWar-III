@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { SHEET_SNAPS, SheetHandle, nextSnap, type SheetSnap } from './Sheet.tsx'
+import { SHEET_SNAPS, SheetHandle, SheetNav, nextSnap, type SheetSnap } from './Sheet.tsx'
 import { t } from '../i18n/text.ts'
 
 /**
@@ -98,5 +98,22 @@ describe('R-UX-01 T-M44-03b Das Blatt im Stylesheet', () => {
     expect(touch).toMatch(/data-sheet='peek'\][^{]*\{[^}]*--map-h: 58dvh;/)
     expect(touch).toMatch(/data-sheet='full'\][^{]*\{[^}]*--map-h: 12dvh;/)
     expect(touch).toMatch(/data-panel="open"\] \{[^}]*--map-h: 31dvh;/)
+  })
+})
+
+describe('T-M46-10 Die Panelwahl im Kopf des Blatts', () => {
+  it('bietet Diplomatie, Markt, Heer, Spionage und Lage als Knoepfe mit Namen', () => {
+    render(<SheetNav active={null} onPanel={() => undefined} />)
+    const names = screen.getAllByRole('button').map((button) => button.getAttribute('aria-label'))
+    expect(names).toEqual(['Diplomatie', 'Markt', 'Heer', 'Spionage', 'Rangliste / Sieg'])
+  })
+
+  it('meldet das gewaehlte Panel und markiert das offene', () => {
+    const onPanel = vi.fn()
+    render(<SheetNav active="market" onPanel={onPanel} />)
+    expect(screen.getByRole('button', { name: 'Markt' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByRole('button', { name: 'Heer' }).getAttribute('aria-pressed')).toBe('false')
+    fireEvent.click(screen.getByRole('button', { name: 'Heer' }))
+    expect(onPanel).toHaveBeenCalledWith('armies')
   })
 })

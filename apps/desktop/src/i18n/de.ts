@@ -84,6 +84,7 @@ export const de = {
   /** Das Blatt im Hochformat (T-M44-03b): Griff und die drei Rasten. */
   sheet: {
     handle: 'Panelhöhe',
+    nav: 'Panels',
     snap: { peek: 'Streifen', half: 'halb', full: 'voll' },
   },
 
@@ -1041,6 +1042,10 @@ export const de = {
     home: 'Pos1 — Hauptstadt zentrieren',
     espionage: 'S — Spionageübersicht',
     armies: 'A — Heer (alle Armeen)',
+    // Der Fokus springt in die Seitenleiste (T-M46-05): statt 19 bis 60 Mal Tab.
+    provinces: 'P — zur Provinzliste',
+    build: 'B — zu den Bauknöpfen der Provinz',
+    recruit: 'E — zu den Aushebeknöpfen der Provinz',
   },
 
   tutorial: {
