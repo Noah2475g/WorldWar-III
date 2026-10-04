@@ -2923,3 +2923,8 @@ body {
 .diplomacy-table .meter {
   margin: 0;
 }
+
+/* ---- T-M46-11 · Quittung oben in der Seitenleiste, anderthalb Sekunden bei jedem Tempo --------- */
+.notice--ack {
+  border-left-color: var(--good);
+}

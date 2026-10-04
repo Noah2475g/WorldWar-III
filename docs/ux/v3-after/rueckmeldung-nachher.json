@@ -1,0 +1,10 @@
+{
+  "erzeugt": "2026-10-04T14:03:04.159Z",
+  "skript": "scripts/ux-tasks.mjs --rueckmeldung",
+  "rueckmeldungJeTempoMs": {
+    "1": 1510,
+    "10": 1524,
+    "100": 1580,
+    "Pause": "bleibt stehen (>3,5 s)"
+  }
+}

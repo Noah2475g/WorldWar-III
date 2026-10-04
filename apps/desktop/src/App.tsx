@@ -62,6 +62,7 @@ import { MENU_ENTRIES } from './ui/menuEntries.ts'
 import { CreditsDialog } from './ui/Credits.tsx'
 import { armyNamer, createArmyNameMemory, nationNamer, provinceNamer } from './game/names.ts'
 import { armyRows } from './game/armies.ts'
+import { ACK_MIN_MS, armyAckKey } from './game/ack.ts'
 import { Foot, latestReport } from './ui/Foot.tsx'
 import { standingsRows } from './ui/Standings.tsx'
 import { Dialog } from './ui/Dialogs.tsx'
@@ -587,6 +588,51 @@ export function App(props: AppProps) {
    */
   const [pendingCommands, setPendingCommands] = useState<readonly { actionId: string; command: Command }[]>([])
   const pendingRef = useRef<readonly { actionId: string; command: Command }[]>([])
+  /**
+   * Quittungen, die nach dem Anwenden noch ACK_MIN_MS stehen bleiben (T-M46-11): bei Tempo 100 wendet der naechste Tick
+   * den Befehl nach ~100 ms an, und die Quittung war weg, bevor jemand hinsah.
+   */
+  const [ackHeld, setAckHeld] = useState<ReadonlySet<string>>(new Set())
+  const ackTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>())
+  /**
+   * Die Quittung als eigene Zeile oben in der Seitenleiste (T-M46-11): viele Knoepfe verschwinden, sobald der Befehl
+   * wirkt (aus „Kaserne bauen“ wird der Bauauftrag), und mit ihnen ihre Quittung. Diese Zeile haengt am Befehl, nicht
+   * am Knopf, und steht ACK_MIN_MS lang - bei jedem Tempo.
+   */
+  const [ackLine, setAckLine] = useState<string | null>(null)
+  const ackLineTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const showAckLine = useCallback((text: string): void => {
+    if (ackLineTimer.current) clearTimeout(ackLineTimer.current)
+    setAckLine(text)
+    ackLineTimer.current = setTimeout(() => setAckLine(null), ACK_MIN_MS)
+  }, [])
+  useEffect(
+    () => () => {
+      if (ackLineTimer.current) clearTimeout(ackLineTimer.current)
+    },
+    [],
+  )
+  const holdAck = useCallback((key: string): void => {
+    if (!key) return
+    const old = ackTimers.current.get(key)
+    if (old) clearTimeout(old)
+    setAckHeld((held) => new Set(held).add(key))
+    ackTimers.current.set(
+      key,
+      setTimeout(() => {
+        ackTimers.current.delete(key)
+        setAckHeld((held) => {
+          const next = new Set(held)
+          next.delete(key)
+          return next
+        })
+      }, ACK_MIN_MS),
+    )
+  }, [])
+  useEffect(() => {
+    const timers = ackTimers.current
+    return () => timers.forEach((timer) => clearTimeout(timer))
+  }, [])
   const takePending = useCallback((): Command[] => {
     const commands = pendingRef.current.map((entry) => entry.command)
     if (commands.length > 0) {
@@ -1295,7 +1341,7 @@ export function App(props: AppProps) {
    * ausloesenden Knopf bis dahin die Quittung zeigen.
    */
   const send = useCallback(
-    (command: Command, actionId?: string): boolean => {
+    (command: Command, actionId?: string, label?: string): boolean => {
       if (!state || !ctx) return false
       const result = canApply(state, command, {
         map: activeMap,
@@ -1313,9 +1359,13 @@ export function App(props: AppProps) {
       if (netplay.active) netplay.give(command)
       pendingRef.current = [...pendingRef.current, { actionId: actionId ?? '', command }]
       setPendingCommands(pendingRef.current)
+      // Die Quittung bleibt mindestens ACK_MIN_MS, auch wenn der naechste Tick den Befehl schon angewendet hat.
+      holdAck(actionId ?? '')
+      if (command.type === 'MOVE_ARMY' || command.type === 'BOMBARD') holdAck(armyAckKey(command.armyId))
+      showAckLine(label ? t('actions.ackLine', { label }) : t('actions.ackPlain'))
       return true
     },
-    [state, ctx, activeMap, props.rules, netplay],
+    [state, ctx, activeMap, props.rules, netplay, holdAck, showAckLine],
   )
 
   /** Welche Knoepfe gerade eine Quittung tragen (T-M22-05): ihr Befehl steht noch aus. */
@@ -1338,7 +1388,10 @@ export function App(props: AppProps) {
       // angewendet — bei stehender Uhr mit dem Hinweis, wann es so weit sein wird.
       ...(pendingIds.has(spec.id)
         ? { pendingNotice: speed === 0 ? t('actions.orderedPaused') : t('actions.ordered') }
-        : {}),
+        : ackHeld.has(spec.id)
+          ? // Schon angewendet, aber noch nicht lange genug gesehen (T-M46-11).
+            { pendingNotice: t('actions.orderedDone'), ackOnly: true }
+          : {}),
       onRun: () => {
         if (spec.id.startsWith('build-')) tutor('openBuild')
         if (spec.targetKind && armyId) {
@@ -1353,11 +1406,11 @@ export function App(props: AppProps) {
           // Garnison. Beide gehen in denselben naechsten Tick, in der Reihenfolge des Knopfs — der zweite
           // nur, wenn die Vorpruefung in `send` den ersten annimmt (T-M40-14). Der Kern kann den ersten im
           // Tick trotzdem ablehnen; der zweite gilt dann allein (Befund N-4, PROBLEME.md).
-          if (send(spec.command, spec.id) && spec.followUp) send(spec.followUp, spec.id)
+          if (send(spec.command, spec.id, spec.label) && spec.followUp) send(spec.followUp, spec.id)
         }
       },
     }),
-    [send, tutor, pendingIds, speed],
+    [send, tutor, pendingIds, ackHeld, speed],
   )
 
   /**
@@ -2238,9 +2291,9 @@ export function App(props: AppProps) {
         (entry.command.type === 'MOVE_ARMY' || entry.command.type === 'BOMBARD') &&
         entry.command.armyId === ui.selectedArmy,
     )
-    if (!waiting) return null
+    if (!waiting) return ackHeld.has(armyAckKey(ui.selectedArmy)) ? t('actions.orderedDone') : null
     return speed === 0 ? t('actions.orderedPaused') : t('actions.ordered')
-  }, [pendingCommands, ui.selectedArmy, speed])
+  }, [pendingCommands, ui.selectedArmy, speed, ackHeld])
 
   /** Die Heeruebersicht (T-M46-01): alle eigenen Armeen der Sicht, nur gerechnet, solange das Panel offen ist. */
   const heerZeilen = useMemo(
@@ -2290,7 +2343,7 @@ export function App(props: AppProps) {
           onRun: () => {
             // Ein eigener Marschbefehl haelt fest (T-M40-14): eine Verteidigung geht mit dem Marsch auf
             // Garnison — der zweite Befehl nur, wenn die Vorpruefung in `send` den Marsch annimmt (Befund N-4).
-            if (confirmSpec.command && send(confirmSpec.command, confirmSpec.id) && confirmSpec.followUp) {
+            if (confirmSpec.command && send(confirmSpec.command, confirmSpec.id, confirmSpec.label) && confirmSpec.followUp) {
               send(confirmSpec.followUp, confirmSpec.id)
             }
             setTargeting(null)
@@ -2513,7 +2566,17 @@ export function App(props: AppProps) {
                 }
               />
           }
-          notice={ui.notice && <p className={`notice notice--${ui.notice.kind}`}>{ui.notice.text}</p>}
+          notice={
+            <>
+              {/* Die Quittung haengt am Befehl und steht mindestens anderthalb Sekunden (T-M46-11). */}
+              {ackLine && (
+                <p className="action__pending notice notice--ack" aria-live="polite">
+                  {ackLine}
+                </p>
+              )}
+              {ui.notice && <p className={`notice notice--${ui.notice.kind}`}>{ui.notice.text}</p>}
+            </>
+          }
           panel={
             <>
               {ui.panel === 'province' && (

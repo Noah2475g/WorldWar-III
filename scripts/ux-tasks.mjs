@@ -502,7 +502,13 @@ async function extras(browser, base, armies) {
     await context.close()
   }
   // 3. Wie lange steht "befohlen" im Bild, je Tempo? (Kaserne bauen in Mittlerer Westen)
-  out.rueckmeldungJeTempo = {}
+  out.rueckmeldungJeTempo = await ackPerSpeed(browser, base)
+  return out
+}
+
+/** Die Sichtdauer der Quittung je Tempo in ms (Nebenwert, T-M46-11): bleibt sie stehen (Pause), steht es da. */
+async function ackPerSpeed(browser, base) {
+  const out = {}
   for (const tempo of ['Pause', '1', '10', '100']) {
     const { page, context } = await openState(browser, base)
     if (tempo !== 'Pause') await page.getByRole('button', { name: tempo, exact: true }).first().click()
@@ -510,11 +516,11 @@ async function extras(browser, base, armies) {
     await page.waitForTimeout(300)
     await page.evaluate(() => { window.__ack = [] })
     await page.getByRole('button', { name: 'Kaserne bauen' }).click()
-    await page.waitForTimeout(2500)
+    await page.waitForTimeout(3500)
     const log = await page.evaluate(() => window.__ack)
     const on = log.find((e) => e.on)
     const off = log.find((e) => !e.on && on && e.t > on.t)
-    out.rueckmeldungJeTempo[tempo] = on ? (off ? off.t - on.t : 'bleibt stehen (>2,5 s)') : 'nie gesehen'
+    out[tempo] = on ? (off ? off.t - on.t : 'bleibt stehen (>3,5 s)') : 'nie gesehen'
     await context.close()
   }
   return out
@@ -537,6 +543,13 @@ async function main() {
       console.log(`ok: ${prep.armiesBlock?.replace(/\s+/g, ' ')}`)
     }
     if (flag('prepare-only')) return
+    if (flag('rueckmeldung')) {
+      const ack = await ackPerSpeed(browser, base)
+      mkdirSync(OUT, { recursive: true })
+      writeFileSync(join(OUT, 'rueckmeldung.json'), JSON.stringify({ erzeugt: new Date().toISOString(), skript: 'scripts/ux-tasks.mjs --rueckmeldung', rueckmeldungJeTempoMs: ack }, null, 2) + '\n')
+      console.log(JSON.stringify(ack))
+      return
+    }
     const armies = readFileSync(armiesFile, 'utf8')
     const results = []
     const { TASKS } = await import('./ux-tasks.defs.mjs')

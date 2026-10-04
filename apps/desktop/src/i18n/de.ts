@@ -366,6 +366,11 @@ export const de = {
     // angewendet — und bei stehender Uhr sagt der Satz dazu, wann es so weit ist.
     ordered: '✓ befohlen — wirkt im nächsten Tick.',
     orderedPaused: '✓ befohlen — wirkt beim Weiterlaufen.',
+    // Schon angewendet, aber mindestens anderthalb Sekunden sichtbar geblieben (T-M46-11).
+    orderedDone: '✓ befohlen — ausgeführt.',
+    // Die Quittung oben in der Seitenleiste (T-M46-11): am Befehl, nicht am Knopf.
+    ackLine: '✓ befohlen: {{label}}',
+    ackPlain: '✓ befohlen.',
     cancelGroup: 'Im Bau',
     buildGroup: 'Bauen',
     recruitGroup: 'Ausheben',

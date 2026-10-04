@@ -74,6 +74,11 @@ export interface Action {
    * Befehl anwendet — ein Doppelklick waere sonst ein Doppelbefehl.
    */
   pendingNotice?: string
+  /**
+   * Die Quittung steht nur noch fuers Auge (T-M46-11): der Befehl ist schon angewendet, der Satz bleibt mindestens
+   * anderthalb Sekunden. Der Knopf ist dann nicht mehr gesperrt - ein zweiter Auftrag waere kein Doppelbefehl.
+   */
+  ackOnly?: boolean
   onRun: () => void
 }
 
@@ -243,14 +248,14 @@ function ActionButton({
           Erklaerzeichen eine eigene Reihe einsamer Kreise (in der Sichtpruefung
           zu T-M13-17 gefunden). */}
       <span className="action__head">
-        {confirm !== undefined && action.disabledReason === null && action.pendingNotice === undefined ? (
+        {confirm !== undefined && action.disabledReason === null && (action.pendingNotice === undefined || action.ackOnly === true) ? (
           <ConfirmButton label={action.label} consequence={confirm} onConfirm={action.onRun} />
         ) : (
           <button
             type="button"
             className={primary ? 'button button--primary' : 'button'}
             aria-pressed={pressed}
-            disabled={action.disabledReason !== null || action.pendingNotice !== undefined}
+            disabled={action.disabledReason !== null || (action.pendingNotice !== undefined && action.ackOnly !== true)}
             title={buttonTitle(action)}
             // Der Name nennt die Handlung, nicht nur die Sache (T-M22-06, V2-13).
             aria-label={compact ? (action.aria ?? action.label) : action.aria}
