@@ -10,6 +10,7 @@
  *        [--states S100,S300,S575] [--viewports 375x667,1280x800] [--measure-only 1920x1080]
  *        [--full S300]   # Staende, die ALLE Ansichten als Bild bekommen; die anderen nur die Kernbilder
  *        [--merge]       # messwerte-spaet.json ergaenzen statt ersetzen
+ *        [--probes]      # nur die Browsersonden R-UX-03/AK2-4 (Kennungen im Spielertext, Spielstandmeldungen, kein Weg) -> probes-spaet.json
  *        [--contrast]    # nur die Pixelprobe der axe-„unvollstaendig“-Kontrastknoten auf der Karte
  *
  * Bilder nur in 375x667 und 1280x800 (Regel 12 der V3); 1920x1080 nur als Messwert. Schreibt
@@ -46,6 +47,7 @@ const FULL = arg('full', 'S575G').split(',')
 const VIEWPORTS = parseViewports(arg('viewports', '375x667,1280x800'))
 const MEASURE_ONLY = parseViewports(arg('measure-only', '1920x1080'))
 const CONTRAST_ONLY = flag('contrast')
+const PROBES_ONLY = flag('probes')
 const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
 mkdirSync(OUT, { recursive: true })
 
@@ -231,6 +233,127 @@ async function strongestViewer(page, text) {
     },
     { origin: new URL(URL_).origin, root: ROOTFS, raw: text },
   )
+}
+
+const LEAK_ID = /[ap]\d{1,4}/g
+const LEAK_RAW = /\((?:[A-Z][A-Z_]{2,}|[a-z]+_[a-z_]+)\)/g
+
+/** Sichtbarer Text samt title/aria-label: Kennungen („a68“, „p2“) und Rohwoerter des Kerns in Klammern. */
+async function textLeaks(page) {
+  return page.evaluate(
+    ({ idSrc, rawSrc }) => {
+      const texts = [document.body.innerText]
+      for (const el of document.querySelectorAll('[title], [aria-label]')) texts.push(el.getAttribute('title') ?? '', el.getAttribute('aria-label') ?? '')
+      const all = texts.join('\n')
+      const grab = (src) => {
+        const re = new RegExp(src, 'g')
+        const hits = []
+        let m
+        while ((m = re.exec(all)) && hits.length < 8) hits.push(all.slice(Math.max(0, m.index - 25), m.index + m[0].length + 15).replace(/\s+/g, ' '))
+        return hits
+      }
+      return { ids: grab(idSrc), raw: grab(rawSrc), chars: all.length }
+    },
+    { idSrc: LEAK_ID.source, rawSrc: LEAK_RAW.source },
+  )
+}
+
+/** Browsersonden fuer R-UX-03/AK2-4 auf der Sicht der staerksten Macht bei Tag 575. */
+async function runProbes(browser) {
+  const context = await browser.newContext(contextOptions({ width: 1280, height: 800 }))
+  const page = await context.newPage()
+  const btn = (n, exact = true) => page.getByRole('button', { name: n, exact }).first()
+  const out = { state: 'S575G', views: {}, saves: {}, noRoute: {} }
+  await openState(page, 'S575G')
+  await btn('Nicht mehr zeigen').click({ timeout: 3000 }).catch(() => {})
+  const view = async (key, fn) => {
+    try {
+      await fn()
+      await page.waitForTimeout(300)
+      out.views[key] = await textLeaks(page)
+    } catch (e) {
+      out.views[key] = { error: String(e).split('\n')[0].slice(0, 160) }
+    }
+  }
+  await view('karte', async () => {})
+  for (const f of ['alles', 'Kämpfe', 'Aufbau', 'Verträge', 'Weltgeschehen']) await view(`protokoll-${f}`, async () => btn(f).click({ timeout: 3000 }))
+  await btn('alles').click({ timeout: 2000 }).catch(() => {})
+  for (const [k, l] of [['diplomatie', 'Diplomatie'], ['markt', 'Markt'], ['spionage', 'Spionage'], ['rangliste', 'Rangliste / Sieg']]) {
+    await view(k, async () => btn(l, false).click({ timeout: 5000 }))
+    await page.keyboard.press('Escape')
+  }
+  const picker = page.locator('aside select').first()
+  const n = Math.min(await picker.locator('option').count(), 40)
+  let armyOption = null
+  for (let i = 1; i < n; i++) {
+    await picker.selectOption({ index: i }, { timeout: 5000 })
+    await page.waitForTimeout(120)
+    if (await btn('Auswählen').isVisible().catch(() => false)) {
+      armyOption = i
+      break
+    }
+  }
+  await view('provinz-mit-armee', async () => {})
+  // AK4: Marschziel, das nicht erreichbar ist — was sagt die Oberflaeche?
+  if (armyOption !== null) {
+    await btn('Auswählen').click({ timeout: 4000 })
+    await page.waitForTimeout(300)
+    await view('armee-panel', async () => {})
+    await btn('Marschieren').click({ timeout: 4000 })
+    await page.waitForTimeout(300)
+    const info = await page.evaluate(() => {
+      const select = document.querySelectorAll('aside select')[1]
+      const group = [...(select?.querySelectorAll('optgroup') ?? [])].find((g) => /Nicht erreichbar/.test(g.label))
+      const opts = [...(group?.children ?? [])]
+      return { groupLabel: group?.label ?? null, count: opts.length, disabled: opts.filter((o) => o.disabled).length, sample: opts.slice(0, 3).map((o) => ({ text: o.textContent, disabled: o.disabled, value: o.value })) }
+    })
+    out.noRoute.options = info
+    const target = info.sample[0]
+    if (target) {
+      await page.locator('aside select').nth(1).selectOption(target.value, { timeout: 4000 }).catch((e) => (out.noRoute.selectError = String(e).split('\n')[0].slice(0, 160)))
+      await page.waitForTimeout(300)
+      out.noRoute.panelAfter = await page.evaluate(() => (document.querySelector('aside')?.innerText ?? '').replace(/\s+/g, ' ').slice(0, 700))
+      out.noRoute.mentionsNoRoute = /kein Weg/.test(out.noRoute.panelAfter)
+      out.noRoute.mentionsEnemyTerritory = /feindliches Gebiet/.test(out.noRoute.panelAfter)
+    }
+    await view('armee-marsch', async () => {})
+  } else {
+    out.noRoute.error = 'keine Armee in den ersten 40 Provinzen'
+  }
+  // AK3: Spielstand nicht lesbar -> „beschaedigt“; andere Fassung -> „aus einer anderen Fassung“.
+  const raw = readState('S575')
+  const wrongVersion = JSON.parse(raw)
+  wrongVersion.schemaVersion = 999
+  const slots = { 'stand-2': JSON.stringify(wrongVersion), 'stand-3': '{"kaputt":true}', 'stand-4': 'kein json {' }
+  await page.evaluate(
+    (entries) =>
+      new Promise((res, rej) => {
+        const r = indexedDB.open('worldwar', 1)
+        r.onerror = () => rej(r.error)
+        r.onsuccess = () => {
+          const tx = r.result.transaction('saves', 'readwrite')
+          for (const [k, v] of Object.entries(entries)) tx.objectStore('saves').put(v, k)
+          tx.oncomplete = () => {
+            r.result.close()
+            res(true)
+          }
+        }
+      }),
+    slots,
+  )
+  for (const [slot, label] of [['stand-2', 'andere Fassung (schemaVersion 999)'], ['stand-3', 'beschaedigt (kaputt-Objekt)'], ['stand-4', 'beschaedigt (kein JSON)']]) {
+    await page.keyboard.press('Escape')
+    await btn('Spielstände').click({ timeout: 5000 })
+    await page.waitForTimeout(400)
+    const idx = Number(slot.split('-')[1]) - 1
+    await page.getByRole('button', { name: 'Laden', exact: true }).nth(idx).click({ timeout: 5000 })
+    await page.waitForTimeout(700)
+    out.saves[slot] = { label, text: await page.evaluate(() => (document.querySelector('[role=dialog]')?.innerText ?? document.body.innerText).replace(/\s+/g, ' ').slice(0, 500)) }
+    out.saves[slot].saysOtherVersion = /anderen Fassung/.test(out.saves[slot].text)
+    out.saves[slot].saysBroken = /beschädigt/.test(out.saves[slot].text)
+  }
+  await context.close()
+  return out
 }
 
 /** Pixelprobe fuer axe-„unvollstaendig“: Vordergrund aus der Gestaltung, Hintergrund aus dem Bild ohne den Text. */
@@ -686,6 +809,12 @@ async function main() {
   const browser = await chromium.launch(process.platform === 'win32' ? { channel: 'msedge' } : {})
   const out = { createdAt: new Date().toISOString(), url: URL_, runs: [] }
   try {
+    if (PROBES_ONLY) {
+      const probes = await runProbes(browser)
+      writeFileSync(join(OUT, 'probes-spaet.json'), JSON.stringify(probes, null, 1) + '\n')
+      console.log('geschrieben probes-spaet.json')
+      return
+    }
     if (CONTRAST_ONLY) {
       const context = await browser.newContext(contextOptions({ width: 1280, height: 800 }))
       const page = await context.newPage()
