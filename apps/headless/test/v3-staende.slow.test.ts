@@ -7,7 +7,7 @@ import { createInitialState, deserialise, parseRules, serialise, type MapData, t
 import { DEFAULT_NEW_GAME, toConfig } from '../../desktop/src/game/newGame'
 
 /**
- * Die drei Spaetspiel-Staende der V3 (P0-A.1): S100, S300, S575.
+ * Die vier Spaetspiel-Staende der V3 (P0-A.1): S100, S300, S575; dazu S500 (G1-8: Messort fuer 10 s bei Tempo 100).
  *
  * Weltkarte, Startzahl 1914 (die ausgelieferte), die ausgelieferte Aufstellung (ein Mensch, der nichts befiehlt, und sieben KI; wie `fullgame.json`), bis Tag 100/300/575
  * mit dem ausgelieferten Weg (`advanceTicks`) gefahren und mit dem Kern-`serialise` versiegelt.
@@ -31,14 +31,14 @@ const map = load('data/maps/world.json') as MapData
 const breathe = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0))
 
 describe('V3-Staende erzeugen', () => {
-  it('schreibt S100, S300 und S575', async () => {
+  it('schreibt S100, S300, S500 und S575', async () => {
     const config = toConfig({ ...DEFAULT_NEW_GAME, seed: 1914 }, map)
     let state = createInitialState(config, { map, rules })
     const dir = `${ROOT}/test/fixtures/v3`
     mkdirSync(dir, { recursive: true })
     const perDay = rules.constants.ticksPerDay
     const lines: string[] = []
-    for (const day of [100, 300, 575]) {
+    for (const day of [100, 300, 500, 575]) {
       while (state.tick < day * perDay) {
         const step = Math.min(10 * perDay, day * perDay - state.tick)
         const before = state.tick
