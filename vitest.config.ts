@@ -38,6 +38,14 @@ export default defineConfig({
     include: ['{packages,apps,test}/**/*.test.{ts,tsx}'],
     exclude: ['**/node_modules/**', '**/dist/**', '**/dist-mp/**', '**/*.slow.test.ts', '**/e2e/**'],
     environment: 'node',
+    /**
+     * Node >= 25 legt ein eigenes, experimentelles `localStorage` auf `globalThis` (ohne
+     * `--localstorage-file` ist es `undefined`). Vitest uebernimmt jsdom-Globals nur, wo
+     * `globalThis` den Namen nicht schon hat — also blieb `localStorage` in jedem jsdom-Test
+     * `undefined` (23 rote Tests in apps/desktop auf Node 26.7). Der Schalter schaltet die
+     * Node-Version ab, jsdom liefert dann sein eigenes Storage.
+     */
+    poolOptions: { forks: { execArgv: ['--no-experimental-webstorage'] } },
     coverage: {
       provider: 'v8',
       reporter: ['text-summary', 'json-summary'],
