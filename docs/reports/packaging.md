@@ -111,7 +111,7 @@ läuft in beiden exe gleich mit.
 Tag; die Streuung des Ausgangswerts selbst beträgt 0,21. Der Abstand liegt darunter →
 **Normalstreuung, kein Befund.** Die Uhr hält an der exe nach M44 und PR #15–#19.
 Gemessen ist nur eine **neue Partie** (Tag 1); das Spätspiel misst V3 am Bündel
-(`docs/reports/v3/leistung-ausgang.md`).
+(PLAN-V3, P0-W; Bericht `leistung-ausgang.md` unter `docs/reports/v3/` im V3-Zweig).
 
 Nebenbefund am Skript: die exe von `7a6aa47` hat „Partie beginnen“ noch nicht in `.dialog__foot`;
 das Skript sucht seitdem ersatzweise jeden sichtbaren Knopf mit diesem Text.
