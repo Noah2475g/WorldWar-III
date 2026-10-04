@@ -1,0 +1,94 @@
+<!doctype html><html lang=de><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>WorldWar V3 Abschluss</title><style>
+:root{--bg:#f6f5f1;--fg:#1d1d1b;--mut:#5b5a55;--acc:#8a2c1d;--card:#fff;--ok:#2f6b3a;--warn:#8a5a00}
+@media (prefers-color-scheme:dark){:root{--bg:#16161a;--fg:#ecebe6;--mut:#a9a8a2;--acc:#e0846f;--card:#22222a;--ok:#7fc68b;--warn:#e3b45a}}
+body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.5 system-ui,sans-serif}
+section{max-width:960px;margin:24px auto;padding:32px 40px;background:var(--card);border-radius:12px;min-height:60vh;position:relative;box-sizing:border-box}
+h2{color:var(--acc);margin-top:0} .lead{font-size:1.3em} code{font-size:.9em}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px} .kpis div{padding:16px;border:1px solid var(--mut);border-radius:8px} .kpis b{display:block;font-size:2em;color:var(--acc)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start} img{max-width:100%;border:1px solid var(--mut);border-radius:6px} figure{margin:0} figcaption{color:var(--mut);font-size:.9em}
+table{border-collapse:collapse;width:100%} td,th{text-align:left;padding:8px;border-bottom:1px solid var(--mut)} .ok{color:var(--ok)} .warn{color:var(--warn)}
+footer{position:absolute;bottom:12px;right:20px;color:var(--mut);font-size:.8em}
+@media (max-width:640px){section{margin:12px 16px;padding:20px} .two{grid-template-columns:1fr}}
+</style></head><body>
+<section><h2>WorldWar V3 — Abschluss</h2><p class=lead>Leistung im Spätspiel (M45) und UX V3 (M46) · 2026-10-04</p><p>Zweig <code>claude/v3-leistung-ux</code>: Zahlen vorher und nachher, was Noahs Playtest bewirkt hat und was offen bleibt.</p><footer>1 / 11</footer></section>
+
+<section><h2>Was V3 wollte</h2><ul>
+<li><b>Leistung:</b> Tempo 100 soll im Spätspiel halten (Zusage R-TIME-02, 10 ms je Tick). Neu: <code>R-PERF-01</code> — ≥ 98 Ticks/s am Bündel, Langlauf ≤ 10 ms je Tick in jedem 50-Tage-Fenster vor der Entscheidung.</li>
+<li><b>Bedienung:</b> Telefon, Überblick im Spätspiel, Tastatur, Rückmeldung — nur dort, wo die Messung vorher eine Lücke zeigte.</li>
+<li><b>Regeln:</b> Leistungsänderungen nur verhaltensgleich (G1-2); Grenzen werden nicht angehoben, damit eine Zahl passt.</li>
+<li><b>Ablauf:</b> Uhr an der exe (Schritt 0), messen (Phase 0), Noahs Entscheide (G1), bauen in zwei Wellen, Abnahme.</li>
+</ul><footer>2 / 11</footer></section>
+
+<section><h2>Messung zuerst</h2>
+<table><tr><th>Vermutung</th><th>Messung</th><th>Folge</th></tr>
+<tr><td>H-P1: Die KI aus Etappe 2 macht das Spätspiel teurer</td><td><span class=ok>widerlegt</span>: vor der Entscheidung 9,12 → 9,32 ms (Etappe 1 gegen heute), in der Streuung; der Mittelwert 5,45 → 16,60 ms kam nur aus den Ticks <b>nach</b> dem Sieg (24–32 ms)</td><td>Etappe 2 bleibt unangetastet; Hebel: <code>threat.ts</code>, Kern, Hülle</td></tr>
+<tr><td>Der alte Wert 18,6 ms je Tick</td><td>Mischgröße aus Ticks nach Spielende und Parallellast in <code>acceptance</code></td><td>Langlauf wird einzeln gemessen</td></tr>
+<tr><td>S575: nur 29,9 Ticks/s, zwei Drittel liegen in der Hülle</td><td><span class=warn>Messfehler, offen benannt</span>: S575 liegt 14 Tage vor dem Sieg, das 10-s-Fenster maß den Stillstand nach Spielende mit. Richtig: Ticks 70–75 %, Hülle 25–30 %</td><td>neuer Stand S500 (G1-8), Grenze unverändert</td></tr></table>
+<p>Gefunden hat den Fehler die Bahn P-Hülle; die falsche Deutung steht mit Begründung im Bericht, nicht gelöscht.</p><footer>3 / 11</footer></section>
+
+<section><h2>Leistung · vorher / nachher</h2>
+<div class=kpis><div><b>91,6 → 99,87</b><span>Ticks/s, Bündel S300, Tempo 100 (Grenze ≥ 98)</span></div><div><b>99,94</b><span>Ticks/s, Bündel S500 (neuer Stand)</span></div><div><b>9,32 → 2,81 ms</b><span>Langlauf, höchstes 50-Tage-Fenster vor der Entscheidung (Grenze ≤ 10)</span></div><div><b>16,6 → 3,1 ms</b><span>Mittel über 1000 Tage je Tick</span></div></div>
+<ul><li>S300 und S500 nachher: je 0 Bilder über 50 ms, 0 lange Aufgaben (S300 vorher: 84 Bilder, 23 Aufgaben)</li>
+<li>Auch nach dem Sieg höchstens 4,27 ms (vorher bis 31,1) — dafür gab es kein Ziel, es fällt mit</li>
+<li>Zeichnen (Node): Median 2,08 → 1,96 ms, p95 2,42 → 2,36 ms</li>
+<li><b class=ok>R-PERF-01 erfüllt.</b> Gemessen im Rechnerfenster 2, <code>pnpm acceptance</code> <b class=ok>12 von 12</b>, 3 min 49 s</li></ul><footer>4 / 11</footer></section>
+
+<section><h2>Verhalten gleich</h2>
+<p>Beweis, dass die Optimierung das Spiel nicht verändert (Regel 3):</p>
+<table><tr><th>Beleg</th><th>Ergebnis</th></tr>
+<tr><td>Spätspiel-Hash, S100 / S300 / S575, je 720 Ticks mit KI</td><td>vorher = nachher</td></tr>
+<tr><td>Golden Master <code>tiny-500</code> und <code>walkthrough</code></td><td><span class=ok>unverändert</span> (Diff gegen <code>main</code> leer)</td></tr>
+<tr><td>KI-Turnier</td><td><span class=ok>zeilengleich</span>: 84 / 61 / 63 % wie zuvor, nur Datum und Messcommit neu</td></tr>
+<tr><td>Haltungs-Messlauf</td><td><span class=ok>inhaltsgleich</span>, nur Messcommit und Zeit neu</td></tr>
+<tr><td>Siegtag der ausgelieferten Partie (AK-1)</td><td>589 wie vorher; Langlauf-Entscheidung weiter bei Tick 9456</td></tr></table>
+<p>Die UX-Bahnen haben Kern, KI und Regeldaten nicht berührt; die sieben geänderten Quelldateien in <code>core</code> und <code>ai</code> stammen aus den Leistungsbahnen.</p><footer>5 / 11</footer></section>
+
+<section><h2>UX · Telefon, Überblick, Stapel, Klang</h2>
+<div class=two><figure><img src="../ux/v3-before/S575G-01-karte-geladen-375x667.png" alt="Karte vorher 375x667"><figcaption>Vorher, 375x667, Spätspiel</figcaption></figure><figure><img src="../ux/v3-after/S575G-karte-375x667.png" alt="Karte nachher 375x667"><figcaption>Nachher, 375x667, Spätspiel</figcaption></figure></div>
+<table><tr><th>Kennzahl (Spätspiel S575G)</th><th>Vorher</th><th>Nachher</th></tr>
+<tr><td>Telefon: Kopfelemente im Bild; Kopfbreite</td><td>5 von 17; 1561 px</td><td>13 von 13; 375 px</td></tr>
+<tr><td>Armee bewegen per Tastatur (S300)</td><td>46 Tasten</td><td>8 Tasten</td></tr>
+<tr><td>Protokollzeilen im DOM (Ansicht „alles“)</td><td>81</td><td>22</td></tr>
+<tr><td>Vollständig verdeckte Armeemarker (von 237)</td><td>208</td><td>0</td></tr>
+<tr><td>Ereignisarten mit Ort (Puls und Sprung)</td><td>7 von 8</td><td>8 von 8</td></tr>
+<tr><td>Ereignisarten mit eigenem Klang</td><td>3 von 8</td><td>8 von 8</td></tr>
+<tr><td>Bildläufe in der Diplomatie (Krieg / Frieden / Handel)</td><td>2 / 1 / 2</td><td>0 / 0 / 0</td></tr></table><footer>6 / 11</footer></section>
+
+<section><h2>Symbole statt Text</h2>
+<div class=two><figure><img src="../ux/v3-before/S575G-08-provinz-eigene-1280x800.png" alt="Provinzpanel vorher 1280x800"><figcaption>Vorher: Provinzpanel fast nur Text</figcaption></figure><figure><img src="../ux/v3-after/S575G-symbol-provinz-1280x800.png" alt="Provinzpanel nachher 1280x800"><figcaption>Nachher: Symbole tragen, Text beschriftet</figcaption></figure></div>
+<table><tr><th>Textanteil (S575G 1280x800)</th><th>Vorher</th><th>Nachher</th></tr>
+<tr><td>Kopf</td><td>0,835</td><td>0,454</td></tr><tr><td>Provinzpanel</td><td>0,816</td><td>0,328</td></tr><tr><td>Armeepanel</td><td>0,930</td><td>0,244</td></tr><tr><td>Alarmliste</td><td>0,981</td><td>0,288</td></tr><tr><td>Protokoll</td><td>0,992</td><td>0,435</td></tr></table>
+<p>Größter Wert über alle 64 Messungen (auch Telefon und S300): 0,498. Symbolabdeckung: Einheiten 10/10, Gebäude 7/7, Rohstoffe 7/7. Quellen: game-icons.net (CC BY, von Noah freigegeben, Nennung im Menü), milsymbol, Lucide, Kenney (CC0).</p><footer>7 / 11</footer></section>
+
+<section><h2>Noahs Playtest → was umgesetzt ist</h2>
+<p>Noah spielte bis Tag 444: Spielfluss „sehr gut“, Karte „gut“, wollte weiterspielen.</p>
+<table><tr><th>Noahs Fund</th><th>Stand</th></tr>
+<tr><td>Einheiten liegen übereinander</td><td><span class=ok>umgesetzt</span>: Stapel aufgefächert; 0 verdeckte, 0 teilweise verdeckte Marker, 193 von 193 eigenen Armeen per Klick wählbar. Preis: Marker stehen bis 155 px vom Ort (Maßstab 8)</td></tr>
+<tr><td>„Ploppen“ nervt</td><td><span class=ok>umgesetzt</span>: 8 von 8 Ereignisarten mit eigenem Klang. Ob es noch nervt, kann nur Noah hören</td></tr>
+<tr><td>Töne ohne Ort</td><td><span class=ok>umgesetzt</span>: 2142 von 2142 hörbaren Ereignissen (720 Ticks, S100/S300/S575) mit Puls und Sprung</td></tr>
+<tr><td>Protokoll überfüllt</td><td><span class=warn>teilweise</span>: Sammelzeilen, Wichtigkeit, Filter; bis 7 statt 35 Zeilen je Tag. Siehe Offen</td></tr>
+<tr><td>UI zu textlastig</td><td><span class=ok>umgesetzt</span> im V3-Teil (vorige Folie); der Gesamtumbau aller Dialoge ist V4/V5</td></tr>
+<tr><td>Ausheben in eroberter Provinz gesperrt</td><td><span class=warn>Anzeige</span> jetzt („Moral 23 von 25 nötig“); die Reparatur kommt nach V3</td></tr>
+<tr><td>Verteilung in der Provinz, Waffenradius</td><td>vorgemerkt für V4 „Gefecht“</td></tr></table><footer>8 / 11</footer></section>
+
+<section><h2>Mid-Game „stressig“ · gemessen</h2>
+<p>Ereignisdichte aus einer Vollpartie (Startzahl 1914, 1 Mensch ohne Befehle + 7 KI, Sieg Tag 589):</p>
+<div class=kpis><div><b>76 → 117–164</b><span>Ereignisse je Tag, Tag 0–49 gegen Tag 50–499 (Spitze Tag 350–399)</span></div><div><b>11–22</b><span>für den Menschen sichtbare Ereignisse je Tag in Tag 100–499</span></div><div><b>0</b><span>Angriffe auf den Menschen in 589 Tagen</span></div></div>
+<ul><li>Der Strom besteht überwiegend aus fremden Kriegen: Messung spricht für ein <b>UX-Problem</b> (viel Meldung, wenig echte Gefahr)</li>
+<li><b>Grenze:</b> der Mensch befiehlt hier nichts. Wie sehr ein handelnder Mensch unter Druck gerät, ist nicht gemessen — Balance ist damit nicht ausgeschlossen</li></ul><footer>9 / 11</footer></section>
+
+<section><h2>Offen und Fehler</h2><ul>
+<li><b>Uhr an der exe misst 100,66</b> Ticks/s (Minimum 100,63, Höchstwert 100,81; Ausgangswert 99,87). Nicht langsamer, aber systematisch über 100 (+0,8 %), am Bündel dagegen 99,87/99,94. Vermutung: Kopfleiste hinkt am Fensteranfang nach. <b class=warn>Nicht untersucht</b>, bevor die Uhr-Zusage neu gefasst wird</li>
+<li><b>Protokoll im Fuß zeigt nur 3 ganze Zeilen</b> (vorher 6, Zeilenhöhe 20 → 27 px). Eine Zeile steht für mehr, ob der Überblick reicht, urteilt nur Noah</li>
+<li><b>Lernbarkeit der Zeichen</b> ist ungemessen: 12 von 13 Knöpfen im Armeepanel sind reine Zeichen (mit Tooltip und Name), ob man sie versteht, zeigt nur ein Playtest</li>
+<li><b>Ladezeit am Bündel</b> getrennt nicht gemessen; Bündel-Aufteilung (T-M45-05) begründet zurückgenommen</li>
+<li><b>Ausheben in eroberten Provinzen</b> bleibt gesperrt, bis die Schonfrist gebaut ist; Ereignisdichte nur ohne handelnden Menschen gemessen</li>
+<li><b>Messfehler S575</b> (Folie 3) — korrigiert, aber der Spätspiel-Messort ist jetzt S500</li></ul><footer>10 / 11</footer></section>
+
+<section><h2>Was als Nächstes kommt</h2><ul>
+<li><b>Noahs Merge</b> von <code>claude/v3-leistung-ux</code> nach <code>main</code>; danach <code>WORKFLOW.md</code> §0 richten</li>
+<li><b>Schonfrist nach Eroberung (VM-01):</b> eigener PR <b>nach</b> V3; Ursache ist die Moralsperre (<code>commands/recruit.ts:46</code>), verhaltensändernd, also volle Messkette (Turnier, <code>progress.slow</code>, 9 Vollpartien, Haltung) und Noahs Wort. Moral oder Grenze zu senken wurde verworfen</li>
+<li><b>V4 „Gefecht“ (vorgemerkt, nicht geplant):</b> Einheiten nach Gebäuden in der Provinz verteilen, Bewegungslogik und Waffenradius statt „gleiche Provinz“; neue Golden Master und Balance-Messung</li>
+<li><b>V4/V5 „Bild statt Text“:</b> Umbau aller Dialoge, falls der V3-Teil nicht reicht</li>
+<li><b>Nächster Playtest</b> mit der neuen exe: Klang, Stapel, Protokoll, Zeichen lesbar? Dazu die Uhr 100,66 klären</li></ul><footer>11 / 11</footer></section>
+</body></html>
