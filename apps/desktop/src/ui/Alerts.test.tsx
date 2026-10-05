@@ -144,7 +144,8 @@ describe('R-UI-14 Meldungen entstehen aus der Lage', () => {
 
     // Seit T-M17-14 (E3) traegt der Sprung ein Panelziel, nicht mehr nur die Provinz-Id.
     expect(onJump).toHaveBeenCalledWith({ kind: 'province', provinceId: 'A' })
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 257 ms, unter verify+Last max 7080 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 30_000)
 
   it('zeigt nichts, wenn nichts anliegt', () => {
     const { container } = render(<Alerts alerts={[]} onJump={() => undefined} />)

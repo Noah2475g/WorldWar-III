@@ -40,7 +40,8 @@ describe('R-UI-04 Icons', () => {
       expect(path?.getAttribute('d')?.length, name).toBeGreaterThan(10)
       unmount()
     }
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 122 ms, unter verify+Last max 6356 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('bleibt mit jedem Pfad im 24x24-Feld', () => {
     // Alle Zeichen liegen im selben Feld, sonst richten sie sich in einer Zeile nicht
@@ -92,7 +93,8 @@ describe('R-UI-04 Icons', () => {
     render(<Icon name="battle" title="Gefecht" />)
 
     expect(screen.getByRole('img', { name: 'Gefecht' })).toBeTruthy()
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 225 ms, unter verify+Last max 10213 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 
   it('kennt ein Symbol fuer jede Einheit und jedes Gebaeude', () => {
     for (const [key, icon] of Object.entries(UNIT_ICONS)) {

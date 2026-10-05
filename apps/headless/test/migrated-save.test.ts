@@ -69,7 +69,8 @@ describe('R-GAME-09/AK1 Der eingefrorene Stand der Stufe 3 spielt mit KI weiter'
     ])
     expect(fehler).toEqual([])
     expect(hashOf(deserialise(serialise(lauf.state)))).toBe(hashOf(lauf.state))
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 497 ms, unter verify+Last max 14003 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 
   it('rechnet nach Speichern und Laden dasselbe wie ohne Unterbrechung', () => {
     const start = deserialise(FROZEN)
@@ -79,5 +80,6 @@ describe('R-GAME-09/AK1 Der eingefrorene Stand der Stufe 3 spielt mit KI weiter'
     const weiter = advanceTicks(deserialise(serialise(halb)), TICKS / 2, ctx).state
 
     expect(hashOf(weiter)).toBe(hashOf(durch))
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 452 ms, unter verify+Last max 15738 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 })

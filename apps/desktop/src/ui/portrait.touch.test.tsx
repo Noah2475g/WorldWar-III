@@ -185,7 +185,8 @@ describe('R-UX-05/AK2: der Hinweis „quer halten empfohlen“ blockiert nicht',
     render(<OrientationHint />)
     expect(screen.getByRole('note').textContent).toMatch(/quer halten/i)
     expect(t('orientation.hint')).toMatch(/quer halten/i)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 200 ms, unter verify+Last max 6400 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('ist kein Dialog, nimmt keinen Fokus und haelt keine Eingabe auf', () => {
     const before = document.activeElement

@@ -155,7 +155,8 @@ describe('Touch-Bedienung: Ziehen waehlt nichts aus', () => {
 
     expect(calls.selected).toEqual([])
     expect(calls.views.at(-1)).toEqual({ x: START.x - 60, y: START.y - 30, scale: 1 })
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 423 ms, unter verify+Last max 7445 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 30_000)
 
   it('ein Klick ohne Ziehen waehlt weiter aus — auch gleich nach einem Ziehen', () => {
     const { map, calls } = karte()
@@ -370,7 +371,8 @@ describe('Touch-Bedienung: Tippen trifft, wohin der Finger zeigt', () => {
     fireEvent.click(maus.map, daneben)
     expect(maus.calls.armies).toEqual([])
     expect(maus.calls.selected.length).toBe(1)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 94 ms, unter verify+Last max 2663 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('rechnet eine gestauchte Leinwand heraus (Huelle kleiner als 320 x 240)', () => {
     const { map, calls } = karte()

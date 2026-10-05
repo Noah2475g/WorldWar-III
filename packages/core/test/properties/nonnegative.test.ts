@@ -90,7 +90,8 @@ describe('R-ECON-03 Vorraete werden niemals negativ', () => {
       ),
       { numRuns: 40 },
     )
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 195 ms, unter verify+Last max 5185 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('haelt Vorraete innerhalb der Lagergrenzen', () => {
     fc.assert(

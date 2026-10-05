@@ -37,7 +37,8 @@ describe('R-UI-11 Das Erklaerungsfeld', () => {
     fireEvent.click(screen.getByRole('button', { name: /Kaserne/ }))
 
     expect(screen.getByRole('note').textContent).toBe(de.explain.buildings.barracks)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 453 ms, unter verify+Last max 7878 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 30_000)
 
   it('ist mit der Tastatur erreichbar und meldet seinen Zustand', () => {
     // Ein title-Attribut waere fuer die Tastatur unsichtbar — R-UI-11 verlangt beides.

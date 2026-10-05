@@ -126,7 +126,8 @@ describe('R-AI-01 Eine Spielschleife fuer alle', () => {
     // (EVENT_LOG_LIMIT), wer daraus zaehlt, zaehlt zu wenig.
     const result = advanceTicks(stateWith(4), 600, ctx)
     expect(result.events.length).toBeGreaterThan(result.state.eventLog.length)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 504 ms, unter verify+Last max 19532 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 
   it('reicht die Spielerbefehle nur in den ersten Tick', () => {
     // Der erste Spieler ist hier ein Mensch: sonst baut die KI in seiner Provinz mit, und
@@ -238,7 +239,8 @@ describe('R-AI-01 Eine Spielschleife fuer alle', () => {
         expect(gekuerzt.state.armies[armyId]?.owner ?? 'gefallen', `${playerId} erinnert ${armyId}`).toBe(playerId)
       }
     }
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 175 ms, unter verify+Last max 4400 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 })
 
 /**
@@ -297,7 +299,8 @@ describe('R-UNIT-09/AK4 Der Adjutant in der Spielschleife', () => {
 
     expect([...erste.applied, ...zweite.applied]).toEqual(durchgehend.applied)
     expect(stateHash(zweite.state)).toBe(stateHash(durchgehend.state))
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 171 ms, unter verify+Last max 6501 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('nennt die Befehle der Automatik gesondert — genau die Befehle fuer den Menschen in applied (T-M40-13)', () => {
     // Die Oberflaeche schreibt daraus eine leise Zeile; ein Ereignis des Kerns gibt es dafuer nicht.
@@ -315,7 +318,8 @@ describe('R-UNIT-09/AK4 Der Adjutant in der Spielschleife', () => {
 
     const abgelehnt = lauf.events.filter((event) => event.type === 'COMMAND_REJECTED' && event.playerId === mensch)
     expect(abgelehnt, JSON.stringify(abgelehnt.slice(0, 3))).toEqual([])
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 164 ms, unter verify+Last max 4470 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 })
 
 /**
@@ -527,7 +531,8 @@ describe('R-UNIT-09/AK7 Nach Marsch und Rueckzug ruht die Automatik fuenf Spielt
       const fuerSie = lauf.adjutant.filter((entry) => 'armyId' in entry.command && entry.command.armyId === mit.zieht.id)
       expect(fuerSie, fall).toEqual([])
     }
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 455 ms, unter verify+Last max 10285 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 })
 
 /**

@@ -143,7 +143,8 @@ describe('R-ARCH-06/AK2 Die Karte zeichnet wirklich', () => {
     expect(recorder.calls.moveTo ?? 0).toBeGreaterThan(50)
     expect(recorder.calls.lineTo ?? 0).toBeGreaterThan(500)
     expect(recorder.calls.clearRect ?? 0).toBeGreaterThan(0)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 115 ms, unter verify+Last max 3093 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('nimmt die Farben aus den Gestaltungsmarken, nicht aus dem Code', () => {
     zeichne()
@@ -273,7 +274,8 @@ describe('T-M30-03 Zoomknoepfe und Uebersichtskarte', () => {
     // `centres` dieser Datei zeigt auf den ersten Umrisspunkt — zentriert wird, was
     // die Karte als Mitte kennt, nicht was die Kartendatei sagt.
     expect(centred.x + (320 * centred.scale) / 2).toBeCloseTo(centres[capital.id]!.x, 0)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 276 ms, unter verify+Last max 8005 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 30_000)
 
   it('zeichnet die Uebersichtskarte und zentriert bei Klick dort', () => {
     const changes: { x: number; y: number; scale: number }[] = []

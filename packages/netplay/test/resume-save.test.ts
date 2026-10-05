@@ -93,7 +93,8 @@ describe('R-MP-13/AK1 Der Handschlag vergleicht die Staende beider Seiten', () =
 
     expect(gast.from, 'zwei getrennt gerechnete Staende sind nicht gleich').toBe(host.from)
     expect(resumeDecision(host, probeMessage(gast))).toEqual({ kind: 'continue' })
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 305 ms, unter verify+Last max 3637 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('verlangt eine Uebertragung, wenn der Gast einen aelteren Stand hat', () => {
     const host = runProbeFrom(nachDreissig, ctx, PROBE_TICKS)
@@ -239,7 +240,8 @@ describe('R-MP-13/AK2 Der uebertragene Stand fuehrt dieselbe Pruefsumme', () => 
       zwei.receive('p1', eins.emit())
     }
     expect(eins.tick).toBe(DREISSIG_TAGE + weiter)
-  }, 30_000)
+    // Zeitlimit wegen Last, nicht Verhalten: allein 2823 ms, unter verify+Last max 24759 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 })
 
 /**

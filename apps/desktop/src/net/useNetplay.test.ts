@@ -181,7 +181,8 @@ describe('R-MP-03/AK1 Die Oberflaeche rechnet keinen Tick ohne Freigabe', () => 
     expect(a.getickt.hashes.slice(0, gemeinsam)).toEqual(b.getickt.hashes.slice(0, gemeinsam))
     expect(a.sicht.value?.waiting).toBe(false)
     expect(a.sicht.value?.desync).toBeNull()
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 307 ms, unter verify+Last max 10021 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 
   it('haelt an, sobald die Leitung zu ist, statt allein weiterzurechnen', () => {
     const { a, leitung } = aufbau(50)
@@ -198,7 +199,8 @@ describe('R-MP-03/AK1 Die Oberflaeche rechnet keinen Tick ohne Freigabe', () => 
     expect(a.lockstep.tick, 'die Uhr lief ohne Gegenseite weiter').toBe(stand)
     expect(stand).toBeGreaterThanOrEqual(bisher)
     expect(a.sicht.value?.waiting).toBe(true)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 109 ms, unter verify+Last max 3379 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('bringt einen Befehl der Oberflaeche bei tick + 2 zur Wirkung', () => {
     const { a, b } = aufbau(50)
@@ -216,7 +218,8 @@ describe('R-MP-03/AK1 Die Oberflaeche rechnet keinen Tick ohne Freigabe', () => 
     expect(b.getickt.befehle.map((c) => c.type)).toContain('SET_STANCE')
     const gemeinsam = Math.min(a.getickt.hashes.length, b.getickt.hashes.length)
     expect(a.getickt.hashes.slice(0, gemeinsam)).toEqual(b.getickt.hashes.slice(0, gemeinsam))
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 171 ms, unter verify+Last max 4800 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 })
 
 describe('R-MP-05/AK2 Der Pausenantrag erreicht beide Seiten und haelt beide beim selben Tick an', () => {
@@ -273,7 +276,8 @@ describe('R-MP-05/AK2 Der Pausenantrag erreicht beide Seiten und haelt beide bei
     warte(300)
     expect(a.lockstep.tick).toBeGreaterThan(stand)
     expect(a.sicht.value?.status).not.toBe('paused')
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 143 ms, unter verify+Last max 3222 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 })
 
 describe('R-MP-04/AK1 Ein Auseinanderlaufen erreicht die Oberflaeche und haelt an', () => {
@@ -297,7 +301,8 @@ describe('R-MP-04/AK1 Ein Auseinanderlaufen erreicht die Oberflaeche und haelt a
     // Und es bleibt dabei: kein weiterer Tick, egal wie lange man wartet.
     warte(5000)
     expect(a.lockstep.tick).toBe(bisher)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 105 ms, unter verify+Last max 2538 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 })
 
 describe('R-MP-07/AK1 Die Huelle liefert nach, was nicht bestaetigt ist', () => {
@@ -383,7 +388,8 @@ describe('R-MP-07/AK1 Die Huelle liefert nach, was nicht bestaetigt ist', () => 
     )
     expect(p.b.lockstep.tick).toBe(p.a.lockstep.tick)
     expect(stateHash(p.a.lockstep.state)).toBe(stateHash(p.b.lockstep.state))
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 570 ms, unter verify+Last max 7235 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 30_000)
 
   it('verliert dabei keinen Befehl, der waehrend des Abrisses gegeben wurde', () => {
     // Der Befehl gilt fuer tick + 2 und faellt damit mitten in die Luecke. Er muss nach
@@ -405,7 +411,8 @@ describe('R-MP-07/AK1 Die Huelle liefert nach, was nicht bestaetigt ist', () => 
     expect(p.a.getickt.befehle.map((c) => c.type)).toContain('SET_STANCE')
     expect(p.b.getickt.befehle.map((c) => c.type)).toContain('SET_STANCE')
     expect(stateHash(p.a.lockstep.state)).toBe(stateHash(p.b.lockstep.state))
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 454 ms, unter verify+Last max 5953 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('wiederholt nicht bei jedem Schlag, sondern hoechstens jede Sekunde', () => {
     // Wiederholen ist gefahrlos, aber nicht umsonst: bei Tempo 50 waeren das sonst
@@ -471,7 +478,8 @@ describe('R-MP-08/AK1 Der abwesende Spieler wird zum Computergegner', () => {
 
     expect(lauf.ticks).toBe(240)
     expect(lauf.state.ai['p2'], 'die uebernommene Macht hat nie gedacht').toBeDefined()
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 123 ms, unter verify+Last max 3932 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('laeuft ohne Verbindung weiter — dieselbe Partie, ein Spieler weniger', () => {
     const zuZweit = frisch()

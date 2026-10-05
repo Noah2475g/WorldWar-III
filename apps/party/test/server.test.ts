@@ -571,5 +571,6 @@ describe('R-MP-11/AK1 Der Gast bekommt das vollstaendige Spiel', () => {
     const roh = regelwerk() as unknown as Record<string, Record<string, unknown>>
     const veraendert = parseRules({ ...roh, constants: { ...roh['constants'], startMorale: 999 } } as never, 'default')
     expect(fingerprintOf(veraendert, karteA).rulesHash).not.toBe(a.rulesHash)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 374 ms, unter verify+Last max 4387 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 })

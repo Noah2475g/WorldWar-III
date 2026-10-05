@@ -21,20 +21,23 @@ describe('R-AI-06 Das Werkzeug misst, was eine Konstante bewirkt', () => {
     expect(result.leaderShare).toBeLessThanOrEqual(1)
     expect(result.survivors).toBeGreaterThan(0)
     expect(result.days).toBeGreaterThan(0)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 378 ms, unter verify+Last max 15149 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 
   it('spielt bei gleichem Seed dieselbe Partie', () => {
     // Without this the whole tool is noise: a difference between two variants could
     // just as well be a difference between two random games.
     expect(playOut(map, rules, 3, 15, 42)).toEqual(playOut(map, rules, 3, 15, 42))
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 290 ms, unter verify+Last max 10397 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 
   it('spielt bei anderem Seed eine andere Partie', () => {
     const a = playOut(map, rules, 3, 40, 1)
     const b = playOut(map, rules, 3, 40, 2)
 
     expect(JSON.stringify(a)).not.toBe(JSON.stringify(b))
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 564 ms, unter verify+Last max 13923 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 
   it('variiert eine Konstante, ohne die anderen anzufassen', () => {
     const changed = withConstant(rules, 'battleRate', 1.25)
@@ -67,7 +70,8 @@ describe('R-AI-06 Das Werkzeug misst, was eine Konstante bewirkt', () => {
       expect(effect.loadBearing).toBe(effect.swing >= SWING_THRESHOLD)
       expect(effect.baseline.leaderShare).toBeGreaterThan(0)
     }
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 675 ms, unter verify+Last max 9738 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 30_000)
 
   it('sortiert die wirksamsten Konstanten nach oben', () => {
     const effects = sweep({ map, rules, players: 3, days: 12, seeds: [3] }, ['battleRate', 'startMorale', 'minDamage'])
@@ -75,7 +79,8 @@ describe('R-AI-06 Das Werkzeug misst, was eine Konstante bewirkt', () => {
     for (let i = 1; i < effects.length; i++) {
       expect(effects[i - 1]!.swing).toBeGreaterThanOrEqual(effects[i]!.swing)
     }
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 671 ms, unter verify+Last max 13307 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 })
 
 /**
@@ -98,7 +103,8 @@ describe('R-AI-06 Die Messgeraete messen die Partie, nicht ihren Schwanz', () =>
     // Der Ringpuffer fasst 500 Ereignisse; eine Partie dieser Länge erzeugt ein Vielfaches.
     // Die Zählung darf davon nicht abhängen.
     expect(lang.captures).toBeGreaterThanOrEqual(playOut(map, rules, 3, 40, 1914).captures)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 1223 ms, unter verify+Last max 28500 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 
   it('nennt die Endbestaende beim Namen, statt sie Produktion zu nennen', () => {
     // `economy` war als "Total resources produced" beschriftet und summierte Endbestände.
@@ -107,5 +113,6 @@ describe('R-AI-06 Die Messgeraete messen die Partie, nicht ihren Schwanz', () =>
     const result = playOut(map, rules, 3, 20, 7)
     expect(result.stockpile).toBeGreaterThan(0)
     expect('economy' in result, 'die alte, falsch beschriftete Groesse ist weg').toBe(false)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 212 ms, unter verify+Last max 3172 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 })

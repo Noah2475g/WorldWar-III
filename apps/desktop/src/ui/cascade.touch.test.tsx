@@ -118,7 +118,8 @@ describe('touch.css: im Touch-Betrieb ist jedes Bedienelement mindestens 44 px',
     expect(css(button('weniger'), 'min-width')).toBe('44px')
     expect(css(button('ausblenden'), 'min-width')).toBe('44px')
     expect(css(button('ausblenden'), 'min-height')).toBe('44px')
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 415 ms, unter verify+Last max 24744 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 
   it('macht auch Textverweise, Aufklapper und Eingaben fingergross', () => {
     const { container } = render(<Bedienelemente />)
@@ -131,7 +132,8 @@ describe('touch.css: im Touch-Betrieb ist jedes Bedienelement mindestens 44 px',
     expect(css(screen.getByRole('textbox', { name: 'Name' }), 'font-size')).toBe('16px')
     expect(css(screen.getByRole('combobox', { name: 'Provinz' }), 'min-height')).toBe('44px')
     expect(css(screen.getByRole('combobox', { name: 'Provinz' }), 'font-size')).toBe('16px')
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 85 ms, unter verify+Last max 4545 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('holt den Ausbau-Knopf aus der Ecke des Bauplatzes und gibt dem Fragezeichen Abstand', () => {
     const { container } = render(<Bedienelemente />)
@@ -143,7 +145,8 @@ describe('touch.css: im Touch-Betrieb ist jedes Bedienelement mindestens 44 px',
     // sorgt dafuer, dass dieses Feld dem Knopf daneben keine Tipps stiehlt.
     expect(css(button('Erklaerung'), 'position')).toBe('relative')
     expect(css(container.querySelector('.action__head')!, 'gap')).toBe('12px')
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 64 ms, unter verify+Last max 3810 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 })
 
 describe('touch.css: im Mausbetrieb bleibt der Schreibtisch, wie er war', () => {
@@ -170,7 +173,8 @@ describe('touch.css: im Mausbetrieb bleibt der Schreibtisch, wie er war', () => 
       // Und der Wert, den Panels.test.tsx fuer den Schreibtisch festhaelt.
       expect(css(button('Los'), 'min-height')).toBe('24px')
       expect(css(button('Hineinzoomen'), 'width')).toBe('26px')
-    })
+      // Zeitlimit wegen Last, nicht Verhalten: allein 155 ms, unter verify+Last max 7269 ms (gemessen 2026-10-05, t_3cad0a35).
+    }, 30_000)
   }
 })
 
@@ -389,5 +393,6 @@ describe('R-UX-02/AK2 hidden gewinnt gegen jede Klasse mit eigenem display', () 
     }
     walk(`${process.cwd()}/apps/desktop/src`)
     expect(treffer).toEqual(['ui/Header.tsx'])
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 20 ms, unter verify+Last max 3450 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 })

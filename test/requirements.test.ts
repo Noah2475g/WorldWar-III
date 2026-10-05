@@ -256,7 +256,8 @@ describe('R-ARCH-05 Anforderungs-Abgleich', () => {
     // Erreichen des Ziels als Fehler gemeldet haette.
     const offen = Number(open![1])
     expect(result.status, result.stdout).toBe(offen > 0 ? 1 : 0)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 509 ms, unter verify+Last max 7573 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 30_000)
 
   // T-M14-02b: Der Zaehler. Bis heute galt eine Anforderung als belegt, sobald irgendwo
   // ein describe mit ihrer ID und einem expect stand — das Akzeptanzkriterium las
@@ -345,7 +346,8 @@ scope:
     const script = fileURLToPath(new URL('../scripts/requirements-coverage.mjs', import.meta.url))
     const result = spawnSync(process.execPath, [script], { encoding: 'utf8' })
     expect(result.stdout).toMatch(/M15: \d+ von \d+ belegt \(Fortschritt, kein Tor\)/)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 462 ms, unter verify+Last max 7706 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 30_000)
 })
 
 /**
@@ -824,7 +826,8 @@ describe('T-M40-17 Frische nach Abstammung: der Merge eines aelteren Seitencommi
       ['Turnier', false],
       ['Haltungs-Messlauf', false],
     ])
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 1501 ms, unter verify+Last max 11265 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 
   it('meldet den Parameterlauf vor dem Merge frisch und danach veraltet - dieselbe Luecke', () => {
     const gauge = { name: 'Parameterlauf', report: 'docs/reports/balance-sweep.md', sources: ['data/rules'], command: 'pnpm balance:sweep' }
@@ -832,7 +835,8 @@ describe('T-M40-17 Frische nach Abstammung: der Merge eines aelteren Seitencommi
     expect(vorher.fresh, vorher.reason).toBe(true)
     const nachher = gaugeFreshness(repo, gauge)
     expect(nachher.fresh, nachher.reason).toBe(false)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 426 ms, unter verify+Last max 5447 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 })
 
 /**
@@ -920,7 +924,8 @@ describe('T-M40-17 Frische nach Abstammung: der Turnier-Waechter sieht KI und Ke
       ['Turnier', false],
       ['Haltungs-Messlauf', false],
     ])
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 1911 ms, unter verify+Last max 24101 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 
   it('haelt den Parameterlauf frisch, wenn sich nur KI und Kern aendern - der bewusste Unterschied', () => {
     const parameterlauf = messgeraet('Parameterlauf')
@@ -928,7 +933,8 @@ describe('T-M40-17 Frische nach Abstammung: der Turnier-Waechter sieht KI und Ke
     expect(nachKi.fresh, nachKi.reason).toBe(true)
     const nachKern = gaugeFreshness(repo, parameterlauf)
     expect(nachKern.fresh, nachKern.reason).toBe(true)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 542 ms, unter verify+Last max 3874 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 })
 
 /**
@@ -1035,21 +1041,24 @@ describe('T-M17-15 Der Turnier-Waechter sieht die Turnierlogik in apps/headless,
     expect(status.fresh, status.reason).toBe(false)
     expect(status.reason).toContain('apps/headless/src/tournament.ts')
     expect(status.reason).toContain(f1Commit.slice(0, 7))
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 136 ms, unter verify+Last max 2988 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('F2 - ein Commit nur an apps/headless/test/tournament.slow.test.ts macht das Turnier nicht frisch', () => {
     const turnier = messgeraet('Turnier')
     const status = gaugeFreshness(repo, turnier, f2Commit)
     expect(status.fresh, status.reason).toBe(false)
     expect(status.reason).toContain('apps/headless/test/tournament.slow.test.ts')
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 114 ms, unter verify+Last max 3320 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('F3 - ein Commit nur an packages/testkit macht das Turnier nicht frisch', () => {
     const turnier = messgeraet('Turnier')
     const status = gaugeFreshness(repo, turnier, f3Commit)
     expect(status.fresh, status.reason).toBe(false)
     expect(status.reason).toContain('packages/testkit')
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 113 ms, unter verify+Last max 3581 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('F4 - ein Commit nur an packages/shared macht das Turnier nicht frisch', () => {
     const turnier = messgeraet('Turnier')
@@ -1062,7 +1071,8 @@ describe('T-M17-15 Der Turnier-Waechter sieht die Turnierlogik in apps/headless,
     const turnier = messgeraet('Turnier')
     const status = gaugeFreshness(repo, turnier, f5Commit)
     expect(status.fresh, status.reason).toBe(true)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 171 ms, unter verify+Last max 3334 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('F6 - der Parameterlauf bleibt in F1-F5 frisch (bewusster Unterschied)', () => {
     const parameterlauf = messgeraet('Parameterlauf')
@@ -1070,7 +1080,8 @@ describe('T-M17-15 Der Turnier-Waechter sieht die Turnierlogik in apps/headless,
       const status = gaugeFreshness(repo, parameterlauf, ref)
       expect(status.fresh, `${ref.slice(0, 7)}: ${status.reason}`).toBe(true)
     }
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 443 ms, unter verify+Last max 9819 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 30_000)
 
   it('F7 - measurementStamp nennt eine ungesicherte Aenderung an tournament.ts in measuredDirty', () => {
     // Auf dem berichtCommit, im Arbeitsbaum: dieselbe Datei ungesichert geaendert.
@@ -1079,7 +1090,8 @@ describe('T-M17-15 Der Turnier-Waechter sieht die Turnierlogik in apps/headless,
     const stamp = measurementStamp(repo, messgeraet('Turnier').sources)
     expect(stamp.measuredDirty).toEqual(['apps/headless/src/tournament.ts'])
     execFileSync('git', ['-c', 'core.autocrlf=false', 'checkout', '-q', '--', 'apps/headless/src/tournament.ts'], { cwd: repo })
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 141 ms, unter verify+Last max 2603 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 })
 
 /**
@@ -1284,26 +1296,30 @@ describe('Frische des Turniers nach Messcommit: im Wegwerf-Repo', () => {
     const status = gaugeFreshness(repo, turnier, ref.merge)
     expect(status.fresh, status.reason).toBe(true)
     expect(status.reason).toContain(ref.code.slice(0, 7))
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 180 ms, unter verify+Last max 3923 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('meldet das Turnier rot, wenn der Messcommit kein Vorfahr von HEAD ist', () => {
     const status = gaugeFreshness(repo, messgeraet('Turnier'), ref.kopiert)
     expect(status.fresh, status.reason).toBe(false)
     expect(status.reason).toContain('Geschichte')
     expect(status.reason).toContain(ref.fremd.slice(0, 7))
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 116 ms, unter verify+Last max 3408 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('meldet das Turnier rot bei einem Quellcommit nach dem Messcommit - auch wenn der Bericht danach noch einmal committet wurde', () => {
     const status = gaugeFreshness(repo, messgeraet('Turnier'), ref.nachgezogen)
     expect(status.fresh, status.reason).toBe(false)
     expect(status.reason).toContain(ref.kern.slice(0, 7))
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 122 ms, unter verify+Last max 2834 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('meldet das Turnier rot, wenn beim Messen Quellen uncommittet waren', () => {
     const status = gaugeFreshness(repo, messgeraet('Turnier'), ref.schmutzig)
     expect(status.fresh, status.reason).toBe(false)
     expect(status.reason).toContain('packages/ai/src/adjutant.ts')
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 127 ms, unter verify+Last max 2618 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('meldet das Turnier rot bei einem Bericht ohne Messcommit', () => {
     const status = gaugeFreshness(repo, messgeraet('Turnier'), ref.ohne)
@@ -1322,7 +1338,8 @@ describe('Frische des Turniers nach Messcommit: im Wegwerf-Repo', () => {
     expect(neu.fresh, neu.reason).toBe(true)
     // Auf demselben Stand bleibt das Turnier rot: sein Messcommit liegt vor der Regelaenderung.
     expect(gaugeFreshness(repo, messgeraet('Turnier'), ref.sweep).fresh).toBe(false)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 376 ms, unter verify+Last max 9262 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 30_000)
 
   it('nimmt den Messstand wie der Haltungs-Messlauf: HEAD und die uncommitteten Dateien unter den Quellen', () => {
     const turnier = messgeraet('Turnier')
@@ -1337,5 +1354,6 @@ describe('Frische des Turniers nach Messcommit: im Wegwerf-Repo', () => {
       rmSync(neu, { force: true })
       rmSync(notiz, { force: true })
     }
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 109 ms, unter verify+Last max 3755 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 })

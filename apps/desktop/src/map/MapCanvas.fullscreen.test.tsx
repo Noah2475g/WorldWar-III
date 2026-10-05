@@ -84,7 +84,8 @@ describe('Vollbild-Knopf: nur im Touch-Betrieb und nur, wenn der Browser es anbi
     karte()
 
     expect(screen.queryByRole('button', { name: /Vollbild/ })).toBeNull()
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 573 ms, unter verify+Last max 10890 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 
   it('fehlt im Touch-Betrieb, wenn der Browser kein Vollbild anbietet', () => {
     stubFullscreenApi(false)

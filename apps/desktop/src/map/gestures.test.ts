@@ -398,7 +398,8 @@ describe('Touch-Gesten: zwei Finger', () => {
       }),
       { numRuns: 300 },
     )
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 200 ms, unter verify+Last max 3509 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('eine Pinch-Stellung ohne Bewegung ist der Ausgangsausschnitt', () => {
     const a = { x: 100, y: 200 }

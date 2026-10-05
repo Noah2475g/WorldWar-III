@@ -40,7 +40,8 @@ describe('R-ARCH-01 Determinismus ueber lange Laeufe', () => {
     const a = run(500)
     const b = run(500)
     expect(a.hashes).toEqual(b.hashes)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 231 ms, unter verify+Last max 8702 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 30_000)
 
   it('erreicht denselben Zustand unabhaengig von der Aufteilung des Laufs', () => {
     // Stopping and resuming must not change anything — the precondition for save/load.
@@ -97,7 +98,8 @@ describe('R-ARCH-03 Golden-Master', () => {
     expect(existsSync(file), 'Golden-Datei fehlt — mit UPDATE_GOLDEN=1 erzeugen').toBe(true)
     const stored = JSON.parse(readFileSync(file, 'utf8')) as { checkpoints: Record<string, string> }
     expect(checkpoints).toEqual(stored.checkpoints)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 234 ms, unter verify+Last max 7465 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 30_000)
 })
 
 /**
@@ -157,7 +159,8 @@ describe('R-ARCH-02 Additive Kommandofelder', () => {
     const spaet = replay({ type: 'MOVE_ARMY', playerId: 'p1', armyId: 'a1', targetProvinceId: 'n2', departInTicks: 8 })
 
     expect(spaet).not.toEqual(alt)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 76 ms, unter verify+Last max 2615 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 })
 
 /**
@@ -214,7 +217,8 @@ describe('D29.4 Spionage verbraucht Zufall nur, wenn es Spione gibt', () => {
       vi.doUnmock('../src/phases/espionage')
       vi.resetModules()
     }
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 1352 ms, unter verify+Last max 13999 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 
   const DREI: GameConfig = {
     ...CONFIG,
@@ -254,11 +258,13 @@ describe('D29.4 Spionage verbraucht Zufall nur, wenn es Spione gibt', () => {
     expect(a.ausgaenge).toHaveLength(4 * 19)
     expect(a.ausgaenge.some((entry) => entry.endsWith(':success'))).toBe(true)
     expect(a.ausgaenge.some((entry) => entry.endsWith(':failure'))).toBe(true)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 948 ms, unter verify+Last max 18242 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 
   it('und würfelt mit einer anderen Startzahl andere Ausgänge', () => {
     expect(mitSpionen(43).ausgaenge).not.toEqual(mitSpionen(42).ausgaenge)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 961 ms, unter verify+Last max 16598 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 
   /** Sabotage und Gegenspionage in der ersten Stunde: p1 sabotiert s1 und bewacht n1, p3 sabotiert n1 und bewacht s1. */
   const sabotieren = (tick: number): Command[] =>
@@ -288,5 +294,6 @@ describe('D29.4 Spionage verbraucht Zufall nur, wenn es Spione gibt', () => {
     const rejected = a.events.filter((e) => e.type === 'COMMAND_REJECTED')
     expect(rejected, 'Vorbedingung: alle vier Spione angeworben').toEqual([])
     expect(a.events.filter((e) => e.type === 'SABOTAGE_SUFFERED').length).toBeGreaterThanOrEqual(1)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 880 ms, unter verify+Last max 26278 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 })

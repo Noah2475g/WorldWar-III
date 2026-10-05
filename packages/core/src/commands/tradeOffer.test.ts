@@ -1190,5 +1190,6 @@ describe('R-DIP-05 Eigenschaft: Bestaende plus Treuhand bleiben ueber jede Folge
     for (const [ausgang, anzahl] of Object.entries(seen)) {
       expect(anzahl, `${ausgang}: die Eigenschaft hat diesen Ausgang nie gesehen — sie waere leer gruen`).toBeGreaterThanOrEqual(10)
     }
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 2304 ms, unter verify+Last max 31374 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 })

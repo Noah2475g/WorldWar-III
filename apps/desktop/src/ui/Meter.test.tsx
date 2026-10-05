@@ -22,7 +22,8 @@ describe('R-UI-09 Der Balken ist eine Zahl, kein Bild', () => {
     expect(meter.getAttribute('aria-valuenow')).toBe('70')
     expect(meter.getAttribute('aria-valuemin')).toBe('0')
     expect(meter.getAttribute('aria-valuemax')).toBe('100')
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 224 ms, unter verify+Last max 7369 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 30_000)
 
   it('laesst die Zahl daneben stehen', () => {
     render(<Meter label="Moral" value={70} max={100} text="70 %" />)

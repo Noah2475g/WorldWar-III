@@ -1611,7 +1611,8 @@ describe('R-UX-04/AK2 Zielwahl: erreichbare zuerst, unerreichbare getrennt, geme
     }
     // Schiffe öffnen die Seekanten: mit Transport ist mehr erreichbar als zu Fuß.
     expect(sizes[1]).toBeGreaterThan(sizes[0]!)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 232 ms, unter verify+Last max 9528 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 30_000)
 
   it('Flugverbände erreichen nur eigene Flugplätze', () => {
     const { ctx, west } = usGame()

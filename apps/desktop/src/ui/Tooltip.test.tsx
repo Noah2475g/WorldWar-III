@@ -80,7 +80,8 @@ describe('T-M31-01 Die Provinz erklaert sich im Tooltip', () => {
     // Neben dem Anker, nicht darauf: der Zeiger soll den Kasten nicht verdecken.
     expect(tip.style.left).toBe('24px')
     expect(tip.style.top).toBe('34px')
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 224 ms, unter verify+Last max 7162 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 30_000)
 
   it('sagt "keine" statt "0 Armeen" und laesst die Gefechtszeile ohne Gefecht weg', () => {
     render(<Tooltip data={tooltipFor('C', view, sources)!} x={0} y={0} />)

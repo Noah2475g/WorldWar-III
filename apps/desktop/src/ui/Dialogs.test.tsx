@@ -76,7 +76,8 @@ describe('R-UI-05 Der Startdialog traegt ein Gesicht', () => {
     // Die Fassung kommt aus package.json — nicht als zweite Wahrheit im Text.
     const pkg = JSON.parse(readFileSync(`${process.cwd()}/package.json`, 'utf8')) as { version: string }
     expect(screen.getByText(`Fassung ${pkg.version}`)).toBeTruthy()
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 282 ms, unter verify+Last max 10305 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 
   it('stellt Weiterspielen als ersten Knopf des Rumpfes vor alles andere', () => {
     const onResume = vi.fn()
@@ -225,7 +226,8 @@ describe('R-MP-02/AK1 Der Anlegedialog waehlt Partieart und feste Rate', () => {
 
     zeigeMit({ mode: 'multiplayer' })
     expect(screen.getByRole('combobox', { name: /Feste Geschwindigkeit/ })).toBeTruthy()
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 130 ms, unter verify+Last max 7916 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 30_000)
 
   it('bietet genau die Rasten ohne die Null an', () => {
     zeigeMit({ mode: 'multiplayer' })
@@ -586,7 +588,8 @@ describe('R-UX-05/AK1 Die Hauptaktion eines Dialogs steht in einer festen Fußze
     } finally {
       style.remove()
     }
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 157 ms, unter verify+Last max 4053 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 })
 
 /**
@@ -624,7 +627,8 @@ describe('R-UX-01/AK2 Die Spielstandliste ist eine Liste und kein Raster', () =>
     } finally {
       style.remove()
     }
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 74 ms, unter verify+Last max 2806 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 })
 
 /**

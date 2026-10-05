@@ -155,7 +155,8 @@ describe('R-MP-07/AK1 Die Partie uebersteht einen Verbindungsabbruch', () => {
     expect(p.a.tick).toBe(40)
     expect(p.b.tick).toBe(40)
     expect(stateHash(p.a.state)).toBe(stateHash(p.b.state))
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 165 ms, unter verify+Last max 4849 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('haelt fest, was noch nicht bestaetigt ist — und raeumt es weg, sobald es ankam', () => {
     const p = paar()
@@ -220,7 +221,8 @@ describe('R-MP-07/AK1 Die Partie uebersteht einen Verbindungsabbruch', () => {
     expect(stateHash(p.a.state)).toBe(stateHash(p.b.state))
     expect(stateHash(p.a.state)).not.toBe(vorher)
     expect(p.a.tick).toBe(20)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 104 ms, unter verify+Last max 2546 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('behaelt nach einem langen Abriss genau die unbestaetigten Ticks', () => {
     const p = paar()

@@ -44,7 +44,8 @@ describe('R-UI-05 Die Einstiegshilfe', () => {
     fireEvent.click(screen.getByRole('button', { name: /Nicht mehr zeigen/ }))
 
     expect(onDismiss).toHaveBeenCalledOnce()
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 704 ms, unter verify+Last max 7686 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 30_000)
 
   it('faengt keine Eingabe ab', () => {
     // A hint beside the game, not a door in front of it: no dialogue role, no modal,

@@ -103,7 +103,8 @@ describe('R-ARCH-01 Verteilung des Zufallsgenerators', () => {
     }
     const mean = sum / draws
     expect(Math.abs(mean - 500)).toBeLessThan(15) // Mittelwert nahe 0,5
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 624 ms, unter verify+Last max 4451 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('trifft chance() in der erwarteten Haeufigkeit', () => {
     const rng = createRng(777)

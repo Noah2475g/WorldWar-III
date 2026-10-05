@@ -22,7 +22,8 @@ describe('R-UI-12 Die Legende erklaert die Farben', () => {
       }
       unmount()
     }
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 191 ms, unter verify+Last max 5633 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('wechselt mit dem Modus', () => {
     const { rerender } = render(<Legend mode="political" />)

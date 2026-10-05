@@ -40,7 +40,8 @@ describe('R-UI-10 Die Symbolzeile', () => {
     // The count and the name are readable as text, not only as a picture.
     expect(screen.getByText('400')).toBeTruthy()
     expect(screen.getByRole('img', { name: /Eisen/ })).toBeTruthy()
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 226 ms, unter verify+Last max 5358 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('laesst die Eins weg — "1 Kaserne" ist eine Kaserne', () => {
     const { container } = render(<IconRow items={[{ icon: 'barracks', label: 'Kaserne', count: 1 }]} />)
