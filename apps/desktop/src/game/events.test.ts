@@ -24,6 +24,7 @@ import {
   dayReportDeltas,
   describeEvent,
   eventSymbol,
+  isAutoPauseTrigger,
   mergeBattleLines,
   openIntrusion,
   priceSeries,
@@ -1502,5 +1503,34 @@ describe('T-M46-17 Jede Protokollzeile traegt ein Zeichen', () => {
 
     expect(entry?.symbol).toBe('march')
     expect(entry?.short).toBe(provinceName)
+  })
+})
+
+describe('VM-06 Auto-Pause-Ausloeser', () => {
+  const me = 'p1'
+  const cap = 'prov-cap'
+  const trig = (e: Record<string, unknown>, viewer: string | null | undefined = me, c: string | null = cap) =>
+    isAutoPauseTrigger(event(e), viewer, c)
+  it('Krieg an mich ja, von mir nein, zwischen anderen nein', () => {
+    expect(trig({ type: 'WAR_DECLARED', playerId: 'p2', targetPlayerId: me })).toBe(true)
+    expect(trig({ type: 'WAR_DECLARED', playerId: me, targetPlayerId: 'p2' })).toBe(false)
+    expect(trig({ type: 'WAR_DECLARED', playerId: 'p2', targetPlayerId: 'p3' })).toBe(false)
+  })
+  it('Hauptstadtverlust: ich ja, andere nein', () => {
+    expect(trig({ type: 'CAPITAL_LOST', playerId: me })).toBe(true)
+    expect(trig({ type: 'CAPITAL_LOST', playerId: 'p2' })).toBe(false)
+  })
+  it('Einmarsch loest nicht aus (P2-Streichregel: Zaehlung riss die Schwelle)', () => {
+    expect(trig({ type: 'ARMY_INTRUDED', playerId: me, provinceId: cap })).toBe(false)
+    expect(trig({ type: 'ARMY_INTRUDED', playerId: me, provinceId: 'other' })).toBe(false)
+    expect(trig({ type: 'ARMY_INTRUDED', playerId: 'p2', provinceId: cap })).toBe(false)
+    expect(trig({ type: 'ARMY_INTRUDED', playerId: me, provinceId: cap }, me, null)).toBe(false)
+  })
+  it('Provinzverlust/Aufstand und leerer Betrachter loesen nicht aus', () => {
+    expect(trig({ type: 'PROVINCE_CAPTURED', previousOwner: me, playerId: 'p2' })).toBe(false)
+    expect(trig({ type: 'PROVINCE_REVOLTED', previousOwner: me })).toBe(false)
+    expect(trig({ type: 'WAR_DECLARED', playerId: 'p2', targetPlayerId: me }, null)).toBe(false)
+    expect(isAutoPauseTrigger(event({ type: 'CAPITAL_LOST', playerId: me }), undefined, cap)).toBe(false)
+    expect(trig({ type: 'CAPITAL_LOST', playerId: me }, '')).toBe(false)
   })
 })
