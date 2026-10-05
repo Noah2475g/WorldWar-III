@@ -813,3 +813,7 @@ nur 1280x800 und 375x667 (PLAN-V3 Regel 12). Kein Fremdinhalt: Bildschirmfotos d
 | `docs/ux/v3-after/S575G-nachher2-tastenhilfe-1280x800.png` | `scripts/ux-nachbesserung-bild.mjs` | T-M46-05: Tastenhilfe (F1) mit den Kürzeln A, P, B, E neben den alten, 1280x800 |
 | `docs/ux/v3-after/S575G-nachher2-diplomatie-1280x800.png` | `scripts/ux-nachbesserung-bild.mjs` | Diplomatie mit gewählter Macht: Kopfleiste bleibt bei y = 0 (vorher −82), 1280x800 |
 | `docs/ux/v3-after/S575G-nachher2-karte-375x667.png` | `scripts/ux-nachbesserung-bild.mjs` | T-M46-17: Telefon nach der Nachbesserung, größere Zeichen im Kopf und in der Protokollzeile, 375x667 |
+| `docs/ux/v4-stellung/stand-vorher.png` | `scripts/v4-stellung-bild.mjs` | T-M48-04: Stand S575G, SAU, ohne Stellung (origin/main b23aa04), 1280x800 |
+| `docs/ux/v4-stellung/stand-nachher.png` | `scripts/v4-stellung-bild.mjs` | T-M48-04: Stand S575G, SAU, mit Stellung (T-M48-04), 1280x800 |
+| `docs/ux/v4-stellung/marsch-vorher.png` | `scripts/v4-stellung-bild.mjs` | T-M48-04: eine Spielstunde Marsch, ohne Stellung, 1280x800 |
+| `docs/ux/v4-stellung/marsch-nachher.png` | `scripts/v4-stellung-bild.mjs` | T-M48-04: eine Spielstunde Marsch, mit Stellung, 1280x800 |

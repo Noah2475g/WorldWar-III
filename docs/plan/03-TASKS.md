@@ -8119,3 +8119,44 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Dateien:** `docs/reports/vm01/messkette.md`, `docs/reports/ai-tournament-run.md`, `docs/reports/progress-measured.json`, `docs/reports/stance.json`, `docs/reports/v3/verhalten-hash.json`, `docs/plan/PROGRESS.md`
 - **Tests zuerst:** `apps/headless/test/tournament.slow.test.ts`, `apps/headless/test/progress.slow.test.ts`, `apps/headless/test/fullgame.slow.test.ts`, `apps/headless/test/ai-integration.slow.test.ts`, `apps/headless/test/m17-integration.slow.test.ts`, `apps/headless/test/stance.slow.test.ts`, `apps/headless/test/v3-verhalten.slow.test.ts`
 - **Fertig wenn:** Turnier, progress.slow, neun Vollpartien, ai-integration, m17-integration, Haltung je Exit 0 ohne geaenderte Grenze; Vorher/Nachher in docs/reports/vm01/messkette.md; allFreshness frisch; pnpm verify Exit 0; coverage:requirements V1 offen: 0; PR nach main offen, Noah merged.
+
+## Meilenstein M48 — V4 Etappe 1 Stellung
+
+> **Herkunft.** VM-07, Plan „V4 Etappe 1 Stellung“ (Noahs Ja am 2026-10-05). **Grenze:** nur die Hülle;
+> `packages/` und `data/` bleiben unberührt. Position im Kern (Variante B) gehört in den VM-08-Plan.
+
+### T-M48-01 · Stellungsregel (stellung.ts) und Datenweg home/toHome
+- **Ziel:** Die App kennt für jede eigene Armee den Anker des Gebäudes ihrer stärksten Gattung (home/toHome), belegt durch eine reine, getestete Funktion.
+- **Paket und Priorität:** V4 Etappe 1 · P1
+- **Anforderungen:** R-MAP-05
+- **Abhängigkeiten:** —
+- **Dateien:** `apps/desktop/src/map/stellung.ts`, `apps/desktop/src/map/markers.ts`, `apps/desktop/src/App.tsx`, `docs/reports/v4/ausgang.md`
+- **Tests zuerst:** `apps/desktop/src/map/stellung.test.ts`
+- **Fertig wenn:** Stellungstests grün, Gegenprobe rot gesehen, Desktop-Tests/Typecheck/Lint Exit 0, `plan-consistency` grün, `coverage:requirements` V1 offen: 0.
+
+### T-M48-02 · Hub, Raster nach oben, Marsch ohne Sprung
+- **Ziel:** Eine Armee mit home steht 17 px über dem Anker, das Raster wächst nach oben, der Marsch läuft von Anker zu Anker ohne Sprung, der Pfeil deckt sich mit dem Marker.
+- **Paket und Priorität:** V4 Etappe 1 · P1
+- **Anforderungen:** R-MAP-05
+- **Abhängigkeiten:** T-M48-01
+- **Dateien:** `apps/desktop/src/map/markers.ts`, `apps/desktop/src/map/MapCanvas.tsx`
+- **Tests zuerst:** `apps/desktop/src/map/markers.test.ts`
+- **Fertig wenn:** Neue Einheitstests grün, alle alten `markers`/`render`/`MapCanvas`-Tests unverändert grün.
+
+### T-M48-03 · Wächter an S575 ohne und mit Stellung
+- **Ziel:** Der Wächter misst am echten Stand S575, dass die Stellung keine Armee verdeckt und kein Heimatgebäude überdeckt.
+- **Paket und Priorität:** V4 Etappe 1 · P1
+- **Anforderungen:** R-MAP-05
+- **Abhängigkeiten:** T-M48-02
+- **Dateien:** `apps/desktop/src/map/stapel.slow.test.ts`, `docs/reports/v3/treffer.json`, `docs/reports/v4/stellung.json`, `docs/reports/v4/stellung.md`
+- **Tests zuerst:** `apps/desktop/src/map/stapel.slow.test.ts`
+- **Fertig wenn:** `ohneStellung` == `treffer.json` von `25aafa4`; `mitStellung`: `fullyHidden` 0, `ownHit == ownTotal`, Heimatgebäude voll verdeckt 0.
+
+### T-M48-04 · Abnahme am laufenden Programm, Bericht, PR
+- **Ziel:** Abnahme der Stellung am laufenden Programm mit Bildern vorher/nachher, Bericht und PR.
+- **Paket und Priorität:** V4 Etappe 1 · P1
+- **Anforderungen:** R-MAP-05
+- **Abhängigkeiten:** T-M48-03
+- **Dateien:** `scripts/v4-stellung-bild.mjs`, `docs/ux/v4-stellung/stand-nachher.png`, `docs/ux/v4-stellung/stand-vorher.png`, `docs/ux/v4-stellung/marsch-nachher.png`, `docs/ux/v4-stellung/marsch-vorher.png`, `docs/reports/v4/stellung.md`, `docs/plan/PROGRESS.md`
+- **Tests zuerst:** `scripts/v4-stellung-bild.mjs`
+- **Fertig wenn:** Bilder vorhanden und angesehen, `pnpm verify` Exit 0, PR-URL, `gh auth status` = Noah2475g.

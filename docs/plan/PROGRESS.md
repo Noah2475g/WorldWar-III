@@ -856,3 +856,4 @@ die Prüfkette je Block.
 | T-M47-01 | 2026-10-04 | **Schonfrist fürs Ausheben in eroberten Provinzen (Kern und KI).** 14 Spieltage Besatzungszeit sperrt die Moral RECRUIT nicht, danach unverändert (D6.8); Commit 8e94fc8. | grün |
 | T-M47-02 | 2026-10-04 | **Integrationsmessung Schonfrist.** 3 x 200 Tage: 2 Aushebungen in der Schonfrist unter der Grenze (1815/1914/2015: 1/1/0), Gegenprobe vorher 0/0/0; Commits 2797508, af97ec4. | grün |
 | T-M47-03 | 2026-10-04 | **Messkette VM-01.** Turnier 84/61/62 %, anteilDesStaerksten 0.3293, Vollpartien 1914 und fünf weitere bitgleich, 1683/1789/2015 verschoben, ai-/m17-Integration, Haltung AK5 und v3-Hash unverändert; Commits c7c324b, 991dd2c. | grün |
+| T-M48-04 | 2026-10-05 | **V4 Etappe 1 Stellung (VM-07), Abnahmebilder.** Armeen stehen über dem Gebäude ihrer Gattung (153 von 193 eigenen, Soll 161 nach Anker-Beleg), vorher/nachher an S575G/SAU in docs/ux/v4-stellung; Bericht docs/reports/v4/stellung.md. | grün |

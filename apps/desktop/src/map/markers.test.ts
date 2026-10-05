@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { MAP_COLORS } from './render.ts'
+import { MAP_COLORS, marchArrow } from './render.ts'
+import { armyHome } from './stellung.ts'
 import { colorForPlayer, fillFor } from './modes.ts'
-import { zoomAt, type View, type ViewLimits } from './picking.ts'
+import { zoomAt, toScreen, type View, type ViewLimits } from './picking.ts'
 import {
   ARMY_BOX,
   ARMY_HIT_BOX,
+  ARMY_LIFT_Y,
+  armyScreenPoint,
   declutter,
   BUILDING_BOX,
   BUILDING_MAX_SCALE,
@@ -13,6 +16,7 @@ import {
   FAN_PITCH,
   fanOut,
   stackSummary,
+  marchEnds,
   marchPoint,
   markersFor,
   pickArmy,
@@ -693,5 +697,120 @@ describe('T-M46-03 Stapel benachbarter Provinzen decken einander nicht zu', () =
     // Die eigene Armee behaelt ihren Platz, die fremde weicht aus.
     expect(eigen).toMatchObject({ x: 101, y: 100 })
     expect(fremd!.x !== 100 || fremd!.y !== 100).toBe(true)
+  })
+})
+
+describe('R-MAP-05/AK1 Stellung: Layout und Marsch', () => {
+  const RULES = { units: { infantry: { requiresBuilding: 'barracks' } } }
+  const UNITS = [{ unitKey: 'infantry', hpTotal: 100 }]
+  const ANCHORS = [
+    { x: 130, y: 140, edgeDistance: 30 },
+    { x: 80, y: 90, edgeDistance: 20 },
+  ]
+  const homeOf = armyHome(UNITS, { barracks: 1 }, ANCHORS, RULES)!
+  const overlap = (a: { x: number; y: number }, aw: number, ah: number, b: { x: number; y: number }, bw: number, bh: number): number => {
+    const w = Math.min(a.x + aw / 2, b.x + bw / 2) - Math.max(a.x - aw / 2, b.x - bw / 2)
+    const h = Math.min(a.y + ah / 2, b.y + bh / 2) - Math.max(a.y - ah / 2, b.y - bh / 2)
+    return w > 0 && h > 0 ? w * h : 0
+  }
+
+  it('(a) eine Armee mit home steht 17 px ueber ihrem Gebaeude', () => {
+    expect(ARMY_LIFT_Y).toBe(17)
+    const [m] = markersFor([army('a1', 'alpha', { home: homeOf })], {}, centres, view).filter((k) => k.kind === 'army')
+    const soll = toScreen(homeOf, view)
+    expect(m!.x).toBeCloseTo(soll.x, 9)
+    expect(m!.y).toBeCloseTo(soll.y - 17, 9)
+  })
+
+  it('(b) Gebaeude frei: kein Armeekasten schneidet das 14x14-Quadrat, bei 1 und 12 Armeen', () => {
+    for (const n of [1, 12]) {
+      for (const scale of [0.5, 1, 2]) {
+        const v: View = { x: 0, y: 0, scale }
+        const armies = Array.from({ length: n }, (_, i) => army(`h${i}`, 'alpha', { home: homeOf }))
+        const bau = toScreen(homeOf, v)
+        const kaesten = markersFor(armies, {}, centres, v).filter((k) => k.kind === 'army')
+        expect(kaesten, `n ${n} scale ${scale}`).toHaveLength(n)
+        const flaeche = kaesten.reduce((sum, k) => sum + overlap(k, ARMY_BOX.width, ARMY_BOX.height, bau, BUILDING_BOX, BUILDING_BOX), 0)
+        expect(flaeche, `n ${n} scale ${scale}`).toBe(0)
+      }
+    }
+  })
+
+  it('(c) Rueckfall-Anker = Mitte: Gebaeude bei Mitte + 17, Armee bei Mitte - 17, keine Ueberschneidung', () => {
+    const nurMitte = [{ x: 100, y: 100, edgeDistance: 5 }]
+    const home = armyHome(UNITS, { barracks: 1 }, nurMitte, RULES)!
+    const marker = markersFor([army('a1', 'alpha', { home })], { alpha: { barracks: 1 } }, centres, view, { anchors: { alpha: nurMitte } })
+    const bau = marker.find((k) => k.kind === 'building')!
+    const armee = marker.find((k) => k.kind === 'army')!
+    expect(bau.y).toBeCloseTo(100 + 17, 9)
+    expect(armee.y).toBeCloseTo(100 - 17, 9)
+    expect(overlap(armee, ARMY_BOX.width, ARMY_BOX.height, bau, BUILDING_BOX, BUILDING_BOX)).toBe(0)
+  })
+
+  const marsch = army('m1', 'alpha', {
+    home: homeOf,
+    march: { toProvinceId: 'beta', departureTick: 10, arrivalTick: 20, toHome: { x: 320, y: 230 } },
+  })
+  const eps = 1e-6 * 10
+
+  it('(d) kein Sprung beim Abmarsch', () => {
+    const a = armyScreenPoint(marsch, centres, view, 10)!
+    const b = armyScreenPoint(marsch, centres, view, 10 + eps)!
+    expect(Math.hypot(a.x - b.x, a.y - b.y)).toBeLessThan(0.01)
+  })
+
+  it('(e) kein Sprung bei Ankunft', () => {
+    const p = armyScreenPoint(marsch, centres, view, 20 - eps)!
+    const soll = toScreen(marsch.march!.toHome!, view)
+    expect(Math.hypot(p.x - soll.x, p.y - (soll.y - 17))).toBeLessThan(0.01)
+  })
+
+  it('(f) Pfeil und Marker bleiben deckungsgleich', () => {
+    const ends = marchEnds(marsch, centres, view)!
+    for (const anteil of [0.1, 0.5, 0.9]) {
+      const arrow = marchArrow([[ends[0].x, ends[0].y], [ends[1].x, ends[1].y]], anteil)!
+      const p = armyScreenPoint(marsch, centres, view, 10 + anteil * 10)!
+      expect(arrow.standpoint[0]).toBeCloseTo(p.x, 9)
+      expect(arrow.standpoint[1]).toBeCloseTo(p.y, 9)
+    }
+    expect(marchEnds(army('x', 'alpha'), centres, view)).toBeNull()
+  })
+
+  it('(g) Waechter: 2/3 der eigenen Armeen mit home, keiner vollstaendig verdeckt, alle waehlbar', () => {
+    const zehn = Object.fromEntries(Array.from({ length: 10 }, (_, i) => [`p${i}`, { x: 100 + i * 4, y: 100 + (i % 3) * 3 }]))
+    const viele = Array.from({ length: 60 }, (_, i) => {
+      const own = i % 4 !== 0
+      const c = zehn[`p${i % 10}`]!
+      return army(`a${i}`, `p${i % 10}`, { own, ...(own && i % 3 !== 0 ? { home: { x: c.x + 5, y: c.y + 5 } } : {}) })
+    })
+    for (const scale of [0.5, 1, 2, 4, 8]) {
+      const v: View = { x: 0, y: 0, scale }
+      const marker = markersFor(viele, {}, zehn, v).filter((k) => k.kind === 'army')
+      expect(marker, `scale ${scale}`).toHaveLength(60)
+      let verdeckt = 0
+      marker.forEach((m, i) => {
+        let bedeckt = 0
+        for (let ix = 0; ix < 7; ix++) {
+          for (let iy = 0; iy < 5; iy++) {
+            const px = m.x - ARMY_BOX.width / 2 + ((ix + 0.5) * ARMY_BOX.width) / 7
+            const py = m.y - ARMY_BOX.height / 2 + ((iy + 0.5) * ARMY_BOX.height) / 5
+            if (marker.slice(i + 1).some((o) => Math.abs(px - o.x) <= ARMY_BOX.width / 2 && Math.abs(py - o.y) <= ARMY_BOX.height / 2)) bedeckt++
+          }
+        }
+        if (bedeckt === 35) verdeckt++
+      })
+      expect(verdeckt, `scale ${scale}`).toBe(0)
+      for (const m of marker.filter((k) => k.own)) {
+        expect(pickArmy({ x: m.x, y: m.y }, viele, zehn, v), `${m.armyId} scale ${scale}`).toBe(m.armyId)
+      }
+    }
+  })
+
+  it('(h) ohne home: Marker und Marsch wie bisher', () => {
+    const ohne = army('o1', 'alpha', { march: { toProvinceId: 'beta', departureTick: 10, arrivalTick: 20 } })
+    expect(armyScreenPoint(ohne, centres, view)).toEqual({ x: 100, y: 100 })
+    expect(armyScreenPoint(ohne, centres, view, 15)).toEqual({ x: 200, y: 150 })
+    expect(marchEnds(ohne, centres, view)).toEqual([{ x: 100, y: 100 }, { x: 300, y: 200 }])
+    expect(armyScreenPoint(army('z', 'fehlt'), centres, view)).toBeNull()
   })
 })
