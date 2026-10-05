@@ -44,8 +44,17 @@ export default defineConfig({
      * `globalThis` den Namen nicht schon hat — also blieb `localStorage` in jedem jsdom-Test
      * `undefined` (23 rote Tests in apps/desktop auf Node 26.7). Der Schalter schaltet die
      * Node-Version ab, jsdom liefert dann sein eigenes Storage.
+     * Nur setzen, wo Node den Schalter kennt: Node 20 (engines >=20) und 22.0-22.3 brechen sonst
+     * die ganze Suite mit 'bad option' ab. Gemessen 2026-10-05: allowedNodeEnvironmentFlags.has(...)
+     * ist true auf v24.18.1/v26.7.0, false auf v20.20.2. Ohne Schalter bleibt es beim Stand vor PR #22.
      */
-    poolOptions: { forks: { execArgv: ['--no-experimental-webstorage'] } },
+    poolOptions: {
+      forks: {
+        execArgv: process.allowedNodeEnvironmentFlags.has('--no-experimental-webstorage')
+          ? ['--no-experimental-webstorage']
+          : [],
+      },
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text-summary', 'json-summary'],
