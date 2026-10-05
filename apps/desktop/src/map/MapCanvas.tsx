@@ -50,6 +50,7 @@ import { ZOOM_STEP } from '../keyboard.ts'
 import {
   ARMY_BOX,
   BUILDING_BOX,
+  marchEnds,
   markersFor,
   pickArmy,
   type ArmyMarker,
@@ -630,9 +631,13 @@ export function MapCanvas(props: MapCanvasProps) {
     // ablesbar — nur der GLEITENDE Marker (markersFor) respektiert die Einstellung.
     for (const army of props.armies) {
       if (!army.march) continue
-      const stations = [army.provinceId, ...(army.march.route ?? [army.march.toProvinceId])]
-      const points: [number, number][] = []
-      for (const id of stations) {
+      const ends = marchEnds(army, props.centres, props.view)
+      if (!ends) continue
+      const points: [number, number][] = [
+        [ends[0].x, ends[0].y],
+        [ends[1].x, ends[1].y],
+      ]
+      for (const id of (army.march.route ?? [army.march.toProvinceId]).slice(1)) {
         const centre = props.centres[id]
         if (!centre) break
         const screen = toScreen(centre, props.view)

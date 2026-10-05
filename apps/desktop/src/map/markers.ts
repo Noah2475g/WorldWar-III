@@ -142,7 +142,7 @@ export const FAN_PITCH = { x: ARMY_BOX.width + 2, y: ARMY_BOX.height + 2 } as co
  * innerhalb des Rasters ist die der Eingabe — stabil von Bild zu Bild, damit ein Marker nicht
  * springt, solange sich die Zusammensetzung nicht aendert. Eine einzelne Armee bleibt, wo sie war.
  */
-export function fanOut<T extends { x: number; y: number }>(markers: readonly T[]): T[] {
+export function fanOut<T extends { x: number; y: number }>(markers: readonly T[], growUp?: readonly boolean[]): T[] {
   const groups = new Map<string, number[]>()
   markers.forEach((marker, index) => {
     // Auf ganze Bildpunkte gerundet: zwei Mitten, die sich um Bruchteile unterscheiden, sind derselbe Ort.
@@ -159,13 +159,15 @@ export function fanOut<T extends { x: number; y: number }>(markers: readonly T[]
     // Etwa so breit wie hoch, wenn man die Kastenform einrechnet; mindestens zwei nebeneinander.
     const cols = Math.min(n, Math.max(2, Math.ceil(Math.sqrt((n * FAN_PITCH.y) / FAN_PITCH.x) * 1.6)))
     const rows = Math.ceil(n / cols)
+    // T-M48-02 (E5): Stellung am Gebaeude — das Raster waechst nach oben, die unterste Reihe sitzt auf dem gehobenen Punkt.
+    const up = growUp?.[indices[0]!] === true
     indices.forEach((markerIndex, slot) => {
       const row = Math.floor(slot / cols)
       const inRow = row === rows - 1 ? n - row * cols : cols
       const col = slot % cols
       const target = out[markerIndex]!
       target.x += (col - (inRow - 1) / 2) * FAN_PITCH.x
-      target.y += (row - (rows - 1) / 2) * FAN_PITCH.y
+      target.y += (row - (up ? rows - 1 : (rows - 1) / 2)) * FAN_PITCH.y
     })
   }
   return out
@@ -329,19 +331,63 @@ export function marchPoint(
   centres: Readonly<Record<string, Point>>,
   tick: number,
 ): Point | null {
-  const from = centres[army.provinceId]
+  const centre = centres[army.provinceId]
   const march = army.march
-  if (!from || !march) return null
+  if (!centre || !march) return null
 
-  const to = centres[march.toProvinceId]
+  const toCentre = centres[march.toProvinceId]
   const spanne = march.arrivalTick - march.departureTick
   // Ein Marsch ohne Dauer ist ein Sprung, und durch null teilt niemand.
-  if (!to || spanne <= 0) return null
+  if (!toCentre || spanne <= 0) return null
+  // T-M48-02 (E6): Start am Gebaeude (home), Ziel am Gebaeude der naechsten Provinz (toHome).
+  const from = army.home ?? centre
+  const to = march.toHome ?? toCentre
 
   const anteil = (tick - march.departureTick) / spanne
   if (anteil <= 0 || anteil >= 1) return null
 
   return { x: from.x + (to.x - from.x) * anteil, y: from.y + (to.y - from.y) * anteil }
+}
+
+/** Hub einer Armee mit `home` ueber ihrem Gebaeude (E5): Kastenunterkante 1 px ueber dem Gebaeudequadrat. */
+export const ARMY_LIFT_Y = BUILDING_OFFSET_Y
+
+/**
+ * Der gezeichnete Bildschirmpunkt einer Armee (T-M48-02, E5/E6): Stellung am Gebaeude, gehoben um
+ * `ARMY_LIFT_Y`; der Hub wird mit dem Marschanteil zwischen Start und Ziel ueberblendet — kein Sprung.
+ */
+export function armyScreenPoint(
+  army: ArmyMarker,
+  centres: Readonly<Record<string, Point>>,
+  view: View,
+  tick?: number,
+): Point | null {
+  const centre = centres[army.provinceId]
+  if (!centre) return null
+  const u = tick === undefined ? null : marchPoint(army, centres, tick)
+  const base = toScreen(u ?? army.home ?? centre, view)
+  const march = army.march
+  const a = u && march ? (tick! - march.departureTick) / (march.arrivalTick - march.departureTick) : 0
+  const lift = ARMY_LIFT_Y * ((army.home ? 1 : 0) * (1 - a) + (u && march?.toHome ? 1 : 0) * a)
+  return { x: base.x, y: base.y - lift }
+}
+
+/** Die zwei Bildschirmpunkte des ersten Marschabschnitts (Start und Ziel, mit Hub); null ohne Marsch oder Mitte. */
+export function marchEnds(
+  army: ArmyMarker,
+  centres: Readonly<Record<string, Point>>,
+  view: View,
+): [Point, Point] | null {
+  const march = army.march
+  const centre = centres[army.provinceId]
+  const toCentre = march ? centres[march.toProvinceId] : undefined
+  if (!march || !centre || !toCentre) return null
+  const a = toScreen(army.home ?? centre, view)
+  const b = toScreen(march.toHome ?? toCentre, view)
+  return [
+    { x: a.x, y: a.y - (army.home ? ARMY_LIFT_Y : 0) },
+    { x: b.x, y: b.y - (march.toHome ? ARMY_LIFT_Y : 0) },
+  ]
 }
 
 /**
@@ -433,14 +479,13 @@ function armyLayout(
 
   const origin: View = { x: 0, y: 0, scale }
   const raw: Marker[] = []
+  const growUp: boolean[] = []
   for (const army of armies) {
-    const centre = centres[army.provinceId]
-    if (!centre) continue
-
-    // Unterwegs steht der Marker zwischen den Provinzen, sonst in der Mitte. `tick`
+    // Unterwegs steht der Marker zwischen den Provinzen, sonst in der Mitte (oder am Gebaeude). `tick`
     // fehlt heisst: keine Bewegung — der Aufrufer will keine, oder es gibt keine Uhr.
-    const unterwegs = tick === undefined ? null : marchPoint(army, centres, tick)
-    const point = toScreen(unterwegs ?? centre, origin)
+    const point = armyScreenPoint(army, centres, origin, tick)
+    if (!point) continue
+    growUp.push(army.home !== undefined && (tick === undefined || marchPoint(army, centres, tick) === null))
     raw.push({
       kind: 'army',
       provinceId: army.provinceId,
@@ -455,7 +500,7 @@ function armyLayout(
     })
   }
 
-  const result = declutter(fanOut(raw))
+  const result = declutter(fanOut(raw, growUp))
   layoutCache = { armies, centres, scale, tick, result }
   return result
 }
