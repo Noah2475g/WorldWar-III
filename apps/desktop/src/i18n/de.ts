@@ -744,6 +744,15 @@ export const de = {
     // Punkt liest sich fuer ihn wie "val" + Ersatzschrift-"ue".
     worth: 'Marktwert: Sie geben ≈ {{give}} Geld, Sie erhalten ≈ {{want}} Geld.',
     worthProvinces: 'Provinzen haben keinen Marktpreis und sind darin nicht enthalten.',
+    // Liefervertrag (B3, D8)
+    repeat: 'wiederholen',
+    scheduleEvery: 'alle N Tage',
+    scheduleDeliveries: 'Lieferungen',
+    scheduleNote: '{{count}}× alle {{days}} Tage.',
+    contract: {
+      row: 'Liefervertrag: gibt {{give}} / bekommt {{want}}, nächste Lieferung Tag {{day}} · {{hour}}:00, noch {{remaining}}.',
+      cancel: 'Kündigen',
+    },
     limits: 'Höchstens {{money}} Geld und {{resource}} je Rohstoff und Seite.',
     // Die Sperrgründe des Kerns als Satz (T-M17-14, E7) — eigene Tabelle statt `errors.*`, weil
     // `errors.QUEUE_FULL` „Alle Bauplätze" sagt und keiner der Kerngründe Provinznamen kennt.
@@ -760,6 +769,7 @@ export const de = {
       limit: 'Höchstens {{max}} {{resource}} je Angebot.',
       invalidAmount: 'Nur ganze, positive Mengen.',
       badSchedule: 'Der Zeitplan ist ungültig: Abstand und Zahl der Lieferungen liegen außerhalb der Grenzen.',
+      scheduleProvinces: 'Ein Liefervertrag kann nur Rohstoffe umfassen: nehmen Sie die Provinzen heraus oder schalten Sie „wiederholen“ aus.',
       scheduleResourcesOnly: 'Ein Liefervertrag kann nur Rohstoffe umfassen, keine Provinzen.',
       tooManyContracts: 'Zu viele Lieferverträge: Eine der beiden Seiten hat schon die Höchstzahl.',
       war: 'Im Krieg wird nicht gehandelt.',

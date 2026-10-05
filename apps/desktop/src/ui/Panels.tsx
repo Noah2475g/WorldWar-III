@@ -1352,7 +1352,7 @@ export function categoryOf(type: string): EventCategory {
   if (/BATTLE|BOMBARD|ARMY|CAPTURED|REVOLTED|CAPITAL/.test(type)) return 'combat'
   // Ein geschlossenes oder angenommenes Handelsangebot ist ein Vertrag, kein Aufbau (T-M17-14, E5)
   // — vor der Wirtschaftszeile, sonst faengt `/TRADE/` unten schon TRADE_OFFER_CLOSED.
-  if (/TRADE_OFFER_CLOSED|TRADE_AGREED/.test(type)) return 'diplomacy'
+  if (/TRADE_OFFER_CLOSED|TRADE_AGREED|CONTRACT_CLOSED/.test(type)) return 'diplomacy'
   if (/BUILD|RECRUIT|RESOURCE|STORAGE|TRADE/.test(type)) return 'economy'
   if (/WAR|DIPLOMACY|ELIMINATED|GAME_ENDED/.test(type)) return 'diplomacy'
   // „RIGHT_OF_WAY" enthält kein „WAR" — ohne diese Zeile landete der Durchmarsch (T-M17-04) unter „Sonstiges".
@@ -1775,6 +1775,14 @@ export interface OfferRow {
 }
 
 /** Was das Angebotsformular braucht (T-M17-14, R-DIP-07, R-DIP-09) — nie den Bestand des Partners (E10). */
+/** Eine Zeile eines laufenden Liefervertrags in der Machtzeile (Liefervertrag B3, D8). */
+export interface ContractRow {
+  id: string
+  partner: string
+  text: string
+  actions: readonly Action[]
+}
+
 export interface TradeFormSpec {
   resources: readonly ResourceKey[]
   /** NUR der eigene Bestand (R-DIP-04, E10). */
@@ -1834,6 +1842,7 @@ export function DiplomacyPanel({
   actionsFor,
   passageFor,
   offers,
+  contracts,
   tradeForm,
   onClose,
 }: {
@@ -1851,6 +1860,8 @@ export function DiplomacyPanel({
   /** Durchmarsch und Karte — fünf Aktionen. */
   passageFor?: (playerId: string) => readonly Action[]
   offers?: { incoming: readonly OfferRow[]; outgoing: readonly OfferRow[] }
+  /** Laufende Liefervertraege (D8): je eine Zeile unter der Macht, mit der sie laufen. */
+  contracts?: readonly ContractRow[]
   tradeForm?: TradeFormSpec
 }) {
   // Wer eine Macht waehlt, will handeln (T-M46-06): der Blick springt zum Anfang ihrer Aktionen (Block an den
@@ -1930,8 +1941,10 @@ export function DiplomacyPanel({
           {view.others.map((other) => {
             const relation = view.relations[other.id]
             const passage = ticksPerDay !== undefined ? passageShort(relation, ticksPerDay) : null
+            const contractRows = (contracts ?? []).filter((row) => row.partner === other.id)
             return (
-              <tr key={other.id} className={other.id === chosen ? 'is-selected' : undefined}>
+              <Fragment key={other.id}>
+              <tr className={other.id === chosen ? 'is-selected' : undefined}>
                 <td>
                   {canChoose ? (
                     <button
@@ -1976,6 +1989,15 @@ export function DiplomacyPanel({
                   <td title={passage.title}>{passage.text}</td>
                 )}
               </tr>
+              {contractRows.map((row) => (
+                <tr key={row.id} className="contract-row">
+                  <td colSpan={2 + (reputationMax !== undefined ? 1 : 0) + (ticksPerDay !== undefined ? 1 : 0)}>
+                    <p className="offer__text">{row.text}</p>
+                    <ActionRow actions={row.actions} />
+                  </td>
+                </tr>
+              ))}
+              </Fragment>
             )
           })}
         </tbody>
@@ -2045,6 +2067,10 @@ export function TradeOfferForm({
   const [wantUnits, setWantUnits] = useState<Partial<Record<ResourceKey, number>>>({})
   const [giveProvinces, setGiveProvinces] = useState<readonly string[]>([])
   const [wantProvinces, setWantProvinces] = useState<readonly string[]>([])
+  // Liefervertrag (B3, D8): Schalter aus; Standard alle 3 Tage, 5 Lieferungen.
+  const [repeat, setRepeat] = useState(false)
+  const [intervalDays, setIntervalDays] = useState(3)
+  const [deliveries, setDeliveries] = useState(5)
 
   /** Ganze Einheiten × 1000 (Festkomma); Nullen und leere Felder bleiben aus dem Entwurf draussen. */
   const resourcesOf = (units: Partial<Record<ResourceKey, number>>): Partial<Record<ResourceKey, number>> => {
@@ -2059,8 +2085,15 @@ export function TradeOfferForm({
   const draft: TradeDraft = {
     give: { resources: resourcesOf(giveUnits), provinces: [...giveProvinces] },
     want: { resources: resourcesOf(wantUnits), provinces: [...wantProvinces] },
+    // Der Schluessel fehlt bei ausgeschaltetem Schalter (P2).
+    ...(repeat ? { schedule: { intervalDays, deliveries } } : {}),
   }
-  const result = spec.evaluate(partner, draft)
+  const evaluated = spec.evaluate(partner, draft)
+  // Mit Provinzen ist ein Liefervertrag unmoeglich (D1): Hinweis und Senden gesperrt.
+  const scheduleBlocked = repeat && (giveProvinces.length > 0 || wantProvinces.length > 0)
+  const result = scheduleBlocked
+    ? { ...evaluated, action: { ...evaluated.action, disabledReason: t('trade.blocked.scheduleProvinces') } }
+    : evaluated
 
   const availableOwn = spec.ownProvinces.filter((province) => !giveProvinces.includes(province.id))
   const availablePartner = spec.provincesOf(partner).filter((province) => !wantProvinces.includes(province.id))
@@ -2136,6 +2169,42 @@ export function TradeOfferForm({
         </tbody>
       </table>
       {/* Vorschau, Grenzen und der Knopf stehen direkt unter den Rohstoffen (T-M46-06): sie sind die Handlung. */}
+      <label className="trade-form__repeat">
+        <input type="checkbox" checked={repeat} onChange={(event) => setRepeat(event.target.checked)} /> {t('trade.repeat')}
+      </label>
+      {repeat && (
+        <div className="trade-form__schedule">
+          <label>
+            <span>{t('trade.scheduleEvery')}</span>
+            <input
+              type="number"
+              min={1}
+              max={30}
+              step={1}
+              aria-label={t('trade.scheduleEvery')}
+              value={intervalDays}
+              onChange={(event) => setIntervalDays(Math.round(Number(event.target.value)))}
+            />
+          </label>
+          <label>
+            <span>{t('trade.scheduleDeliveries')}</span>
+            <input
+              type="number"
+              min={2}
+              max={20}
+              step={1}
+              aria-label={t('trade.scheduleDeliveries')}
+              value={deliveries}
+              onChange={(event) => setDeliveries(Math.round(Number(event.target.value)))}
+            />
+          </label>
+        </div>
+      )}
+      {scheduleBlocked && (
+        <p className="notice notice--info" role="status">
+          {t('trade.blocked.scheduleProvinces')}
+        </p>
+      )}
       <p className="facts__inline">{result.text}</p>
       <p className="panel__sub">
         {t('trade.limits', { money: amount(spec.limits.money), resource: amount(spec.limits.resource) })}

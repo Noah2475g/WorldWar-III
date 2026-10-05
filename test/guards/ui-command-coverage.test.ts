@@ -57,9 +57,6 @@ function uiCommandSource(): string {
 // Zuruecknehmen im Diplomatiepanel) — die Ausnahmen sind gestrichen. Der Kommentar bleibt stehen,
 // damit eine spaetere Luecke hier wieder einen Grund bekommt statt eines blossen Namens.
 const NICHT_FUER_DEN_SPIELER: Record<string, string> = {
-  // Liefervertrag B1 (Kern): der Knopf „Kündigen“ in der Machtzeile der Diplomatie kommt mit B3 (D8).
-  // B3 streicht diese Zeile; der Test „kennt keine veraltete Ausnahme“ fällt sonst.
-  CANCEL_CONTRACT: 'Liefervertrag B1 baut nur den Kern; der Kündigen-Knopf folgt mit B3 (D8)',
 }
 
 describe('R-UI-05 Jeder Befehl des Kerns ist fuer den Spieler erreichbar', () => {
