@@ -69,29 +69,38 @@ export interface ClockDriver {
   advance(budgetMs: number): number
   /** Milliseconds until another whole tick is owed; 0 when one is owed already. */
   msToNextTick(): number
+  /** True once `run` signalled a stop (returned true); the driver then runs nothing more. */
+  isStopped(): boolean
 }
 
 export function createClockDriver(options: {
   readonly speed: number
   /** Milliseconds, any origin (`performance.now`). */
   readonly now: () => number
-  /** Runs exactly one tick. */
-  readonly run: () => void
+  /** Runs exactly one tick. Returning true stops the driver for good (auto-pause). */
+  readonly run: () => boolean | void
 }): ClockDriver {
   const { speed, now, run } = options
   let last = now()
   let owed = 0
+  let stopped = false
   return {
     advance(budgetMs) {
+      if (stopped) return 0
       const start = now()
       const next = clockStep(owed, start - last, speed)
       last = start
       let left = next.due
       let ran = 0
       while (left > 0) {
-        run()
+        const stop = run()
         ran += 1
         left -= 1
+        if (stop === true) {
+          stopped = true
+          owed = 0
+          return ran
+        }
         // At least one tick per call; after that the budget decides.
         if (left > 0 && now() - start >= budgetMs) break
       }
@@ -100,8 +109,11 @@ export function createClockDriver(options: {
       return ran
     },
     msToNextTick() {
-      if (!(speed > 0)) return Infinity
+      if (stopped || !(speed > 0)) return Infinity
       return owed >= 1 - EPSILON ? 0 : Math.max(0, ((1 - owed) / speed) * 1000 - (now() - last))
+    },
+    isStopped() {
+      return stopped
     },
   }
 }

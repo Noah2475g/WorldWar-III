@@ -37,6 +37,7 @@ export const de = {
     day: 'Tag',
     speed: 'Geschwindigkeit',
     pause: 'Pause',
+    autoPaused: 'Pausiert: {{event}}',
     // Der Einmarsch-Alarm im Kopf (T-M28-06): kurz im Chip, vollständig fürs Ohr.
     alarm: 'Einmarsch: {{province}}',
     alarmAria: 'Einmarsch in {{province}} durch {{intruder}} — anzeigen',
@@ -955,6 +956,7 @@ export const de = {
     fontNormal: 'normal',
     fontLarge: 'groß',
     debug: 'Debug-Ansicht',
+    autoPause: 'Anhalten bei Kriegserklärung und Gefahr für die Hauptstadt',
     reset: 'Auf Vorgabe zurücksetzen',
     resetConfirm: 'Alle Einstellungen gehen auf die Vorgabe zurück — noch einmal klicken.',
   },
