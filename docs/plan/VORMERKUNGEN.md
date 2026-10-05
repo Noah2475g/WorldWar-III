@@ -67,6 +67,7 @@
 - **Noah:** „Wir sollten die Einheiten in den Ländern noch verteilen, passend zu den Gebäuden.“
 - **Plan muss klären:** Positionen innerhalb einer Provinz im Kernzustand (heute: Armee steht „in“
   einer Provinz), Darstellung, Speichern/Laden, Mehrspieler-Gleichstand.
+- **Eingeplant:** Etappe 1 (Variante A, nur Hülle) → M48; Variante B (Position im Kern) → VM-08-Plan.
 
 ### VM-08 · Bewegungslogik und Kampf mit Waffenradius
 - **Noah:** „Sobald Einheiten losmarschieren und auf Angriff gestellt sind, den Waffenradius

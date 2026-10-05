@@ -117,6 +117,9 @@ milestones:
   # eroberten Provinzen, verhaltensaendernd, eigener PR mit voller Messkette (Plan VM-01 im Vault).
   - { id: M47, title: "V3-Bugfix Schonfrist" }
 
+  # V4 Etappe 1 (VM-07, Plan "V4 Etappe 1 Stellung"): Armeen stehen am Gebaeude ihrer Gattung. Nur die Huelle.
+  - { id: M48, title: "V4 Etappe 1 Stellung" }
+
 tasks:
   - id: T-M0-01
     milestone: M0
@@ -4316,3 +4319,44 @@ tasks:
     files: [docs/reports/vm01/messkette.md, docs/reports/ai-tournament-run.md, docs/reports/progress-measured.json, docs/reports/stance.json, docs/reports/v3/verhalten-hash.json, docs/plan/PROGRESS.md]
     tests: [apps/headless/test/tournament.slow.test.ts, apps/headless/test/progress.slow.test.ts, apps/headless/test/fullgame.slow.test.ts, apps/headless/test/ai-integration.slow.test.ts, apps/headless/test/m17-integration.slow.test.ts, apps/headless/test/stance.slow.test.ts, apps/headless/test/v3-verhalten.slow.test.ts]
     dod: "Turnier, progress.slow, neun Vollpartien, ai-integration, m17-integration, Haltung je Exit 0 ohne geaenderte Grenze; Vorher/Nachher in docs/reports/vm01/messkette.md; allFreshness frisch; pnpm verify Exit 0; coverage:requirements V1 offen: 0; PR nach main offen, Noah merged."
+
+  - id: T-M48-01
+    milestone: M48
+    title: "Stellungsregel (stellung.ts) und Datenweg home/toHome"
+    status: todo
+    deps: []
+    requirements: [R-MAP-05]
+    design: []
+    files: [apps/desktop/src/map/stellung.ts, apps/desktop/src/map/markers.ts, apps/desktop/src/App.tsx, docs/reports/v4/ausgang.md]
+    tests: [apps/desktop/src/map/stellung.test.ts]
+    dod: "Reine Funktion armyHome (Anker des Gebaeudes der staerksten Gattung, Stufe egal, nur eigene); knownBuildings aus App.tsx herausgezogen; ArmyMarker.home und march.toHome gesetzt. Tests (a)-(j) gruen, Gegenprobe rot gesehen; Desktop-Tests, Typecheck, Lint, plan-consistency Exit 0; coverage:requirements V1 offen: 0."
+  - id: T-M48-02
+    milestone: M48
+    title: "Hub, Raster nach oben, Marsch ohne Sprung"
+    status: todo
+    deps: [T-M48-01]
+    requirements: [R-MAP-05]
+    design: []
+    files: [apps/desktop/src/map/markers.ts, apps/desktop/src/map/MapCanvas.tsx]
+    tests: [apps/desktop/src/map/markers.test.ts]
+    dod: "ARMY_LIFT_Y = BUILDING_OFFSET_Y; armyScreenPoint, marchEnds, fanOut mit growUp; Marsch Anker zu Anker, Pfeil deckungsgleich mit dem Marker. Neue Einheitstests gruen, alte markers/render/MapCanvas-Tests unveraendert gruen; Gegenprobe ARMY_LIFT_Y 0 und growUp ignoriert rot gesehen."
+  - id: T-M48-03
+    milestone: M48
+    title: "Waechter an S575 ohne und mit Stellung"
+    status: todo
+    deps: [T-M48-02]
+    requirements: [R-MAP-05]
+    design: []
+    files: [apps/desktop/src/map/stapel.slow.test.ts, docs/reports/v3/treffer.json, docs/reports/v4/stellung.json, docs/reports/v4/stellung.md]
+    tests: [apps/desktop/src/map/stapel.slow.test.ts]
+    dod: "stapel.slow misst ohne und mit Stellung: ohneStellung == treffer.json von 25aafa4 je Massstab; mitStellung fullyHidden 0, ownHit == ownTotal, Heimatgebaeude voll verdeckt 0 (Massstab 0,5/1/2); armiesWithHome 161 oder Abweichung erklaert."
+  - id: T-M48-04
+    milestone: M48
+    title: "Abnahme am laufenden Programm, Bericht, PR"
+    status: todo
+    deps: [T-M48-03]
+    requirements: [R-MAP-05]
+    design: []
+    files: [scripts/v4-stellung-bild.mjs, docs/ux/v4-stellung, docs/reports/v4/stellung.md, docs/plan/PROGRESS.md]
+    tests: [scripts/v4-stellung-bild.mjs]
+    dod: "Bilder vorher/nachher SAU vom laufenden Programm, angesehen und beschrieben; pnpm verify Exit 0; coverage:requirements V1 offen: 0; PR von claude/v4-stellung offen (Noah2475g), Merge nur durch reviewer."

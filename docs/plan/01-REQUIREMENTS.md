@@ -169,6 +169,9 @@ werden selbst erzeugt oder stammen aus frei lizenzierten Quellen (siehe R-ASSET-
   (z. B. Natural Earth). Herkunft und Lizenz dokumentiert.
 - **R-MAP-05 — Kartendarstellung.** Provinzen nach Eigentümer eingefärbt, Grenzen sichtbar,
   zoom- und verschiebbar; Einheiten, Gebäude und Kampfsymbole darauf angezeigt.
+  - AK1: WENN eine eigene Armee in einer Provinz steht, in der das Gebäude ihrer stärksten Gattung
+    steht, DANN SOLL ihr Marker über dem Anker dieses Gebäudes stehen, ohne es zu verdecken; fremde
+    Armeen und Armeen ohne passendes Gebäude SOLLEN in der Provinzmitte stehen.
 - **R-MAP-06 — Kartenmodi.** Umschaltbar: politisch, Ressourcen, Moral, Truppenstärke.
 - **R-MAP-07 — Kein Modus ohne Daten.** Jeder angebotene Kartenmodus färbt aus einer Größe,
   die das Spiel wirklich führt. Ein Modus, für den keine Daten anfallen, wird nicht angeboten.

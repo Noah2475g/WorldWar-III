@@ -1,6 +1,7 @@
 import { ZOOM_MID_MAX_SCALE, toScreen, zoomTier, type Point, type View } from './picking.ts'
 import { BUILDING_ICONS, UNIT_ICONS, type IconName } from '../ui/icons.tsx'
 import { placeBuildings, type Anchor } from './anchors.ts'
+import { dominantUnitKey } from './stellung.ts'
 
 /**
  * What sits on top of the map (R-MAP-05, T-M10-03b).
@@ -29,6 +30,8 @@ export interface ArmyMarker {
    * about its composition (R-DIP-04), so it keeps the plain infantry box.
    */
   icon?: IconName
+  /** Kartenraum, Anker des Gattungsgebaeudes, nur eigene — T-M48-01. */
+  home?: Point
   /**
    * Stueckzahl und Zustand des Stapels (T-M30-01, D27.2) — nur fuer eigene Armeen,
    * denn nur deren Zusammensetzung kennt die Sicht (R-DIP-04). `condition` ist der
@@ -54,6 +57,8 @@ export interface ArmyMarker {
      * Fehlt sie, bleibt der Pfeil bei der einen Etappe, die `toProvinceId` kennt.
      */
     route?: readonly string[]
+    /** Kartenraum, Anker des Gattungsgebaeudes in der naechsten Provinz, nur eigene — T-M48-01. */
+    toHome?: Point
   }
 }
 
@@ -266,13 +271,8 @@ export function declutter<T extends { x: number; y: number; own?: boolean }>(mar
 
 /** Which arm of service a stack is mostly made of — that is the symbol it wears. */
 export function dominantIcon(units: readonly { unitKey: string; hp: number }[]): IconName | undefined {
-  let best: { icon: IconName; hp: number } | null = null
-  for (const stack of units) {
-    const icon = UNIT_ICONS[stack.unitKey]
-    if (!icon) continue
-    if (!best || stack.hp > best.hp) best = { icon, hp: stack.hp }
-  }
-  return best?.icon
+  const key = dominantUnitKey(units)
+  return key ? UNIT_ICONS[key] : undefined
 }
 
 /** Der Gebaeudemarker in Bildpunkten (D27.2): Quadrat mit Glyphe, Stufe rechts oben. */

@@ -50,7 +50,8 @@ import { describeRejection } from './game/rejections.ts'
 import { t } from './i18n/text.ts'
 import { INITIAL_UI, defaultViewer, loadSettings, saveSettings, uiReducer, type Settings } from './state/uiState.ts'
 import { MapCanvas, type ArmyMarker } from './map/MapCanvas.tsx'
-import { dominantIcon, stackSummary, type BuildingsByProvince } from './map/markers.ts'
+import { dominantIcon, stackSummary } from './map/markers.ts'
+import { armyHome, knownBuildings } from './map/stellung.ts'
 import { anchorsFor } from './map/anchors.ts'
 import { relationKindFor, strengthByProvince } from './map/modes.ts'
 import { boundsOf, centreOn, clampView, zoomAt, type View } from './map/picking.ts'
@@ -913,14 +914,7 @@ export function App(props: AppProps) {
   //   useCallback((id: string): string => activeMap.provinces.find((p) => p.id === id)?.name ?? id, [activeMap.provinces])
 
   /** Gebaeude je Provinz, Art → Stufe — nur die eigenen sind bekannt (R-DIP-04). */
-  const buildings = useMemo(() => {
-    const byProvince: Record<string, Partial<Record<string, number>>> = {}
-    for (const province of view?.provinces ?? []) {
-      const known = Object.entries(province.buildings ?? {}).filter(([, level]) => (level ?? 0) > 0)
-      if (known.length > 0) byProvince[province.id] = Object.fromEntries(known)
-    }
-    return byProvince as BuildingsByProvince
-  }, [view])
+  const buildings = useMemo(() => knownBuildings(view?.provinces ?? []), [view])
 
   /** Die Anker je Provinz (T-M30-02): aus der Geometrie, einmal je Karte. */
   const anchors = useMemo(
@@ -944,6 +938,11 @@ export function App(props: AppProps) {
         const summary = army.units ? stackSummary(army.units, props.rules) : null
         const relation = view?.relations[army.owner]?.state
         const naechste = army.path?.[0]
+        // Stellung am Gattungsgebaeude (T-M48-01): nur eigene, nur mit bekannten Einheiten.
+        const own = army.owner === viewerId
+        const home = own ? armyHome(army.units, buildings[army.provinceId], anchors[army.provinceId], props.rules) : null
+        const toHome =
+          own && naechste ? armyHome(army.units, buildings[naechste], anchors[naechste], props.rules) : null
         const march =
           naechste && army.departureTick != null && army.arrivalTick != null
             ? {
@@ -952,6 +951,7 @@ export function App(props: AppProps) {
                 arrivalTick: army.arrivalTick,
                 // Die ganze Restroute, fuer den Marschpfeil (T-M26-01).
                 route: army.path!,
+                ...(toHome ? { toHome } : {}),
               }
             : undefined
         return {
@@ -959,14 +959,15 @@ export function App(props: AppProps) {
           provinceId: army.provinceId,
           owner: army.owner,
           strength: army.strength,
-          own: army.owner === viewerId,
+          own,
           ...(icon ? { icon } : {}),
+          ...(home ? { home } : {}),
           ...(summary ? { count: summary.count, condition: summary.condition } : {}),
           ...(relation ? { relation } : {}),
           ...(march ? { march } : {}),
         }
       }),
-    [view, viewerId, props.rules],
+    [view, viewerId, props.rules, buildings, anchors],
   )
 
   /** Was gerade Aufmerksamkeit braucht: Kampf, Mangel, Aufstandsgefahr (R-UI-14). */
