@@ -2,6 +2,7 @@ import { ZOOM_MID_MAX_SCALE, toScreen, zoomTier, type Point, type View } from '.
 import { BUILDING_ICONS, UNIT_ICONS, type IconName } from '../ui/icons.tsx'
 import { placeBuildings, type Anchor } from './anchors.ts'
 import { dominantUnitKey } from './stellung.ts'
+import { groupArmies, toneFor } from './sammel.ts'
 
 /**
  * What sits on top of the map (R-MAP-05, T-M10-03b).
@@ -62,7 +63,7 @@ export interface ArmyMarker {
   }
 }
 
-export type MarkerKind = 'building' | 'army' | 'battle' | 'capital'
+export type MarkerKind = 'building' | 'army' | 'armyGroup' | 'battle' | 'capital'
 
 /** Wessen Stapel das ist — entscheidet die Rahmenfarbe (D27.2). */
 export type MarkerTone = 'own' | 'ally' | 'enemy' | 'other'
@@ -87,6 +88,10 @@ export interface Marker {
   armyId?: string
   /** Armies: which symbol to draw in the box. */
   icon?: IconName
+  /** Sammelmarke: die Armeen der Gruppe in Eingabereihenfolge (T-M49-01). */
+  armyIds?: readonly string[]
+  /** Sammelmarke: die Beschriftung, Summe der Stueckzahl oder `×n` (T-M49-01, D6). */
+  label?: string
 }
 
 /**
@@ -114,13 +119,8 @@ export function stackSummary(
   return { count, condition: full > 0 ? hp / full : 0 }
 }
 
-/** Der Stapel-Ton aus Besitz und Beziehung. */
-export function toneFor(army: Pick<ArmyMarker, 'own' | 'relation'>): MarkerTone {
-  if (army.own) return 'own'
-  if (army.relation === 'war') return 'enemy'
-  if (army.relation === 'alliance') return 'ally'
-  return 'other'
-}
+// D12: `toneFor` wohnt in `sammel.ts`; hier weitergereicht, damit alle bisherigen Importe gleich bleiben.
+export { toneFor } from './sammel.ts'
 
 /** Der gezeichnete Stapel in Bildpunkten (D27.2): Rechteck mit Zahl und Zustandsbalken. */
 export const ARMY_BOX = { width: 30, height: 18 } as const
@@ -308,6 +308,11 @@ export interface MarkerExtras {
   battleProvinces?: readonly string[]
   /** Die Anker je Provinz (T-M30-02, `anchorsFor`), einmal je Karte gerechnet. */
   anchors?: Readonly<Record<string, readonly Anchor[]>>
+  /**
+   * Sammelmarke (T-M49-01, D1): nur wenn gesetzt und nicht auf der nahen Stufe werden Armeen
+   * gruppiert. Ohne diese Angabe ist die Ausgabe bitgleich zu der vor M49.
+   */
+  grouping?: { selectedArmyId: string | null }
 }
 
 /**
@@ -442,6 +447,39 @@ export function pickArmy(
   return bestId
 }
 
+/**
+ * Die Sammelmarke unter einem Bildschirmpunkt — oder null (T-M49-01, D8).
+ *
+ * Gleiche Reichweite und gleiche `<=`-Regel wie `pickArmy`, nur fuer `kind === 'armyGroup'`;
+ * eigene und fremde Gruppen zaehlen. Ohne `extras.grouping` gibt es keine Gruppen: null.
+ */
+export function pickArmyGroup(
+  screen: Point,
+  armies: readonly ArmyMarker[],
+  centres: Readonly<Record<string, Point>>,
+  view: View,
+  extras: MarkerExtras = {},
+  hitBox: number = ARMY_HIT_BOX,
+): { armyIds: readonly string[]; x: number; y: number } | null {
+  const reachX = Math.max(hitBox, ARMY_BOX.width) / 2
+  const reachY = Math.max(hitBox, ARMY_BOX.height) / 2
+  let best: { armyIds: readonly string[]; x: number; y: number } | null = null
+  let bestDistance = Infinity
+
+  for (const marker of markersFor(armies, {}, centres, view, extras)) {
+    if (marker.kind !== 'armyGroup' || !marker.armyIds) continue
+    const dx = screen.x - marker.x
+    const dy = screen.y - marker.y
+    if (Math.abs(dx) > reachX || Math.abs(dy) > reachY) continue
+    const distance = dx * dx + dy * dy
+    if (distance <= bestDistance) {
+      bestDistance = distance
+      best = { armyIds: marker.armyIds, x: marker.x, y: marker.y }
+    }
+  }
+  return best
+}
+
 /** Sieben Plaetze in einer Reihe unter der Provinzmitte, abwechselnd rechts und links. */
 function fallbackAnchors(centre: Point, scale: number): Anchor[] {
   return Array.from({ length: 7 }, (_, i) => {
@@ -457,6 +495,8 @@ let layoutCache: {
   centres: Readonly<Record<string, Point>>
   scale: number
   tick: number | undefined
+  /** D10: `g:<gewaehlte Armee>` bei aktiver Gruppierung, sonst leer. */
+  group: string
   result: Marker[]
 } | null = null
 
@@ -465,27 +505,63 @@ let layoutCache: {
  *
  * Getrennt vom Ausschnitt, damit das Schieben der Karte nichts neu rechnet: nur der Massstab,
  * die Armeen, die Mitten und die Uhr (marschierende Armeen gleiten) veraendern die Anordnung.
+ * Mit `grouping` (T-M49-01) stehen Sammelmarken an Stelle des ersten Mitglieds (D5).
  */
 function armyLayout(
   armies: readonly ArmyMarker[],
   centres: Readonly<Record<string, Point>>,
   scale: number,
   tick: number | undefined,
+  grouping: MarkerExtras['grouping'],
 ): Marker[] {
+  const active = grouping !== undefined && zoomTier(scale) !== 'near'
+  const group = active ? `g:${grouping.selectedArmyId ?? ''}` : ''
   const cached = layoutCache
-  if (cached && cached.armies === armies && cached.centres === centres && cached.scale === scale && cached.tick === tick) {
+  if (
+    cached &&
+    cached.armies === armies &&
+    cached.centres === centres &&
+    cached.scale === scale &&
+    cached.tick === tick &&
+    cached.group === group
+  ) {
     return cached.result
   }
 
   const origin: View = { x: 0, y: 0, scale }
   const raw: Marker[] = []
   const growUp: boolean[] = []
+  const groups = active ? groupArmies(armies, grouping.selectedArmyId).groups : []
+  const firstOf = new Map<string, (typeof groups)[number]>()
+  const skipped = new Set<string>()
+  for (const g of groups) {
+    firstOf.set(g.members[0]!.id, g)
+    for (const m of g.members.slice(1)) skipped.add(m.id)
+  }
   for (const army of armies) {
+    if (skipped.has(army.id)) continue
+    const g = firstOf.get(army.id)
+    // Eine Sammelmarke steht am Punkt ihres Vertreters (D5), an Stelle des ersten Mitglieds.
+    const shown = g ? g.rep : army
     // Unterwegs steht der Marker zwischen den Provinzen, sonst in der Mitte (oder am Gebaeude). `tick`
     // fehlt heisst: keine Bewegung — der Aufrufer will keine, oder es gibt keine Uhr.
-    const point = armyScreenPoint(army, centres, origin, tick)
+    const point = armyScreenPoint(shown, centres, origin, tick)
     if (!point) continue
-    growUp.push(army.home !== undefined && (tick === undefined || marchPoint(army, centres, tick) === null))
+    growUp.push(shown.home !== undefined && (tick === undefined || marchPoint(shown, centres, tick) === null))
+    if (g) {
+      raw.push({
+        kind: 'armyGroup',
+        provinceId: g.provinceId,
+        x: point.x,
+        y: point.y,
+        own: g.own,
+        tone: g.tone,
+        armyIds: g.members.map((m) => m.id),
+        label: g.label,
+        ...(g.icon ? { icon: g.icon } : {}),
+      })
+      continue
+    }
     raw.push({
       kind: 'army',
       provinceId: army.provinceId,
@@ -501,7 +577,7 @@ function armyLayout(
   }
 
   const result = declutter(fanOut(raw, growUp))
-  layoutCache = { armies, centres, scale, tick, result }
+  layoutCache = { armies, centres, scale, tick, group, result }
   return result
 }
 
@@ -549,7 +625,7 @@ export function markersFor(
   // aufeinander — hier stand `markers.push({ kind: 'army', … })` je Armee ohne Versatz.
   // Die Anordnung haengt nur vom Massstab ab, nicht vom Ausschnitt: sie wird einmal gerechnet und
   // beim Schieben der Karte nur verschoben.
-  const laidOut = armyLayout(armies, centres, view.scale, extras.tick)
+  const laidOut = armyLayout(armies, centres, view.scale, extras.tick, extras.grouping)
   const shiftX = -view.x / view.scale
   const shiftY = -view.y / view.scale
   for (const marker of laidOut) markers.push({ ...marker, x: marker.x + shiftX, y: marker.y + shiftY })

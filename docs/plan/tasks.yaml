@@ -120,6 +120,9 @@ milestones:
   # V4 Etappe 1 (VM-07, Plan "V4 Etappe 1 Stellung"): Armeen stehen am Gebaeude ihrer Gattung. Nur die Huelle.
   - { id: M48, title: "V4 Etappe 1 Stellung" }
 
+  # Armee-Sammelmarke (Gate t_facb9d60): ab 4 Armeen je Provinz/Station/Seite eine Marke auf mid/far. Nur die Huelle.
+  - { id: M49, title: "Armee-Sammelmarke" }
+
 tasks:
   - id: T-M0-01
     milestone: M0
@@ -4360,3 +4363,43 @@ tasks:
     files: [scripts/v4-stellung-bild.mjs, docs/ux/v4-stellung/stand-nachher.png, docs/ux/v4-stellung/stand-vorher.png, docs/ux/v4-stellung/marsch-nachher.png, docs/ux/v4-stellung/marsch-vorher.png, docs/reports/v4/stellung.md, docs/plan/PROGRESS.md]
     tests: [scripts/v4-stellung-bild.mjs]
     dod: "Bilder vorher/nachher SAU vom laufenden Programm, angesehen und beschrieben; pnpm verify Exit 0; coverage:requirements V1 offen: 0; PR von claude/v4-stellung offen (Noah2475g), Merge nur durch reviewer."
+  - id: T-M49-01
+    milestone: M49
+    title: "Sammelmarke: Gruppierung als reine Funktion (sammel.ts)"
+    status: done
+    deps: []
+    requirements: [R-MAP-05]
+    design: []
+    files: [apps/desktop/src/map/sammel.ts, apps/desktop/src/map/markers.ts]
+    tests: [apps/desktop/src/map/sammel.test.ts]
+    dod: "Tests (a)-(m) gruen, Gegenproben rot gesehen, Typecheck/Lint/plan-consistency Exit 0."
+  - id: T-M49-02
+    milestone: M49
+    title: "Zeichnen und Klick der Sammelmarke in MapCanvas"
+    status: todo
+    deps: [T-M49-01]
+    requirements: [R-MAP-05]
+    design: []
+    files: [apps/desktop/src/map/MapCanvas.tsx, apps/desktop/src/map/MapCanvas.test.tsx, apps/desktop/src/App.tsx]
+    tests: [apps/desktop/src/map/MapCanvas.test.tsx]
+    dod: "Neue MapCanvas-Tests gruen, alte unveraendert gruen."
+  - id: T-M49-03
+    milestone: M49
+    title: "Waechter: Sammelmarke an S575"
+    status: todo
+    deps: [T-M49-02]
+    requirements: [R-MAP-05]
+    design: []
+    files: [apps/desktop/src/map/sammel.slow.test.ts, docs/reports/v4/sammel.json]
+    tests: [apps/desktop/src/map/sammel.slow.test.ts]
+    dod: "Slow-Test gruen, Messwerte in sammel.json."
+  - id: T-M49-04
+    milestone: M49
+    title: "Abnahme am laufenden Programm, Bericht, PR"
+    status: todo
+    deps: [T-M49-03]
+    requirements: [R-MAP-05]
+    design: []
+    files: [scripts/v4-sammel-bild.mjs, docs/ux/v4-sammel/, docs/reports/v4/sammel.md, docs/plan/PROGRESS.md, docs/ASSETS.md]
+    tests: [scripts/v4-sammel-bild.mjs]
+    dod: "Bilder angesehen, pnpm verify Exit 0, PR offen (Noah2475g), Merge nur durch reviewer."

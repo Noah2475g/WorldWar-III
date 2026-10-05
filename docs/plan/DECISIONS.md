@@ -5899,3 +5899,15 @@ Grundlage: Nachtrag in `docs/plan/V3-G1-DOSSIER.md`, Playtest V3 (`docs/reports/
 - **Unverändert:** `RECRUIT_MIN_MORALE`, `capturedMorale`, Aushebedauer und Startzustand (in der Schonfrist langsam und schwach — gewollte Bremse), Regeldateien, Zustand, Oberfläche.
 - **Handel:** eine abgetretene Provinz behält `occupiedSince`; ist es jünger als 14 Tage, gilt die Schonfrist auch für den Empfänger — hingenommen.
 - **Verworfen:** eigene Konstante `recruitGraceDays` (Regeldatei → Parameterlauf), Moraluntergrenze während der Frist (änderte Produktion und Aufstand mit).
+
+## 2026-10-05 · Armee-Sammelmarke (M49) · Ausgestaltung (Plan, Noahs Ja im Gate t_facb9d60)
+- **D1 ·** Opt-in + Stufe: `MarkerExtras.grouping?: { selectedArmyId }`; gruppiert nur mit `grouping` und `zoomTier !== 'near'`, sonst bitgleich zu heute.
+- **D2 ·** Schlüssel `${provinceId}|${march?.toProvinceId ?? '-'}|${toneFor(army)}`; Seite = Ton, Verbündete eigene Seite.
+- **D3 ·** `ARMY_GROUP_MIN = 4` (gemessen 2→38, 3→43, 4→55, 6→65 Marken bei 1.6); die gewählte Armee bleibt einzeln und zählt nicht mit.
+- **D4 ·** Gruppen-icon = icon mit größter Summe `count` (ohne count 1; Gleichstand: zuerst); Vertreter = erstes Mitglied mit diesem icon, sonst erstes.
+- **D5 ·** Marke steht an `armyScreenPoint(rep)`, dann `fanOut` → `declutter` mit den Einzelkästen; in der Rohliste an Stelle des ersten Mitglieds.
+- **D6 ·** `Marker.kind 'armyGroup'` mit `armyIds`, `label` (Summe count, ab 1000 „Nk“, sonst „×n“); Zeichnung: versetzter Rahmen 30x18 (+3/−3 px), Stapel-Stempel darüber, kein Zustandsbalken.
+- **D7 ·** Pfeile: near alle, mid/far Einzelne + Vertreter je Gruppe; Tageslabel: near wie heute, mid/far nur gewählte Armee (ersetzt D27.5 für mid).
+- **D8 ·** Klick: `pickArmy` → `pickArmyGroup` → Provinz; nur mit `onSelectArmy`; Treffer zoomt auf `GROUP_ZOOM_SCALE` (= 1), kein Select.
+- **D9 ·** Datenweg: Prop `MapCanvas.selectedArmyId`; Canvas bekommt `data-zoom-tier` und `data-view-scale`.
+- **D10 ·** Cache: `layoutCache.group` = `'g:' + selectedArmyId` bei aktiver Gruppierung, sonst `''`; Treffer nur bei gleichem `group`.
