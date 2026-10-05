@@ -104,3 +104,10 @@ jeweils **LÖSCHEN**, sobald Noah Paket B abgenommen hat (der Wortlaut bleibt in
 | 55 | `apps/desktop/src/ui/Panels.tsx` (`DiplomacyPanel`, Effekt auf `chosenAt`) | `block.scrollIntoView?.({ block: 'start' })` | **LÖSCHEN**, sobald Noah T-M46-06 abgenommen hat | `scrollWithin` (`ui/scrollWithin.ts`) rollt nur den nächsten Rollrahmen; `scrollIntoView` schob die ganze App um die Kopfhöhe nach oben (header.y −82). Test in `Panels.test.tsx`. |
 | 56 | `apps/desktop/src/map/markers.ts` (`DECLUTTER_RADIUS`) | `DECLUTTER_RADIUS = 96` | **LÖSCHEN**, sobald Noah T-M46-03 abgenommen hat | Radius 256: an S575G 0 teilweise verdeckte Marker bei Maßstab 4 und 8 (vorher 109 und 145), Klickfläche zu 100 % sichtbar (vorher 93 % / 80 %). Preis: mittlere Verschiebung vom Ort 87 → 118 px (Maßstab 4), 95 → 155 px (Maßstab 8). Zahlenschlüssel statt Zeichenketten in `declutter`. |
 - 2026-10-04 (Merge PR #21): `docs/plan/WORKFLOW.md` §0 und Kopf (Zeile „Nächste Version“) auf den Stand nach V3 gerichtet; alter Wortlaut als HTML-Kommentar mit LOESCHVERMERK an beiden Stellen.
+
+## Nachtrag VM-01 (T-M47-01, 2026-10-04)
+| # | Datei:Zeile | Inhalt kurz | Empfehlung | Begründung |
+|---|---|---|---|---|
+| 57 | `packages/core/src/commands/recruit.ts` (RECRUIT check) | `if (province.morale < RECRUIT_MIN_MORALE) {` | **LÖSCHEN**, sobald Noah VM-01 abgenommen hat | ersetzt durch `recruitMoraleBlocked` (Schonfrist). |
+| 58 | `packages/ai/src/economy.ts` (recruitCommands) | `if ((province.morale ?? 0) < RECRUIT_MIN_MORALE) continue` | **LÖSCHEN**, sobald Noah VM-01 abgenommen hat | dieselbe Funktion wie der Kern. |
+| 59 | `packages/core/src/commands/recruitConquered.test.ts` | IST-Test „Moral sperrt RECRUIT“ | **LÖSCHEN**, sobald Noah VM-01 abgenommen hat | durch Tests a–d ersetzt. |

@@ -8089,3 +8089,33 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Dateien:** `apps/desktop/src/ui/Icon.tsx`, `apps/desktop/src/ui/Header.tsx`, `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/ui/Foot.tsx`, `apps/desktop/src/ui/Alerts.tsx`
 - **Tests zuerst:** Textanteil je Ansicht an S575G (1280x800) mit `scripts/ux-bild.mjs` als Ausgangswert.
 - **Fertig wenn:** Textanteil höchstens 0,5 in Kopfleiste, Provinzpanel, Armeepanel, Alarmliste und Protokoll; jedes Symbol mit zugänglichem Namen (Tooltip, aria-label); a11y-Tests und axe ohne neuen Verstoß; Desktop-Tests grün.
+
+## Meilenstein M47 — V3-Bugfix Schonfrist
+> Noahs Entscheid G1-10b (DECISIONS.md, 2026-10-04); Plan VM-01 im Vault; VORMERKUNGEN.md VM-01.
+
+### T-M47-01 · Schonfrist fuers Ausheben in eroberten Provinzen (Kern und KI)
+- **Ziel:** Schonfrist fuers Ausheben in eroberten Provinzen (Kern und KI).
+- **Paket und Priorität:** V3-Bugfix · P1
+- **Anforderungen:** R-UNIT-02
+- **Abhängigkeiten:** —
+- **Dateien:** `packages/core/src/rules/recruit.ts`, `packages/core/src/commands/recruit.ts`, `packages/ai/src/economy.ts`, `docs/plan/01-REQUIREMENTS.md`, `docs/plan/DECISIONS.md`, `docs/plan/LOESCHVERMERKE.md`
+- **Tests zuerst:** `packages/core/src/commands/recruitConquered.test.ts`, `packages/ai/src/economy.test.ts`
+- **Fertig wenn:** VM-01, G1-10b. Solange tick - occupiedSince < occupationPenaltyDays x ticksPerDay (14 Spieltage), sperrt die Moral RECRUIT nicht; Kern und KI fragen recruitMoraleBlocked. Danach und in nie eroberten Provinzen unveraendert (D6.8). Keine Regeldatei, kein Zustandsfeld. Gegenprobe: alte Zeile zurueck, SOLL-Tests fallen. pnpm verify Exit 0; Golden Master nur mit Absicht neu (Grund im Commit).
+
+### T-M47-02 · Integrationsmessung: Schonfrist-Aushebungen auf der Weltkarte
+- **Ziel:** Integrationsmessung: Schonfrist-Aushebungen auf der Weltkarte.
+- **Paket und Priorität:** V3-Bugfix · P1
+- **Anforderungen:** R-UNIT-02
+- **Abhängigkeiten:** T-M47-01
+- **Dateien:** `apps/headless/test/schonfrist.slow.test.ts`, `docs/reports/vm01/schonfrist.json`
+- **Tests zuerst:** `apps/headless/test/schonfrist.slow.test.ts`
+- **Fertig wenn:** Drei Startzahlen (1815, 1914, 2015), 200 Spieltage, 8 KI-Maechte: Aushebungen in der Schonfrist unter der Moralgrenze in der Summe > 0; auf dem Stand vor T-M47-01 gemessen = 0 (Gegenprobe).
+
+### T-M47-03 · Messkette verhaltensaendernd und PR
+- **Ziel:** Messkette verhaltensaendernd und PR.
+- **Paket und Priorität:** V3-Bugfix · P1
+- **Anforderungen:** R-UNIT-02
+- **Abhängigkeiten:** T-M47-02
+- **Dateien:** `docs/reports/vm01/messkette.md`, `docs/reports/ai-tournament-run.md`, `docs/reports/progress-measured.json`, `docs/reports/stance.json`, `docs/reports/v3/verhalten-hash.json`, `docs/plan/PROGRESS.md`
+- **Tests zuerst:** `apps/headless/test/tournament.slow.test.ts`, `apps/headless/test/progress.slow.test.ts`, `apps/headless/test/fullgame.slow.test.ts`, `apps/headless/test/ai-integration.slow.test.ts`, `apps/headless/test/m17-integration.slow.test.ts`, `apps/headless/test/stance.slow.test.ts`, `apps/headless/test/v3-verhalten.slow.test.ts`
+- **Fertig wenn:** Turnier, progress.slow, neun Vollpartien, ai-integration, m17-integration, Haltung je Exit 0 ohne geaenderte Grenze; Vorher/Nachher in docs/reports/vm01/messkette.md; allFreshness frisch; pnpm verify Exit 0; coverage:requirements V1 offen: 0; PR nach main offen, Noah merged.

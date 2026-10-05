@@ -173,6 +173,28 @@ describe('R-AI-08/AK3 Die KI handelt, bevor der Mangel da ist', () => {
       'genau ab der Grenze darf diese Provinz wieder aufnehmen',
     ).toBe(true)
   })
+
+  it('hebt in der Schonfrist nach der Eroberung trotz niedriger Moral aus (R-UNIT-02/AK1)', () => {
+    const tpd = TEST_RULES.constants.ticksPerDay
+    const window = TEST_RULES.constants.occupationPenaltyDays * tpd
+    const frisch = richContext(30 * tpd, (state) => {
+      for (const id of state.provinceOrder) {
+        const p = state.provinces[id]!
+        if (p.owner === 'p2') p.occupiedSince = state.tick - tpd
+      }
+    })
+    frisch.view.provinces = frisch.view.provinces.map((p) => (p.owner === 'p2' ? { ...p, morale: RECRUIT_MIN_MORALE - 1 } : p))
+    expect(recruitCommands(frisch, []).some((c) => c.type === 'RECRUIT'), 'Schonfrist: Aushebung trotz Moral unter der Grenze').toBe(true)
+
+    const alt = richContext(30 * tpd, (state) => {
+      for (const id of state.provinceOrder) {
+        const p = state.provinces[id]!
+        if (p.owner === 'p2') p.occupiedSince = state.tick - window
+      }
+    })
+    alt.view.provinces = alt.view.provinces.map((p) => (p.owner === 'p2' ? { ...p, morale: RECRUIT_MIN_MORALE - 1 } : p))
+    expect(recruitCommands(alt, []).some((c) => c.type === 'RECRUIT'), 'nach der Schonfrist wieder gesperrt').toBe(false)
+  })
 })
 
 /**

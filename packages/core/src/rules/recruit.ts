@@ -1,4 +1,6 @@
 import { ONE, clampFixed, mulChain, quotFixed, type Fixed } from '@worldwar/shared'
+import type { Tick } from '../state/types'
+import type { Rules } from './types'
 
 /**
  * Recruitment timing and starting condition (T-M3-05).
@@ -11,6 +13,24 @@ import { ONE, clampFixed, mulChain, quotFixed, type Fixed } from '@worldwar/shar
 
 /** Unter dieser Moral hebt eine Provinz nichts aus (D6.8). */
 export const RECRUIT_MIN_MORALE = 25_000
+
+/**
+ * Schonfrist nach der Eroberung (VM-01, Noahs Entscheid G1-10b, R-UNIT-02/AK1).
+ * Solange die Besatzungszeit laeuft (`occupationPenaltyDays`), sperrt die Moral das Ausheben nicht — sie sinkt in
+ * dieser Zeit gerade wegen des Besatzungsabzugs unter die Grenze. Danach und in nie eroberten Provinzen gilt die
+ * Grenze unveraendert (D6.8). Kern (`RECRUIT`) und KI (`economy.ts`) fragen beide hier.
+ */
+export function recruitMoraleBlocked(
+  province: { readonly morale?: Fixed | undefined; readonly occupiedSince?: Tick | null | undefined },
+  tick: number,
+  rules: Rules,
+): boolean {
+  if ((province.morale ?? 0) >= RECRUIT_MIN_MORALE) return false
+  if (province.occupiedSince === null || province.occupiedSince === undefined) return true
+  // eslint-disable-next-line no-restricted-syntax -- days x ticks-per-day, plain integers
+  const window = rules.constants.occupationPenaltyDays * rules.constants.ticksPerDay
+  return tick - province.occupiedSince >= window
+}
 
 /** 0 morale -> 20 % speed, 100 morale -> 100 % speed. */
 export function recruitSpeedFactor(morale: Fixed): Fixed {

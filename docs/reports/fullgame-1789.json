@@ -13,12 +13,12 @@
     "China",
     "Indien"
   ],
-  "decidedOnDay": 953,
-  "winner": "p6",
+  "decidedOnDay": 989,
+  "winner": "p8",
   "condition": "points",
   "warDeclarations": 6,
-  "captures": 1914,
-  "battles": 6037,
+  "captures": 2282,
+  "battles": 8207,
   "factory": {
     "highestLevelPerNation": {
       "Vereinigte Staaten": 0,
@@ -31,9 +31,9 @@
       "Indien": 3
     },
     "provincesAtLevel2OrMore": 78,
-    "provincesAtLevel3": 74,
-    "upgradesStartedToLevel2": 83,
-    "upgradesStartedToLevel3": 82
+    "provincesAtLevel3": 65,
+    "upgradesStartedToLevel2": 78,
+    "upgradesStartedToLevel3": 68
   },
   "cities": {
     "Vereinigte Staaten": {
@@ -72,10 +72,10 @@
       "fabrikOhneEisenbahn": 0
     },
     "Russland": {
-      "staedte": 58,
-      "eisenbahn": 58,
-      "festung": 58,
-      "festung2": 58,
+      "staedte": 14,
+      "eisenbahn": 14,
+      "festung": 14,
+      "festung2": 14,
       "fabrikOhneEisenbahn": 0
     },
     "China": {
@@ -86,10 +86,10 @@
       "fabrikOhneEisenbahn": 0
     },
     "Indien": {
-      "staedte": 9,
-      "eisenbahn": 9,
-      "festung": 9,
-      "festung2": 9,
+      "staedte": 53,
+      "eisenbahn": 53,
+      "festung": 53,
+      "festung2": 53,
       "fabrikOhneEisenbahn": 0
     }
   },
@@ -101,10 +101,10 @@
       "pointShareSecond": 600
     },
     "winner": {
-      "provinces": 127,
-      "pointShareFirst": 798,
-      "populationShare": 798,
-      "pointShareSecond": 913
+      "provinces": 200,
+      "pointShareFirst": 561,
+      "populationShare": 563,
+      "pointShareSecond": 944
     },
     "perNation": {
       "Vereinigte Staaten": {
@@ -139,9 +139,9 @@
       },
       "Russland": {
         "provinces": 127,
-        "pointShareFirst": 798,
-        "populationShare": 798,
-        "pointShareSecond": 913
+        "pointShareFirst": 686,
+        "populationShare": 686,
+        "pointShareSecond": null
       },
       "China": {
         "provinces": 165,
@@ -152,8 +152,8 @@
       "Indien": {
         "provinces": 200,
         "pointShareFirst": 561,
-        "populationShare": 564,
-        "pointShareSecond": null
+        "populationShare": 563,
+        "pointShareSecond": 944
       }
     },
     "reachedEvents": 8
@@ -180,8 +180,8 @@
       "veraltet": 0
     },
     "Russland": {
-      "eintraege": 117,
-      "armeen": 117,
+      "eintraege": 54,
+      "armeen": 54,
       "veraltet": 0
     },
     "China": {
@@ -190,13 +190,13 @@
       "veraltet": 0
     },
     "Indien": {
-      "eintraege": 39,
-      "armeen": 39,
+      "eintraege": 142,
+      "armeen": 142,
       "veraltet": 0
     }
   },
-  "aiMemoryKB": 5,
-  "stateKB": 297,
+  "aiMemoryKB": 6,
+  "stateKB": 318,
   "maxDays": 1500,
-  "measuredAt": "2026-10-03T12:22:15.785Z"
+  "measuredAt": "2026-10-04T22:25:42.743Z"
 }

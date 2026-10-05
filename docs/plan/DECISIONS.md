@@ -5892,3 +5892,10 @@ Grundlage: Nachtrag in `docs/plan/V3-G1-DOSSIER.md`, Playtest V3 (`docs/reports/
 - **G1-12 ·** Mid-Game-Stress erst messen (T-M46-16, Ereignisdichte je Abschnitt), dann UX- oder Balance-Entscheid.
 - **V4 „Gefecht“ vorgemerkt** (VM-07, VM-08): Positionen in der Provinz, Waffenradius — nicht in V3.
 
+
+## 2026-10-04 · VM-01 Schonfrist · Ausgestaltung (Plan VM-01, freigegeben durch Noah per Entsperren der Kanban-Karte)
+- **Schonfrist = Besatzungszeit:** solange `tick − occupiedSince < occupationPenaltyDays × ticksPerDay` (14 Spieltage), sperrt die Moral das Ausheben nicht (`recruitMoraleBlocked`, `packages/core/src/rules/recruit.ts`). Die Sperre entstand durch den Besatzungsabzug derselben 14 Tage; danach gilt D6.8.
+- **Spieler und KI** fragen dieselbe Funktion (`commands/recruit.ts`, `ai/src/economy.ts`).
+- **Unverändert:** `RECRUIT_MIN_MORALE`, `capturedMorale`, Aushebedauer und Startzustand (in der Schonfrist langsam und schwach — gewollte Bremse), Regeldateien, Zustand, Oberfläche.
+- **Handel:** eine abgetretene Provinz behält `occupiedSince`; ist es jünger als 14 Tage, gilt die Schonfrist auch für den Empfänger — hingenommen.
+- **Verworfen:** eigene Konstante `recruitGraceDays` (Regeldatei → Parameterlauf), Moraluntergrenze während der Frist (änderte Produktion und Aufstand mit).

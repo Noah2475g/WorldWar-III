@@ -1,0 +1,27 @@
+{
+  "note": "Erzeugt von apps/headless/test/schonfrist.slow.test.ts (T-M47-02).",
+  "days": 200,
+  "ergebnisse": [
+    {
+      "seed": 1815,
+      "captures": 582,
+      "recruits": 2890,
+      "recruitsInGrace": 170,
+      "recruitsInGraceBelowLimit": 1
+    },
+    {
+      "seed": 1914,
+      "captures": 773,
+      "recruits": 2890,
+      "recruitsInGrace": 199,
+      "recruitsInGraceBelowLimit": 1
+    },
+    {
+      "seed": 2015,
+      "captures": 670,
+      "recruits": 2904,
+      "recruitsInGrace": 133,
+      "recruitsInGraceBelowLimit": 0
+    }
+  ]
+}

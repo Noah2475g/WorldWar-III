@@ -228,6 +228,7 @@ werden selbst erzeugt oder stammen aus frei lizenzierten Quellen (siehe R-ASSET-
   Einheitenklassen, Geschwindigkeit, Reichweite, Unterhalt. Klassen mindestens: Infanterie,
   gepanzert, Artillerie, Luft, See.
 - **R-UNIT-02 — Rekrutierung** nur in Provinzen mit passendem Gebäude; kostet Ressourcen und Ticks.
+  - AK1: WÄHREND eine Provinz seit weniger als `occupationPenaltyDays` Spieltagen (14) erobert ist (`occupiedSince`), SOLL ihr Besitzer dort ausheben können, auch wenn ihre Moral unter der Aushebungsgrenze (25) liegt; danach und in nie eroberten Provinzen gilt die Grenze unverändert (D6.8). Dasselbe gilt für die KI (VM-01, G1-10b).
 - **R-UNIT-03 — Armeen.** Einheiten werden gestapelt; Armeen sind teilbar und zusammenlegbar.
 - **R-UNIT-04 — Bewegung** entlang des Provinzgraphen mit tickgenauer Ankunft, abhängig von der
   langsamsten Einheit, Gelände und Infrastruktur.
