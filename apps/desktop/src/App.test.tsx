@@ -1143,6 +1143,26 @@ describe('VM-06 Die Uhr haelt bei einem eigenen Alarm von selbst an', () => {
     expect(screen.getByText(/Tag \d+ · \d{2}:\d{2}/).textContent).toMatch(/Tag 1 · 03:00/)
   })
 
+  it('zeigt die alte Meldung nicht wieder, wenn man spaeter von Hand pausiert', () => {
+    startGame({ storage: new MemoryStorage() })
+    tempo100()
+    alarm.beiAufruf = 3
+    bilder(10, 100)
+    expect(screen.getByText(/Pausiert: /)).toBeTruthy()
+    const gedrueckt = () =>
+      within(screen.getByRole('group', { name: 'Geschwindigkeit' }))
+        .getAllByRole('button')
+        .find((knopf) => knopf.getAttribute('aria-pressed') === 'true')
+        ?.getAttribute('aria-label')
+    expect(gedrueckt()).toBe('Pause')
+
+    tempo100()
+    bilder(3, 100)
+    fireEvent.click(within(screen.getByRole('group', { name: 'Geschwindigkeit' })).getByRole('button', { name: 'Pause' }))
+
+    expect(screen.queryByText(/Pausiert: /)).toBeNull()
+  })
+
   it('laeuft mit abgeschalteter Auto-Pause weiter', () => {
     startGame({ storage: new MemoryStorage() })
     autoPauseAus()

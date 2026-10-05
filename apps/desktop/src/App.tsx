@@ -1285,6 +1285,12 @@ export function App(props: AppProps) {
   }
   const onAutoPauseRef = useRef(onAutoPause)
   onAutoPauseRef.current = onAutoPause
+  // Laeuft die Uhr wieder, ist die Auto-Pause-Meldung veraltet (sonst kaeme sie bei der naechsten Pause zurueck).
+  useEffect(() => {
+    if (speed > 0) {
+      setFastForward((alt) => (alt.reason === 'autopause' ? { ...alt, reason: null, trigger: null } : alt))
+    }
+  }, [speed])
   useEffect(() => {
     // Zu zweit gibt es keine zweite Uhr daneben (T-M37-11): der Gleichschritt gibt den
     // Takt, und ein rAF-Lauf darueber rechnete Ticks, die niemand freigegeben hat.
