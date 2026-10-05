@@ -124,4 +124,19 @@ describe('R-ARCH-01 Der Durchstich ist reproduzierbar', () => {
     expect(existsSync(file), 'Golden-Datei fehlt — mit UPDATE_GOLDEN=1 erzeugen').toBe(true)
     expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual(summary)
   })
+
+  /** Paritaet asV4 == Stand 6ca34a4 (Liefervertrag B1, D9/P10): Literal wird NIE angepasst. */
+  it('Paritaet asV4 == Stand 6ca34a4: der Lauf ohne Vertraege trifft das alte Literal', () => {
+    const result = walkthrough()
+    const copy = JSON.parse(JSON.stringify(result.state)) as Record<string, unknown> & {
+      diplomacy: Record<string, unknown>
+      nextIds: Record<string, unknown>
+    }
+    delete copy.diplomacy['contracts']
+    delete copy.nextIds['contract']
+    copy['schemaVersion'] = 4
+    expect(hashValue(copy, { omitKeys: HASH_OMIT_KEYS })).toBe('5a5c3d40488d4af2')
+    expect(result.state.tick).toBe(500)
+    expect(result.state.provinces['m1']!.owner).toBe('p1')
+  })
 })

@@ -476,6 +476,8 @@ export const de = {
     // Sätze beugen kein Verb nach der Macht — deshalb keine Mehrzahl- und keine Fremdfassung.
     TRADE_OFFER_CLOSED: 'Handelsangebot von {{player}} an {{target}}: {{reason}}.',
     TRADE_AGREED: 'Handel zwischen {{player}} und {{target}}.',
+    // Liefervertrag beendet (Liefervertrag B1, P5): nur die beiden lesen es; keine Mengen.
+    CONTRACT_CLOSED: 'Liefervertrag von {{player}} an {{target}}: {{reason}}.',
     // Die Abtretung (T-M17-06, R-DIP-09/AK2): Weltgeschehen ohne Preis. Satzgegenstand ist die Provinz —
     // deshalb weder Mehrzahl- noch Fremdfassung, und kein „ich".
     PROVINCE_CEDED: '{{province}} geht durch Vertrag von {{previous}} an {{player}} über.',
@@ -614,6 +616,14 @@ export const de = {
       // beiden Ursachen als sicher.
       invalid: 'hinfällig geworden — eine Macht ist ausgeschieden oder eine Provinz nicht mehr abtretbar',
     },
+    // Warum ein Liefervertrag zu Ende ist (Liefervertrag B1, P5) — der Satz steht in events.CONTRACT_CLOSED.
+    contractClosed: {
+      completed: 'vollständig geliefert',
+      cancelled: 'gekündigt',
+      war: 'wegen Krieges beendet',
+      invalid: 'hinfällig — eine Macht ist ausgeschieden',
+      unpaid: 'beendet — eine Seite konnte die fällige Lieferung nicht leisten',
+    },
   },
 
   /**
@@ -749,6 +759,9 @@ export const de = {
       sameResource: 'Derselbe Rohstoff steht auf beiden Seiten.',
       limit: 'Höchstens {{max}} {{resource}} je Angebot.',
       invalidAmount: 'Nur ganze, positive Mengen.',
+      badSchedule: 'Der Zeitplan ist ungültig: Abstand und Zahl der Lieferungen liegen außerhalb der Grenzen.',
+      scheduleResourcesOnly: 'Ein Liefervertrag kann nur Rohstoffe umfassen, keine Provinzen.',
+      tooManyContracts: 'Zu viele Lieferverträge: Eine der beiden Seiten hat schon die Höchstzahl.',
       war: 'Im Krieg wird nicht gehandelt.',
       declaration: 'Eine Kriegserklärung läuft — kein neuer Handel.',
       gone: 'Diese Macht ist ausgeschieden.',
@@ -1410,6 +1423,9 @@ export const de = {
     },
     ACCEPT_TRADE: {
       noOffer: 'Dieses Angebot gibt es nicht mehr.',
+    },
+    CANCEL_CONTRACT: {
+      noContract: 'Diesen Liefervertrag gibt es nicht mehr.',
     },
     DIPLOMACY: {
       self: 'Mit der eigenen Macht geht das nicht.',

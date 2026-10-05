@@ -466,6 +466,38 @@ describe('R-DIP-08 Die Sicht nennt Durchmarsch und Karte mit ihrer Richtung', ()
   })
 })
 
+describe('R-DIP-04 Liefervertraege stehen nur in der Sicht der Beteiligten (Liefervertrag B1)', () => {
+  it('Dritte sehen fremde Vertraege nicht, die Beteiligten tiefe Kopien', () => {
+    const three = createInitialState(
+      {
+        ...CONFIG,
+        players: [...CONFIG.players, { name: 'Dritter', kind: 'ai', nation: 'Sueden', color: '#2e7d32', difficulty: 'normal' }],
+      },
+      ctx,
+    )
+    three.diplomacy.contracts.push({
+      id: 'c1',
+      from: 'p1',
+      to: 'p2',
+      give: { iron: 1_000 },
+      want: { money: 500 },
+      intervalTicks: 24,
+      remaining: 3,
+      nextDueTick: 48,
+      createdTick: 24,
+    })
+
+    expect(publicView(three, 'p1').contracts).toEqual(three.diplomacy.contracts)
+    expect(publicView(three, 'p2').contracts).toEqual(three.diplomacy.contracts)
+    expect(publicView(three, 'p3').contracts, 'ein Dritter sieht den Vertrag nicht').toEqual([])
+    expect(JSON.stringify(publicView(three, 'p3'))).not.toContain('c1')
+
+    const eigene = publicView(three, 'p1')
+    eigene.contracts[0]!.give.iron = 1
+    expect(three.diplomacy.contracts[0]!.give.iron).toBe(1_000)
+  })
+})
+
 describe('R-DIP-04 Die laufende Kriegserklaerung steht nur in der Sicht der Beteiligten', () => {
   it('fehlt ohne Erklaerung', () => {
     const view = publicView(state, 'p1')

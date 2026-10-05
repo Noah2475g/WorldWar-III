@@ -11,6 +11,7 @@ import type {
   SpyMission,
   Stance,
   TradeBundle,
+  TradeSchedule,
 } from '../state/types'
 
 /**
@@ -153,6 +154,8 @@ export interface OfferTradeCommand {
   targetPlayerId: PlayerId
   give: TradeBundle
   want: TradeBundle
+  /** Zeitplan: macht das Angebot zum Liefervertrag (nur Rohstoffe). Der Schluessel fehlt ohne Zeitplan. */
+  schedule?: TradeSchedule
 }
 
 /** Nur der Empfaenger (`to`) nimmt an; beide Seiten tauschen im selben Tick. */
@@ -174,6 +177,13 @@ export interface WithdrawTradeCommand {
   type: 'WITHDRAW_TRADE'
   playerId: PlayerId
   offerId: string
+}
+
+/** Jede Partei kuendigt einen laufenden Liefervertrag sofort und ohne Strafe (Liefervertrag B1, D4). */
+export interface CancelContractCommand {
+  type: 'CANCEL_CONTRACT'
+  playerId: PlayerId
+  contractId: string
 }
 
 /**
@@ -223,6 +233,7 @@ export type Command =
   | AcceptTradeCommand
   | DeclineTradeCommand
   | WithdrawTradeCommand
+  | CancelContractCommand
   | RecruitSpyCommand
   | ReassignSpyCommand
   | DismissSpyCommand

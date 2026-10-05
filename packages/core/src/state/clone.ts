@@ -154,6 +154,12 @@ export function cloneState(state: GameState): GameState {
         ...offer,
         give: cloneBundle(offer.give),
         want: cloneBundle(offer.want),
+        ...(offer.schedule ? { schedule: { ...offer.schedule } } : {}),
+      })),
+      contracts: state.diplomacy.contracts.map((contract) => ({
+        ...contract,
+        give: { ...contract.give },
+        want: { ...contract.want },
       })),
       grievances,
     },

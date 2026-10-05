@@ -172,6 +172,7 @@ function valuesFor(event: GameEvent, map: MapData, naming: EventNaming): Record<
 
   // Handelsangebote (T-M17-05): der Grund mit Namen statt Schluessel — „withdrawn" sagt niemandem etwas.
   if (event.type === 'TRADE_OFFER_CLOSED') values.reason = t(`diplomacy.tradeClosed.${String(record.reason)}`)
+  if (event.type === 'CONTRACT_CLOSED') values.reason = t(`diplomacy.contractClosed.${String(record.reason)}`)
   // Die Abtretung (T-M17-06): der Vorbesitzer mit Namen — `previousOwner` ist eine Kennung.
   if (event.type === 'PROVINCE_CEDED') values.previous = playerName(record.previousOwner)
 
@@ -677,6 +678,7 @@ export function eventSymbol(
       return { symbol: RESOURCE_ICONS[str('resource') ?? ''] ?? 'warning' }
     case 'TRADE_EXECUTED':
     case 'TRADE_OFFER_CLOSED':
+    case 'CONTRACT_CLOSED':
     case 'TRADE_AGREED':
       return { symbol: 'trade' }
     case 'WAR_DECLARED':

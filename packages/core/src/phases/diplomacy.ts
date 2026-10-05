@@ -1,4 +1,5 @@
 import { emit } from '../events/emit'
+import { settleContracts } from '../commands/contract'
 import { settleTradeOffers } from '../commands/tradeOffer'
 import { isClearingPath, type ClearingWay } from '../rules/homePath'
 import { canUseSea } from '../rules/movement'
@@ -199,6 +200,7 @@ export const diplomacy: Phase = (draft: GameState, ctx: PhaseContext) => {
   // in Schritt 3 — oder abgelaufene Frist schliessen sie mit Rueckgabe. Ein Durchlauf, ein Grund:
   // „Ueberfall und Verfall im selben Tick" gibt die Treuhand genau einmal zurueck, als Krieg.
   settleTradeOffers(draft, ctx)
+  settleContracts(draft, ctx)
 
   relax(draft, ctx)
 }

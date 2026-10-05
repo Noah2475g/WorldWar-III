@@ -104,6 +104,7 @@ export function validateState(value: unknown): asserts value is GameState {
   if (kindOf(diplomacy['relations']) !== 'object') problems.push('diplomacy.relations fehlt')
   if (kindOf(diplomacy['offers']) !== 'array') problems.push('diplomacy.offers fehlt')
   if (kindOf(diplomacy['tradeOffers']) !== 'array') problems.push('diplomacy.tradeOffers fehlt')
+  if (kindOf(diplomacy['contracts']) !== 'array') problems.push('diplomacy.contracts fehlt')
   if (kindOf(diplomacy['grievances']) !== 'object') problems.push('diplomacy.grievances fehlt')
 
   // Die Tagespruefung der Zwischenziele liest den Eintrag jeder Macht (T-M35-03). Fehlt er,
@@ -173,7 +174,7 @@ function checkVersion4(state: Record<string, unknown>, diplomacy: Record<string,
   }
 
   const nextIds = state['nextIds'] as Record<string, unknown>
-  for (const key of ['army', 'battle', 'order', 'spy', 'offer']) {
+  for (const key of ['army', 'battle', 'order', 'spy', 'offer', 'contract']) {
     const actual = kindOf(nextIds[key])
     if (actual !== 'number') problems.push(`Feld "nextIds.${key}" fehlt oder ist ${actual} statt number`)
   }
@@ -279,9 +280,64 @@ function checkVersion4(state: Record<string, unknown>, diplomacy: Record<string,
           if (!known(provinces, id)) problems.push(`${at}.${side}.provinces[${i}] nennt keine Provinz dieser Karte`)
         })
       }
+      // Zeitplan (Liefervertrag B1): optional; wenn da, ganze Zahlen in sinnvoller Form. Die Grenzen
+      // der Regeln prueft `OFFER_TRADE` — hier nur, dass die Abwicklung nicht an NaN scheitert.
+      if ('schedule' in fields) {
+        const schedule = fields['schedule']
+        if (kindOf(schedule) !== 'object') problems.push(`${at}.schedule ist kein Objekt`)
+        else {
+          const s = schedule as Record<string, unknown>
+          if (!Number.isSafeInteger(s['intervalDays']) || (s['intervalDays'] as number) < 1) problems.push(`${at}.schedule.intervalDays ist keine ganze Zahl ab 1`)
+          if (!Number.isSafeInteger(s['deliveries']) || (s['deliveries'] as number) < 2) problems.push(`${at}.schedule.deliveries ist keine ganze Zahl ab 2`)
+        }
+      }
     })
   }
   checkNextIdAbove(nextIds, 'offer', 't', tradeOfferIds, 'diplomacy.tradeOffers', problems)
+
+  // Liefervertraege (Liefervertrag B1, Schema 5): `settleContracts` bucht auf `players[from|to]`.
+  const contractIds = new Set<string>()
+  if (kindOf(diplomacy['contracts']) === 'array') {
+    ;(diplomacy['contracts'] as unknown[]).forEach((contract, index) => {
+      const at = `diplomacy.contracts[${index}]`
+      if (kindOf(contract) !== 'object') {
+        problems.push(`${at} ist kein Objekt`)
+        return
+      }
+      const fields = contract as Record<string, unknown>
+      if (typeof fields['id'] !== 'string') problems.push(`${at}.id ist kein Text`)
+      else {
+        if (contractIds.has(fields['id'])) problems.push(`${at}.id "${fields['id']}" ist doppelt vergeben`)
+        contractIds.add(fields['id'])
+      }
+      if (!known(players, fields['from'])) problems.push(`${at}.from nennt keine Macht dieses Spiels`)
+      if (!known(players, fields['to'])) problems.push(`${at}.to nennt keine Macht dieses Spiels`)
+      else if (fields['to'] === fields['from']) problems.push(`${at}.to ist der Anbieter selbst`)
+      for (const side of ['give', 'want']) {
+        const resources = fields[side]
+        if (kindOf(resources) !== 'object') {
+          problems.push(`${at}.${side} fehlt oder ist kein Objekt`)
+          continue
+        }
+        for (const [key, amount] of Object.entries(resources as Record<string, unknown>)) {
+          if (!RESOURCE_KEYS.includes(key as ResourceKey)) problems.push(`${at}.${side}.${key} ist kein Rohstoff`)
+          else if (typeof amount !== 'number' || !Number.isSafeInteger(amount) || amount <= 0) {
+            problems.push(`${at}.${side}.${key} ist keine ganze Zahl ueber null`)
+          }
+        }
+      }
+      if (!Number.isSafeInteger(fields['intervalTicks']) || (fields['intervalTicks'] as number) <= 0) {
+        problems.push(`${at}.intervalTicks ist keine ganze Zahl ueber null`)
+      }
+      if (!Number.isSafeInteger(fields['remaining']) || (fields['remaining'] as number) < 1) {
+        problems.push(`${at}.remaining ist keine ganze Zahl ab 1`)
+      }
+      for (const key of ['nextDueTick', 'createdTick']) {
+        if (typeof fields[key] !== 'number') problems.push(`${at}.${key} ist ${kindOf(fields[key])} statt number`)
+      }
+    })
+  }
+  checkNextIdAbove(nextIds, 'contract', 'c', contractIds, 'diplomacy.contracts', problems)
 
   // Je Spion und je Aufdeckung, so tief, wie der Tageslauf sie liest (Befund M17-S7):
   // `settleEspionage` greift ungeprueft auf `players[spy.owner]` und `provinces[spy.provinceId]`.

@@ -84,6 +84,8 @@ describe('R-UI-07 Der Katalog ist vollstaendig', () => {
       'RIGHT_OF_WAY_CHANGED',
       // Seit T-M17-05: Handelsangebote (R-DIP-05).
       'TRADE_OFFER_CLOSED', 'TRADE_AGREED',
+      // Seit Liefervertrag B1: ein beendeter Liefervertrag (CONTRACT_CLOSED).
+      'CONTRACT_CLOSED',
       // Seit T-M17-06: die Abtretung (R-DIP-09/AK2).
       'PROVINCE_CEDED',
       // Seit T-M17-08: der Tageslauf der Spionage (R-SPY-02).

@@ -281,6 +281,13 @@ export interface RuleConstants {
   tradeMaxMoney: Fixed
   /** Hoechstmenge je anderem Rohstoff und Seite, Festkomma (Referenz 9.4: 30 % der Geldgrenze). */
   tradeMaxResource: Fixed
+  /** Hoechstens so viele laufende Liefervertraege je Macht (Eintraege mit `from` oder `to`; Liefervertrag B1, D5). */
+  maxActiveContracts: number
+  /** Grenzen des Zeitplans (Liefervertrag B1, P3): Abstand in Spieltagen, Zahl der Lieferungen. */
+  contractMinIntervalDays: number
+  contractMaxIntervalDays: number
+  contractMinDeliveries: number
+  contractMaxDeliveries: number
 
   // Spionage (R-SPY-01, D29.7, T-M17-07). Das Geld ist aus EINEM Anker abgeleitet: dem
   // Aufklärungssold, gemessen in T-M17-02 als 5 % des Medians des täglichen Geldertrags an

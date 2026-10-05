@@ -9,6 +9,7 @@ import {
   ADDED_IN_VERSION_2,
   ADDED_IN_VERSION_3,
   ADDED_IN_VERSION_4,
+  ADDED_IN_VERSION_5,
   REMOVED_IN_VERSION_4,
   migrate,
   type SaveEnvelope,
@@ -73,7 +74,7 @@ describe('R-GAME-08/AK5 Ein Stand der Stufe 2 laeuft mit leeren Zielen weiter', 
     // `migrate` fuehrt bis zur aktuellen Stufe, seit T-M17-03 also ueber 3 -> 4 hinweg;
     // abgezogen werden die Felder beider Schritte samt der von 3 -> 4 entfernten.
     const after = migrate(copy(V2)).state
-    const beide = [...ADDED_IN_VERSION_3, ...ADDED_IN_VERSION_4, ...REMOVED_IN_VERSION_4]
+    const beide = [...ADDED_IN_VERSION_3, ...ADDED_IN_VERSION_4, ...ADDED_IN_VERSION_5, ...REMOVED_IN_VERSION_4]
 
     expect(canonicalText(strip(after, beide))).toBe(canonicalText(strip(V2.state, beide)))
     expect(ADDED_IN_VERSION_3).toEqual(['schemaVersion', 'goals'])
@@ -108,7 +109,7 @@ describe('R-GAME-08/AK5 Ein Stand der Stufe 1 liefert ueber beide Schritte dasse
   it('liefert in einem Zug dasselbe wie Schritt fuer Schritt', () => {
     const direct = migrate(copy(V1))
     const second = migrate(copy(V1), undefined, 2)
-    const stepwise = migrate(migrate(second, undefined, 3), undefined, 4)
+    const stepwise = migrate(migrate(migrate(second, undefined, 3), undefined, 4), undefined, 5)
 
     expect(second.schemaVersion).toBe(2)
     expect(canonicalText(stepwise)).toBe(canonicalText(direct))
@@ -116,7 +117,7 @@ describe('R-GAME-08/AK5 Ein Stand der Stufe 1 liefert ueber beide Schritte dasse
 
   it('aendert nichts ausser den Feldern aller Schritte', () => {
     const after = migrate(copy(V1)).state
-    const added = [...ADDED_IN_VERSION_2, ...ADDED_IN_VERSION_3, ...ADDED_IN_VERSION_4, ...REMOVED_IN_VERSION_4]
+    const added = [...ADDED_IN_VERSION_2, ...ADDED_IN_VERSION_3, ...ADDED_IN_VERSION_4, ...ADDED_IN_VERSION_5, ...REMOVED_IN_VERSION_4]
 
     expect(canonicalText(strip(after, added))).toBe(canonicalText(strip(V1.state, added)))
   })

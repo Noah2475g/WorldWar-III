@@ -112,6 +112,9 @@ const TRADE_OFFER_REASONS: Record<string, string> = {
   'ungültiges Angebot': 'trade.blocked.invalidAmount',
   'im Krieg': 'trade.blocked.war',
   'Kriegserklärung läuft': 'trade.blocked.declaration',
+  'ungültiger Zeitplan': 'trade.blocked.badSchedule',
+  'Zeitplan nur mit Rohstoffen': 'trade.blocked.scheduleResourcesOnly',
+  'zu viele Verträge': 'trade.blocked.tooManyContracts',
 }
 
 export const REASON_KEYS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
@@ -146,6 +149,7 @@ export const REASON_KEYS: Readonly<Record<string, Readonly<Record<string, string
   ACCEPT_TRADE: TRADE_OFFER_REASONS,
   DECLINE_TRADE: { 'kein Angebot': 'refusal.ACCEPT_TRADE.noOffer' },
   WITHDRAW_TRADE: { 'kein Angebot': 'refusal.ACCEPT_TRADE.noOffer' },
+  CANCEL_CONTRACT: { 'kein Vertrag': 'refusal.CANCEL_CONTRACT.noContract' },
 }
 
 /** Der Schlüssel des Satzes zu (Befehlstyp, Grund) — oder `undefined`, wenn der Kern einen neuen Grund hat. */
