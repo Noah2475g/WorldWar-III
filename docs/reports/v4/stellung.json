@@ -162,5 +162,29 @@
       "ohneStellungFullyCovered": 4,
       "ohneStellungPartly": 14
     }
+  },
+  "ankerLuecke": {
+    "MYS": {
+      "anker": 1,
+      "gebaeudeStufe1": 5,
+      "gezeichnet": 1,
+      "armeenOhneHome": [
+        "artillery:factory",
+        "artillery:factory",
+        "artillery:factory",
+        "artillery:factory",
+        "tank:factory"
+      ]
+    },
+    "BGD": {
+      "anker": 1,
+      "gebaeudeStufe1": 5,
+      "gezeichnet": 1,
+      "armeenOhneHome": [
+        "tank:factory",
+        "tank:factory",
+        "tank:factory"
+      ]
+    }
   }
 }

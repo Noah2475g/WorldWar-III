@@ -32,6 +32,32 @@ ohneStellung ist bitgleich zu docs/reports/v3/treffer.json@25aafa4 (byScale, 5 M
 | 1 | 29 | 2 | 4 | 20 | 24 |
 | 2 | 29 | 4 | 3 | 24 | 26 |
 
-Offene Abweichung vom Plan: Soll war homeBuildingsFullyCovered = 0 je Massstab. Gemessen mit Stellung 0 / 2 / 4, ohne Stellung 4 / 4 / 3. Verdecker sind Armeekaesten Nachbarprovinzen (Stapel an gehobenen Ankern plus declutter). Die Zusicherung ist per Hermes-Entscheid auf "Summe 0,5/1/2 mit Stellung <= ohne" gelockert (6 gegen 11). Je Massstab ist 2 schlechter (4 gegen 3). Kein Drehen an DECLUTTER_RADIUS/FAN_PITCH. Reviewer soll die Lockerung beurteilen.
+## Offen fuer Noah
+
+Plan-Soll war homeBuildingsFullyCovered = 0 je Massstab. Verfehlt. Gemessen (29 Heimatgebaeude je Massstab, ungerundet):
+
+| Massstab | voll verdeckt mit Stellung | voll verdeckt ohne Stellung |
+|---|---|---|
+| 0.5 | 0 | 4 |
+| 1 | 2 | 4 |
+| 2 | 4 | 3 |
+
+Ursache: Die Verdecker sind Armeekaesten aus Nachbarprovinzen (BEN -> BFA bei Massstab 1 mit a1146/a3269, BEN -> CIV bei 2, MYS -> KHM bei 2). Die Stellung-Regel betrifft nur die home-Position eigener Armeen in ihrer eigenen Provinz. Fremde Provinzen fasst sie nicht an, deshalb gab es innerhalb E5/E6 keinen Nachbesserungsversuch. declutter behandelt Gebaeudemarker nicht als Hindernis (E7 unveraendert).
+
+Entscheidungen: Hermes entschied "je Massstab nicht schlechter als ohne Stellung". Das reisst bei Massstab 2 (4 gegen 3). Eine Summenpruefung (builder, Commit 659bccb) wurde deshalb verworfen. Der Waechter im Test ist jetzt je Massstab auf den Ist-Stand festgeschrieben (<= 0 / 2 / 4, Konstante HOME_FULLY_COVERED_MAX, Gegenprobe mit Grenze 3 bei Massstab 2 rot, Log b3-gegenprobe.log). homeBuildingsPartly wird je Massstab protokolliert (11 / 20 / 24), nicht zugesichert.
+
+Loesungsweg B (nicht Teil von V4-B3, eigenes Feature): declutter behandelt Gebaeudemarker als Hindernis. DECLUTTER_RADIUS und FAN_PITCH bleiben unveraendert.
+
+## armiesWithHome 153 statt 161
+
+193 eigene Armeen, davon 32 ohne Gattungsgebaeude, ergibt 161. Weitere 8 haben das Gattungsgebaeude auf Stufe >= 1, bekommen aber kein home, weil die Provinz nur 1 Anker hat und placeBuildings nur 1 von 5 Gebaeuden zeichnet (gemessen, Log b3-anker.log, Feld ankerLuecke in stellung.json):
+
+| Provinz | Anker (anchorsFor) | Gebaeude Stufe >= 1 | von placeBuildings gezeichnet | Armeen ohne home |
+|---|---|---|---|---|
+| MYS | 1 | 5 | 1 | 5 (artillery 4, tank 1; factory) |
+| BGD | 1 | 5 | 1 | 3 (tank 3; factory) |
+| Summe | | | | 8 |
+
+161 - 8 = 153.
 
 Hinweis: Mehrstufiger Marsch: Naeherung ab Etappe 2 (render.ts:178) ist bestehend und nicht Teil von VM-07.

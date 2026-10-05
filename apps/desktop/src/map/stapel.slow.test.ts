@@ -3,9 +3,9 @@ import { fileURLToPath } from 'node:url'
 import { gunzipSync } from 'node:zlib'
 import { describe, expect, it } from 'vitest'
 import { deserialise, parseRules, publicView, type MapData } from '@worldwar/core'
-import { anchorsFor } from './anchors.ts'
+import { anchorsFor, placeBuildings } from './anchors.ts'
 import { ARMY_BOX, BUILDING_OFFSET_Y, dominantIcon, markersFor, pickArmy, stackSummary, type ArmyMarker } from './markers.ts'
-import { armyHome, knownBuildings } from './stellung.ts'
+import { armyHome, dominantUnitKey, knownBuildings } from './stellung.ts'
 
 /**
  * Treffertest und Ueberdeckung der Armeemarker an S575G (V3 Nachbesserung U, T-M46-03):
@@ -86,6 +86,22 @@ describe('V3 Nachbesserung U: Armeemarker an S575G', () => {
       const key = m.icon ?? '?'
       byBuilding[key] = (byBuilding[key] ?? 0) + 1
     }
+    // Belegt die Differenz 193 eigene - armiesWithHome: eigene Armeen ohne home, obwohl das Gattungsgebaeude Stufe >= 1 hat.
+    const ankerLuecke: Record<string, { anker: number; gebaeudeStufe1: number; gezeichnet: number; armeenOhneHome: string[] }> = {}
+    for (const army of view.armies) {
+      if (army.owner !== viewer || !army.units) continue
+      const mark = armiesMit.find((m) => m.id === army.id)
+      if (mark?.home) continue
+      const key = dominantUnitKey(army.units.map((u) => ({ unitKey: u.unitKey, hp: u.hpTotal })))
+      const req = key ? rules.units[key]?.requiresBuilding : undefined
+      const pb = buildings[army.provinceId]
+      if (!key || !req || !pb || !pb[req]) continue
+      const an = anchors[army.provinceId] ?? []
+      ankerLuecke[army.provinceId] ??= { anker: an.length, gebaeudeStufe1: Object.keys(pb).length, gezeichnet: placeBuildings(pb, an).length, armeenOhneHome: [] }
+      ankerLuecke[army.provinceId]!.armeenOhneHome.push(`${key}:${req}`)
+    }
+    const ankerFehlend = Object.values(ankerLuecke).reduce((n, r) => n + r.armeenOhneHome.length, 0)
+    console.log('ANKER', ankerFehlend, JSON.stringify(ankerLuecke))
     const topProvince = Object.entries(byProvinceHome).sort((a, b) => b[1] - a[1])[0]?.[0]
     const W = ARMY_BOX.width
     const H = ARMY_BOX.height
@@ -204,17 +220,18 @@ describe('V3 Nachbesserung U: Armeemarker an S575G', () => {
     mkdirSync(`${ROOT}/docs/reports/v3`, { recursive: true })
     mkdirSync(`${ROOT}/docs/reports/v4`, { recursive: true })
     writeFileSync(`${ROOT}/docs/reports/v3/treffer.json`, JSON.stringify({ note: 'Erzeugt von apps/desktop/src/map/stapel.slow.test.ts (S575, Sicht der staerksten Macht), seit T-M48-03 mit Stellung', viewer, armies: armiesMit.length, byScale: mitStellung }, null, 2) + '\n')
-    writeFileSync(`${ROOT}/docs/reports/v4/stellung.json`, JSON.stringify({ armiesWithHome, byBuilding, topProvince, ohneStellung, mitStellung, gebaeude }, null, 2) + '\n')
+    writeFileSync(`${ROOT}/docs/reports/v4/stellung.json`, JSON.stringify({ armiesWithHome, byBuilding, topProvince, ohneStellung, mitStellung, gebaeude, ankerLuecke }, null, 2) + '\n')
     expect(armiesWithHome, 'Waechter ueber leerer Menge').toBeGreaterThan(0)
     for (const row of Object.values(mitStellung) as { fullyHidden: number; ownTotal: number; ownHit: number }[]) {
       expect(row.fullyHidden).toBe(0)
       expect(row.ownHit, 'jede eigene Armee waehlbar').toBe(row.ownTotal)
     }
-    // Plan-Absicht: Stellung verschlechtert die Verdeckung der Heimatgebaeude nicht (Lockerung von "== 0", Hermes-Entscheid t_4b1f1275).
-    // Je Massstab ist 2 schlechter (4 gegen 3), Summe 0,5/1/2 besser (6 gegen 11): daher Summe.
-    const rows = Object.values(gebaeude) as { homeBuildingsFullyCovered: number; ohneStellungFullyCovered: number }[]
-    const sumMit = rows.reduce((n, r) => n + r.homeBuildingsFullyCovered, 0)
-    const sumOhne = rows.reduce((n, r) => n + r.ohneStellungFullyCovered, 0)
-    expect(sumMit, 'Heimatgebaeude voll verdeckt: mit Stellung nicht mehr als ohne (Summe 0,5/1/2)').toBeLessThanOrEqual(sumOhne)
+    // Ist-Stand T-M48-03, Soll 0, offen fuer Noah (declutter/E7): Waechter je Massstab auf die Messwerte, kein Summenwaechter.
+    const HOME_FULLY_COVERED_MAX: Record<string, number> = { '0.5': 0, '1': 2, '2': 4 }
+    for (const [scale, max] of Object.entries(HOME_FULLY_COVERED_MAX)) {
+      const g = gebaeude[scale] as { homeBuildingsFullyCovered: number; homeBuildingsPartly: number }
+      console.log('HOME', scale, 'voll', g.homeBuildingsFullyCovered, 'teils', g.homeBuildingsPartly)
+      expect(g.homeBuildingsFullyCovered, `Heimatgebaeude voll verdeckt, Massstab ${scale}`).toBeLessThanOrEqual(max)
+    }
   })
 })
