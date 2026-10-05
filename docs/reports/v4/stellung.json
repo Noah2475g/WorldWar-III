@@ -1,0 +1,166 @@
+{
+  "armiesWithHome": 153,
+  "byBuilding": {
+    "infantry": 107,
+    "artillery": 20,
+    "armour": 26
+  },
+  "topProvince": "SAU",
+  "ohneStellung": {
+    "1": {
+      "markers": 237,
+      "fullyHidden": 0,
+      "partlyCovered": 0,
+      "centreCovered": 0,
+      "ownTotal": 193,
+      "ownHit": 193,
+      "visiblePoints": 6755,
+      "visiblePicked": 6755,
+      "farFromHome48px": 121,
+      "meanMovePx": 52,
+      "maxMovePx": 131
+    },
+    "2": {
+      "markers": 237,
+      "fullyHidden": 0,
+      "partlyCovered": 0,
+      "centreCovered": 0,
+      "ownTotal": 193,
+      "ownHit": 193,
+      "visiblePoints": 6755,
+      "visiblePicked": 6755,
+      "farFromHome48px": 174,
+      "meanMovePx": 75,
+      "maxMovePx": 205
+    },
+    "4": {
+      "markers": 237,
+      "fullyHidden": 0,
+      "partlyCovered": 0,
+      "centreCovered": 0,
+      "ownTotal": 193,
+      "ownHit": 193,
+      "visiblePoints": 6755,
+      "visiblePicked": 6755,
+      "farFromHome48px": 209,
+      "meanMovePx": 118,
+      "maxMovePx": 248
+    },
+    "8": {
+      "markers": 237,
+      "fullyHidden": 0,
+      "partlyCovered": 0,
+      "centreCovered": 0,
+      "ownTotal": 193,
+      "ownHit": 193,
+      "visiblePoints": 6755,
+      "visiblePicked": 6755,
+      "farFromHome48px": 219,
+      "meanMovePx": 155,
+      "maxMovePx": 276
+    },
+    "0.5": {
+      "markers": 237,
+      "fullyHidden": 0,
+      "partlyCovered": 0,
+      "centreCovered": 0,
+      "ownTotal": 193,
+      "ownHit": 193,
+      "visiblePoints": 6755,
+      "visiblePicked": 6755,
+      "farFromHome48px": 96,
+      "meanMovePx": 43,
+      "maxMovePx": 108
+    }
+  },
+  "mitStellung": {
+    "1": {
+      "markers": 237,
+      "fullyHidden": 0,
+      "partlyCovered": 0,
+      "centreCovered": 0,
+      "ownTotal": 193,
+      "ownHit": 193,
+      "visiblePoints": 6755,
+      "visiblePicked": 6755,
+      "farFromHome48px": 126,
+      "meanMovePx": 52,
+      "maxMovePx": 126
+    },
+    "2": {
+      "markers": 237,
+      "fullyHidden": 0,
+      "partlyCovered": 0,
+      "centreCovered": 0,
+      "ownTotal": 193,
+      "ownHit": 193,
+      "visiblePoints": 6755,
+      "visiblePicked": 6755,
+      "farFromHome48px": 181,
+      "meanMovePx": 78,
+      "maxMovePx": 197
+    },
+    "4": {
+      "markers": 237,
+      "fullyHidden": 0,
+      "partlyCovered": 0,
+      "centreCovered": 0,
+      "ownTotal": 193,
+      "ownHit": 193,
+      "visiblePoints": 6755,
+      "visiblePicked": 6755,
+      "farFromHome48px": 216,
+      "meanMovePx": 125,
+      "maxMovePx": 247
+    },
+    "8": {
+      "markers": 237,
+      "fullyHidden": 0,
+      "partlyCovered": 0,
+      "centreCovered": 0,
+      "ownTotal": 193,
+      "ownHit": 193,
+      "visiblePoints": 6755,
+      "visiblePicked": 6755,
+      "farFromHome48px": 222,
+      "meanMovePx": 156,
+      "maxMovePx": 270
+    },
+    "0.5": {
+      "markers": 237,
+      "fullyHidden": 0,
+      "partlyCovered": 0,
+      "centreCovered": 0,
+      "ownTotal": 193,
+      "ownHit": 193,
+      "visiblePoints": 6755,
+      "visiblePicked": 6755,
+      "farFromHome48px": 115,
+      "meanMovePx": 49,
+      "maxMovePx": 130
+    }
+  },
+  "gebaeude": {
+    "1": {
+      "homeBuildings": 29,
+      "homeBuildingsFullyCovered": 2,
+      "homeBuildingsPartly": 20,
+      "ohneStellungFullyCovered": 4,
+      "ohneStellungPartly": 24
+    },
+    "2": {
+      "homeBuildings": 29,
+      "homeBuildingsFullyCovered": 4,
+      "homeBuildingsPartly": 24,
+      "ohneStellungFullyCovered": 3,
+      "ohneStellungPartly": 26
+    },
+    "0.5": {
+      "homeBuildings": 29,
+      "homeBuildingsFullyCovered": 0,
+      "homeBuildingsPartly": 11,
+      "ohneStellungFullyCovered": 4,
+      "ohneStellungPartly": 14
+    }
+  }
+}

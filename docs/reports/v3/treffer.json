@@ -1,5 +1,5 @@
 {
-  "note": "Erzeugt von apps/desktop/src/map/stapel.slow.test.ts (S575, Sicht der staerksten Macht)",
+  "note": "Erzeugt von apps/desktop/src/map/stapel.slow.test.ts (S575, Sicht der staerksten Macht), seit T-M48-03 mit Stellung",
   "viewer": "p6",
   "armies": 237,
   "byScale": {
@@ -12,9 +12,9 @@
       "ownHit": 193,
       "visiblePoints": 6755,
       "visiblePicked": 6755,
-      "farFromHome48px": 121,
+      "farFromHome48px": 126,
       "meanMovePx": 52,
-      "maxMovePx": 131
+      "maxMovePx": 126
     },
     "2": {
       "markers": 237,
@@ -25,9 +25,9 @@
       "ownHit": 193,
       "visiblePoints": 6755,
       "visiblePicked": 6755,
-      "farFromHome48px": 174,
-      "meanMovePx": 75,
-      "maxMovePx": 205
+      "farFromHome48px": 181,
+      "meanMovePx": 78,
+      "maxMovePx": 197
     },
     "4": {
       "markers": 237,
@@ -38,9 +38,9 @@
       "ownHit": 193,
       "visiblePoints": 6755,
       "visiblePicked": 6755,
-      "farFromHome48px": 209,
-      "meanMovePx": 118,
-      "maxMovePx": 248
+      "farFromHome48px": 216,
+      "meanMovePx": 125,
+      "maxMovePx": 247
     },
     "8": {
       "markers": 237,
@@ -51,9 +51,9 @@
       "ownHit": 193,
       "visiblePoints": 6755,
       "visiblePicked": 6755,
-      "farFromHome48px": 219,
-      "meanMovePx": 155,
-      "maxMovePx": 276
+      "farFromHome48px": 222,
+      "meanMovePx": 156,
+      "maxMovePx": 270
     },
     "0.5": {
       "markers": 237,
@@ -64,9 +64,9 @@
       "ownHit": 193,
       "visiblePoints": 6755,
       "visiblePicked": 6755,
-      "farFromHome48px": 96,
-      "meanMovePx": 43,
-      "maxMovePx": 108
+      "farFromHome48px": 115,
+      "meanMovePx": 49,
+      "maxMovePx": 130
     }
   }
 }

@@ -3,7 +3,9 @@ import { fileURLToPath } from 'node:url'
 import { gunzipSync } from 'node:zlib'
 import { describe, expect, it } from 'vitest'
 import { deserialise, parseRules, publicView, type MapData } from '@worldwar/core'
-import { ARMY_BOX, dominantIcon, markersFor, pickArmy, stackSummary, type ArmyMarker } from './markers.ts'
+import { anchorsFor } from './anchors.ts'
+import { ARMY_BOX, BUILDING_OFFSET_Y, dominantIcon, markersFor, pickArmy, stackSummary, type ArmyMarker } from './markers.ts'
+import { armyHome, knownBuildings } from './stellung.ts'
 
 /**
  * Treffertest und Ueberdeckung der Armeemarker an S575G (V3 Nachbesserung U, T-M46-03):
@@ -40,21 +42,54 @@ describe('V3 Nachbesserung U: Armeemarker an S575G', () => {
     const viewer = Object.keys(count).sort((a, b) => count[b]! - count[a]!)[0]!
     const view = publicView(state, viewer, rules)
     const centres = Object.fromEntries(world.provinces.map((p) => [p.id, p.center as { x: number; y: number }])) as Record<string, { x: number; y: number }>
-    const armies: ArmyMarker[] = view.armies.map((army) => {
+    const buildings = knownBuildings(view.provinces)
+    const anchors = Object.fromEntries(world.provinces.map((p) => [p.id, anchorsFor(p.polygons, p.center)]))
+    // Wie App.tsx (E2/E4): home/toHome nur fuer eigene Armeen mit bekannten Einheiten.
+    const armiesMit: ArmyMarker[] = view.armies.map((army) => {
       const icon = army.units ? dominantIcon(army.units.map((s) => ({ unitKey: s.unitKey, hp: s.hpTotal }))) : undefined
       const summary = army.units ? stackSummary(army.units, rules) : null
+      const own = army.owner === viewer
+      const home = own ? armyHome(army.units, buildings[army.provinceId], anchors[army.provinceId], rules) : null
+      const next = army.path?.[0]
+      const toHome = own && next ? armyHome(army.units, buildings[next], anchors[next], rules) : null
+      const march =
+        next && army.departureTick != null && army.arrivalTick != null
+          ? { toProvinceId: next, departureTick: army.departureTick, arrivalTick: army.arrivalTick, route: army.path!, ...(toHome ? { toHome } : {}) }
+          : undefined
       return {
         id: army.id,
         provinceId: army.provinceId,
         owner: army.owner,
         strength: army.strength,
-        own: army.owner === viewer,
+        own,
         ...(icon ? { icon } : {}),
+        ...(home ? { home } : {}),
         ...(summary ? { count: summary.count, condition: summary.condition } : {}),
+        ...(march ? { march } : {}),
       }
     })
+    // Derselbe Bestand ohne home/toHome: der alte Weg (Provinzmitte).
+    const armiesOhne: ArmyMarker[] = armiesMit.map((m) => {
+      const { home: _home, march, ...rest } = m
+      void _home
+      if (!march) return rest
+      const { toHome: _toHome, ...marchRest } = march
+      void _toHome
+      return { ...rest, march: marchRest }
+    })
+    const armiesWithHome = armiesMit.filter((m) => m.home).length
+    const byBuilding: Record<string, number> = {}
+    const byProvinceHome: Record<string, number> = {}
+    for (const m of armiesMit) {
+      if (!m.home) continue
+      byProvinceHome[m.provinceId] = (byProvinceHome[m.provinceId] ?? 0) + 1
+      const key = m.icon ?? '?'
+      byBuilding[key] = (byBuilding[key] ?? 0) + 1
+    }
+    const topProvince = Object.entries(byProvinceHome).sort((a, b) => b[1] - a[1])[0]?.[0]
     const W = ARMY_BOX.width
     const H = ARMY_BOX.height
+    const measure = (armies: ArmyMarker[]): Record<string, unknown> => {
     const byScale: Record<string, unknown> = {}
     for (const scale of [0.5, 1, 2, 4, 8]) {
       const v = { x: 0, y: 0, scale }
@@ -115,11 +150,71 @@ describe('V3 Nachbesserung U: Armeemarker an S575G', () => {
       })
       byScale[String(scale)] = { markers: list.length, fullyHidden: hidden, partlyCovered: partly, centreCovered: hiddenCentre, ownTotal, ownHit, visiblePoints, visiblePicked, farFromHome48px: displaced, meanMovePx: Math.round(sumMove / Math.max(1, list.length)), maxMovePx: Math.round(maxMove) }
     }
+    return byScale
+    }
+    const ohneStellung = measure(armiesOhne)
+    const mitStellung = measure(armiesMit)
+
+    // Heimatgebaeude: Gebaeudemarker, an deren Punkt mindestens eine Armee ihr home hat; 7x7 Stichproben auf 14x14.
+    const gebaeude: Record<string, unknown> = {}
+    for (const scale of [0.5, 1, 2]) {
+      const v = { x: 0, y: 0, scale }
+      const all = markersFor(armiesMit, buildings, centres, v, { anchors })
+      const eps = 1e-6
+      const homeBuildings = all.filter(
+        (m) =>
+          m.kind === 'building' &&
+          armiesMit.some((a) => {
+            if (!a.home || a.provinceId !== m.provinceId) return false
+            const hx = a.home.x / scale
+            const hy = a.home.y / scale
+            return Math.abs(m.x - hx) < eps && (Math.abs(m.y - hy) < eps || Math.abs(m.y - (hy + BUILDING_OFFSET_Y)) < eps)
+          }),
+      )
+      // Dieselben Gebaeudemarker, einmal von den Kaesten mit, einmal ohne Stellung verdeckt.
+      const cover = (armiesX: typeof armiesMit) => {
+        const armyBoxes = markersFor(armiesX, buildings, centres, v, { anchors }).filter((m) => m.kind === 'army')
+        let fully = 0
+        let partly = 0
+        for (const bm of homeBuildings) {
+          let covered = 0
+          for (let ix = 0; ix < 7; ix++) {
+            for (let iy = 0; iy < 7; iy++) {
+              const px = bm.x - 7 + ((ix + 0.5) * 14) / 7
+              const py = bm.y - 7 + ((iy + 0.5) * 14) / 7
+              if (armyBoxes.some((b) => px >= b.x - W / 2 && px <= b.x + W / 2 && py >= b.y - H / 2 && py <= b.y + H / 2)) covered += 1
+            }
+          }
+          if (covered === 49) fully += 1
+          else if (covered > 0) partly += 1
+        }
+        return { fully, partly }
+      }
+      const mit = cover(armiesMit)
+      const ohne = cover(armiesOhne as typeof armiesMit)
+      gebaeude[String(scale)] = {
+        homeBuildings: homeBuildings.length,
+        homeBuildingsFullyCovered: mit.fully,
+        homeBuildingsPartly: mit.partly,
+        ohneStellungFullyCovered: ohne.fully,
+        ohneStellungPartly: ohne.partly,
+      }
+    }
+
     mkdirSync(`${ROOT}/docs/reports/v3`, { recursive: true })
-    writeFileSync(`${ROOT}/docs/reports/v3/treffer.json`, JSON.stringify({ note: 'Erzeugt von apps/desktop/src/map/stapel.slow.test.ts (S575, Sicht der staerksten Macht)', viewer, armies: armies.length, byScale }, null, 2) + '\n')
-    for (const row of Object.values(byScale) as { fullyHidden: number; ownTotal: number; ownHit: number }[]) {
+    mkdirSync(`${ROOT}/docs/reports/v4`, { recursive: true })
+    writeFileSync(`${ROOT}/docs/reports/v3/treffer.json`, JSON.stringify({ note: 'Erzeugt von apps/desktop/src/map/stapel.slow.test.ts (S575, Sicht der staerksten Macht), seit T-M48-03 mit Stellung', viewer, armies: armiesMit.length, byScale: mitStellung }, null, 2) + '\n')
+    writeFileSync(`${ROOT}/docs/reports/v4/stellung.json`, JSON.stringify({ armiesWithHome, byBuilding, topProvince, ohneStellung, mitStellung, gebaeude }, null, 2) + '\n')
+    expect(armiesWithHome, 'Waechter ueber leerer Menge').toBeGreaterThan(0)
+    for (const row of Object.values(mitStellung) as { fullyHidden: number; ownTotal: number; ownHit: number }[]) {
       expect(row.fullyHidden).toBe(0)
       expect(row.ownHit, 'jede eigene Armee waehlbar').toBe(row.ownTotal)
     }
+    // Plan-Absicht: Stellung verschlechtert die Verdeckung der Heimatgebaeude nicht (Lockerung von "== 0", Hermes-Entscheid t_4b1f1275).
+    // Je Massstab ist 2 schlechter (4 gegen 3), Summe 0,5/1/2 besser (6 gegen 11): daher Summe.
+    const rows = Object.values(gebaeude) as { homeBuildingsFullyCovered: number; ohneStellungFullyCovered: number }[]
+    const sumMit = rows.reduce((n, r) => n + r.homeBuildingsFullyCovered, 0)
+    const sumOhne = rows.reduce((n, r) => n + r.ohneStellungFullyCovered, 0)
+    expect(sumMit, 'Heimatgebaeude voll verdeckt: mit Stellung nicht mehr als ohne (Summe 0,5/1/2)').toBeLessThanOrEqual(sumOhne)
   })
 })
