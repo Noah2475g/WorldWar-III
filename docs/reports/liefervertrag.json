@@ -1,0 +1,18 @@
+{
+  "gemessenAm": "2026-10-05",
+  "measuredAtCommit": "a8fbaa8",
+  "seed": 1914,
+  "partner": "p2",
+  "gabe": "food",
+  "gabeMenge": 13340,
+  "wunschGeld": 12127,
+  "zeitplan": {
+    "intervalDays": 2,
+    "deliveries": 3
+  },
+  "annahmeTick": 29,
+  "annahmeTag": 1,
+  "lieferungenNachAnnahme": 2,
+  "schliessgrund": "completed",
+  "ablehnungen": []
+}

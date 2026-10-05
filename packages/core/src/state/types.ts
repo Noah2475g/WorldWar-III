@@ -324,6 +324,12 @@ export interface TradeBundle {
   provinces: ProvinceId[]
 }
 
+/** Zeitplan eines Liefervertrags (Liefervertrag B1, P2): `deliveries` Lieferungen im Abstand von `intervalDays`. */
+export interface TradeSchedule {
+  intervalDays: number
+  deliveries: number
+}
+
 export interface TradeOffer {
   id: string
   from: PlayerId
@@ -333,6 +339,24 @@ export interface TradeOffer {
   want: TradeBundle
   createdTick: Tick
   expiresAtTick: Tick
+  /** Nur bei einem Liefervertrag; der Schluessel FEHLT sonst (nie `undefined`: der Hash wirft). */
+  schedule?: TradeSchedule
+}
+
+/**
+ * Ein laufender Liefervertrag (Liefervertrag B1, D2/P2). `from` = Anbieter (liefert `give`),
+ * `to` = Annehmender (liefert `want`). `remaining` = noch ausstehende Lieferungen NACH der Annahme.
+ */
+export interface DeliveryContract {
+  id: string
+  from: PlayerId
+  to: PlayerId
+  give: Partial<Record<ResourceKey, Fixed>>
+  want: Partial<Record<ResourceKey, Fixed>>
+  intervalTicks: Tick
+  remaining: number
+  nextDueTick: Tick
+  createdTick: Tick
 }
 
 export interface DiplomacyState {
@@ -345,6 +369,8 @@ export interface DiplomacyState {
    * von T-M17-05 gefuellt — dieselbe Bauart wie `grievances` in M15.
    */
   tradeOffers: TradeOffer[]
+  /** Laufende Liefervertraege (Liefervertrag B1, Schema 5), in Abschlussreihenfolge. */
+  contracts: DeliveryContract[]
   /**
    * Wer ist auf wen wie boese (R-DIP-06, T-M15-05).
    *
@@ -442,7 +468,7 @@ export interface GameState {
    * angelegt, ab T-M17-07 gefuellt.
    */
   espionage: EspionageState
-  nextIds: { army: number; battle: number; order: number; spy: number; offer: number }
+  nextIds: { army: number; battle: number; order: number; spy: number; offer: number; contract: number }
 }
 
 /** Keys the simulation hash ignores (design D2, "Was der Hash umfasst"). */
@@ -466,5 +492,8 @@ export const HASH_OMIT_KEYS: readonly string[] = ['eventLog']
  * `sharedMap` entfallen, an ihre Stelle treten `aGrantsPassage`/`bGrantsPassage`,
  * `aPassageEndsAtTick`/`bPassageEndsAtTick` und `aSharesMap`/`bSharesMap`. T-M17-04 bis -14
  * fuellen diese Felder mit Verhalten und erhoehen die Stufe **nicht**.
+ *
+ * **5 seit dem 2026-10-05 (Liefervertrag B1).** Der Schritt 4 → 5 legt `diplomacy.contracts`
+ * leer und `nextIds.contract` mit 1 an; `TradeOffer.schedule` ist optional und braucht keine Migration.
  */
-export const SCHEMA_VERSION = 4
+export const SCHEMA_VERSION = 5

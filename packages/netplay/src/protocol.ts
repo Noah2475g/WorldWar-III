@@ -29,8 +29,11 @@ import type { Command, GameConfig, GameState, PlayerId } from '@worldwar/core'
  * einen uebertragenen Stand nur auf seine Pruefsumme, haette einen Stand der Stufe 4 angenommen
  * und waere nach dem Start auseinandergelaufen — erreichbar ist er nur ueber diese Zahl im
  * ersten `hallo` (Befund M17-4, `protocol.test.ts` fuehrt die Paare).
+ *
+ * **3 seit dem 2026-10-05** (Formatstufe 5, Liefervertrag B1): der uebertragene Stand traegt
+ * `diplomacy.contracts` und `nextIds.contract`.
  */
-export const PROTOCOL_VERSION = 2
+export const PROTOCOL_VERSION = 3
 
 /** Die sieben Arten, in der Reihenfolge, in der eine Partie sie sieht. */
 export const MESSAGE_KINDS = ['hallo', 'willkommen', 'probe', 'befehle', 'pause', 'zustand', 'ende'] as const

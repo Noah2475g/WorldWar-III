@@ -451,6 +451,20 @@ handeln lässt.
 | `tradeMaxMoney` | 507.650 | abgeleitet | Referenz 9.4 (100.000) auf der Skala des Ankers: 100.000 × 10.153 / 2.000 — rund zweieinhalb Tageserträge einer mittleren Macht, knapp ein Drittel des Startgelds |
 | `tradeMaxResource` | 152.295 | abgeleitet | 30 % von `tradeMaxMoney` (Referenz 9.4: 30.000 zu 100.000), je Rohstoff und Seite |
 
+## Lieferverträge (Liefervertrag Etappe 1, B1, D5, P3)
+
+Fünf Zahlen in `constants.json`, alle geschätzt: nichts in der Referenz nennt Lieferverträge. Die
+Höchstmengen gelten **je Lieferung** (`tradeMaxMoney`/`tradeMaxResource`, siehe oben). In einer reinen
+KI-Partie wirkt keine der fünf Zahlen, bis B2 die KI Verträge annehmen lässt.
+
+| Konstante | Wert | Status | Begründung |
+|---|---|---|---|
+| `maxActiveContracts` | 3 | geschätzt | je Macht (Einträge mit `from` oder `to`); begrenzt die dauerhafte Bindung von Beständen, ein Vertrag je Nachbar-Handelsstrang reicht |
+| `contractMinIntervalDays` | 1 | geschätzt | kürzester Abstand: täglich, wie die Wirtschaft rechnet |
+| `contractMaxIntervalDays` | 30 | geschätzt | längster Abstand: ein Monat, danach wäre der Vertrag eine Verabredung ohne Wirkung in einer 90-Tage-Partie |
+| `contractMinDeliveries` | 2 | geschätzt | unter zwei Lieferungen wäre es ein Einmalangebot |
+| `contractMaxDeliveries` | 20 | geschätzt | begrenzt die Laufzeit auf höchstens 20 × 30 Tage und hält den Vertragsstand klein |
+
 ## Handelsangebote und Durchmarsch der KI (R-AI-09, D29.7, D29.8, T-M17-10)
 
 Die Zahlen oberster Ebene in `ai.json`. Der Wächter in `test/balancing.test.ts` verlangt seit

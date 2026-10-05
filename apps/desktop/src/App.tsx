@@ -40,6 +40,7 @@ import {
   spySummary,
   targetAction,
   tradeOfferAction,
+  contractRowActions,
   tradePreview,
   unitCounts,
   type ActionContext,
@@ -2014,6 +2015,15 @@ export function App(props: AppProps) {
     }
   }, [ctx, view, nameOf, nameOfProvince, toAction])
 
+  /** Laufende Liefervertraege als Zeilen mit Kuendigen-Knopf (Liefervertrag B3, D8). */
+  const contractRows = useMemo(() => {
+    if (!ctx || !view) return []
+    return contractRowActions(ctx, view, { nameOf, nameOfProvince }).map((row) => ({
+      ...row,
+      actions: row.actions.map((spec) => toAction(spec)),
+    }))
+  }, [ctx, view, nameOf, nameOfProvince, toAction])
+
   /**
    * Spionage-Meldungen sammeln (R-SPY-06/AK2, E3, T-M17-13).
    *
@@ -2693,6 +2703,7 @@ export function App(props: AppProps) {
                   actionsFor={(playerId) => diplomacyActions(ctx, playerId).map((spec) => toAction(spec))}
                   passageFor={(playerId) => passageActions(ctx, playerId).map((spec) => toAction(spec))}
                   offers={offerRows}
+                  contracts={contractRows}
                   tradeForm={{
                     resources: RESOURCE_KEYS,
                     stock: view.self.resources,

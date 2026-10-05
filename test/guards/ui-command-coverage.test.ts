@@ -56,7 +56,8 @@ function uiCommandSource(): string {
 // T-M17-14 hat die vier Handelsbefehle erreichbar gemacht (Angebotsformular, Annehmen/Ablehnen/
 // Zuruecknehmen im Diplomatiepanel) — die Ausnahmen sind gestrichen. Der Kommentar bleibt stehen,
 // damit eine spaetere Luecke hier wieder einen Grund bekommt statt eines blossen Namens.
-const NICHT_FUER_DEN_SPIELER: Record<string, string> = {}
+const NICHT_FUER_DEN_SPIELER: Record<string, string> = {
+}
 
 describe('R-UI-05 Jeder Befehl des Kerns ist fuer den Spieler erreichbar', () => {
   it('findet ueberhaupt Kommandotypen', () => {
