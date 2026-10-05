@@ -1,6 +1,6 @@
 # Auto-Pause-Zaehlung (VM-06, B1)
 
-Gemessen auf: c67f6cf · Ausloeser: WAR_DECLARED an mich, CAPITAL_LOST (ARMY_INTRUDED gestrichen, siehe unten) · Pause = Tick mit >= 1 Ausloeser, keine Sperrzeit · jede Macht als Betrachter · Gate: max. 10 je Macht und Partie.
+Gemessen auf: 551e907 · Ausloeser: WAR_DECLARED an mich, CAPITAL_LOST (ARMY_INTRUDED gestrichen, siehe unten) · Pause = Tick mit >= 1 Ausloeser, keine Sperrzeit · jede Macht als Betrachter · Gate: max. 10 je Macht und Partie.
 
 Erzeugt von `apps/headless/test/autopause-zaehlung.slow.test.ts`. Simulation (KI spielt alle Maechte), keine Zeitmessung.
 
@@ -23,7 +23,7 @@ Entscheidung an Tag 589, Sieger p6. Ausloeser gesamt: 22, Paritaetspruefung (fir
 
 ## Startzahl 1915
 
-Entscheidung an Tag 535, Sieger p6. Ausloeser gesamt: 15, Paritaetspruefung (firstAlertFor): 15 von 15 bestanden. **Maximum: 6 Pausen (p7)** - Gate <= 10: erfuellt.
+Entscheidung an Tag 640, Sieger p6. Ausloeser gesamt: 18, Paritaetspruefung (firstAlertFor): 18 von 18 bestanden. **Maximum: 8 Pausen (p8)** - Gate <= 10: erfuellt.
 
 | Macht | Pausen | Typen |
 | --- | ---: | --- |
@@ -33,5 +33,5 @@ Entscheidung an Tag 535, Sieger p6. Ausloeser gesamt: 15, Paritaetspruefung (fir
 | p4 | 1 | WAR_DECLARED: 1 |
 | p5 | 1 | WAR_DECLARED: 1 |
 | p6 | 1 | WAR_DECLARED: 1 |
-| p7 | 6 | WAR_DECLARED: 1, CAPITAL_LOST: 5 |
-| p8 | 6 | CAPITAL_LOST: 5, WAR_DECLARED: 1 |
+| p7 | 7 | WAR_DECLARED: 2, CAPITAL_LOST: 5 |
+| p8 | 8 | CAPITAL_LOST: 6, WAR_DECLARED: 2 |
