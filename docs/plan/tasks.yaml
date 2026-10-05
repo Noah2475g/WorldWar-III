@@ -4357,6 +4357,6 @@ tasks:
     deps: [T-M48-03]
     requirements: [R-MAP-05]
     design: []
-    files: [scripts/v4-stellung-bild.mjs, docs/ux/v4-stellung, docs/reports/v4/stellung.md, docs/plan/PROGRESS.md]
+    files: [scripts/v4-stellung-bild.mjs, docs/ux/v4-stellung/stand-nachher.png, docs/ux/v4-stellung/stand-vorher.png, docs/ux/v4-stellung/marsch-nachher.png, docs/ux/v4-stellung/marsch-vorher.png, docs/reports/v4/stellung.md, docs/plan/PROGRESS.md]
     tests: [scripts/v4-stellung-bild.mjs]
     dod: "Bilder vorher/nachher SAU vom laufenden Programm, angesehen und beschrieben; pnpm verify Exit 0; coverage:requirements V1 offen: 0; PR von claude/v4-stellung offen (Noah2475g), Merge nur durch reviewer."

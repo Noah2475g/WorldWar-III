@@ -8157,6 +8157,6 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Paket und Priorität:** V4 Etappe 1 · P1
 - **Anforderungen:** R-MAP-05
 - **Abhängigkeiten:** T-M48-03
-- **Dateien:** `scripts/v4-stellung-bild.mjs`, `docs/ux/v4-stellung`, `docs/reports/v4/stellung.md`, `docs/plan/PROGRESS.md`
+- **Dateien:** `scripts/v4-stellung-bild.mjs`, `docs/ux/v4-stellung/stand-nachher.png`, `docs/ux/v4-stellung/stand-vorher.png`, `docs/ux/v4-stellung/marsch-nachher.png`, `docs/ux/v4-stellung/marsch-vorher.png`, `docs/reports/v4/stellung.md`, `docs/plan/PROGRESS.md`
 - **Tests zuerst:** `scripts/v4-stellung-bild.mjs`
 - **Fertig wenn:** Bilder vorhanden und angesehen, `pnpm verify` Exit 0, PR-URL, `gh auth status` = Noah2475g.
