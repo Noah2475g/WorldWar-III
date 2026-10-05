@@ -61,3 +61,9 @@ Loesungsweg B (nicht Teil von V4-B3, eigenes Feature): declutter behandelt Gebae
 161 - 8 = 153.
 
 Hinweis: Mehrstufiger Marsch: Naeherung ab Etappe 2 (render.ts:178) ist bestehend und nicht Teil von VM-07.
+
+## Abnahmebilder am laufenden Programm (T-M48-04)
+
+Bilder: docs/ux/v4-stellung/stand-vorher.png, stand-nachher.png, marsch-vorher.png, marsch-nachher.png (Stand S575G, 1280x800, Pause; erzeugt mit scripts/v4-stellung-bild.mjs). Vorher = Worktree .claude/worktrees/vm07-vorher (detached b23aa04 = origin/main, Port 5342, stellung.ts dort nicht ausgeliefert), nachher = Worktree vm07 (Port 5341, stellung.ts ausgeliefert). Beide Bilder selbst angesehen.
+
+Befund: Der Klick auf die Uebersichtskarte (2479/4000, 1250/2400) zeigt Nahost und Suedasien mit SAU am linken Bildrand-Mitte, nicht stark herangezoomt; der Klickpunkt blieb unveraendert. Nachher stehen die eigenen Armeekaesten sichtbar ueber den Gebaeudezeichen (Kaserne/Fabrik) statt wie vorher mitten in der Provinz auf ihnen; die Gebaeudezeichen sind in beiden Bildern zu erkennen. Fremde Armeen (rote Kaesten, Sued des Bildes) stehen unveraendert in der Provinzmitte. Im Marschbild (eine Spielstunde Tempo 1, dann Pause) laufen Marker und Marschpfeil gemeinsam, kein Sprung erkennbar. In SAU sind es viele Armeen an wenigen Ankern: das Raster waechst nach oben und ragt dicht gedraengt in Nachbarprovinzen; Geschmacksfrage an Noah, nicht umgebaut.

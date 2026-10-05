@@ -4323,7 +4323,7 @@ tasks:
   - id: T-M48-01
     milestone: M48
     title: "Stellungsregel (stellung.ts) und Datenweg home/toHome"
-    status: todo
+    status: done
     deps: []
     requirements: [R-MAP-05]
     design: []
@@ -4333,7 +4333,7 @@ tasks:
   - id: T-M48-02
     milestone: M48
     title: "Hub, Raster nach oben, Marsch ohne Sprung"
-    status: todo
+    status: done
     deps: [T-M48-01]
     requirements: [R-MAP-05]
     design: []
@@ -4343,7 +4343,7 @@ tasks:
   - id: T-M48-03
     milestone: M48
     title: "Waechter an S575 ohne und mit Stellung"
-    status: todo
+    status: done
     deps: [T-M48-02]
     requirements: [R-MAP-05]
     design: []
@@ -4353,7 +4353,7 @@ tasks:
   - id: T-M48-04
     milestone: M48
     title: "Abnahme am laufenden Programm, Bericht, PR"
-    status: todo
+    status: done
     deps: [T-M48-03]
     requirements: [R-MAP-05]
     design: []
