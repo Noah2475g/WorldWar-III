@@ -441,3 +441,84 @@ describe('R-DIP-05 Kein Geschaeft im Zug einer eigenen Kriegserklaerung (Befund 
     expect(offered).toMatchObject({ type: 'OFFER_TRADE', targetPlayerId: 'p1' })
   })
 })
+
+/**
+ * Liefervertrag B2 (D7/P8): die KI nimmt Vertraege begruendet an oder lehnt sie ab.
+ * Bestaende und Preise setzen die Tests selbst (keine festen Laenderannahmen).
+ */
+describe('Liefervertrag: Annahme und Ablehnung der KI (D7)', () => {
+  /** Mensch p2 bietet Oel (Menge so, dass die Marge 1100 Promille traegt) gegen Geld, mit Zeitplan. */
+  function vertragsAngebot(wantMoney: number, deliveries: number, intervalDays: number) {
+    const base = handelsLage()
+    base.market.prices.oil = 2000
+    base.market.prices.money = 1000
+    base.players.p3!.resources = { ...base.players.p3!.resources, money: 3_000_000 }
+    const giveOil = Math.ceil((wantMoney * 1000 * 1100) / (2000 * 1000))
+    base.players.p2!.resources = { ...base.players.p2!.resources, oil: giveOil * 2 }
+    const r = step(
+      base,
+      [
+        {
+          type: 'OFFER_TRADE',
+          playerId: 'p2',
+          targetPlayerId: 'p3',
+          give: { resources: { oil: giveOil }, provinces: [] },
+          want: { resources: { money: wantMoney }, provinces: [] },
+          schedule: { intervalDays, deliveries },
+        },
+      ],
+      ctx,
+    )
+    const rejected = r.events.find((e) => e.type === 'COMMAND_REJECTED')
+    if (rejected) throw new Error(`Angebot abgelehnt: ${JSON.stringify(rejected)}`)
+    return { state: r.state, offerId: r.state.diplomacy.tradeOffers[r.state.diplomacy.tradeOffers.length - 1]!.id }
+  }
+
+  it('AK1-KI: nimmt Oel gegen Geld, 5x alle 3 Tage, an und nennt den Vertrag', () => {
+    const { state, offerId } = vertragsAngebot(200_000, 5, 3)
+    const explanations: Explanation[] = []
+    const commands = tradeOfferCommands(contextFor(state, 'p3'), explanations, [])
+    expect(commands.find((c) => c.type === 'ACCEPT_TRADE')).toMatchObject({ offerId })
+    expect(explanations[0]!.reason).toContain('Liefervertrag 5× alle 3 Tage')
+    allAccepted(state, commands)
+    const after = step(state, commands, ctx)
+    expect(after.state.diplomacy.contracts).toHaveLength(1)
+  })
+
+  it('lehnt ab, wenn das Budget fuer alle Lieferungen nicht reicht', () => {
+    const { state, offerId } = vertragsAngebot(200_000, 20, 1)
+    const explanations: Explanation[] = []
+    const commands = tradeOfferCommands(contextFor(state, 'p3'), explanations, [])
+    expect(commands.find((c) => c.type === 'DECLINE_TRADE')).toMatchObject({ offerId })
+    expect(explanations[0]!.reason).toMatch(/^money: 4000000 für 20 Lieferungen über \d+$/)
+  })
+
+  it('lehnt ab bei erreichter Vertragsgrenze', () => {
+    const { state } = vertragsAngebot(200_000, 5, 3)
+    for (let i = 1; i <= TEST_RULES.constants.maxActiveContracts; i++) {
+      state.diplomacy.contracts.push({
+        id: `c${i}`,
+        from: 'p2',
+        to: 'p3',
+        give: { iron: 1_000 },
+        want: { food: 1_000 },
+        intervalTicks: 72,
+        remaining: 3,
+        nextDueTick: 1_000_000,
+        createdTick: 0,
+      })
+    }
+    const explanations: Explanation[] = []
+    const commands = tradeOfferCommands(contextFor(state, 'p3'), explanations, [])
+    expect(commands.find((c) => c.type === 'DECLINE_TRADE')).toBeDefined()
+    expect(explanations[0]!.reason).toBe('Vertragsgrenze erreicht')
+  })
+
+  it('Einmalangebot ohne Zeitplan: Antwort ohne Vertragstext', () => {
+    const base = handelsLage()
+    const { state } = offer(base, { food: 100_000 }, { wood: 90_000 })
+    const explanations: Explanation[] = []
+    tradeOfferCommands(contextFor(state, 'p3'), explanations, [])
+    expect(explanations[0]!.reason).not.toContain('Liefervertrag')
+  })
+})
