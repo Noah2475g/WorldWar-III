@@ -1,10 +1,10 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react'
 import { MAX_DEPART_DELAY_DAYS } from '@worldwar/core'
-import type { PublicView, ResourceKey, Terrain, VisibleArmy, VisibleProvince } from '@worldwar/core'
+import type { CommandError, PublicView, ResourceKey, Terrain, VisibleArmy, VisibleProvince } from '@worldwar/core'
 // Nur der Typ: zur Laufzeit importiert weiterhin events.ts aus Panels.tsx, nicht umgekehrt.
 import type { BattleReportData, PricePoint } from '../game/events.ts'
 import type { TimelineEntry } from '../game/saves.ts'
-import type { NextUnlock, TradeDraft } from '../game/actions.ts'
+import type { CostLine, NextUnlock, TradeDraft } from '../game/actions.ts'
 import { t } from '../i18n/text.ts'
 import { DeltaBar } from './charts/DeltaBar.tsx'
 import { Sparkline } from './charts/Sparkline.tsx'
@@ -73,6 +73,10 @@ export interface Action {
   disabledReason: string | null
   /** What it costs and how long it takes, for the tooltip. */
   hint?: string
+  /** Kosten der naechsten Stufe als Zeilen (Bedarf + Fehlbetrag), fuer die Bauvorschau. */
+  costLines?: readonly CostLine[]
+  /** Der Ablehnungscode des Kerns; fehlt bei leistbaren Aktionen. */
+  blockCode?: CommandError
   /**
    * Die Quittung (T-M22-05, Befund V2-08): der Befehl ist abgeschickt und noch nicht
    * angewendet. Der Knopf zeigt den Satz und ist gesperrt, bis der naechste Tick den
