@@ -2538,6 +2538,7 @@ export function App(props: AppProps) {
             view={ui.view}
             ownershipVersion={ui.ownershipVersion}
             selectedProvince={ui.selectedProvince}
+            selectedArmyId={ui.selectedArmy}
             alarmProvince={alarm?.provinceId ?? null}
             pings={pings}
             capitalProvinceId={view.self.capitalProvinceId}

@@ -53,10 +53,12 @@ import {
   marchEnds,
   markersFor,
   pickArmy,
+  pickArmyGroup,
   type ArmyMarker,
   type BuildingsByProvince,
   type MarkerTone,
 } from './markers.ts'
+import { GROUP_ZOOM_SCALE, arrowArmies, showDayLabel } from './sammel.ts'
 import type { Anchor } from './anchors.ts'
 import { ICON_PATHS, type IconName } from '../ui/icons.tsx'
 import { GLYPH_BOX, GLYPH_PATHS } from '../ui/glyphs.ts'
@@ -208,6 +210,11 @@ export interface MapCanvasProps {
   view: View
   ownershipVersion: number
   selectedProvince: string | null
+  /**
+   * Die gewaehlte Armee (T-M49-02, D9). Sie steht auf mittel/fern nie in einer Sammelmarke,
+   * und nur sie bekommt dort das Tageslabel. `null`/fehlt: keine Auswahl.
+   */
+  selectedArmyId?: string | null
   /**
    * Die Provinz des offenen Einmarsch-Alarms (T-M28-06, D27.2) — ein Zinnober-Ring,
    * damit der Chip im Kopf eine Stelle auf der Karte hat. `null`: kein Ring.
@@ -629,7 +636,7 @@ export function MapCanvas(props: MapCanvasProps) {
     // zeigte. Der Fortschritt haengt am Spieltick, nicht an der Bildschirmuhr: er ist
     // Zustand wie ein Fortschrittsbalken und bleibt auch unter prefers-reduced-motion
     // ablesbar — nur der GLEITENDE Marker (markersFor) respektiert die Einstellung.
-    for (const army of props.armies) {
+    for (const army of arrowArmies(props.armies, props.view.scale, props.selectedArmyId ?? null)) {
       if (!army.march) continue
       const ends = marchEnds(army, props.centres, props.view)
       if (!ends) continue
@@ -687,7 +694,13 @@ export function MapCanvas(props: MapCanvasProps) {
       context.lineWidth = 1.2
       context.stroke()
 
-      if (props.tick !== undefined && props.ticksPerDay !== undefined && zoomTier(props.view.scale) !== 'far') {
+      // LOESCHVERMERK (Review): bis T-M49-02 stand hier `zoomTier(props.view.scale) !== 'far'`
+      // (Tagesangabe ab mittel fuer alle); D7 ersetzt das durch showDayLabel.
+      if (
+        props.tick !== undefined &&
+        props.ticksPerDay !== undefined &&
+        showDayLabel(army.id, props.view.scale, props.selectedArmyId ?? null)
+      ) {
         const label = marchLabel(marchDays(army.march, props.tick, props.ticksPerDay))
         context.font = `600 ${MARCH_LABEL_PX}px ${TYPE.num}`
         context.textAlign = 'left'
@@ -779,7 +792,9 @@ export function MapCanvas(props: MapCanvasProps) {
     // Die sichtbare Gesamtstaerke je Provinz, fuer die Intensitaet der Gefechtsringe.
     const strengthOf = strengthByProvince(props.armies)
 
+    const grouping = { selectedArmyId: props.selectedArmyId ?? null }
     for (const marker of markersFor(props.armies, props.buildings, props.centres, props.view, {
+      grouping,
       capitalProvinceId: props.capitalProvinceId ?? null,
       battleProvinces: props.battleProvinces ?? [],
       ...(props.anchors ? { anchors: props.anchors } : {}),
@@ -812,6 +827,48 @@ export function MapCanvas(props: MapCanvasProps) {
           context.textAlign = 'right'
           context.textBaseline = 'top'
           context.fillText(String(marker.level), left + BUILDING_BOX + 4, top - 3)
+          context.textAlign = 'left'
+          context.textBaseline = 'alphabetic'
+        }
+        continue
+      }
+
+      if (marker.kind === 'armyGroup') {
+        // Sammelmarke (T-M49-02, D6): Rahmen 30x18 um +3/-3 px versetzt (Stapel-Zeichen),
+        // darueber der normale Stapel-Stempel; Zahl rechtsbuendig, kein Zustandsbalken.
+        const tone = marker.tone ?? (marker.own ? 'own' : 'other')
+        const rim = TONE_COLORS[tone]
+        const left = marker.x - ARMY_BOX.width / 2
+        const top = marker.y - ARMY_BOX.height / 2
+        context.fillStyle = TOKENS.ground
+        context.fillRect(left + 3, top - 3, ARMY_BOX.width, ARMY_BOX.height)
+        context.strokeStyle = rim
+        context.lineWidth = 1.2
+        context.strokeRect(left + 3.5, top - 2.5, ARMY_BOX.width - 1, ARMY_BOX.height - 1)
+        const stamp = stackStamp(stampsRef.current, tone, marker.icon ?? 'infantry', stampRatio)
+        if (stamp) {
+          context.drawImage(
+            stamp,
+            left - STAMP_PAD,
+            top - STAMP_PAD,
+            ARMY_BOX.width + STAMP_PAD * 2,
+            ARMY_BOX.height + STAMP_PAD * 2,
+          )
+        } else {
+          context.fillStyle = TOKENS.ground
+          context.fillRect(left, top, ARMY_BOX.width, ARMY_BOX.height)
+          context.strokeStyle = rim
+          context.lineWidth = 1.2
+          context.strokeRect(left + 0.5, top + 0.5, ARMY_BOX.width - 1, ARMY_BOX.height - 1)
+          context.lineWidth = 1.5
+          drawIcon(context, marker.icon ?? 'infantry', left + 9, marker.y - 1, 11)
+        }
+        if (marker.label) {
+          context.fillStyle = TOKENS.ink
+          context.font = `600 9px ${TYPE.num}`
+          context.textAlign = 'right'
+          context.textBaseline = 'middle'
+          context.fillText(marker.label, left + ARMY_BOX.width - 3, marker.y - 1)
           context.textAlign = 'left'
           context.textBaseline = 'alphabetic'
         }
@@ -942,6 +999,7 @@ export function MapCanvas(props: MapCanvasProps) {
     props.anchors,
     props.mode,
     props.selectedProvince,
+    props.selectedArmyId,
     props.alarmProvince,
     props.capitalProvinceId,
     props.battleProvinces,
@@ -1093,18 +1151,38 @@ export function MapCanvas(props: MapCanvasProps) {
       // Ein Finger bekommt eine Trefferflaeche von TOUCH_TARGET_PX CSS-Pixeln.
       if (props.onSelectArmy) {
         const hitBox = touch ? TOUCH_TARGET_PX * (rect.width > 0 ? size.width / rect.width : 1) : undefined
+        const grouping = { selectedArmyId: props.selectedArmyId ?? null }
         const armyId = pickArmy(
           screen,
           props.armies,
           props.centres,
           props.view,
           {
+            grouping,
             ...(motionAllowed(props.speed ?? 0) && props.tick !== undefined ? { tick: props.tick } : {}),
           },
           hitBox,
         )
         if (armyId) {
           props.onSelectArmy(armyId)
+          return
+        }
+        // Sammelmarke (T-M49-02, D8): Klick zoomt nah heran, waehlt nichts.
+        const hit = pickArmyGroup(
+          screen,
+          props.armies,
+          props.centres,
+          props.view,
+          {
+            grouping,
+            ...(motionAllowed(props.speed ?? 0) && props.tick !== undefined ? { tick: props.tick } : {}),
+          },
+          hitBox,
+        )
+        if (hit) {
+          props.onViewChange(
+            centreOn(toMap({ x: hit.x, y: hit.y }, props.view), { ...props.view, scale: GROUP_ZOOM_SCALE }, limits),
+          )
           return
         }
       }
@@ -1286,6 +1364,7 @@ export function MapCanvas(props: MapCanvasProps) {
       data-view-y={Math.round(props.view.y)}
       data-view-scale={props.view.scale.toFixed(4)}
       data-selected-province={props.selectedProvince ?? ''}
+      data-zoom-tier={zoomTier(props.view.scale)}
       // Die Orte der laufenden Pulse (T-M46-02), fuer dieselbe Messung ohne Bilderkennung.
       data-pings={rings.map((ring) => ring.provinceId).join(',')}
     >
