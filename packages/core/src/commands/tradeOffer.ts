@@ -14,6 +14,7 @@ import {
   type TradeOffer,
 } from '../state/types'
 import { registerCommand } from './registry'
+import { activeContractCount, createContract } from './contract'
 import {
   fail,
   ok,
@@ -249,6 +250,27 @@ registerCommand<OfferTradeCommand>('OFFER_TRADE', {
 
     if (!isBundle(command.give) || !isBundle(command.want)) return fail('INVALID_TARGET', { reason: 'ungültiges Angebot' })
 
+    // Zeitplan (Liefervertrag B1, D1/P4): Form und Grenzen aus den Regeln; nur Rohstoffe.
+    const schedule = command.schedule
+    if (schedule !== undefined) {
+      const C0 = ctx.rules.constants
+      if (
+        typeof schedule !== 'object' ||
+        schedule === null ||
+        !Number.isSafeInteger(schedule.intervalDays) ||
+        !Number.isSafeInteger(schedule.deliveries) ||
+        schedule.intervalDays < C0.contractMinIntervalDays ||
+        schedule.intervalDays > C0.contractMaxIntervalDays ||
+        schedule.deliveries < C0.contractMinDeliveries ||
+        schedule.deliveries > C0.contractMaxDeliveries
+      ) {
+        return fail('INVALID_TARGET', { reason: 'ungültiger Zeitplan' })
+      }
+      if (command.give.provinces.length > 0 || command.want.provinces.length > 0) {
+        return fail('INVALID_TARGET', { reason: 'Zeitplan nur mit Rohstoffen' })
+      }
+    }
+
     const warIssue = warProblem(state, command.playerId, command.targetPlayerId)
     if (warIssue !== null) return warIssue
 
@@ -279,6 +301,9 @@ registerCommand<OfferTradeCommand>('OFFER_TRADE', {
 
     const open = state.diplomacy.tradeOffers.filter((o) => o.from === command.playerId).length
     if (open >= C.maxOpenTradeOffers) return fail('QUEUE_FULL', { max: C.maxOpenTradeOffers })
+    if (schedule !== undefined && activeContractCount(state, command.playerId) >= C.maxActiveContracts) {
+      return fail('INVALID_TARGET', { reason: 'zu viele Verträge' })
+    }
 
     const player = state.players[command.playerId]!
     for (const key of RESOURCE_KEYS) {
@@ -307,6 +332,10 @@ registerCommand<OfferTradeCommand>('OFFER_TRADE', {
         want: { resources: copyResources(command.want.resources), provinces: command.want.provinces.slice() },
         createdTick: draft.tick,
         expiresAtTick: draft.tick + lifetime,
+        // Der Schluessel fehlt ohne Zeitplan (P2): `schedule: undefined` liesse den Hash werfen.
+        ...(command.schedule !== undefined
+          ? { schedule: { intervalDays: command.schedule.intervalDays, deliveries: command.schedule.deliveries } }
+          : {}),
       },
     ]
     // Kein Ereignis (D29.5): ein Angebot meldet sich ueber die Sicht, nicht per Ereignis.
@@ -314,7 +343,7 @@ registerCommand<OfferTradeCommand>('OFFER_TRADE', {
 })
 
 registerCommand<AcceptTradeCommand>('ACCEPT_TRADE', {
-  check: (state, command) => {
+  check: (state, command, ctx) => {
     const offer = partyTradeOffer(state, command.playerId, command.offerId)
     if (!offer) return fail('INVALID_TARGET', { reason: 'kein Angebot' })
     if (offer.to !== command.playerId) return fail('NOT_OWNER', { offerId: offer.id })
@@ -322,6 +351,14 @@ registerCommand<AcceptTradeCommand>('ACCEPT_TRADE', {
 
     const warIssue = warProblem(state, offer.from, offer.to)
     if (warIssue !== null) return warIssue
+
+    // Vertragsgrenze (Liefervertrag B1, P4): bei Zeitplan darf keine der beiden Seiten voll sein.
+    if (offer.schedule) {
+      const max = ctx.rules.constants.maxActiveContracts
+      if (activeContractCount(state, offer.from) >= max || activeContractCount(state, offer.to) >= max) {
+        return fail('INVALID_TARGET', { reason: 'zu viele Verträge' })
+      }
+    }
 
     // Beide Seiten erneut und voll (R-DIP-09/AK1): zwischen Angebot und Annahme kann eine Provinz
     // veralten. Die verlangte ist die eigene des Annehmenden; die gebende scheitert hier nur, wenn
@@ -371,6 +408,8 @@ registerCommand<AcceptTradeCommand>('ACCEPT_TRADE', {
     // Die Provinzen zuletzt (E9): erst die gegebene Seite, dann die verlangte, je in Listenreihenfolge.
     for (const provinceId of offer.give.provinces) cedeProvince(draft, provinceId, offer.from, offer.to, ctx)
     for (const provinceId of offer.want.provinces) cedeProvince(draft, provinceId, offer.to, offer.from, ctx)
+    // Mit Zeitplan: Lieferung 1 ist gebucht, der Vertrag fuehrt den Rest (Liefervertrag B1, D2).
+    if (offer.schedule) createContract(draft, offer, ctx)
   },
 })
 

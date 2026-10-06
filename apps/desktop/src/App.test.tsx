@@ -15,7 +15,9 @@ import { t } from './i18n/text.ts'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from './App.tsx'
 import { ACK_MIN_MS, ACK_SLACK_MS } from './game/ack.ts'
+import { defaultViewer } from './state/uiState.ts'
 import type * as FastForwardModule from './game/fastForward.ts'
+import type * as AdvanceModule from './game/advance.ts'
 
 /**
  * Die Haeppchengroesse des Vorspulens, im Test verkleinerbar (T-M41-13).
@@ -27,6 +29,40 @@ import type * as FastForwardModule from './game/fastForward.ts'
  * alles unveraendert durch.
  */
 const haeppchen = vi.hoisted(() => ({ ticks: 0 }))
+
+/**
+ * VM-06 (K5-Ausweg): `beiAufruf` > 0 laesst den n-ten Tick einer Partie eine Kriegserklaerung an den
+ * Betrachter melden; das Geruest kann keinen echten Alarm stellen. Alles andere geht unveraendert durch.
+ */
+const alarm = vi.hoisted(() => ({ beiAufruf: 0 }))
+
+vi.mock('./game/advance.ts', async (importOriginal) => {
+  const original = await importOriginal<typeof AdvanceModule>()
+  return {
+    ...original,
+    advanceStep: (...args: Parameters<typeof original.advanceStep>) => {
+      const result = original.advanceStep(...args)
+      if (alarm.beiAufruf <= 0) return result
+      alarm.beiAufruf -= 1
+      if (alarm.beiAufruf > 0) return result
+      const state = args[0]
+      const me = defaultViewer(state)
+      const feind = Object.keys(state.players).find((id) => id !== me) ?? me
+      const event = {
+        tick: state.tick,
+        severity: 'alert',
+        audience: [],
+        concerns: [],
+        type: 'WAR_DECLARED',
+        playerId: feind,
+        targetPlayerId: me,
+        effectiveAtTick: state.tick,
+        withoutDeclaration: false,
+      } as unknown as (typeof result.events)[number]
+      return { ...result, events: [...result.events, event] }
+    },
+  }
+})
 
 vi.mock('./game/fastForward.ts', async (importOriginal) => {
   const original = await importOriginal<typeof FastForwardModule>()
@@ -1100,6 +1136,96 @@ describe('T-M41-04/T-M41-17 Die Uhrschleife im Spiel verliert keine Ticks', () =
     // Zeitlimit wegen Last, nicht Verhalten: allein 157 ms, unter verify+Last max 3356 ms (gemessen 2026-10-05, t_3cad0a35).
   }, 20_000)
 
+})
+
+describe('VM-06 Die Uhr haelt bei einem eigenen Alarm von selbst an', () => {
+  let wartend: FrameRequestCallback[] = []
+  let jetzt = 0
+
+  beforeEach(() => {
+    localStorage.clear()
+    wartend = []
+    jetzt = 1000
+    vi.stubGlobal('requestAnimationFrame', (rueckruf: FrameRequestCallback) => {
+      wartend.push(rueckruf)
+      return wartend.length
+    })
+    vi.spyOn(performance, 'now').mockImplementation(() => jetzt)
+  })
+
+  afterEach(() => {
+    alarm.beiAufruf = 0
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+    localStorage.clear()
+  })
+
+  const bilder = (anzahl: number, dtMs: number) => {
+    for (let bild = 0; bild < anzahl; bild++) {
+      jetzt += dtMs
+      const faellig = wartend
+      wartend = []
+      act(() => {
+        for (const rueckruf of faellig) rueckruf(jetzt)
+      })
+    }
+  }
+
+  const tempo100 = () =>
+    fireEvent.click(within(screen.getByRole('group', { name: 'Geschwindigkeit' })).getByRole('button', { name: '100' }))
+
+  const autoPauseAus = () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Menü' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Einstellungen' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: /Anhalten bei Kriegserklärung/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Schließen' }))
+  }
+
+  it('springt auf Tempo 0 und nennt in der Kopfleiste den Grund, mit dem Stand des Alarm-Ticks', () => {
+    startGame({ storage: new MemoryStorage() })
+    tempo100()
+    alarm.beiAufruf = 3
+
+    bilder(10, 100)
+
+    expect(screen.getByText(/Pausiert: /)).toBeTruthy()
+    // Gestoppt nach dem 3. Tick: 03:00 Uhr, nicht die fuenf Ticks, die das Bild schuldete.
+    expect(screen.getByText(/Tag \d+ · \d{2}:\d{2}/).textContent).toMatch(/Tag 1 · 03:00/)
+    bilder(5, 100)
+    expect(screen.getByText(/Tag \d+ · \d{2}:\d{2}/).textContent).toMatch(/Tag 1 · 03:00/)
+  })
+
+  it('zeigt die alte Meldung nicht wieder, wenn man spaeter von Hand pausiert', () => {
+    startGame({ storage: new MemoryStorage() })
+    tempo100()
+    alarm.beiAufruf = 3
+    bilder(10, 100)
+    expect(screen.getByText(/Pausiert: /)).toBeTruthy()
+    const gedrueckt = () =>
+      within(screen.getByRole('group', { name: 'Geschwindigkeit' }))
+        .getAllByRole('button')
+        .find((knopf) => knopf.getAttribute('aria-pressed') === 'true')
+        ?.getAttribute('aria-label')
+    expect(gedrueckt()).toBe('Pause')
+
+    tempo100()
+    bilder(3, 100)
+    fireEvent.click(within(screen.getByRole('group', { name: 'Geschwindigkeit' })).getByRole('button', { name: 'Pause' }))
+
+    expect(screen.queryByText(/Pausiert: /)).toBeNull()
+  })
+
+  it('laeuft mit abgeschalteter Auto-Pause weiter', () => {
+    startGame({ storage: new MemoryStorage() })
+    autoPauseAus()
+    tempo100()
+    alarm.beiAufruf = 3
+
+    bilder(10, 100)
+
+    expect(screen.queryByText(/Pausiert: /)).toBeNull()
+    expect(screen.getByText(/Tag \d+ · \d{2}:\d{2}/).textContent).not.toMatch(/Tag 1 · 03:00/)
+  })
 })
 
 describe('R-UI-15 Escape blendet den Tooltip aus, ohne die Uhr in eine Schleife zu treiben', () => {

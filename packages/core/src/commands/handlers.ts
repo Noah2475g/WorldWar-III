@@ -6,6 +6,7 @@ import './move' // registers MOVE_ARMY
 import './bombard' // registers BOMBARD
 import './diplomacy' // registers DIPLOMACY
 import './tradeOffer' // registers OFFER_TRADE, ACCEPT_TRADE, DECLINE_TRADE, WITHDRAW_TRADE
+import './contract' // registers CANCEL_CONTRACT
 import './espionage' // registers RECRUIT_SPY, REASSIGN_SPY, DISMISS_SPY
 import { emit } from '../events/emit'
 import type { PhaseContext } from '../phases/index'

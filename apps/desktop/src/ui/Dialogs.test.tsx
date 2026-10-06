@@ -714,6 +714,15 @@ describe('R-UX-04/AK1 Folgenschweres in den Dialogen fragt nach', () => {
     expect(onReset).toHaveBeenCalledOnce()
   })
 
+  it('VM-06: die Auto-Pause-Checkbox schaltet per onChange({ autoPause })', () => {
+    const onChange = vi.fn()
+    render(<SettingsDialog settings={DEFAULT_SETTINGS} onChange={onChange} onReset={vi.fn()} onClose={vi.fn()} />)
+
+    fireEvent.click(screen.getByRole('checkbox', { name: /Anhalten bei Kriegserklärung/ }))
+
+    expect(onChange).toHaveBeenCalledWith({ autoPause: false })
+  })
+
   it('Einstellungen auf Vorgabe: der Knopf bleibt gesperrt, es gibt nichts zurückzusetzen', () => {
     render(<SettingsDialog settings={DEFAULT_SETTINGS} onChange={vi.fn()} onReset={vi.fn()} onClose={vi.fn()} />)
 

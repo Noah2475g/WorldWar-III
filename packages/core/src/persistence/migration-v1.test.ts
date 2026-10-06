@@ -9,6 +9,7 @@ import {
   ADDED_IN_VERSION_2,
   ADDED_IN_VERSION_3,
   ADDED_IN_VERSION_4,
+  ADDED_IN_VERSION_5,
   REMOVED_IN_VERSION_4,
   highestMigration,
   migrate,
@@ -102,6 +103,7 @@ describe('R-GAME-07/AK1 Ein Stand der V1 laeuft weiter', () => {
       ...ADDED_IN_VERSION_2,
       ...ADDED_IN_VERSION_3,
       ...ADDED_IN_VERSION_4,
+      ...ADDED_IN_VERSION_5,
       ...REMOVED_IN_VERSION_4,
     ]
 
@@ -219,6 +221,7 @@ const STAGE_MILESTONES: Record<number, string> = {
   2: 'M15',
   3: 'M35',
   4: 'M17',
+  5: 'M50',
 }
 
 describe('R-GAME-07 Der Formatwaechter', () => {
@@ -280,6 +283,6 @@ describe('R-GAME-07 Der Formatwaechter', () => {
     const state = createInitialState(CONFIG, { map: smallWorld(), rules: TEST_RULES })
 
     expect(state.diplomacy.grievances).toEqual({})
-    expect(Object.keys(state.diplomacy).sort()).toEqual(['grievances', 'offers', 'relations', 'tradeOffers'].sort())
+    expect(Object.keys(state.diplomacy).sort()).toEqual(['contracts', 'grievances', 'offers', 'relations', 'tradeOffers'].sort())
   })
 })

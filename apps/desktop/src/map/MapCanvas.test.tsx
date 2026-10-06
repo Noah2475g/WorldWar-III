@@ -5,6 +5,9 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { HOVER_DELAY_MS, MapCanvas } from './MapCanvas.tsx'
 import { anchorsFor } from './anchors.ts'
 import { boundsOf } from './picking.ts'
+import { toMap } from './picking.ts'
+import { markersFor } from './markers.ts'
+import { marchLabel } from './render.ts'
 import type { RenderProvince } from './render.ts'
 import { TOKENS } from '../ui/tokens.ts'
 import { ICON_PATHS } from '../ui/icons.tsx'
@@ -560,5 +563,142 @@ describe('T-M45-04 Die Flaechenebene zeichnet nur, wenn sich ein Pixel aendern k
     rerender(<MapCanvas {...props(gleicheNeueListe().map((p) => ({ ...p, morale: (p.morale ?? 0) + 30_000 })), 'morale')} />)
 
     expect(fuellungen(container, recorders)).toBeGreaterThan(nachDemErsten)
+  })
+})
+
+describe('T-M49-02 Sammelmarke', () => {
+  const wo = world.provinces[Math.floor(world.provinces.length / 2)]!.id
+  const vier = ['a1', 'a2', 'a3', 'a4'].map((id) => ({
+    id,
+    provinceId: wo,
+    owner: 'p1',
+    strength: 5000,
+    own: true,
+    icon: 'infantry' as const,
+    count: 3,
+  }))
+  const ansicht = (scale: number) => ({ x: centres[wo]!.x - 160 * scale, y: centres[wo]!.y - 120 * scale, scale })
+  const mitGruppe = (scale: number, selectedArmyId: string | null = null) =>
+    markersFor(vier, {}, centres, ansicht(scale), { grouping: { selectedArmyId } })
+  const ueberzug = (container: HTMLElement) => container.querySelector('canvas[role="application"]') as HTMLCanvasElement
+  const rahmen = () => {
+    const rect = ueberzug(document.body)
+    rect.getBoundingClientRect = () => ({ left: 0, top: 0, width: 320, height: 240 }) as DOMRect
+    return rect
+  }
+
+  it('(a) vier eigene Armeen: bei 0.9 vier Kaesten, bei 1.6 einer', () => {
+    // Zaehlweise: drawImage der Ueberzug-Leinwand = ein Stempel je Kasten (die Marke
+    // stempelt genau einmal, ihr Versatzrahmen ist strokeRect/fillRect). Jedes Bild zeichnet
+    // gleich oft, daher verhalten sich die Zaehlungen wie die Kastenzahl 4 : 1.
+    zeichne({ speed: 100, armies: vier, view: ansicht(0.9) })
+    const nah = recorder.calls.drawImage ?? 0
+    cleanup()
+    zeichne({ speed: 100, armies: vier, view: ansicht(1.6) })
+    const mittel = recorder.calls.drawImage ?? 0
+    expect(mittel).toBeGreaterThan(0)
+    expect(nah).toBe(mittel * 4)
+  })
+
+  it('(b) Klick auf die Marke zoomt auf 1 und zentriert, ohne zu waehlen', () => {
+    const marke = mitGruppe(1.6).find((m) => m.kind === 'armyGroup')!
+    const ansichten: { x: number; y: number; scale: number }[] = []
+    const onSelectArmy = vi.fn()
+    const onSelect = vi.fn()
+    zeichne({
+      speed: 100,
+      armies: vier,
+      view: ansicht(1.6),
+      onSelectArmy,
+      onSelect,
+      onViewChange: (v) => ansichten.push(v),
+    })
+    fireEvent.click(rahmen(), { clientX: marke.x, clientY: marke.y })
+
+    expect(ansichten.length).toBe(1)
+    expect(ansichten[0]!.scale).toBe(1)
+    const punkt = toMap({ x: marke.x, y: marke.y }, ansicht(1.6))
+    // Ausschnitt der Leinwand (jsdom: 320x240): die Mitte liegt bei x + 160.
+    expect(ansichten[0]!.x + 160).toBeCloseTo(punkt.x, 0)
+    expect(ansichten[0]!.y + 120).toBeCloseTo(punkt.y, 0)
+    expect(onSelectArmy).not.toHaveBeenCalled()
+    expect(onSelect).not.toHaveBeenCalled()
+  })
+
+  it('(c) ohne onSelectArmy bleibt der Klick Ortswahl', () => {
+    const marke = mitGruppe(1.6).find((m) => m.kind === 'armyGroup')!
+    const onSelect = vi.fn()
+    const onViewChange = vi.fn()
+    zeichne({ speed: 100, armies: vier, view: ansicht(1.6), onSelect, onViewChange })
+    fireEvent.click(rahmen(), { clientX: marke.x, clientY: marke.y })
+    expect(onSelect).toHaveBeenCalledTimes(1)
+    expect(onViewChange).not.toHaveBeenCalled()
+  })
+
+  it('(d) die gewaehlte Armee steht einzeln und ist anklickbar', () => {
+    const kasten = mitGruppe(1.6, 'a2').find((m) => m.kind === 'army' && m.armyId === 'a2')!
+    const onSelectArmy = vi.fn()
+    zeichne({ speed: 100, armies: vier, view: ansicht(1.6), selectedArmyId: 'a2', onSelectArmy })
+    fireEvent.click(rahmen(), { clientX: kasten.x, clientY: kasten.y })
+    expect(onSelectArmy).toHaveBeenCalledWith('a2')
+  })
+
+  it('(e) Tageslabel bei 1.5 nur fuer die gewaehlte Armee', () => {
+    const ziel = world.provinces[1]!.id
+    const marsch = {
+      id: 'm1',
+      provinceId: wo,
+      owner: 'p1',
+      strength: 5000,
+      own: true,
+      march: { toProvinceId: ziel, departureTick: 0, arrivalTick: 48, route: [ziel] },
+    }
+    const texte = (selectedArmyId: string | null) => {
+      const { context: basis, recorder: rec } = recordingContext()
+      recorder = rec
+      const gesehen: string[] = []
+      // Der Recorder zaehlt nur Aufrufe; die Texte schneidet diese Huelle um fillText mit.
+      const context = new Proxy(basis, {
+        get(ziel, key) {
+          if (key === 'fillText') return (text: string) => void gesehen.push(text)
+          return Reflect.get(ziel, key)
+        },
+      })
+      HTMLCanvasElement.prototype.getContext = (() => context) as never
+      render(
+        <MapCanvas
+          provinces={provinces}
+          centres={centres}
+          armies={[marsch]}
+          buildings={{}}
+          mode="political"
+          width={world.width}
+          height={world.height}
+          view={ansicht(1.5)}
+          ownershipVersion={1}
+          selectedProvince={null}
+          onSelect={() => undefined}
+          onViewChange={() => undefined}
+          labelFor={(id) => id}
+          speed={100}
+          tick={12}
+          ticksPerDay={24}
+          selectedArmyId={selectedArmyId}
+        />,
+      )
+      cleanup()
+      return gesehen.filter((text) => text === marchLabel({ done: 0, total: 2 }) || / T$/.test(text))
+    }
+    expect(texte(null)).toEqual([])
+    expect(texte('m1').length).toBeGreaterThan(0)
+    expect(new Set(texte('m1')).size).toBe(1)
+  })
+
+  it('(f) data-zoom-tier: mid bei 1.6, near bei 1', () => {
+    const { container } = zeichne({ speed: 100, view: ansicht(1.6) })
+    expect(container.querySelector('[data-zoom-tier]')!.getAttribute('data-zoom-tier')).toBe('mid')
+    cleanup()
+    const { container: nah } = zeichne({ speed: 100, view: ansicht(1) })
+    expect(nah.querySelector('[data-zoom-tier]')!.getAttribute('data-zoom-tier')).toBe('near')
   })
 })

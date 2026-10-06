@@ -172,6 +172,7 @@ function valuesFor(event: GameEvent, map: MapData, naming: EventNaming): Record<
 
   // Handelsangebote (T-M17-05): der Grund mit Namen statt Schluessel — „withdrawn" sagt niemandem etwas.
   if (event.type === 'TRADE_OFFER_CLOSED') values.reason = t(`diplomacy.tradeClosed.${String(record.reason)}`)
+  if (event.type === 'CONTRACT_CLOSED') values.reason = t(`diplomacy.contractClosed.${String(record.reason)}`)
   // Die Abtretung (T-M17-06): der Vorbesitzer mit Namen — `previousOwner` ist eine Kennung.
   if (event.type === 'PROVINCE_CEDED') values.previous = playerName(record.previousOwner)
 
@@ -234,6 +235,28 @@ export function isSelfSetback(event: GameEvent, viewer: string | undefined): boo
     case 'CAPITAL_LOST':
     case 'PLAYER_ELIMINATED':
     case 'ARMY_INTRUDED':
+      return event.playerId === viewer
+    default:
+      return false
+  }
+}
+
+/**
+ * Loest dieses Ereignis die Auto-Pause aus (VM-06, P1)? `capitalProvinceId` ist die
+ * Hauptstadt des Betrachters VOR dem Tick (CAPITAL_LOST setzt sie auf null und entsteht
+ * nach ARMY_INTRUDED im selben Tick). Seit der P2-Streichung ungenutzt (ARMY_INTRUDED
+ * loest nicht mehr aus); die Signatur bleibt fuer den Aufrufer stabil.
+ */
+export function isAutoPauseTrigger(
+  event: GameEvent,
+  viewer: string | null | undefined,
+  _capitalProvinceId: string | null,
+): boolean {
+  if (!viewer) return false
+  switch (event.type) {
+    case 'WAR_DECLARED':
+      return event.targetPlayerId === viewer
+    case 'CAPITAL_LOST':
       return event.playerId === viewer
     default:
       return false
@@ -677,6 +700,7 @@ export function eventSymbol(
       return { symbol: RESOURCE_ICONS[str('resource') ?? ''] ?? 'warning' }
     case 'TRADE_EXECUTED':
     case 'TRADE_OFFER_CLOSED':
+    case 'CONTRACT_CLOSED':
     case 'TRADE_AGREED':
       return { symbol: 'trade' }
     case 'WAR_DECLARED':

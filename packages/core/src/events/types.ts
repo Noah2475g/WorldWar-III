@@ -351,6 +351,24 @@ export interface TradeOfferClosedEvent extends BaseEvent {
   reason: TradeOfferCloseReason
 }
 
+/** Warum ein Liefervertrag zu Ende ist (Liefervertrag B1, P5). */
+export type ContractCloseReason = 'completed' | 'cancelled' | 'war' | 'invalid' | 'unpaid'
+
+/**
+ * Ein Liefervertrag ist beendet (Liefervertrag B1, P5, D4). `playerId` ist der Anbieter (`from`),
+ * `targetPlayerId` der Annehmende (`to`); nur die beiden lesen es. `closedBy`: bei `cancelled`
+ * der Kuendigende, bei `unpaid` die Seite, die nicht liefern konnte, sonst `null`. Kein Alarm,
+ * kein Weltgeschehen, keine Mengen. Je Lieferung gibt es KEIN Ereignis (P6).
+ */
+export interface ContractClosedEvent extends BaseEvent {
+  type: 'CONTRACT_CLOSED'
+  contractId: string
+  playerId: PlayerId
+  targetPlayerId: PlayerId
+  reason: ContractCloseReason
+  closedBy: PlayerId | null
+}
+
 /**
  * Zwei Maechte haben gehandelt (T-M17-05, R-DIP-05/AK4, D29.5).
  *
@@ -485,6 +503,7 @@ export type GameEvent =
   | GoalReachedEvent
   | RightOfWayChangedEvent
   | TradeOfferClosedEvent
+  | ContractClosedEvent
   | TradeAgreedEvent
   | ProvinceCededEvent
   | SpyReportEvent
@@ -525,6 +544,7 @@ export const EVENT_TYPES = [
   'GOAL_REACHED',
   'RIGHT_OF_WAY_CHANGED',
   'TRADE_OFFER_CLOSED',
+  'CONTRACT_CLOSED',
   'TRADE_AGREED',
   'PROVINCE_CEDED',
   'SPY_REPORT',

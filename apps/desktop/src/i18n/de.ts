@@ -37,6 +37,7 @@ export const de = {
     day: 'Tag',
     speed: 'Geschwindigkeit',
     pause: 'Pause',
+    autoPaused: 'Pausiert: {{event}}',
     // Der Einmarsch-Alarm im Kopf (T-M28-06): kurz im Chip, vollständig fürs Ohr.
     alarm: 'Einmarsch: {{province}}',
     alarmAria: 'Einmarsch in {{province}} durch {{intruder}} — anzeigen',
@@ -476,6 +477,8 @@ export const de = {
     // Sätze beugen kein Verb nach der Macht — deshalb keine Mehrzahl- und keine Fremdfassung.
     TRADE_OFFER_CLOSED: 'Handelsangebot von {{player}} an {{target}}: {{reason}}.',
     TRADE_AGREED: 'Handel zwischen {{player}} und {{target}}.',
+    // Liefervertrag beendet (Liefervertrag B1, P5): nur die beiden lesen es; keine Mengen.
+    CONTRACT_CLOSED: 'Liefervertrag von {{player}} an {{target}}: {{reason}}.',
     // Die Abtretung (T-M17-06, R-DIP-09/AK2): Weltgeschehen ohne Preis. Satzgegenstand ist die Provinz —
     // deshalb weder Mehrzahl- noch Fremdfassung, und kein „ich".
     PROVINCE_CEDED: '{{province}} geht durch Vertrag von {{previous}} an {{player}} über.',
@@ -614,6 +617,14 @@ export const de = {
       // beiden Ursachen als sicher.
       invalid: 'hinfällig geworden — eine Macht ist ausgeschieden oder eine Provinz nicht mehr abtretbar',
     },
+    // Warum ein Liefervertrag zu Ende ist (Liefervertrag B1, P5) — der Satz steht in events.CONTRACT_CLOSED.
+    contractClosed: {
+      completed: 'vollständig geliefert',
+      cancelled: 'gekündigt',
+      war: 'wegen Krieges beendet',
+      invalid: 'hinfällig — eine Macht ist ausgeschieden',
+      unpaid: 'beendet — eine Seite konnte die fällige Lieferung nicht leisten',
+    },
   },
 
   /**
@@ -734,6 +745,15 @@ export const de = {
     // Punkt liest sich fuer ihn wie "val" + Ersatzschrift-"ue".
     worth: 'Marktwert: Sie geben ≈ {{give}} Geld, Sie erhalten ≈ {{want}} Geld.',
     worthProvinces: 'Provinzen haben keinen Marktpreis und sind darin nicht enthalten.',
+    // Liefervertrag (B3, D8)
+    repeat: 'wiederholen',
+    scheduleEvery: 'alle N Tage',
+    scheduleDeliveries: 'Lieferungen',
+    scheduleNote: '{{count}}× alle {{days}} Tage.',
+    contract: {
+      row: 'Liefervertrag: gibt {{give}} / bekommt {{want}}, nächste Lieferung Tag {{day}} · {{hour}}:00, noch {{remaining}}.',
+      cancel: 'Kündigen',
+    },
     limits: 'Höchstens {{money}} Geld und {{resource}} je Rohstoff und Seite.',
     // Die Sperrgründe des Kerns als Satz (T-M17-14, E7) — eigene Tabelle statt `errors.*`, weil
     // `errors.QUEUE_FULL` „Alle Bauplätze" sagt und keiner der Kerngründe Provinznamen kennt.
@@ -749,6 +769,10 @@ export const de = {
       sameResource: 'Derselbe Rohstoff steht auf beiden Seiten.',
       limit: 'Höchstens {{max}} {{resource}} je Angebot.',
       invalidAmount: 'Nur ganze, positive Mengen.',
+      badSchedule: 'Der Zeitplan ist ungültig: Abstand und Zahl der Lieferungen liegen außerhalb der Grenzen.',
+      scheduleProvinces: 'Ein Liefervertrag kann nur Rohstoffe umfassen: nehmen Sie die Provinzen heraus oder schalten Sie „wiederholen“ aus.',
+      scheduleResourcesOnly: 'Ein Liefervertrag kann nur Rohstoffe umfassen, keine Provinzen.',
+      tooManyContracts: 'Zu viele Lieferverträge: Eine der beiden Seiten hat schon die Höchstzahl.',
       war: 'Im Krieg wird nicht gehandelt.',
       declaration: 'Eine Kriegserklärung läuft — kein neuer Handel.',
       gone: 'Diese Macht ist ausgeschieden.',
@@ -932,6 +956,7 @@ export const de = {
     fontNormal: 'normal',
     fontLarge: 'groß',
     debug: 'Debug-Ansicht',
+    autoPause: 'Anhalten bei Kriegserklärung und Gefahr für die Hauptstadt',
     reset: 'Auf Vorgabe zurücksetzen',
     resetConfirm: 'Alle Einstellungen gehen auf die Vorgabe zurück — noch einmal klicken.',
   },
@@ -1410,6 +1435,9 @@ export const de = {
     },
     ACCEPT_TRADE: {
       noOffer: 'Dieses Angebot gibt es nicht mehr.',
+    },
+    CANCEL_CONTRACT: {
+      noContract: 'Diesen Liefervertrag gibt es nicht mehr.',
     },
     DIPLOMACY: {
       self: 'Mit der eigenen Macht geht das nicht.',

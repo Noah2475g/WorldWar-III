@@ -204,6 +204,14 @@ describe('R-DIP-05/AK1 Treuhand beim Angebot, Verfall mit Rueckgabe', () => {
     expect(closed(all).map((e) => (e as { reason: string }).reason)).toEqual(['expired'])
   })
 
+  it('ein Angebot ohne Zeitplan traegt keinen schedule-Schluessel (Liefervertrag B1, P2)', () => {
+    const id = place(offer('p1', 'p2', { money: 5_000 }, { food: 1_000 }))
+    const o = state.diplomacy.tradeOffers.find((entry) => entry.id === id)!
+    expect('schedule' in o).toBe(false)
+    // Auch Kopie und Sicht fuehren den Schluessel nicht ein.
+    expect('schedule' in publicView(state, 'p1', rules).tradeOffers.outgoing[0]!).toBe(false)
+  })
+
   it('der Befehl bleibt vom Zustand getrennt', () => {
     const command = offer('p1', 'p2', { money: 5_000 }, { food: 1_000 })
     expect(applyCommand(state, command, ctx)).toEqual({ ok: true })

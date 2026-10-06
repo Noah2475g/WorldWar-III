@@ -211,10 +211,36 @@ export const ADDED_IN_VERSION_4 = [
  */
 export const REMOVED_IN_VERSION_4 = ['rightOfWay', 'sharedMap'] as const
 
+/**
+ * Schritt 4 → 5 (Liefervertrag B1, D6): `diplomacy.contracts` leer, `nextIds.contract` = 1.
+ * `TradeOffer.schedule` ist optional und braucht keinen Schritt. Nachsichtig wie `toVersion4`.
+ */
+const toVersion5: Migration = (envelope) => {
+  const state = envelope.state as unknown as Record<string, unknown>
+
+  const diplomacy = state['diplomacy']
+  if (diplomacy !== null && typeof diplomacy === 'object' && !Array.isArray(diplomacy)) {
+    ;(diplomacy as Record<string, unknown>)['contracts'] = []
+  }
+
+  const nextIds = state['nextIds']
+  if (nextIds !== null && typeof nextIds === 'object' && !Array.isArray(nextIds)) {
+    ;(nextIds as Record<string, unknown>)['contract'] = 1
+  }
+
+  state['schemaVersion'] = 5
+
+  return { ...envelope, schemaVersion: 5, state: state as unknown as GameState }
+}
+
+/** Die Felder, die Schritt 4 → 5 anlegt — dieselbe Pruefung wie `ADDED_IN_VERSION_4`. */
+export const ADDED_IN_VERSION_5 = ['schemaVersion', 'contracts', 'contract'] as const
+
 const MIGRATIONS: Record<number, Migration> = {
   1: toVersion2,
   2: toVersion3,
   3: toVersion4,
+  4: toVersion5,
 }
 
 /** Die hoechste Stufe, fuer die ein Schritt eingetragen ist. */

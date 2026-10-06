@@ -3,6 +3,7 @@ import { grantsPassage, passageEndsAtTick, relationKey, sharesMap } from '../sta
 import type {
   ArmyId,
   BuildingKey,
+  DeliveryContract,
   DiplomaticOffer,
   DiplomaticState,
   GameState,
@@ -283,6 +284,11 @@ export interface PublicView {
    */
   tradeOffers: { incoming: TradeOffer[]; outgoing: TradeOffer[] }
   /**
+   * Die eigenen Liefervertraege (Liefervertrag B1, D6, R-DIP-04): nur Eintraege mit `from` oder
+   * `to` gleich mir, tiefe Kopien, in Zustandsreihenfolge. Fremde Vertraege Dritter fehlen ganz.
+   */
+  contracts: DeliveryContract[]
+  /**
    * Die eigenen Spione (R-SPY-01, T-M17-07; die Übersicht R-SPY-06 liest sie in T-M17-13).
    *
    * **Nur die eigenen.** Ein fremder Spion in meiner Provinz steht hier nicht — nicht als
@@ -504,6 +510,13 @@ export function publicView(state: GameState, playerId: PlayerId, rules?: Rules):
     else if (offer.from === playerId) tradeOffers.outgoing.push(copyTradeOffer(offer))
   }
 
+  // Eigene Liefervertraege (Liefervertrag B1, R-DIP-04): Dritte sehen sie nicht. Tiefe Kopien.
+  const contracts: PublicView['contracts'] = []
+  for (const contract of state.diplomacy.contracts) {
+    if (contract.from !== playerId && contract.to !== playerId) continue
+    contracts.push({ ...contract, give: { ...contract.give }, want: { ...contract.want } })
+  }
+
   // Eigene Spione — eigenes Wissen, Kopien statt Verweise in den Zustand (T-M17-07).
   const ownSpies: PublicView['espionage']['spies'] = []
   for (const spy of state.espionage.spies) {
@@ -590,6 +603,7 @@ export function publicView(state: GameState, playerId: PlayerId, rules?: Rules):
       ...(rules ? { pointsShareToWin: state.victory.pointsShareToWin } : {}),
     },
     tradeOffers,
+    contracts,
     espionage: { spies: ownSpies },
     outgoingOffers,
   }
@@ -601,6 +615,7 @@ function copyTradeOffer(offer: TradeOffer): TradeOffer {
     ...offer,
     give: { resources: { ...offer.give.resources }, provinces: offer.give.provinces.slice() },
     want: { resources: { ...offer.want.resources }, provinces: offer.want.provinces.slice() },
+    ...(offer.schedule ? { schedule: { ...offer.schedule } } : {}),
   }
 }
 

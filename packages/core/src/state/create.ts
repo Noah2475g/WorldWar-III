@@ -286,7 +286,7 @@ export function createInitialState(config: GameConfig, ctx: RuleContext): GameSt
     provinceOrder,
     armies: {},
     armyOrder: [],
-    diplomacy: { relations, offers: [], tradeOffers: [], grievances: {} },
+    diplomacy: { relations, offers: [], tradeOffers: [], contracts: [], grievances: {} },
     market: createMarket(rules),
     ai,
     battles: [],
@@ -311,6 +311,6 @@ export function createInitialState(config: GameConfig, ctx: RuleContext): GameSt
     },
     goals,
     espionage: { spies: [], reveals: [] },
-    nextIds: { army: 1, battle: 1, order: 1, spy: 1, offer: 1 },
+    nextIds: { army: 1, battle: 1, order: 1, spy: 1, offer: 1, contract: 1 },
   }
 }

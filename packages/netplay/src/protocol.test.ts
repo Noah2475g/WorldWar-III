@@ -213,7 +213,7 @@ describe('R-MP-06/AK1 Eine neue Formatstufe ist eine neue Protokollfassung', () 
    * hebt `PROTOCOL_VERSION` und traegt das Paar hier ein** — sonst reden zwei Bauten
    * miteinander, die einander den Spielstand nicht mehr lesen koennen.
    */
-  const FASSUNG_JE_STUFE: Record<number, number> = { 3: 1, 4: 2 }
+  const FASSUNG_JE_STUFE: Record<number, number> = { 3: 1, 4: 2, 5: 3 }
 
   it('fuehrt zu jeder Formatstufe genau eine eigene Protokollfassung', () => {
     expect(

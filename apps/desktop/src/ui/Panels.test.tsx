@@ -2800,3 +2800,54 @@ describe('R-UX-04/AK1 Krieg und Bündnisbruch fragen nach', () => {
     expect(peace).toHaveBeenCalledTimes(1)
   })
 })
+
+describe('Liefervertrag B3 (D8)', () => {
+  const action: Action = { id: 'trade-offer', label: 'Handel anbieten', disabledReason: null, onRun: vi.fn() }
+  const makeSpec = (evaluate: TradeFormSpec['evaluate'], withProvinces = false): TradeFormSpec => ({
+    resources: ['iron', 'money'],
+    stock: { iron: 12000 },
+    limits: { money: 507650, resource: 152295 },
+    ownProvinces: withProvinces ? [{ id: 'n1', name: 'Nordtal' }] : [],
+    provincesOf: () => [],
+    evaluate,
+  })
+
+  it('der Schalter „wiederholen“ zeigt die Felder und gibt schedule an evaluate', () => {
+    const evaluate = vi.fn(() => ({ text: 'V', action }))
+    render(<TradeOfferForm partner="p2" partnerName="Ostmark" spec={makeSpec(evaluate)} />)
+    expect(screen.queryByLabelText('Lieferungen')).toBeNull()
+    fireEvent.click(screen.getByLabelText('wiederholen'))
+    expect((screen.getByLabelText('alle N Tage') as HTMLInputElement).value).toBe('3')
+    expect((screen.getByLabelText('Lieferungen') as HTMLInputElement).value).toBe('5')
+    fireEvent.change(screen.getByLabelText('Lieferungen'), { target: { value: '7' } })
+    expect(evaluate).toHaveBeenLastCalledWith('p2', expect.objectContaining({ schedule: { intervalDays: 3, deliveries: 7 } }))
+    fireEvent.click(screen.getByLabelText('wiederholen'))
+    const last = evaluate.mock.calls.at(-1) as unknown as [string, Record<string, unknown>]
+    expect('schedule' in last[1]).toBe(false)
+  })
+
+  it('mit Provinzen und Schalter an: Hinweis und Senden gesperrt', () => {
+    const evaluate = vi.fn(() => ({ text: 'V', action }))
+    render(<TradeOfferForm partner="p2" partnerName="Ostmark" spec={makeSpec(evaluate, true)} />)
+    fireEvent.change(screen.getByLabelText('Provinz abgeben'), { target: { value: 'n1' } })
+    fireEvent.click(screen.getByLabelText('wiederholen'))
+    expect(screen.getAllByText(t('trade.blocked.scheduleProvinces')).length).toBeGreaterThan(0)
+    expect((screen.getByRole('button', { name: 'Handel anbieten' }) as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  it('die Vertragszeile steht unter der Macht, Kuendigen ruft onRun', () => {
+    const onRun = vi.fn()
+    const view = diplomacyView({ others: [{ id: 'p2', nation: 'Ostmark' }] })
+    const contracts = [
+      { id: 'c1', partner: 'p2', text: 'Liefervertrag: gibt 1 Eisen', actions: [{ id: 'contract-c1-cancel', label: 'Kündigen', disabledReason: null, onRun }] },
+    ]
+    render(<DiplomacyPanel view={view} nameOf={() => 'Ostmark'} contracts={contracts} />)
+    expect(screen.getByText('Liefervertrag: gibt 1 Eisen')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Kündigen' }))
+    expect(onRun).toHaveBeenCalledTimes(1)
+  })
+
+  it('CONTRACT_CLOSED gehoert zur Kategorie diplomacy', () => {
+    expect(categoryOf('CONTRACT_CLOSED')).toBe('diplomacy')
+  })
+})

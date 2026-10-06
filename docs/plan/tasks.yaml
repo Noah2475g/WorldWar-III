@@ -120,6 +120,13 @@ milestones:
   # V4 Etappe 1 (VM-07, Plan "V4 Etappe 1 Stellung"): Armeen stehen am Gebaeude ihrer Gattung. Nur die Huelle.
   - { id: M48, title: "V4 Etappe 1 Stellung" }
 
+  # Armee-Sammelmarke (Gate t_facb9d60): ab 4 Armeen je Provinz/Station/Seite eine Marke auf mid/far. Nur die Huelle.
+  - { id: M49, title: "Armee-Sammelmarke" }
+
+  # Liefervertrag Etappe 1 (Plan "Liefervertrag Etappe 1", Gate Noahs Ja): wiederkehrende Handelsangebote. M49 ist
+  # fuer die Armee-Sammelmarke reserviert.
+  - { id: M50, title: "Liefervertrag Etappe 1" }
+
 tasks:
   - id: T-M0-01
     milestone: M0
@@ -4360,3 +4367,85 @@ tasks:
     files: [scripts/v4-stellung-bild.mjs, docs/ux/v4-stellung/stand-nachher.png, docs/ux/v4-stellung/stand-vorher.png, docs/ux/v4-stellung/marsch-nachher.png, docs/ux/v4-stellung/marsch-vorher.png, docs/reports/v4/stellung.md, docs/plan/PROGRESS.md]
     tests: [scripts/v4-stellung-bild.mjs]
     dod: "Bilder vorher/nachher SAU vom laufenden Programm, angesehen und beschrieben; pnpm verify Exit 0; coverage:requirements V1 offen: 0; PR von claude/v4-stellung offen (Noah2475g), Merge nur durch reviewer."
+  - id: T-M49-01
+    milestone: M49
+    title: "Sammelmarke: Gruppierung als reine Funktion (sammel.ts)"
+    status: done
+    deps: []
+    requirements: [R-MAP-05]
+    design: []
+    files: [apps/desktop/src/map/sammel.ts, apps/desktop/src/map/markers.ts]
+    tests: [apps/desktop/src/map/sammel.test.ts]
+    dod: "Tests (a)-(m) gruen, Gegenproben rot gesehen, Typecheck/Lint/plan-consistency Exit 0."
+  - id: T-M49-02
+    milestone: M49
+    title: "Zeichnen und Klick der Sammelmarke in MapCanvas"
+    status: done
+    deps: [T-M49-01]
+    requirements: [R-MAP-05]
+    design: []
+    files: [apps/desktop/src/map/MapCanvas.tsx, apps/desktop/src/map/MapCanvas.test.tsx, apps/desktop/src/App.tsx]
+    tests: [apps/desktop/src/map/MapCanvas.test.tsx]
+    dod: "Neue MapCanvas-Tests gruen, alte unveraendert gruen."
+  - id: T-M49-03
+    milestone: M49
+    title: "Waechter: Sammelmarke an S575"
+    status: done
+    deps: [T-M49-02]
+    requirements: [R-MAP-05]
+    design: []
+    files: [apps/desktop/src/map/sammel.slow.test.ts, docs/reports/v4/sammel.json]
+    tests: [apps/desktop/src/map/sammel.slow.test.ts]
+    dod: "Slow-Test gruen, Messwerte in sammel.json."
+  - id: T-M49-04
+    milestone: M49
+    title: "Abnahme am laufenden Programm, Bericht, PR"
+    status: done
+    deps: [T-M49-03]
+    requirements: [R-MAP-05]
+    design: []
+    files: [scripts/v4-sammel-bild.mjs, docs/ux/v4-sammel/, docs/reports/v4/sammel.md, docs/plan/PROGRESS.md, docs/ASSETS.md]
+    tests: [scripts/v4-sammel-bild.mjs]
+    dod: "Bilder angesehen, pnpm verify Exit 0, PR offen (Noah2475g), Merge nur durch reviewer."
+
+
+  - id: T-M50-01
+    milestone: M50
+    title: "Eingefrorener Stand der Stufe 4 und Messung vorher"
+    status: done
+    deps: []
+    requirements: [R-DIP-05]
+    design: []
+    files: [packages/core/test/golden/save-v4.json]
+    tests: [packages/core/src/persistence/migration-v4.test.ts]
+    dod: "save-v4.json entsteht zeichengleich aus dem Rezept (zweimal gelaufen), 30 Spieltage Weltkarte, Mensch = erste Macht in playerOrder, >= 1 offenes Handelsangebot ohne schedule; Commit noch auf Stufe 4. Basis-Messung ai-integration.json und m17-integration.json bei 6ca34a4 gesichert."
+  - id: T-M50-02
+    milestone: M50
+    title: "Liefervertrag im Kern: Schema 5, OFFER_TRADE schedule, CANCEL_CONTRACT, settleContracts"
+    status: done
+    deps: [T-M50-01]
+    requirements: [R-DIP-05]
+    design: []
+    files: [packages/core/src/commands/contract.ts, packages/core/src/commands/tradeOffer.ts, packages/core/src/commands/types.ts, packages/core/src/events/types.ts, packages/core/src/phases/diplomacy.ts, packages/core/src/state/types.ts, data/rules/default/constants.json, docs/plan/BALANCING.md]
+    tests: [packages/core/src/commands/contract.test.ts, packages/core/src/commands/tradeOffer.test.ts]
+    dod: "5 Lieferungen alle 3 Tage termingerecht, Summen je Rohstoff erhalten (AK1); Krieg/Kriegserklaerung/Ausscheiden schliessen im selben Durchlauf nach Rangfolge, Krieg + faellig = war (AK2); Fehlmenge = unpaid mit closedBy, keine Teillieferung (AK3); Kuendigung durch from und to, fremde Kennung = kein Vertrag (AK4); Zeitplan-Grenzen, Provinzverbot, maxActiveContracts bei Angebot und Annahme; Angebot ohne schedule traegt den Schluessel nicht."
+  - id: T-M50-03
+    milestone: M50
+    title: "Speichern, Migration 4 nach 5, Sicht und Gleichschritt"
+    status: done
+    deps: [T-M50-02]
+    requirements: [R-DIP-05]
+    design: []
+    files: [packages/core/src/persistence/migrate.ts, packages/core/src/persistence/validate.ts, packages/core/src/view/publicView.ts, packages/netplay/src/protocol.ts, apps/desktop/src/game/rejections.ts, apps/desktop/src/i18n/de.ts, apps/desktop/src/game/events.ts]
+    tests: [packages/core/src/persistence/migration-v4.test.ts, packages/core/src/view/publicView.test.ts, packages/netplay/test/contract-lockstep.test.ts, packages/netplay/src/protocol.test.ts]
+    dod: "save-v4.json laeuft ueber den Schritt 4 nach 5 (Differenz genau ADDED_IN_VERSION_5, validateState ok, laeuft und rechnet nach Rundreise gleich); Wiederaufnahme mit laufendem Vertrag 37 Ticks gleich am Stueck; Netplay-Hash je Tick gleich bei Angebot, Annahme, Lieferung, Kuendigung; Dritte sehen fremde Vertraege nicht (R-DIP-04); PROTOCOL_VERSION 3."
+  - id: T-M50-04
+    milestone: M50
+    title: "Golden-Master neu und Paritaet asV4 == 6ca34a4"
+    status: done
+    deps: [T-M50-02]
+    requirements: [R-DIP-05]
+    design: []
+    files: [packages/core/test/determinism.test.ts, apps/headless/test/walkthrough.test.ts, packages/core/test/golden/tiny-500.json, apps/headless/test/golden/walkthrough.json]
+    tests: [packages/core/test/determinism.test.ts, apps/headless/test/walkthrough.test.ts]
+    dod: "Golden-Dateien tiny-500.json und walkthrough.json mit UPDATE_GOLDEN=1 neu (Schema 5); asV4-Paritaet trifft die Literale von 6ca34a4 unveraendert (tiny-500 d32e63834ba2ce4d/6fb36c4975b8b577/a58b3cca20717564/5256d8cd46eb636b, walkthrough 5a5c3d40488d4af2); ai-integration-Kennzahlen unveraendert."

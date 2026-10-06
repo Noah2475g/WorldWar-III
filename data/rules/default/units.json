@@ -283,7 +283,7 @@
       "availableFromDay": 62
     },
     "destroyer": {
-      "name": "Zerstoerer",
+      "name": "Zerstörer",
       "class": "navy",
       "cost": {
         "iron": 250000,

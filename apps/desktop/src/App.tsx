@@ -40,6 +40,7 @@ import {
   spySummary,
   targetAction,
   tradeOfferAction,
+  contractRowActions,
   tradePreview,
   unitCounts,
   type ActionContext,
@@ -125,6 +126,7 @@ import {
   mergeBattleLines,
   pingsFor,
   type MapPing,
+  isAutoPauseTrigger,
   openIntrusion,
   priceSeries,
 } from './game/events.ts'
@@ -507,7 +509,7 @@ export function App(props: AppProps) {
   const [fastForwardState, setFastForward] = useState<{
     running: boolean
     ticksRun: number
-    reason: StopReason | 'aborted' | null
+    reason: StopReason | 'aborted' | 'autopause' | null
     /** Das Ereignis, das den Lauf beendet hat — R-TIME-03/AK1 sagt "stoppen UND melden". */
     trigger: GameEvent | null
   }>({ running: false, ticksRun: 0, reason: null, trigger: null })
@@ -1050,8 +1052,10 @@ export function App(props: AppProps) {
   )
 
   /** One game hour, AI included — and the moment the collected orders take effect. */
+  const autoPauseTrigger = useRef<GameEvent | null>(null)
+  const autoPauseArmed = ui.settings.autoPause && !netplayActive && viewerId !== null
   const step = useCallback(
-    (ticks: number, deferred = false) => {
+    (ticks: number, deferred = false): boolean => {
       // Die gesammelten Befehle gehoeren dem ersten Tick dieses Schritts (T-M22-05).
       const commands = takePending()
       lastTickAt.current = now()
@@ -1060,14 +1064,23 @@ export function App(props: AppProps) {
       // (Befund 2026-09-08): ein Updater muss pur sein, StrictMode ruft ihn doppelt.
       // Hier war der Doppellauf ergebnisgleich, aber noteTrace feuerte zweimal.
       const current = stateRef.current
-      if (!current) return
+      if (!current) return false
+      // Auto-Pause (VM-06): Hauptstadt aus dem Stand VOR dem Tick; nur scharf im Einzelspiel.
+      const capitalBefore = viewerId ? (current.players[viewerId]?.capitalProvinceId ?? null) : null
+      const pauseHit = (events: readonly GameEvent[]): boolean => {
+        if (!autoPauseArmed) return false
+        const hit = events.find((event) => isAutoPauseTrigger(event, viewerId, capitalBefore))
+        if (!hit) return false
+        autoPauseTrigger.current = hit
+        return true
+      }
       if (!debugOn) {
         const result = advanceStep(current, ticks, { map: activeMap, rules: props.rules }, commands)
         noteMarches(result.adjutant)
         // Ueber `commitState`, nicht `setState`: das naechste Bild kann kommen, bevor React
         // eingespielt hat, und muss auf DIESEM Stand weiterrechnen (T-M41-17).
         commitState(result.state, deferred)
-        return
+        return pauseHit(result.events)
       }
       const result = advanceWithTrace(current, ticks, { map: activeMap, rules: props.rules }, commands)
       noteTrace({
@@ -1077,8 +1090,9 @@ export function App(props: AppProps) {
       })
       noteMarches(result.adjutant)
       commitState(result.state, deferred)
+      return pauseHit(result.events)
     },
-    [activeMap, props.rules, debugOn, noteTrace, noteMarches, takePending, now, commitState],
+    [activeMap, props.rules, debugOn, noteTrace, noteMarches, takePending, now, commitState, autoPauseArmed, viewerId],
   )
 
   /**
@@ -1265,6 +1279,18 @@ export function App(props: AppProps) {
   stepRef.current = step
   const flushRef = useRef(flushState)
   flushRef.current = flushState
+  const onAutoPause = () => {
+    setSpeed(0)
+    setFastForward({ running: false, ticksRun: 0, reason: 'autopause', trigger: autoPauseTrigger.current })
+  }
+  const onAutoPauseRef = useRef(onAutoPause)
+  onAutoPauseRef.current = onAutoPause
+  // Laeuft die Uhr wieder, ist die Auto-Pause-Meldung veraltet (sonst kaeme sie bei der naechsten Pause zurueck).
+  useEffect(() => {
+    if (speed > 0) {
+      setFastForward((alt) => (alt.reason === 'autopause' ? { ...alt, reason: null, trigger: null } : alt))
+    }
+  }, [speed])
   useEffect(() => {
     // Zu zweit gibt es keine zweite Uhr daneben (T-M37-11): der Gleichschritt gibt den
     // Takt, und ein rAF-Lauf darueber rechnete Ticks, die niemand freigegeben hat.
@@ -1277,7 +1303,7 @@ export function App(props: AppProps) {
     const driver = createClockDriver({
       speed,
       now: () => performance.now(),
-      run: () => stepRef.current(1, true),
+      run: () => stepRef.current(1, true) === true,
     })
     let lastFrameAt = performance.now()
     let lastFlushAt = 0
@@ -1292,6 +1318,12 @@ export function App(props: AppProps) {
       // Zeitscheiben nicht — sie laufen nur, solange vor kurzem ein Bild kam.
       if (performance.now() - lastFrameAt > SLICE_MAX_FRAME_AGE_MS) return
       driver.advance(SLICE_BUDGET_MS)
+      if (driver.isStopped()) {
+        running = false
+        flushRef.current()
+        onAutoPauseRef.current()
+        return
+      }
       schedule()
     }
     const schedule = () => {
@@ -1310,6 +1342,12 @@ export function App(props: AppProps) {
       if (!running) return
       lastFrameAt = performance.now()
       driver.advance(FRAME_BUDGET_MS)
+      if (driver.isStopped()) {
+        running = false
+        flushRef.current()
+        onAutoPauseRef.current()
+        return
+      }
       if (lastFrameAt - lastFlushAt >= displayGapMs.current) {
         lastFlushAt = lastFrameAt
         flushRef.current()
@@ -2014,6 +2052,15 @@ export function App(props: AppProps) {
     }
   }, [ctx, view, nameOf, nameOfProvince, toAction])
 
+  /** Laufende Liefervertraege als Zeilen mit Kuendigen-Knopf (Liefervertrag B3, D8). */
+  const contractRows = useMemo(() => {
+    if (!ctx || !view) return []
+    return contractRowActions(ctx, view, { nameOf, nameOfProvince }).map((row) => ({
+      ...row,
+      actions: row.actions.map((spec) => toAction(spec)),
+    }))
+  }, [ctx, view, nameOf, nameOfProvince, toAction])
+
   /**
    * Spionage-Meldungen sammeln (R-SPY-06/AK2, E3, T-M17-13).
    *
@@ -2160,6 +2207,16 @@ export function App(props: AppProps) {
    */
   const fastForwardNotice: string | null = useMemo(() => {
     const { running, reason, ticksRun, trigger } = fastForwardState
+    if (reason === 'autopause') {
+      if (speed !== 0 || !trigger || !state || !viewerId) return null
+      const pausiert = describeEvent(trigger, 0, activeMap, {
+        player: nameOf,
+        army: armyNamer(state.armies, armyNames.current),
+        ticksPerDay,
+        viewer: viewerId,
+      })
+      return t('header.autoPaused', { event: pausiert.text })
+    }
     if (running || reason === null) return null
     // „Angehalten nach 2 Tagen" — nach verlangt den Dativ (T-M23-02, V2-11).
     const time = durationDative(ticksRun, ticksPerDay)
@@ -2174,7 +2231,7 @@ export function App(props: AppProps) {
       viewer: viewerId,
     })
     return t('header.stoppedAlert', { time, event: beschrieben.text })
-  }, [fastForwardState, ticksPerDay, state, viewerId, activeMap, nameOf])
+  }, [fastForwardState, speed, ticksPerDay, state, viewerId, activeMap, nameOf])
 
   /** Build, recruit and capital — for an own province; nothing for anyone else's. */
   const provinceGroups: ActionGroupSpec[] = useMemo(() => {
@@ -2528,6 +2585,7 @@ export function App(props: AppProps) {
             view={ui.view}
             ownershipVersion={ui.ownershipVersion}
             selectedProvince={ui.selectedProvince}
+            selectedArmyId={ui.selectedArmy}
             alarmProvince={alarm?.provinceId ?? null}
             pings={pings}
             capitalProvinceId={view.self.capitalProvinceId}
@@ -2693,6 +2751,7 @@ export function App(props: AppProps) {
                   actionsFor={(playerId) => diplomacyActions(ctx, playerId).map((spec) => toAction(spec))}
                   passageFor={(playerId) => passageActions(ctx, playerId).map((spec) => toAction(spec))}
                   offers={offerRows}
+                  contracts={contractRows}
                   tradeForm={{
                     resources: RESOURCE_KEYS,
                     stock: view.self.resources,

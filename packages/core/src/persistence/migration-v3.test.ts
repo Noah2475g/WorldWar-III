@@ -13,6 +13,7 @@ import {
   ADDED_IN_VERSION_2,
   ADDED_IN_VERSION_3,
   ADDED_IN_VERSION_4,
+  ADDED_IN_VERSION_5,
   REMOVED_IN_VERSION_4,
   migrate,
   type SaveEnvelope,
@@ -105,7 +106,7 @@ describe('R-GAME-09/AK1 Ein Stand der Stufe 3 laeuft nach der Migration weiter',
     const state = deserialise(JSON.stringify(copy(V3)))
 
     expect(state.schemaVersion).toBe(SCHEMA_VERSION)
-    expect(SCHEMA_VERSION).toBe(4)
+    expect(SCHEMA_VERSION).toBe(5)
     expect(state.espionage).toEqual({ spies: [], reveals: [] })
     expect(state.diplomacy.tradeOffers).toEqual([])
     expect(state.nextIds.spy).toBe(1)
@@ -149,7 +150,7 @@ describe('R-GAME-09/AK1 Ein Stand der Stufe 3 laeuft nach der Migration weiter',
 
   it('aendert nichts ausser den neuen und den entfernten Schluesseln', () => {
     const after = migrate(copy(V3)).state
-    const beide = [...ADDED_IN_VERSION_4, ...REMOVED_IN_VERSION_4]
+    const beide = [...ADDED_IN_VERSION_4, ...ADDED_IN_VERSION_5, ...REMOVED_IN_VERSION_4]
 
     expect(canonicalText(strip(after, beide))).toBe(canonicalText(strip(V3.state, beide)))
     expect(REMOVED_IN_VERSION_4).toEqual(['rightOfWay', 'sharedMap'])
@@ -237,14 +238,14 @@ describe('R-GAME-09/AK2 Ein Stand der Stufe 1 oder 2 laeuft ueber alle Schritte'
 
   it('liefert in einem Zug dasselbe wie Schritt fuer Schritt', () => {
     const direct = migrate(copy(V1))
-    const stepwise = migrate(migrate(migrate(copy(V1), undefined, 2), undefined, 3), undefined, 4)
+    const stepwise = migrate(migrate(migrate(migrate(copy(V1), undefined, 2), undefined, 3), undefined, 4), undefined, 5)
 
     expect(canonicalText(stepwise)).toBe(canonicalText(direct))
   })
 
   it('aendert nichts ausser den Feldern aller drei Schritte', () => {
     const after = migrate(copy(V1)).state
-    const alle = [...ADDED_IN_VERSION_2, ...ADDED_IN_VERSION_3, ...ADDED_IN_VERSION_4, ...REMOVED_IN_VERSION_4]
+    const alle = [...ADDED_IN_VERSION_2, ...ADDED_IN_VERSION_3, ...ADDED_IN_VERSION_4, ...ADDED_IN_VERSION_5, ...REMOVED_IN_VERSION_4]
 
     expect(canonicalText(strip(after, alle))).toBe(canonicalText(strip(V1.state, alle)))
   })
