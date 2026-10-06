@@ -516,7 +516,8 @@ describe('R-GAME-08/AK3 Die Rangliste zeigt die eigenen Zwischenziele', () => {
 
       expect(zeichen).toHaveLength(4)
       for (const mark of zeichen) expect(mark.getAttribute('aria-hidden')).toBe('true')
-      expect(window.getComputedStyle(zeichen[1]!).color, 'erreicht').toBe('var(--good)')
+      // N1 (v3b): erreicht = var(--text) plus das Zeichen, kein Gruen mehr.
+      expect(window.getComputedStyle(zeichen[1]!).color, 'erreicht').toBe('var(--text)')
       expect(window.getComputedStyle(zeichen[0]!).color, 'offen').toBe('var(--ink-soft)')
     } finally {
       style.remove()

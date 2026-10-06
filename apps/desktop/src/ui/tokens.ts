@@ -17,37 +17,50 @@
  */
 
 export const TOKENS = {
+  // --- v3b (Seitenleiste E1, D1): die sieben Rollen. Die alten Namen darunter sind Aliase
+  // mit denselben neuen Werten (paper=surface, paperSunk=raised, ink=text, inkSoft=muted,
+  // warn=primary, accent=danger, onWarn=onPrimary). Ableitungen (--hair, --line-soft,
+  // --glass, --primary-soft, --danger-soft, --bezel) stehen als color-mix in app.css und
+  // sind keine Hex-Werte, also kein Spiegelfall (A3: strayColors/rootColorVariables
+  // sehen nur Hex/rgb()/hsl(); color-mix ist erlaubt).
+  surface: '#121821',
+  raised: '#1C2531',
+  text: '#ECE6DA',
+  muted: '#A4ABB6',
+  primary: '#E9AB3C',
+  danger: '#F07A5F',
+  onPrimary: '#1A1205',
   /** Map ground, the dark table. */
   ground: '#0D1117',
-  /** Panels and bars. */
-  paper: '#161C25',
-  /** Sunk surfaces: table rows, meter tracks, empty building slots. */
-  paperSunk: '#1E2632',
-  /** Text. */
-  ink: '#E6E1D3',
-  /** Secondary text, units, captions, the clock in the footer. */
-  inkSoft: '#9AA0A8',
+  /** Panels and bars (= surface). */
+  paper: '#121821',
+  /** Sunk surfaces: table rows, meter tracks, empty building slots (= raised). */
+  paperSunk: '#1C2531',
+  /** Text (= text). */
+  ink: '#ECE6DA',
+  /** Secondary text, units, captions, the clock in the footer (= muted). */
+  inkSoft: '#A4ABB6',
   /**
    * Panel rules and meter outlines. D27.1 proposed #2F3944; at 1.46:1 against `paper`
    * an empty meter track would have been invisible, so the value is the nearest tone
    * that clears the 3:1 non-text threshold. The contrast test has the last word.
    */
-  line: '#5C6A78',
+  line: '#657382',
   /** Sea, one shade below the ground. */
   water: '#0A0E14',
   /**
    * Enemy, combat and alarm. Nothing else. D27.1 proposed #E2503A, which reads at
    * 4.44:1 on `paper`; nudged to the first value that clears AA text.
    */
-  accent: '#E8583F',
+  accent: '#F07A5F',
   /** Ours: own armies and provinces, surplus, completed. */
   good: '#7EC57E',
   /** Amber: time, orders, selection, the build queue, a deadline running. */
-  warn: '#E0A220',
+  warn: '#E9AB3C',
   /** Light text and halos on a filled dark surface (marker rims, the map ground). */
   onDark: '#F7F4EC',
   /** Text on an amber (`warn`) or vermilion (`accent`) surface — filled buttons. */
-  onWarn: '#1A1200',
+  onWarn: '#1A1205',
   /** Map labels sitting on a player-coloured province (dark fills, light lettering). */
   onPlayer: '#E6E1D3',
   /** Building markers on the map and resource glyphs in the bar. */
@@ -146,6 +159,19 @@ export interface ContrastPair {
 
 /** Every combination the interface actually produces. */
 export const CONTRAST_PAIRS: readonly ContrastPair[] = [
+  // v3b (E1): die neuen Namen. N2: line #657382 = 3,67 auf surface, 3,19 auf raised.
+  { foreground: 'text', background: 'surface', use: 'v3b Text auf Flaechen' },
+  { foreground: 'text', background: 'raised', use: 'v3b Text auf Feldern' },
+  { foreground: 'muted', background: 'surface', use: 'v3b Nebentext' },
+  { foreground: 'muted', background: 'raised', use: 'v3b Nebentext auf Feldern' },
+  { foreground: 'primary', background: 'surface', use: 'v3b Hauptaktion, Auswahl' },
+  { foreground: 'primary', background: 'raised', use: 'v3b Auswahl auf Feldern' },
+  { foreground: 'danger', background: 'surface', use: 'v3b Krieg, Fehlbetrag' },
+  { foreground: 'danger', background: 'raised', use: 'v3b Alarm auf Feldern' },
+  { foreground: 'onPrimary', background: 'primary', use: 'v3b Text auf Hauptknopf' },
+  { foreground: 'onPrimary', background: 'danger', use: 'v3b Text auf Alarmknopf' },
+  { foreground: 'line', background: 'surface', use: 'v3b Rahmen auf Flaeche', large: true },
+  { foreground: 'line', background: 'paperSunk', use: 'Rahmen auf erhoehter Flaeche (Plaettchen, Felder)', large: true },
   { foreground: 'ink', background: 'paper', use: 'Panels, Fließtext' },
   { foreground: 'ink', background: 'ground', use: 'Leisten, Kartenschrift' },
   { foreground: 'ink', background: 'paperSunk', use: 'Tabellenzeilen' },

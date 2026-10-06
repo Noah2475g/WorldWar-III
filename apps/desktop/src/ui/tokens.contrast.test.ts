@@ -211,7 +211,9 @@ describe('R-UX-06/AK1 Die Schrift des Alarmchips hält 4,5:1', () => {
 
   it('und der Chip sitzt nicht mehr auf paperSunk (dort maß er 4,28)', () => {
     expect(wert('background')).not.toBe('paper-sunk')
-    expect(contrastRatio(TOKENS.accent, TOKENS.paperSunk)).toBeLessThan(AA_TEXT)
+    // Seit v3b (danger #F07A5F) liegt das Paar auf paperSunk bei 5,63 und damit ueber 4,5;
+    // der Chip bleibt trotzdem auf paper, die Zeile oben haelt das Paar.
+    expect(contrastRatio(TOKENS.accent, TOKENS.paperSunk)).toBeGreaterThanOrEqual(AA_TEXT)
   })
 })
 

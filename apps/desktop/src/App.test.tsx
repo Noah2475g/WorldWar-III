@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { readFileSync } from 'node:fs'
 import { StrictMode } from 'react'
+import { toast } from 'sonner'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { advanceTicks } from '@worldwar/ai'
 import { MemoryStorage, planRoute, relationKey, step, type MapData } from '@worldwar/core'
@@ -117,7 +118,11 @@ beforeAll(() => {
   HTMLCanvasElement.prototype.getContext = (() => null) as never
 })
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  // sonner haelt seine Toasts modulweit; ein stehender Toast wuerde sonst im naechsten Test wieder erscheinen.
+  toast.dismiss()
+})
 
 /**
  * A started game, with the guided introduction switched off.
@@ -2827,17 +2832,18 @@ describe('R-MP-02/AK2 In einer angelegten Partie zu zweit sind Tempo und Vorspul
     expect(screen.queryByRole('button', { name: 'Vorspulen' })).toBeNull()
   })
 
-  it('nennt bei Plus, Minus, Leertaste und F den Grund, statt stumm zu bleiben', () => {
+  it('nennt bei Plus, Minus, Leertaste und F den Grund, statt stumm zu bleiben', async () => {
     startZuZweit()
 
+    // Die Meldung ist ein Toast (v3b E1): sonner zeigt ihn einen Takt spaeter, daher findBy.
     fireEvent.keyDown(window, { key: '+' })
-    expect(screen.getByText(/beim Anlegen der Partie gewählt/)).toBeTruthy()
+    expect(await screen.findByText(/beim Anlegen der Partie gewählt/)).toBeTruthy()
 
     fireEvent.keyDown(window, { key: 'f' })
-    expect(screen.getByText(/Vorspulen gibt es zu zweit nicht/)).toBeTruthy()
+    expect(await screen.findByText(/Vorspulen gibt es zu zweit nicht/)).toBeTruthy()
 
     fireEvent.keyDown(window, { key: ' ' })
-    expect(screen.getByText(/beantragt und angenommen/)).toBeTruthy()
+    expect(await screen.findByText(/beantragt und angenommen/)).toBeTruthy()
   })
 
   it('laesst den Einzelspieler unveraendert — die Gegenprobe am selben Bildschirm', () => {
@@ -2916,6 +2922,11 @@ describe('R-MP-03/AK1 Die Oberflaeche rechnet keinen Tick ohne Freigabe des Mits
     act(() => {
       uhr += ms
       vi.advanceTimersByTime(ms)
+    })
+    // Meldungen sind Toasts (v3b E1): sonner zeigt sie per setTimeout(0) aus einem Effekt, der erst
+    // beim Verlassen des act laeuft — ein zweiter Takt von 0 ms bringt sie ins DOM.
+    act(() => {
+      vi.advanceTimersByTime(0)
     })
   }
 
@@ -3313,6 +3324,7 @@ describe('R-MP-03/AK1 Die Oberflaeche rechnet keinen Tick ohne Freigabe des Mits
       const { leitung, peer } = zuZweit()
       warte(400)
       fireEvent.keyDown(window, { key: '+' })
+      warte(0)
       expect(screen.getByText(/beim Anlegen der Partie gewählt/)).toBeTruthy()
 
       act(() => {
@@ -3334,8 +3346,12 @@ describe('R-MP-03/AK1 Die Oberflaeche rechnet keinen Tick ohne Freigabe des Mits
       warte(100)
       expect(screen.getByText(ABGELEHNT)).toBeTruthy()
 
+      // Der Toast geht ueber requestAnimationFrame (sonner); in diesem Block ist es ein Stummschalter
+      // (FALLE aus M22) — fuer den Abgang laeuft es hier ausnahmsweise ueber einen 0-ms-Zeitgeber.
+      vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => setTimeout(() => cb(0), 0) as unknown as number)
       beantragen()
-
+      // Ein abtretender Toast haengt 200 ms (sonner TIME_BEFORE_UNMOUNT) im DOM.
+      for (let takt = 0; takt < 5; takt++) warte(100)
       expect(screen.queryByText(ABGELEHNT), 'die alte Antwort stand neben dem neuen Antrag').toBeNull()
       expect(screen.getByText(GESTELLT)).toBeTruthy()
     })

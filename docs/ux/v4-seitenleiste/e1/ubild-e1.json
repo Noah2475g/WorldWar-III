@@ -1,0 +1,776 @@
+{
+  "url": "http://localhost:5361/",
+  "states": {
+    "S300": {
+      "viewports": {
+        "1280x800": {
+          "karte": {
+            "kopf": {
+              "chars": 65,
+              "symbols": 20,
+              "textArea": 6288,
+              "symbolArea": 9045,
+              "textShare": 0.41,
+              "boxArea": 94720
+            },
+            "panel": {
+              "chars": 0,
+              "symbols": 2,
+              "textArea": 0,
+              "symbolArea": 1268,
+              "textShare": 0,
+              "boxArea": 212040
+            },
+            "alarme": {
+              "chars": 25,
+              "symbols": 3,
+              "textArea": 2093,
+              "symbolArea": 2352,
+              "textShare": 0.471,
+              "boxArea": 13563
+            },
+            "protokoll": {
+              "chars": 24,
+              "symbols": 12,
+              "textArea": 2218,
+              "symbolArea": 5304,
+              "textShare": 0.295,
+              "boxArea": 151524
+            }
+          },
+          "brennpunkt": {
+            "kopf": {
+              "chars": 65,
+              "symbols": 20,
+              "textArea": 6288,
+              "symbolArea": 9045,
+              "textShare": 0.41,
+              "boxArea": 94720
+            },
+            "panel": {
+              "chars": 0,
+              "symbols": 2,
+              "textArea": 0,
+              "symbolArea": 1268,
+              "textShare": 0,
+              "boxArea": 212040
+            },
+            "alarme": {
+              "chars": 25,
+              "symbols": 3,
+              "textArea": 2093,
+              "symbolArea": 2352,
+              "textShare": 0.471,
+              "boxArea": 13563
+            },
+            "protokoll": {
+              "chars": 24,
+              "symbols": 12,
+              "textArea": 2218,
+              "symbolArea": 5304,
+              "textShare": 0.295,
+              "boxArea": 151524
+            }
+          },
+          "nah": {
+            "kopf": {
+              "chars": 65,
+              "symbols": 20,
+              "textArea": 6288,
+              "symbolArea": 9045,
+              "textShare": 0.41,
+              "boxArea": 94720
+            },
+            "panel": {
+              "chars": 0,
+              "symbols": 2,
+              "textArea": 0,
+              "symbolArea": 1268,
+              "textShare": 0,
+              "boxArea": 212040
+            },
+            "alarme": {
+              "chars": 25,
+              "symbols": 3,
+              "textArea": 2093,
+              "symbolArea": 2352,
+              "textShare": 0.471,
+              "boxArea": 13563
+            },
+            "protokoll": {
+              "chars": 24,
+              "symbols": 12,
+              "textArea": 2218,
+              "symbolArea": 5304,
+              "textShare": 0.295,
+              "boxArea": 151524
+            }
+          },
+          "provinz": {
+            "kopf": {
+              "chars": 65,
+              "symbols": 20,
+              "textArea": 6288,
+              "symbolArea": 9045,
+              "textShare": 0.41,
+              "boxArea": 94720
+            },
+            "panel": {
+              "chars": 43,
+              "symbols": 10,
+              "textArea": 5154,
+              "symbolArea": 5724,
+              "textShare": 0.474,
+              "boxArea": 212040
+            },
+            "alarme": {
+              "chars": 25,
+              "symbols": 3,
+              "textArea": 2093,
+              "symbolArea": 2352,
+              "textShare": 0.471,
+              "boxArea": 13563
+            },
+            "protokoll": {
+              "chars": 24,
+              "symbols": 12,
+              "textArea": 2218,
+              "symbolArea": 5304,
+              "textShare": 0.295,
+              "boxArea": 151524
+            },
+            "knoepfe": {
+              "total": 8,
+              "iconOnly": 4,
+              "iconOnlyWithTitle": 4,
+              "iconOnlyWithAria": 4,
+              "iconOnlyWithBoth": 4,
+              "withWord": 4,
+              "words": [
+                "?",
+                "?",
+                "?",
+                "?"
+              ]
+            }
+          }
+        },
+        "375x667": {
+          "karte": {
+            "kopf": {
+              "chars": 65,
+              "symbols": 20,
+              "textArea": 6008,
+              "symbolArea": 7003,
+              "textShare": 0.462,
+              "boxArea": 57750
+            },
+            "panel": {
+              "chars": 25,
+              "symbols": 4,
+              "textArea": 2093,
+              "symbolArea": 2836,
+              "textShare": 0.425,
+              "boxArea": 41572
+            },
+            "alarme": {
+              "chars": 25,
+              "symbols": 3,
+              "textArea": 2093,
+              "symbolArea": 2352,
+              "textShare": 0.471,
+              "boxArea": 53132
+            },
+            "protokoll": {
+              "chars": 11,
+              "symbols": 3,
+              "textArea": 858,
+              "symbolArea": 2352,
+              "textShare": 0.267,
+              "boxArea": 16500
+            }
+          },
+          "protokollOffen": {
+            "kopf": {
+              "chars": 65,
+              "symbols": 20,
+              "textArea": 6008,
+              "symbolArea": 7003,
+              "textShare": 0.462,
+              "boxArea": 57750
+            },
+            "panel": {
+              "chars": 25,
+              "symbols": 4,
+              "textArea": 2093,
+              "symbolArea": 2836,
+              "textShare": 0.425,
+              "boxArea": 58072
+            },
+            "alarme": {
+              "chars": 25,
+              "symbols": 3,
+              "textArea": 2093,
+              "symbolArea": 2352,
+              "textShare": 0.471,
+              "boxArea": 53132
+            },
+            "protokoll": {
+              "chars": 24,
+              "symbols": 12,
+              "textArea": 1872,
+              "symbolArea": 6240,
+              "textShare": 0.231,
+              "boxArea": 137566
+            }
+          },
+          "provinz": {
+            "kopf": {
+              "chars": 65,
+              "symbols": 20,
+              "textArea": 6008,
+              "symbolArea": 7003,
+              "textShare": 0.462,
+              "boxArea": 57750
+            },
+            "panel": {
+              "chars": 53,
+              "symbols": 13,
+              "textArea": 5697,
+              "symbolArea": 5968,
+              "textShare": 0.488,
+              "boxArea": 125063
+            },
+            "alarme": {
+              "chars": 25,
+              "symbols": 3,
+              "textArea": 2093,
+              "symbolArea": 2352,
+              "textShare": 0.471,
+              "boxArea": 53132
+            },
+            "protokoll": {
+              "chars": 0,
+              "symbols": 0,
+              "textArea": 0,
+              "symbolArea": 0,
+              "textShare": 0,
+              "boxArea": 0
+            },
+            "knoepfe": {
+              "total": 17,
+              "iconOnly": 9,
+              "iconOnlyWithTitle": 9,
+              "iconOnlyWithAria": 9,
+              "iconOnlyWithBoth": 9,
+              "withWord": 8,
+              "words": [
+                "halb",
+                "Brasilien",
+                "Argentinien",
+                "China",
+                "?",
+                "?",
+                "?",
+                "?"
+              ]
+            }
+          }
+        }
+      },
+      "overlap": {
+        "viewer": "p1",
+        "armies": 3,
+        "byScale": {
+          "1": {
+            "markers": 3,
+            "fullyHidden": 0,
+            "partlyCovered": 0
+          },
+          "2": {
+            "markers": 3,
+            "fullyHidden": 0,
+            "partlyCovered": 0
+          },
+          "4": {
+            "markers": 3,
+            "fullyHidden": 0,
+            "partlyCovered": 0
+          },
+          "8": {
+            "markers": 3,
+            "fullyHidden": 0,
+            "partlyCovered": 0
+          },
+          "0.5": {
+            "markers": 3,
+            "fullyHidden": 0,
+            "partlyCovered": 0
+          }
+        },
+        "provincesWithStack": 1,
+        "largestStack": 3,
+        "largestStackProvince": "CAN-EAST"
+      }
+    },
+    "S575G": {
+      "viewports": {
+        "1280x800": {
+          "karte": {
+            "kopf": {
+              "chars": 83,
+              "symbols": 21,
+              "textArea": 7929,
+              "symbolArea": 9529,
+              "textShare": 0.454,
+              "boxArea": 104960
+            },
+            "panel": {
+              "chars": 0,
+              "symbols": 2,
+              "textArea": 0,
+              "symbolArea": 1268,
+              "textShare": 0,
+              "boxArea": 209000
+            },
+            "alarme": {
+              "chars": 7,
+              "symbols": 2,
+              "textArea": 633,
+              "symbolArea": 1568,
+              "textShare": 0.288,
+              "boxArea": 6839
+            },
+            "protokoll": {
+              "chars": 55,
+              "symbols": 14,
+              "textArea": 4588,
+              "symbolArea": 5952,
+              "textShare": 0.435,
+              "boxArea": 151524
+            }
+          },
+          "brennpunkt": {
+            "kopf": {
+              "chars": 83,
+              "symbols": 21,
+              "textArea": 7929,
+              "symbolArea": 9529,
+              "textShare": 0.454,
+              "boxArea": 104960
+            },
+            "panel": {
+              "chars": 0,
+              "symbols": 2,
+              "textArea": 0,
+              "symbolArea": 1268,
+              "textShare": 0,
+              "boxArea": 209000
+            },
+            "alarme": {
+              "chars": 7,
+              "symbols": 2,
+              "textArea": 633,
+              "symbolArea": 1568,
+              "textShare": 0.288,
+              "boxArea": 6839
+            },
+            "protokoll": {
+              "chars": 55,
+              "symbols": 14,
+              "textArea": 4588,
+              "symbolArea": 5952,
+              "textShare": 0.435,
+              "boxArea": 151524
+            }
+          },
+          "nah": {
+            "kopf": {
+              "chars": 83,
+              "symbols": 21,
+              "textArea": 7929,
+              "symbolArea": 9529,
+              "textShare": 0.454,
+              "boxArea": 104960
+            },
+            "panel": {
+              "chars": 0,
+              "symbols": 2,
+              "textArea": 0,
+              "symbolArea": 1268,
+              "textShare": 0,
+              "boxArea": 209000
+            },
+            "alarme": {
+              "chars": 7,
+              "symbols": 2,
+              "textArea": 633,
+              "symbolArea": 1568,
+              "textShare": 0.288,
+              "boxArea": 6839
+            },
+            "protokoll": {
+              "chars": 55,
+              "symbols": 14,
+              "textArea": 4588,
+              "symbolArea": 5952,
+              "textShare": 0.435,
+              "boxArea": 151524
+            }
+          },
+          "provinz": {
+            "kopf": {
+              "chars": 83,
+              "symbols": 21,
+              "textArea": 7929,
+              "symbolArea": 9529,
+              "textShare": 0.454,
+              "boxArea": 104960
+            },
+            "panel": {
+              "chars": 153,
+              "symbols": 55,
+              "textArea": 15640,
+              "symbolArea": 28904,
+              "textShare": 0.351,
+              "boxArea": 209000
+            },
+            "alarme": {
+              "chars": 7,
+              "symbols": 2,
+              "textArea": 633,
+              "symbolArea": 1568,
+              "textShare": 0.288,
+              "boxArea": 6839
+            },
+            "protokoll": {
+              "chars": 55,
+              "symbols": 14,
+              "textArea": 4588,
+              "symbolArea": 5952,
+              "textShare": 0.435,
+              "boxArea": 151524
+            },
+            "knoepfe": {
+              "total": 58,
+              "iconOnly": 24,
+              "iconOnlyWithTitle": 24,
+              "iconOnlyWithAria": 24,
+              "iconOnlyWithBoth": 24,
+              "withWord": 34,
+              "words": [
+                "?",
+                "+",
+                "?",
+                "+",
+                "?",
+                "?",
+                "+",
+                "?",
+                "?",
+                "?",
+                "+",
+                "?",
+                "Hauptstadt verlegen",
+                "Infanterie",
+                "?",
+                "Motorisierte Infanterie",
+                "?",
+                "Kampfpanzer",
+                "?",
+                "Schwerer Kampfpanzer",
+                "?",
+                "Artillerie",
+                "?",
+                "Raketenartillerie",
+                "?",
+                "Jagdflugzeug",
+                "?",
+                "Bomber",
+                "?",
+                "Zerstörer",
+                "?",
+                "Transportschiff",
+                "?",
+                "?"
+              ]
+            }
+          },
+          "armee": {
+            "kopf": {
+              "chars": 83,
+              "symbols": 21,
+              "textArea": 7929,
+              "symbolArea": 9529,
+              "textShare": 0.454,
+              "boxArea": 104960
+            },
+            "panel": {
+              "chars": 30,
+              "symbols": 20,
+              "textArea": 3679,
+              "symbolArea": 11818,
+              "textShare": 0.237,
+              "boxArea": 209000
+            },
+            "alarme": {
+              "chars": 7,
+              "symbols": 2,
+              "textArea": 633,
+              "symbolArea": 1568,
+              "textShare": 0.288,
+              "boxArea": 6839
+            },
+            "protokoll": {
+              "chars": 55,
+              "symbols": 14,
+              "textArea": 4588,
+              "symbolArea": 5952,
+              "textShare": 0.435,
+              "boxArea": 151524
+            },
+            "knoepfe": {
+              "total": 12,
+              "iconOnly": 12,
+              "iconOnlyWithTitle": 12,
+              "iconOnlyWithAria": 12,
+              "iconOnlyWithBoth": 12,
+              "withWord": 0,
+              "words": []
+            }
+          }
+        },
+        "375x667": {
+          "karte": {
+            "kopf": {
+              "chars": 83,
+              "symbols": 21,
+              "textArea": 7633,
+              "symbolArea": 7679,
+              "textShare": 0.498,
+              "boxArea": 57750
+            },
+            "panel": {
+              "chars": 7,
+              "symbols": 4,
+              "textArea": 633,
+              "symbolArea": 2836,
+              "textShare": 0.182,
+              "boxArea": 41572
+            },
+            "alarme": {
+              "chars": 7,
+              "symbols": 2,
+              "textArea": 633,
+              "symbolArea": 1568,
+              "textShare": 0.288,
+              "boxArea": 35182
+            },
+            "protokoll": {
+              "chars": 30,
+              "symbols": 4,
+              "textArea": 2308,
+              "symbolArea": 2496,
+              "textShare": 0.48,
+              "boxArea": 16500
+            }
+          },
+          "protokollOffen": {
+            "kopf": {
+              "chars": 83,
+              "symbols": 21,
+              "textArea": 7633,
+              "symbolArea": 7679,
+              "textShare": 0.498,
+              "boxArea": 57750
+            },
+            "panel": {
+              "chars": 7,
+              "symbols": 4,
+              "textArea": 633,
+              "symbolArea": 2836,
+              "textShare": 0.182,
+              "boxArea": 58072
+            },
+            "alarme": {
+              "chars": 7,
+              "symbols": 2,
+              "textArea": 633,
+              "symbolArea": 1568,
+              "textShare": 0.288,
+              "boxArea": 35182
+            },
+            "protokoll": {
+              "chars": 96,
+              "symbols": 18,
+              "textArea": 7486,
+              "symbolArea": 8384,
+              "textShare": 0.472,
+              "boxArea": 137566
+            }
+          },
+          "provinz": {
+            "kopf": {
+              "chars": 83,
+              "symbols": 21,
+              "textArea": 7633,
+              "symbolArea": 7679,
+              "textShare": 0.498,
+              "boxArea": 57750
+            },
+            "panel": {
+              "chars": 36,
+              "symbols": 16,
+              "textArea": 3796,
+              "symbolArea": 7108,
+              "textShare": 0.348,
+              "boxArea": 125063
+            },
+            "alarme": {
+              "chars": 7,
+              "symbols": 2,
+              "textArea": 633,
+              "symbolArea": 1568,
+              "textShare": 0.288,
+              "boxArea": 35182
+            },
+            "protokoll": {
+              "chars": 0,
+              "symbols": 0,
+              "textArea": 0,
+              "symbolArea": 0,
+              "textShare": 0,
+              "boxArea": 0
+            },
+            "knoepfe": {
+              "total": 65,
+              "iconOnly": 29,
+              "iconOnlyWithTitle": 29,
+              "iconOnlyWithAria": 29,
+              "iconOnlyWithBoth": 29,
+              "withWord": 36,
+              "words": [
+                "halb",
+                "Indien",
+                "?",
+                "+",
+                "?",
+                "+",
+                "?",
+                "?",
+                "+",
+                "?",
+                "?",
+                "?",
+                "+",
+                "?",
+                "Hauptstadt verlegen",
+                "Infanterie",
+                "?",
+                "Motorisierte Infanterie",
+                "?",
+                "Kampfpanzer",
+                "?",
+                "Schwerer Kampfpanzer",
+                "?",
+                "Artillerie",
+                "?",
+                "Raketenartillerie",
+                "?",
+                "Jagdflugzeug",
+                "?",
+                "Bomber",
+                "?",
+                "Zerstörer",
+                "?",
+                "Transportschiff",
+                "?",
+                "?"
+              ]
+            }
+          },
+          "armee": {
+            "kopf": {
+              "chars": 83,
+              "symbols": 21,
+              "textArea": 7633,
+              "symbolArea": 7679,
+              "textShare": 0.498,
+              "boxArea": 57750
+            },
+            "panel": {
+              "chars": 39,
+              "symbols": 14,
+              "textArea": 4442,
+              "symbolArea": 6124,
+              "textShare": 0.42,
+              "boxArea": 125063
+            },
+            "alarme": {
+              "chars": 7,
+              "symbols": 2,
+              "textArea": 633,
+              "symbolArea": 1568,
+              "textShare": 0.288,
+              "boxArea": 35182
+            },
+            "protokoll": {
+              "chars": 0,
+              "symbols": 0,
+              "textArea": 0,
+              "symbolArea": 0,
+              "textShare": 0,
+              "boxArea": 0
+            },
+            "knoepfe": {
+              "total": 19,
+              "iconOnly": 17,
+              "iconOnlyWithTitle": 17,
+              "iconOnlyWithAria": 17,
+              "iconOnlyWithBoth": 17,
+              "withWord": 2,
+              "words": [
+                "halb",
+                "Indien"
+              ]
+            }
+          }
+        }
+      },
+      "overlap": {
+        "viewer": "p6",
+        "armies": 237,
+        "byScale": {
+          "1": {
+            "markers": 237,
+            "fullyHidden": 0,
+            "partlyCovered": 0
+          },
+          "2": {
+            "markers": 237,
+            "fullyHidden": 0,
+            "partlyCovered": 0
+          },
+          "4": {
+            "markers": 237,
+            "fullyHidden": 0,
+            "partlyCovered": 0
+          },
+          "8": {
+            "markers": 237,
+            "fullyHidden": 0,
+            "partlyCovered": 0
+          },
+          "0.5": {
+            "markers": 237,
+            "fullyHidden": 0,
+            "partlyCovered": 0
+          }
+        },
+        "provincesWithStack": 27,
+        "largestStack": 27,
+        "largestStackProvince": "SAU"
+      }
+    }
+  }
+}

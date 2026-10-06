@@ -15,6 +15,7 @@ import { join, resolve, dirname } from 'node:path'
 import { gunzipSync } from 'node:zlib'
 import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright'
+import { ALERTS } from './ux-sel.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const arg = (name, fallback) => {
@@ -368,23 +369,23 @@ async function runViewport(browser, vp) {
   await page.waitForTimeout(300)
 
   // Aufstandshinweise (T-M46-11): Hoehe der Meldungsliste und Zahl der Zeilen in der Seitenleiste.
-  out.scenes.hinweise = await page.evaluate(() => {
-    const box = document.querySelector('aside.side .alerts')
-    const rows = [...document.querySelectorAll('aside.side .alerts > ul > li')]
+  out.scenes.hinweise = await page.evaluate((ALERTS) => {
+    const box = document.querySelector(ALERTS)
+    const rows = [...document.querySelectorAll(`${ALERTS} > ul > li`)]
     return {
       height: box ? Math.round(box.getBoundingClientRect().height) : 0,
       rows: rows.length,
       unrestRows: rows.filter((li) => li.classList.contains('alert--unrest')).length,
       unrestTexts: rows.filter((li) => li.classList.contains('alert--unrest')).map((li) => li.textContent.trim().slice(0, 60)),
     }
-  })
+  }, ALERTS)
 
   // Diplomatie (T-M46-06): Foot-Knopf, erste Macht waehlen, dann messen.
   if (vp.width >= 900) {
     await btn('Diplomatie').click({ timeout: 4000 }).catch(() => {})
     await page.waitForTimeout(300)
     // Vor der Wahl: liegt die Auswahl (die Machtnamen) im Bild?
-    out.scenes.diplomatieAuswahl = await page.evaluate(() => {
+    out.scenes.diplomatieAuswahl = await page.evaluate((ALERTS) => {
       const side = document.querySelector('aside.side')
       const sr = side.getBoundingClientRect()
       const bottom = Math.min(sr.bottom, innerHeight)
@@ -394,9 +395,9 @@ async function runViewport(browser, vp) {
         names: names.length,
         inView: names.filter((el) => el.getBoundingClientRect().bottom <= bottom + 0.5).length,
         lastY: names.length ? Math.round(names[names.length - 1].getBoundingClientRect().top - sr.top) : null,
-        alertsH: Math.round(side.querySelector('.alerts')?.getBoundingClientRect().height ?? 0),
+        alertsH: Math.round(document.querySelector(ALERTS)?.getBoundingClientRect().height ?? 0),
       }
-    })
+    }, ALERTS)
     await shot('diplomatie-auswahl')
     await page.locator('aside .nation-select').first().click({ timeout: 4000 }).catch(() => {})
     await page.waitForTimeout(300)

@@ -70,3 +70,76 @@ Tab-Stationen (K5): 38 gesamt; Provinzliste als Nummer 19; davon 15 in Protokoll
 - Kopf 82 px / Telefon-mapShare 0,269 brechen R-UX-01/02 am Basisstand (bekannt, PR #21) – als B0-Wert festgehalten.
 - Rohdaten: `b0/layout-basis.json`, `b0/aufgaben-basis.json`, `b0/ubild-basis.json`, `b0/touch-basis.json`, `b0/gebaeude-basis.json`, `b0/capture-basis.json` (Auszug aus `ux-capture` messwerte: Kopf-/Kartenmaße, Tab-Reihenfolge, axe, `meldungsorte`).
 - Hinweis: ein Hintergrundstart von `ux-capture` meldete im Log nur „stdin is not a tty“ (Shell der Umgebung); der Lauf im Vordergrund war vollständig (Log im Ticket-Workspace `capture-basis.log`).
+
+## E1 — Tokens, Toasts (sonner), Hinweisspalte
+
+Stand: Zweig `claude/seitenleiste-e1`, Basis `origin/main` (M49 enthalten, Merge `af7a290`). Port 5361, Edge/Playwright, S300/S575G.
+Last beim Messen: CPU 4–49 % (Spitzen bis 100 % durch fremde Läufe anderer Tasks; belegt sind nur Zählwerte, keine Zeiten), GPU 0–1 %, RAM frei ca. 15 GB, kein UnrealEditor/UnrealGame/R6Arena, keine eigenen Altinstanzen (vite 5361 per PID beendet, `netstat` leer).
+
+### Befunde A1/A3/A4
+- **A1 (M49 auf main):** `gebaeude.slow.test.ts` am gemergten main = `b0/gebaeude-basis-m49.json` (Region 296 / 72 / 122, Welt 0, identisch zu B0). `ux-tasks` am gemergten main = `b0/aufgaben-basis-m49.json` (alle 16 Läufe identisch zu B0, Tab 38). Die Schwelle für K4/K5 bleibt damit B0 = B0-m49.
+- **A3 (`css-mirrors-tokens.test.ts`):** `rootColorVariables` und `strayColors` sehen nur `#hex`, `rgb()`, `hsl()`; `color-mix()` in `:root` ist erlaubt und kein Spiegelfall. Die Ableitungen (`--hair`, `--line-soft`, `--glass`, `--primary-soft`, `--danger-soft`, `--bezel`) stehen deshalb als `color-mix` in `app.css`. Die Hex-Werte der sieben Rollen und ihrer Aliase stehen in `tokens.ts` und `app.css` und werden gespiegelt (Test grün).
+- **A4 (sonner, Plan D2 Punkt 1, Auflage A2):** Ersetzen mit gleicher id (`'notice'`) startet den Zeitgeber neu. `notice.test.tsx`: (a) Quittung dann Fehler = 1 Toast mit Fehlertext, (b) nach neuer Dauer + 200 ms = 0, (c) Hover hält, (d) Hover, Ersetzen, Maus weg: der Toast steht die volle neue Dauer (±50 ms), (e) kein `aria-live`/`role=alert` im Toast und genau 1 `section[aria-live=polite]`. Alle grün. Der Ausweg (`dismiss` + laufende id) war nicht nötig; gewählter Weg: eine id `'notice'`. Die Regel `[data-visible='false'], [data-removed='true'] { visibility: hidden }` steht trotzdem (abtretender Toast 200 ms nicht fokussierbar), mit Wächter-Test.
+- **Bibliothek (K18):** sonner bringt eigenes CSS mit (u. a. eine `height`-Transition am Toast). Die eigenen Regeln bewegen nur `transform`/`opacity`; `height` steht nur mit Token-Dauer. Wächter in `tokens.v3b.test.ts`.
+
+### Messtabelle K (E1 gegen B0, 1280x800 wenn nicht anders)
+| K | B0 | E1 | Urteil |
+|---|---|---|---|
+| K4 Klickwege (S300, 16 Läufe) | `b0/aufgaben-basis.json` | alle 16 identisch (Maus 5/3/2/2/4/3/5/4 Klicks, Tastatur 8/6/4/5/6/2/16/11 Tasten, Fehlwege 0; spion-anwerben Maus 1 wie B0); Quittung „befohlen“ erkannt, alle erreicht=true | ok |
+| K5 Tab-Stationen (ohne stehenden Toast) | 38 | 38; Provinzliste jetzt Station 22 statt 19 (die Hinweisspalte steht im DOM vor der Seitenleiste; Info) | ok (≤ 38 und ≤ B0) |
+| K9 Textanteil | max 0,498 | max 0,498 (`.alerts` mit 28-px-Zeichen; bei 18 px waren es 0,683) | ok |
+| K10 axe | 0 in 49 Zuständen | 0 in 49 Zuständen | ok |
+| K19 Meldungsorte | doppelt 0 | doppelt 0, ohneKennung 0 in 41 Szenen/Fenstern (Toast und `.alerts` tragen `data-msg`) | ok |
+| K7 freeMap | 0,977 / 0,977 | 0,964 / 0,922 (Hinweisspalte liegt über der Karte; Info) | Info |
+| K6 Telefon mapShare | 0,450 / 0,269 | 0,450 / 0,269 | gleich |
+| K8 Kopf | 82 px | 82 px | gleich |
+| ux:check rot | 5 | 6: dieselben 5 plus R-UX-04/AK2 (lange Aufgabe 52–66 ms beim Öffnen der Zielwahl). Gegenprobe am gemergten main (E1 gestasht, gleiche Last): 1280x800 ebenfalls 64 ms rot, also kein E1-Befund (Lastrauschen oder M49). Bitte beim Review unter ruhiger Last gegenmessen. | Info |
+
+rueckmeldungJeTempo (ms, Quittung bis weg): B0 1658 / 1635 / 1671, E1 1878 / 1985 / 1917 (+220 bis +350 ms: TIME_BEFORE_UNMOUNT 200 ms von sonner plus Lastrauschen; kein K-Verstoß).
+
+### Kontrasttabelle (`tokens.ts`, alle 35 Paare ≥ Schwelle, N2: `line` = #657382)
+| Paar | Verhaeltnis | Schwelle | Ergebnis |
+|---|---|---|---|
+| text auf surface (v3b Text auf Flaechen) | 14.34 | 4.5 | ok |
+| text auf raised (v3b Text auf Feldern) | 12.44 | 4.5 | ok |
+| muted auf surface (v3b Nebentext) | 7.71 | 4.5 | ok |
+| muted auf raised (v3b Nebentext auf Feldern) | 6.68 | 4.5 | ok |
+| primary auf surface (v3b Hauptaktion, Auswahl) | 8.79 | 4.5 | ok |
+| primary auf raised (v3b Auswahl auf Feldern) | 7.62 | 4.5 | ok |
+| danger auf surface (v3b Krieg, Fehlbetrag) | 6.50 | 4.5 | ok |
+| danger auf raised (v3b Alarm auf Feldern) | 5.63 | 4.5 | ok |
+| onPrimary auf primary (v3b Text auf Hauptknopf) | 9.14 | 4.5 | ok |
+| onPrimary auf danger (v3b Text auf Alarmknopf) | 6.76 | 4.5 | ok |
+| line auf surface (v3b Rahmen auf Flaeche) | 3.67 | 3 | ok |
+| line auf paperSunk (Rahmen auf erhoehter Flaeche (Plaettchen, Felder)) | 3.19 | 3 | ok |
+| ink auf paper (Panels, Fließtext) | 14.34 | 4.5 | ok |
+| ink auf ground (Leisten, Kartenschrift) | 15.23 | 4.5 | ok |
+| ink auf paperSunk (Tabellenzeilen) | 12.44 | 4.5 | ok |
+| inkSoft auf paper (Einheiten, Nebentext) | 7.71 | 4.5 | ok |
+| inkSoft auf ground (Kartenlegende) | 8.18 | 4.5 | ok |
+| accent auf paper (Kampf, Kriegserklärung) | 6.50 | 4.5 | ok |
+| accent auf ground (Alarm in der Kopfleiste) | 6.90 | 4.5 | ok |
+| good auf paper (fertiggestellt, Überschuss) | 8.63 | 4.5 | ok |
+| warn auf paper (Uhr, Frist, Auswahl) | 8.79 | 4.5 | ok |
+| warn auf ground (Kopfzeilen der Panels) | 9.33 | 4.5 | ok |
+| onWarn auf warn (Hauptknopf (Bernstein)) | 9.14 | 4.5 | ok |
+| onWarn auf accent (Alarmknopf) | 6.76 | 4.5 | ok |
+| onDark auf ground (Markerrand, Halo auf der Karte) | 17.22 | 4.5 | ok |
+| building auf ground (Gebäudemarker auf der Karte) | 9.72 | 4.5 | ok |
+| building auf paper (Rohstoffsymbole in der Leiste) | 9.16 | 4.5 | ok |
+| ally auf paper (Verbündeter im Machtverlauf) | 7.05 | 4.5 | ok |
+| ink auf water (Beschriftung auf See) | 15.56 | 4.5 | ok |
+| inkSoft auf paperSunk (gedämpfter Bestand in der Rohstoffleiste) | 6.68 | 4.5 | ok |
+| line auf paper (Strich statt Null in der Wirtschaftstabelle) | 3.67 | 3 | ok |
+| warn auf paperSunk (knapper Rohstoff und seine Reichweite) | 7.62 | 4.5 | ok |
+| good auf paperSunk (eigener Schattenriss im Plättchen) | 7.49 | 3 | ok |
+| ally auf paperSunk (verbündeter Schattenriss) | 6.12 | 3 | ok |
+| accent auf paperSunk (feindlicher Schattenriss) | 5.63 | 3 | ok |
+
+### Abweichungen / Entscheidungen
+- **D3 gegen K9:** Zeichen in der Hinweisspalte 28 px statt der 18 aus D3. Bei 18 px misst K9 `.alerts` mit 0,683 (> 0,5), bei 28 px 0,49. K9 ist Abnahme, D3 ein Maß; Entscheidung bitte an Reviewer/Planner.
+- **Meldungsart `completion`** (Bau fertig) bleibt in E1 in der Hinweisspalte (`MESSAGE_ROUTE.completion = 'alerts'`); `done` ist die Toast-Art ohne Aufrufer. Der Sprung-Knopf im Toast ist als Option `jump` vorhanden, noch ohne Aufrufer.
+- **Toast-Bild:** kein Bildschirmfoto mit stehendem Toast (Messläufe liefen unter Fremdlast). Das Toast-Verhalten ist per `notice.test.tsx` mit echtem `<Toaster>` belegt. Bilder `e1/S575G-e1-*.png` (1280x800 und 375x667): Hinweisspalte oben links wie final-v3b-1 (Glas, 3-px-Leiste links in Danger/Primary/Muted, Zeile 36, „+1“ unter drei Zeilen); Telefon-Hochformat unverändert im Blatt.
+- **N1:** 9 Grün-Stellen neutral (`--text`/`--muted`), Wächter `test/guards/no-green-ui.test.ts` (Allowlist `.unit-marker`, `.unit-art--own`).
+- **Skripte (D16):** neue `scripts/ux-sel.mjs` (SIDE, ALERTS, PICKER); in E1 nur `ux-layout.mjs` auf ALERTS umgestellt, Zählregeln und Schwellen unverändert.
+- **Nebenbefund B0:** 14 B0-PNGs fehlten in `docs/ASSETS.md` (Wächter `no-foreign-assets` rot); in E1 nachgetragen, dazu der Eintrag `sonner` (MIT).

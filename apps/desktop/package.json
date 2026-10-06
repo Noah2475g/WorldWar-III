@@ -13,7 +13,8 @@
     "lucide-react": "^1.51.0",
     "milsymbol": "^3.0.4",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "sonner": "2.0.8"
   },
   "devDependencies": {
     "@worldwar/testkit": "workspace:*"

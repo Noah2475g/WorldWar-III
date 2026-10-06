@@ -1241,6 +1241,8 @@ export const de = {
 
   alerts: {
     title: 'Meldungen',
+    more: '{{count}} weitere Meldungen anzeigen',
+    less: 'Weniger Meldungen anzeigen',
     // Was heute neu dazugekommen ist (T-M21-04). Der Tag steht nicht im Satz: er ist
     // heute, sonst stuende die Meldung nicht da.
     // Das Pronomen kommt aus der Genus-Tabelle (grammar, T-M23-02, V2-11): die
