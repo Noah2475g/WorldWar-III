@@ -197,3 +197,24 @@ describe('R-SPY-06 Spionage spricht deutsch', () => {
     }
   })
 })
+
+/**
+ * Die Kurzhilfe zur Schwierigkeit nennt nur, was die KI wirklich liest (Fix t_54e1bf8e, R-UX-05/AK4).
+ * `planningDepth` liest keine Zeile in packages/ai; deshalb verspricht kein Satz „voraus planen“.
+ */
+describe('R-UX-05/AK4 Die Schwierigkeits-Kurzhilfe stimmt mit ai.json ueberein', () => {
+  const ai = JSON.parse(readFileSync(`${process.cwd()}/data/rules/default/ai.json`, 'utf8')) as {
+    difficulties: Record<'easy' | 'normal' | 'hard', { maxFronts: number; recruitShare: number }>
+  }
+  const zahlwort: Record<number, string> = { 1: 'eine', 2: 'zwei', 3: 'drei' }
+
+  for (const stufe of ['easy', 'normal', 'hard'] as const) {
+    it(`${stufe}: nennt Fronten und Aushebeanteil aus ai.json`, () => {
+      const satz = t(`newGame.${stufe}Hint`)
+      const regel = ai.difficulties[stufe]
+      expect(satz).toContain(`${zahlwort[regel.maxFronts]} Front`)
+      expect(satz).toContain(`${regel.recruitShare / 10} %`)
+      expect(satz).not.toMatch(/voraus|Schritt/)
+    })
+  }
+})
