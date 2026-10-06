@@ -530,10 +530,11 @@ sind 0 — Layout-Wächter binden Struktur+Kaskade, Entscheid in DECISIONS.md), 
 **jsdoms `requestAnimationFrame` hängt an `setInterval`** — unter `vi.useFakeTimers`
 rAF stubben, sonst treibt `advanceTimersByTime` die ganze Spielschleife.
 
-Und aus dem Bau von M34: **ein langer synchroner Lauf im Test tötet den Worker.** Vitest
-meldet `Timeout calling "onTaskUpdate"`, obwohl jeder Test grün ist und der Bericht
-geschrieben wurde. Eine Zeile behebt es — `await new Promise((r) => setTimeout(r, 0))`
-zwischen zwei Partien.
+Und aus dem Bau von M34: **ein langer synchroner Lauf im Test tötete unter vitest 3 den Worker.** Vitest
+meldete `Timeout calling "onTaskUpdate"`, obwohl jeder Test grün war (feste 60-s-Grenze je Worker-Aufruf).
+Seit vitest 4 gibt es diese Grenze nicht mehr (vitest-dev/vitest#8297; Fix t_baffebcb, 2026-10-06).
+Lange synchrone Strecken bleiben trotzdem schlecht für die Laufzeit — `await new Promise((r) => setTimeout(r, 0))`
+zwischen zwei Partien bleibt die Regel.
 
 ## 5 · Der Stand in Zahlen (Aufgaben und Abnahme 2026-10-03, Stufe C2; übrige Zeilen älter, je Zeile datiert; der Benchmark-Vorbehalt: 2026-09-08)
 
