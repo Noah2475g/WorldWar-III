@@ -2899,4 +2899,15 @@ describe('Bauvorschau B2: Zustandsmarken und Vorschauzeile (K4)', () => {
     fireEvent.pointerLeave(container.querySelector('.preview-area')!)
     expect(container.querySelector('.cost-preview .cost-chip')).toBeNull()
   })
+
+  it('pointerOver auf Rand/Ecke des Feldes: frei fuellt die Zeile, im Bau leert sie ohne Marke', () => {
+    const { container } = render(panel({ buildQueue: [{ id: 'q1', building: 'airfield', startedTick: 0, completesAtTick: 10 }] }))
+    const free = [...container.querySelectorAll('.slot')].find((s) => s.querySelector('[data-action-id="build-factory"]'))!
+    fireEvent.pointerOver(free)
+    expect(container.querySelector('.cost-preview .cost-chip')).not.toBeNull()
+    const queued = container.querySelector('.slot--queued')!
+    fireEvent.pointerOver(queued)
+    expect(container.querySelector('.cost-preview .cost-chip')).toBeNull()
+    expect(queued.querySelector('.slot__mark')).toBeNull()
+  })
 })

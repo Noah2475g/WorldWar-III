@@ -70,4 +70,31 @@ describe('CostPreview (K3)', () => {
     fireEvent.pointerLeave(container.querySelector('.preview-area')!)
     expect(container.querySelectorAll('.cost-chip')).toHaveLength(0)
   })
+
+  it('PreviewArea: Fokus fuellt, Blur nach aussen leert, Blur nach innen behaelt', () => {
+    const { container } = render(
+      <>
+        <button type="button" id="aussen">
+          aussen
+        </button>
+        <PreviewArea actions={[act({ costLines: lines })]}>
+          <div data-action-id="build-factory">
+            <button type="button" id="b1">
+              x
+            </button>
+            <button type="button" id="b2">
+              y
+            </button>
+          </div>
+        </PreviewArea>
+      </>,
+    )
+    const b1 = container.querySelector('#b1')!
+    fireEvent.focus(b1)
+    expect(container.querySelectorAll('.cost-chip')).toHaveLength(2)
+    fireEvent.blur(b1, { relatedTarget: container.querySelector('#b2') })
+    expect(container.querySelectorAll('.cost-chip')).toHaveLength(2)
+    fireEvent.blur(b1, { relatedTarget: container.querySelector('#aussen') })
+    expect(container.querySelectorAll('.cost-chip')).toHaveLength(0)
+  })
 })

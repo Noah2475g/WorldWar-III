@@ -55,7 +55,11 @@ export function PreviewArea({ actions, children }: { actions: readonly Action[];
     const el = target instanceof Element ? target : null
     const hit = el?.closest('[data-action-id]')
     if (hit) setId(hit.getAttribute('data-action-id'))
-    else if (el?.closest('.slot')) setId(null)
+    else {
+      const slot = el?.closest('.slot')
+      // Rand/Ecke eines Feldes: Aktion des Feldes nehmen; Feld im Bau (ohne Aktion) leert die Zeile (Spec §3, §9)
+      if (slot) setId(slot.querySelector('[data-action-id]')?.getAttribute('data-action-id') ?? null)
+    }
     // sonst: Wert behalten (Luecke zwischen Feldern, Leerraum)
   }
   const action = id === null ? null : (actions.find((a) => a.id === id) ?? null)
