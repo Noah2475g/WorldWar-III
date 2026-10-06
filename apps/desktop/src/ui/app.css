@@ -1943,6 +1943,83 @@ body {
   border-color: var(--warn);
 }
 
+/* Bauvorschau: Zustandsmarken am Bauplatz (Spec Bauvorschau) */
+.slot--short::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  pointer-events: none;
+}
+
+.slot__mark {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  pointer-events: none;
+}
+
+.slot--locked .slot__mark {
+  color: var(--ink-soft);
+}
+
+.slot--queue .slot__mark {
+  color: var(--warn);
+}
+
+/* Bauvorschau: die Zeile unter Raster und Aushebeliste */
+.cost-preview {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  margin: 0 0 var(--sp-sm);
+  overflow: hidden;
+  white-space: nowrap;
+  font-family: var(--font-num);
+  font-size: 10px;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.cost-preview > svg {
+  flex: none;
+  color: var(--ink-soft);
+}
+
+.cost-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 22px;
+  padding-right: 2px;
+}
+
+.cost-chip > svg {
+  flex: none;
+  color: var(--ink-soft);
+}
+
+.cost-chip--short {
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+.cost-chip__short {
+  color: var(--accent);
+  margin-left: 2px;
+}
+
+/* Touch: der Sperrgrund "fehlt" rot — auf --paper, weil Rot auf --paper-sunk nur 4,28:1 hat */
+.action__hint-reason--short {
+  color: var(--accent);
+  background: var(--paper);
+  padding: 0 2px;
+}
+
 .slot--queued .meter {
   display: grid;
   grid-template-columns: 1fr;

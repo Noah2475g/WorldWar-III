@@ -199,3 +199,17 @@ describe('R-UX-06/AK3 Mindestmass der Ziele', () => {
     expect(rules.some((body) => /width: 44px;/.test(body) && /height: 44px;/.test(body))).toBe(true)
   })
 })
+
+describe('ActionButton im Touch-Betrieb: Bauvorschau B2', () => {
+  it('zeigt keine Vorschauzeile; der Sperrgrund "fehlt" ist rot markiert', () => {
+    touch()
+    const fehlt = act({
+      disabledReason: 'Es fehlen 400 Eisen.',
+      blockCode: 'INSUFFICIENT_RESOURCES',
+      costLines: [{ resource: 'iron', need: 800_000, short: 400_000 }],
+    })
+    const { container } = render(<Bauplaetze actions={[fehlt]} />)
+    expect(container.querySelector('.cost-preview')).toBeNull()
+    expect(container.querySelector('.action__hint-reason--short')!.textContent).toBe('Es fehlen 400 Eisen.')
+  })
+})

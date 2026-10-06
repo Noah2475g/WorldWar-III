@@ -336,6 +336,7 @@ export const de = {
 
   actions: {
     build: 'Bauen',
+    costShort: '−{{amount}}',
     // Hoerbare Namen mit Verb (T-M22-06, Befund V2-13): sichtbar bleibt die kurze
     // Beschriftung, ein Vorleseprogramm hoert die Handlung.
     buildAria: '{{thing}} bauen',
