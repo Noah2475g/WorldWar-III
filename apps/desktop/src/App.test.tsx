@@ -14,6 +14,7 @@ import { placeArmy, TEST_RULES } from '@worldwar/testkit'
 import { t } from './i18n/text.ts'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from './App.tsx'
+import { ACK_MIN_MS, ACK_SLACK_MS } from './game/ack.ts'
 import type * as FastForwardModule from './game/fastForward.ts'
 
 /**
@@ -843,13 +844,25 @@ describe('R-UI-05 Jeder Befehl quittiert sofort sichtbar', () => {
     fireEvent.keyDown(window, { key: 'd' })
     const panel = screen.getByRole('region', { name: 'Diplomatie' })
     waehleErsteMacht(panel)
-    klickeKrieg(within(panel))
-    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
-    const text = () => screen.getByRole('region', { name: 'Diplomatie' }).textContent ?? ''
-    expect(text()).toContain('befohlen — ausgeführt')
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    expect(text()).toContain('befohlen — ausgeführt')
-    await waitFor(() => expect(text()).not.toContain('befohlen'), { timeout: 2500 })
+    // Deterministisch: falsche Uhr statt Wandzeit (vor dem Befehl, der Zeitgeber startet dort), sonst laeuft die
+    // 1,5-s-Quittung unter Last waehrend der Wartezeit ab.
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    try {
+      klickeKrieg(within(panel))
+      fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+      const text = () => screen.getByRole('region', { name: 'Diplomatie' }).textContent ?? ''
+      expect(text()).toContain('befohlen — ausgeführt')
+      act(() => {
+        vi.advanceTimersByTime(1000)
+      })
+      expect(text()).toContain('befohlen — ausgeführt')
+      act(() => {
+        vi.advanceTimersByTime(ACK_MIN_MS + ACK_SLACK_MS - 1000)
+      })
+      expect(text()).not.toContain('befohlen')
+    } finally {
+      vi.useRealTimers()
+    }
     // Zeitlimit wegen Last, nicht Verhalten: allein 1966 ms, unter verify+Last max 19969 ms (gemessen 2026-10-05, t_3cad0a35).
   }, 60_000)
 
