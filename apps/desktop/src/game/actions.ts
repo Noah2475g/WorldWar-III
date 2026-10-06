@@ -925,6 +925,8 @@ export function bundleText(bundle: TradeBundle, nameOfProvince: (id: string) => 
 export interface TradeDraft {
   give: TradeBundle
   want: TradeBundle
+  /** Zeitplan (Liefervertrag D1): der Schluessel fehlt, wenn der Schalter aus ist (P2, nie `undefined`). */
+  schedule?: { intervalDays: number; deliveries: number }
 }
 
 export interface OfferNaming {
@@ -992,7 +994,15 @@ export function tradeOfferAction(
   draft: TradeDraft,
   nameOfProvince: (id: string) => string,
 ): { giveValue: number; wantValue: number; text: string; action: ActionSpec } {
-  const command: Command = { type: 'OFFER_TRADE', playerId: ctx.playerId, targetPlayerId, give: draft.give, want: draft.want }
+  // P2: `schedule` nur setzen, wenn der Entwurf einen hat — ein Schluessel mit `undefined` wirft im Hash.
+  const command: Command = {
+    type: 'OFFER_TRADE',
+    playerId: ctx.playerId,
+    targetPlayerId,
+    give: draft.give,
+    want: draft.want,
+    ...(draft.schedule ? { schedule: { intervalDays: draft.schedule.intervalDays, deliveries: draft.schedule.deliveries } } : {}),
+  }
   // NIE ctx.state.players[targetPlayerId].resources lesen (E10, Test A9): die Vorschau rechnet nur
   // mit dem Kurs (oeffentlich) und dem eigenen Entwurf, nie mit dem Bestand des Partners.
   const giveValue = tradeValue(ctx.state.market, draft.give.resources)
@@ -1047,7 +1057,9 @@ export function offerListActions(
         t('trade.worth', {
           give: amount(tradeValue(ctx.state.market, offer.want.resources)),
           want: amount(tradeValue(ctx.state.market, offer.give.resources)),
-        }) + ` ${t('trade.expires', { day })}`
+        }) +
+        ` ${t('trade.expires', { day })}` +
+        (offer.schedule ? ` ${t('trade.scheduleNote', { count: offer.schedule.deliveries, days: offer.schedule.intervalDays })}` : '')
       return {
         id: offer.id,
         text: t('trade.incoming', {
@@ -1106,7 +1118,7 @@ export function offerListActions(
           give: bundleText(offer.give, naming.nameOfProvince),
           want: bundleText(offer.want, naming.nameOfProvince),
         }),
-        note: `${t('trade.expires', { day })}${hasEscrow ? ` ${t('trade.escrow')}` : ''}`,
+        note: `${t('trade.expires', { day })}${offer.schedule ? ` ${t('trade.scheduleNote', { count: offer.schedule.deliveries, days: offer.schedule.intervalDays })}` : ''}${hasEscrow ? ` ${t('trade.escrow')}` : ''}`,
         actions: [
           tradeChecked(
             ctx,
@@ -1128,6 +1140,41 @@ export function offerListActions(
   ]
 
   return { incoming, outgoing }
+}
+
+export interface ContractRowSpec {
+  id: string
+  /** Die andere Partei des Vertrags. */
+  partner: string
+  text: string
+  actions: ActionSpec[]
+}
+
+/**
+ * Laufende Liefervertraege des Spielers (Liefervertrag B3, D8): je Vertrag ein Satz und der Knopf Kuendigen
+ * (`CANCEL_CONTRACT`). Nur aus `view.contracts` (eigene Vertraege, R-DIP-04).
+ */
+export function contractRowActions(ctx: ActionContext, view: PublicView, naming: OfferNaming): ContractRowSpec[] {
+  return view.contracts.map((contract): ContractRowSpec => {
+    const mine = contract.from === ctx.playerId
+    const partner = mine ? contract.to : contract.from
+    const own = mine ? contract.give : contract.want
+    const other = mine ? contract.want : contract.give
+    const { day, hour } = gameTime(contract.nextDueTick, ctx.ticksPerDay)
+    const command: Command = { type: 'CANCEL_CONTRACT', playerId: ctx.playerId, contractId: contract.id }
+    return {
+      id: contract.id,
+      partner,
+      text: t('trade.contract.row', {
+        give: bundleText({ resources: own, provinces: [] }, naming.nameOfProvince),
+        want: bundleText({ resources: other, provinces: [] }, naming.nameOfProvince),
+        day,
+        hour: String(hour).padStart(2, '0'),
+        remaining: contract.remaining,
+      }),
+      actions: [tradeChecked(ctx, command, `contract-${contract.id}-cancel`, t('trade.contract.cancel'), naming.nameOfProvince)],
+    }
+  })
 }
 
 /** "3 × Infanterie" — the composition of an own army, in whole units. */

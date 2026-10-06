@@ -8,6 +8,7 @@ import {
   type ResourceKey,
 } from '@worldwar/core'
 import { nextBuildingShortfall } from './economy'
+import { dailyMoneyLedger } from './finance'
 import { cessionProblem, explainProvinceWorth, ledgerAfter, provinceWorth, warDeclaredThisTurn } from './provinceValue'
 import { explainRelationship, relationship } from './relationship'
 import type { AiContext, Explanation } from './types'
@@ -147,6 +148,25 @@ export function tradeOfferCommands(
       reason = `Gegenwert ${ratio} ‰ unter der Marge ${ai.tradeAcceptMarginPermille} ‰`
     }
 
+    // Liefervertrag (B2, D7/P8): nur mit Zeitplan, der Einmalangebots-Pfad bleibt unveraendert.
+    if (offer.schedule && !reason) {
+      const { intervalDays, deliveries } = offer.schedule
+      if (view.contracts.length >= rules.constants.maxActiveContracts) {
+        reason = 'Vertragsgrenze erreicht'
+      } else {
+        for (const [key, amount] of Object.entries(offer.want.resources) as [ResourceKey, number][]) {
+          const gesamt = amount * deliveries
+          // P8: die KI-Sicht hat keine Produktionszahlen; nur Geld hat eine Tagesbilanz.
+          const bilanz = key === 'money' ? dailyMoneyLedger(view, rules).margin : 0
+          const budget = spendable(key) + Math.max(0, bilanz) * intervalDays * (deliveries - 1)
+          if (gesamt > budget) {
+            reason = `${key}: ${gesamt} für ${deliveries} Lieferungen über ${budget}`
+            break
+          }
+        }
+      }
+    }
+
     if (reason) {
       commands.push({ type: 'DECLINE_TRADE', playerId: me, offerId: offer.id })
       explanations.push({
@@ -174,7 +194,7 @@ export function tradeOfferCommands(
           : `Gegenwert ${Math.trunc(E / 1_000_000)} erreicht ${Math.trunc(G / 1_000_000)}; ${provinceTexts}, ${explainRelationship(wert)}`
         : given === 0
           ? `Geschenk, ${explainRelationship(wert)}`
-          : `Gegenwert ${ratio} ‰ erreicht die Marge ${ai.tradeAcceptMarginPermille} ‰, ${explainRelationship(wert)}`,
+          : `Gegenwert ${ratio} ‰ erreicht die Marge ${ai.tradeAcceptMarginPermille} ‰, ${explainRelationship(wert)}${offer.schedule ? `; Liefervertrag ${offer.schedule.deliveries}× alle ${offer.schedule.intervalDays} Tage` : ''}`,
       score: 600,
       alternative: { action: 'ablehnen', score: 200 },
     })

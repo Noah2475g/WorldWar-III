@@ -2,6 +2,7 @@ import type { AiMemory, Command, DifficultyRule, MapData, PublicView, Rules } fr
 import { diplomacyCommands } from './diplomacy'
 import { capitalCommands } from './capital'
 import { consolidateCommands } from './consolidate'
+import { contractCommands } from './contracts'
 import { economyCommands, recruitCommands, tradeCommands } from './economy'
 import { militaryCommands } from './military'
 import { passageCommands } from './passage'
@@ -109,6 +110,7 @@ export function decide(options: DecideOptions): AiDecision {
     commands.push(...passageCommands(context, explanations, commands)) // T-M17-10
     commands.push(...economyCommands(context, explanations))
     commands.push(...tradeOfferCommands(context, explanations, commands)) // T-M17-10
+    commands.push(...contractCommands(context, explanations, commands, STRATEGIC_INTERVAL)) // Liefervertrag B2 (P9)
     commands.push(...provinceOfferCommands(context, explanations, commands)) // T-M17-11
     // Spionage zuletzt: sie rechnet mit dem Geld, das Bauauftrag und Handel dieses Zugs schon binden, und
     // zieht Saboteure von Maechten ab, denen die Diplomatie eben Frieden angeboten hat (T-M17-12, D29.8).

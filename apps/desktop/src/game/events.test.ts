@@ -321,6 +321,7 @@ describe('R-TIME-06 Eigene Rueckschlaege tragen die eigene Klasse', () => {
     RIGHT_OF_WAY_CHANGED: { playerId: 'p2', targetPlayerId: 'p1', granted: false, effectiveAtTick: 48, audience: ['p1', 'p2'], concerns: ['p1', 'p2'] },
     // Handel (T-M17-05): ein geschlossenes Angebot und ein Tausch sind kein Rueckschlag (D24.1).
     TRADE_OFFER_CLOSED: { offerId: 't1', playerId: 'p1', targetPlayerId: 'p2', reason: 'declined', audience: ['p1', 'p2'], concerns: ['p1', 'p2'] },
+    CONTRACT_CLOSED: { contractId: 'c1', playerId: 'p1', targetPlayerId: 'p2', reason: 'cancelled', closedBy: 'p1', audience: ['p1', 'p2'], concerns: ['p1', 'p2'] },
     TRADE_AGREED: { playerId: 'p1', targetPlayerId: 'p2', audience: [], concerns: ['p1', 'p2'] },
     // Eine Abtretung ist verabredet, nicht erlitten — kein Rueckschlag (T-M17-06, D24.1).
     PROVINCE_CEDED: { provinceId, previousOwner: 'p1', newOwner: 'p2', audience: [], concerns: ['p1', 'p2'] },

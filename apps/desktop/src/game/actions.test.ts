@@ -25,6 +25,7 @@ import {
   capitalActions,
   diplomacyActions,
   offerListActions,
+  contractRowActions,
   ownArmiesIn,
   passageActions,
   planArrival,
@@ -1667,5 +1668,45 @@ describe('R-UX-04/AK2 Zielwahl: erreichbare zuerst, unerreichbare getrennt, geme
     expect(cache.computed).toBe(before)
     marchTargets(ctx, ctx.state.armyOrder[0]!, name, cache)
     expect(cache.computed).toBe(before + 1)
+  })
+})
+
+describe('Liefervertrag B3 (D8, P2)', () => {
+  const nameOfProvinceLocal = (id: string) => id
+
+  it('tradeOfferAction: ohne schedule fehlt der Schluessel, mit schedule steht er im Befehl', () => {
+    const { ctx } = fresh()
+    const base: TradeDraft = {
+      give: { resources: { iron: 1000 }, provinces: [] },
+      want: { resources: { money: 1000 }, provinces: [] },
+    }
+    const ohne = tradeOfferAction(ctx, 'p2', base, nameOfProvinceLocal).action.command
+    expect('schedule' in ohne!).toBe(false)
+    const mit = tradeOfferAction(ctx, 'p2', { ...base, schedule: { intervalDays: 3, deliveries: 5 } }, nameOfProvinceLocal).action.command
+    expect(mit).toMatchObject({ type: 'OFFER_TRADE', schedule: { intervalDays: 3, deliveries: 5 } })
+  })
+
+  it('contractRowActions: Zeile in Worten und Kuendigen sendet CANCEL_CONTRACT', () => {
+    const { ctx } = fresh()
+    ctx.state.diplomacy.contracts.push({
+      id: 'c1',
+      from: 'p1',
+      to: 'p2',
+      give: { iron: 1_000 },
+      want: { money: 500 },
+      intervalTicks: 72,
+      remaining: 3,
+      nextDueTick: 48,
+      createdTick: 0,
+    })
+    const view = publicView(ctx.state, 'p1', rules)
+    const rows = contractRowActions(ctx, view, { nameOf: (id) => ctx.state.players[id]!.nation, nameOfProvince: nameOfProvinceLocal })
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!.partner).toBe('p2')
+    expect(rows[0]!.text).toContain('noch 3')
+    expect(rows[0]!.text).toContain('Tag 3')
+    const cancel = rows[0]!.actions[0]!
+    expect(cancel.label).toBe(t('trade.contract.cancel'))
+    expect(cancel.command).toEqual({ type: 'CANCEL_CONTRACT', playerId: 'p1', contractId: 'c1' })
   })
 })

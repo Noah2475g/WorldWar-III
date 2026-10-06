@@ -95,6 +95,12 @@ const REQUIRED_CONSTANTS: readonly (keyof RuleConstants)[] = [
   'maxOpenTradeOffers',
   'tradeMaxMoney',
   'tradeMaxResource',
+  // Liefervertraege (Liefervertrag B1, P3). Fehlte eine, waere jede Grenze `undefined` und jeder Zeitplan ungueltig.
+  'maxActiveContracts',
+  'contractMinIntervalDays',
+  'contractMaxIntervalDays',
+  'contractMinDeliveries',
+  'contractMaxDeliveries',
   // Spionage (R-SPY-01, T-M17-07). Fehlte der Preis, waere `money < undefined` immer falsch
   // und jeder Spion umsonst; fehlte die Hoechstzahl, waere `count >= undefined` nie wahr.
   'spyRecruitCost',
@@ -167,6 +173,21 @@ export function parseRules(raw: RawRules, id: string): Rules {
   }
   if (constants.tradeMaxMoney <= 0 || constants.tradeMaxResource <= 0) {
     problems.push('tradeMaxMoney und tradeMaxResource muessen positiv sein')
+  }
+  if (!Number.isSafeInteger(constants.maxActiveContracts) || constants.maxActiveContracts < 1) {
+    problems.push('maxActiveContracts muss eine ganze Zahl ab 1 sein')
+  }
+  if (
+    !Number.isSafeInteger(constants.contractMinIntervalDays) ||
+    constants.contractMinIntervalDays < 1 ||
+    !Number.isSafeInteger(constants.contractMaxIntervalDays) ||
+    constants.contractMaxIntervalDays < constants.contractMinIntervalDays ||
+    !Number.isSafeInteger(constants.contractMinDeliveries) ||
+    constants.contractMinDeliveries < 2 ||
+    !Number.isSafeInteger(constants.contractMaxDeliveries) ||
+    constants.contractMaxDeliveries < constants.contractMinDeliveries
+  ) {
+    problems.push('die Zeitplan-Grenzen der Liefervertraege sind ungueltig')
   }
 
   // --- resources -----------------------------------------------------------

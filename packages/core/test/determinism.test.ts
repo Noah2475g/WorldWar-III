@@ -98,6 +98,36 @@ describe('R-ARCH-03 Golden-Master', () => {
     const stored = JSON.parse(readFileSync(file, 'utf8')) as { checkpoints: Record<string, string> }
     expect(checkpoints).toEqual(stored.checkpoints)
   })
+
+  /**
+   * Paritaet (Liefervertrag B1, D9/P10): auf Schema 5 aendern sich die Golden-Hashes allein, weil
+   * `diplomacy.contracts`, `nextIds.contract` und `schemaVersion` im Zustand stehen. Streicht man
+   * genau diese drei Dinge und setzt `schemaVersion = 4`, muss der Lauf die Literale von Stand
+   * 6ca34a4 treffen — ein Beleg, dass sich am Verhalten einer Partie ohne Vertraege nichts geaendert hat.
+   * Die Literale werden NIE angepasst; trifft der Test sie nicht, ist die Ursache im Kern zu suchen.
+   */
+  it('Paritaet asV4 == Stand 6ca34a4: der Lauf ohne Vertraege trifft die alten Literale', () => {
+    const asV4 = (state: GameState): GameState => {
+      const copy = JSON.parse(JSON.stringify(state)) as Record<string, unknown> & {
+        diplomacy: Record<string, unknown>
+        nextIds: Record<string, unknown>
+      }
+      delete copy.diplomacy['contracts']
+      delete copy.nextIds['contract']
+      copy['schemaVersion'] = 4
+      return copy as unknown as GameState
+    }
+    let state = createInitialState(CONFIG, ctx)
+    const at: Record<number, string> = {}
+    for (let tick = 1; tick <= 500; tick++) {
+      state = step(state, [], ctx).state
+      if (tick === 1 || tick === 24 || tick === 100 || tick === 500) at[tick] = hashValue(asV4(state), { omitKeys: HASH_OMIT_KEYS })
+    }
+    expect(at[1]).toBe('d32e63834ba2ce4d')
+    expect(at[24]).toBe('6fb36c4975b8b577')
+    expect(at[100]).toBe('a58b3cca20717564')
+    expect(at[500]).toBe('5256d8cd46eb636b')
+  })
 })
 
 /**

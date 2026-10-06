@@ -5911,3 +5911,9 @@ Grundlage: Nachtrag in `docs/plan/V3-G1-DOSSIER.md`, Playtest V3 (`docs/reports/
 - **D8 ·** Klick: `pickArmy` → `pickArmyGroup` → Provinz; nur mit `onSelectArmy`; Treffer zoomt auf `GROUP_ZOOM_SCALE` (= 1), kein Select.
 - **D9 ·** Datenweg: Prop `MapCanvas.selectedArmyId`; Canvas bekommt `data-zoom-tier` und `data-view-scale`.
 - **D10 ·** Cache: `layoutCache.group` = `'g:' + selectedArmyId` bei aktiver Gruppierung, sonst `''`; Treffer nur bei gleichem `group`.
+
+## 2026-10-05 · M50 Liefervertrag Etappe 1 · B1 Kern (Plan „Liefervertrag Etappe 1“, Noahs Ja)
+- **D1–D9 (Kern):** `OFFER_TRADE` optional `schedule {intervalDays 1..30, deliveries 2..20}`, nur Rohstoffe; Annahme = Lieferung 1 (Treuhand wie bisher), danach `diplomacy.contracts` (`c<n>`). `settleContracts` direkt nach `settleTradeOffers`, Rangfolge `invalid` > `war` (auch laufende Kriegserklärung) > fällig: beide Seiten voll, sonst `unpaid` (keine Teillieferung, keine Schulden, keine Treuhand künftiger Lieferungen). `CANCEL_CONTRACT`: jede Partei, sofort, ohne Strafe. `maxActiveContracts` 3 je Macht. Schema 4 → 5. Golden-Master neu, Parität `asV4 == 6ca34a4`. D7 (KI) = B2, D8 (UI) = B3.
+- **P1–P7, P10:** Zähler `nextIds.contract` ab 1; `schedule`-Schlüssel fehlt ohne Zeitplan (nie `undefined`, der Hash wirft); fünf Konstanten in `constants.json` und `BALANCING.md`; Ablehnungsgründe `ungültiger Zeitplan`, `Zeitplan nur mit Rohstoffen`, `zu viele Verträge`, `kein Vertrag`; Ereignis `CONTRACT_CLOSED` (kein Alarm, kein Weltgeschehen, keine Ereignisse je Lieferung); Code in `commands/contract.ts`; Parität über `asV4` (JSON-Kopie ohne `contracts`/`nextIds.contract`, `schemaVersion = 4`).
+- **Folge:** `PROTOCOL_VERSION` 3 (jede Formatstufe braucht eine eigene Fassung, `protocol.test.ts`). Das Rezept `save-v4-freeze.slow.test.ts` wird mit Stufe 5 entfernt, `save-v4.json` bleibt als Beleg für den Schritt 4 → 5.
+- **Meilensteinnummer:** M50 (M49 ist für die Armee-Sammelmarke reserviert).

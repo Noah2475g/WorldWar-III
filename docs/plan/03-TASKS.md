@@ -8201,3 +8201,44 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Dateien:** `scripts/v4-sammel-bild.mjs`, `docs/ux/v4-sammel/`, `docs/reports/v4/sammel.md`, `docs/plan/PROGRESS.md`, `docs/ASSETS.md`
 - **Tests zuerst:** `scripts/v4-sammel-bild.mjs`
 - **Fertig wenn:** Bilder angesehen, pnpm verify Exit 0, PR offen (Noah2475g), Merge nur durch reviewer.
+
+## Meilenstein M50 — Liefervertrag Etappe 1
+
+> **Herkunft.** Plan „Liefervertrag Etappe 1“ (Noahs Ja). **Grenze:** B1 = Kern, Speichern, Parität; KI (B2) und
+> Oberfläche (B3) folgen als eigene Aufgaben. M49 ist für die Armee-Sammelmarke reserviert.
+
+### T-M50-01 · Eingefrorener Stand der Stufe 4 und Messung vorher
+- **Ziel:** Ein echter Stand der Stufe 4 mit offenem Handelsangebot liegt vor dem ersten Kernschritt als Datei vor, zeichengleich aus seinem Rezept.
+- **Paket und Priorität:** Liefervertrag Etappe 1 · P1
+- **Anforderungen:** R-DIP-05
+- **Abhängigkeiten:** —
+- **Dateien:** `packages/core/test/golden/save-v4.json`
+- **Tests zuerst:** `packages/core/src/persistence/migration-v4.test.ts`
+- **Fertig wenn:** `save-v4.json` entsteht zeichengleich aus dem Rezept (zweimal gelaufen), mindestens ein offenes Handelsangebot ohne `schedule`; Basis-Messung `ai-integration.json` und `m17-integration.json` bei `6ca34a4` gesichert.
+
+### T-M50-02 · Liefervertrag im Kern: Schema 5, OFFER_TRADE schedule, CANCEL_CONTRACT, settleContracts
+- **Ziel:** Ein Handelsangebot mit Zeitplan wird zum Liefervertrag, wird in der Diplomatiephase abgewickelt und kann beendet werden.
+- **Paket und Priorität:** Liefervertrag Etappe 1 · P1
+- **Anforderungen:** R-DIP-05
+- **Abhängigkeiten:** T-M50-01
+- **Dateien:** `packages/core/src/commands/contract.ts`, `packages/core/src/commands/tradeOffer.ts`, `packages/core/src/commands/types.ts`, `packages/core/src/events/types.ts`, `packages/core/src/phases/diplomacy.ts`, `packages/core/src/state/types.ts`, `data/rules/default/constants.json`, `docs/plan/BALANCING.md`
+- **Tests zuerst:** `packages/core/src/commands/contract.test.ts`, `packages/core/src/commands/tradeOffer.test.ts`
+- **Fertig wenn:** 5 Lieferungen alle 3 Tage termingerecht, Summen erhalten; Krieg/Kriegserklärung/Ausscheiden nach Rangfolge; Fehlmenge = `unpaid` mit `closedBy`; Kündigung durch beide Seiten, fremde Kennung = „kein Vertrag“; Grenzen bei Angebot und Annahme; Angebot ohne `schedule` trägt den Schlüssel nicht.
+
+### T-M50-03 · Speichern, Migration 4 nach 5, Sicht und Gleichschritt
+- **Ziel:** Verträge überleben Speichern, Laden und Netzspiel; Dritte sehen sie nicht.
+- **Paket und Priorität:** Liefervertrag Etappe 1 · P1
+- **Anforderungen:** R-DIP-05
+- **Abhängigkeiten:** T-M50-02
+- **Dateien:** `packages/core/src/persistence/migrate.ts`, `packages/core/src/persistence/validate.ts`, `packages/core/src/view/publicView.ts`, `packages/netplay/src/protocol.ts`, `apps/desktop/src/game/rejections.ts`, `apps/desktop/src/i18n/de.ts`, `apps/desktop/src/game/events.ts`
+- **Tests zuerst:** `packages/core/src/persistence/migration-v4.test.ts`, `packages/core/src/view/publicView.test.ts`, `packages/netplay/test/contract-lockstep.test.ts`, `packages/netplay/src/protocol.test.ts`
+- **Fertig wenn:** `save-v4.json` läuft über den Schritt 4 nach 5 (Differenz genau `ADDED_IN_VERSION_5`); Wiederaufnahme mit Vertrag nach 37 Ticks gleich am Stück; Netplay-Hash je Tick gleich; R-DIP-04 gewahrt; `PROTOCOL_VERSION` 3.
+
+### T-M50-04 · Golden-Master neu und Parität asV4 == 6ca34a4
+- **Ziel:** Die Golden-Hashes sind für Schema 5 neu, und ein Lauf ohne Verträge trifft nachweislich die alten Literale.
+- **Paket und Priorität:** Liefervertrag Etappe 1 · P1
+- **Anforderungen:** R-DIP-05
+- **Abhängigkeiten:** T-M50-02
+- **Dateien:** `packages/core/test/determinism.test.ts`, `apps/headless/test/walkthrough.test.ts`, `packages/core/test/golden/tiny-500.json`, `apps/headless/test/golden/walkthrough.json`
+- **Tests zuerst:** `packages/core/test/determinism.test.ts`, `apps/headless/test/walkthrough.test.ts`
+- **Fertig wenn:** Goldens mit `UPDATE_GOLDEN=1` neu; `asV4`-Parität trifft die Literale von `6ca34a4` unverändert; `ai-integration`-Kennzahlen unverändert.
