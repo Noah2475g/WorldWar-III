@@ -60,6 +60,7 @@
   Meldungen ohne Ort/Priorität (dann helfen VM-03/VM-05, V3); (b) Spieltempo/KI-Druck — Kriege,
   Angriffe pro Tag in der Mitte der Partie (dann Balance, eigener Plan mit Messung der Ereignisdichte
   je Spielabschnitt). Erst messen: Ereignisse je Spieltag nach Spielabschnitt aus einer Vollpartie.
+- **Umsetzung 2026-10-05:** Auto-Pause bei eigenen Alarmen (enge Fassung, WAR_DECLARED an mich + CAPITAL_LOST; ARMY_INTRUDED gestrichen), Zaehlung docs/reports/v3/autopause-zaehlung.md (max. 8/Partie).
 
 ## V4 „Gefecht“ (vorgemerkt, nicht geplant)
 

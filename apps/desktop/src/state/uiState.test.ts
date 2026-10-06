@@ -121,7 +121,14 @@ describe('R-UI-06 Einstellungen', () => {
       maxSpeed: 25,
       fontScale: 'large',
       debug: true,
+      autoPause: true,
     })
+  })
+
+  it('VM-06: autoPause ist vorgabemaessig an und uebernimmt nur Boolesches', () => {
+    expect(parseSettings({}).autoPause).toBe(true)
+    expect(parseSettings({ autoPause: false }).autoPause).toBe(false)
+    expect(parseSettings({ autoPause: 'x' }).autoPause).toBe(true)
   })
 
   it('faellt bei Unsinn auf die Vorgabe zurueck, statt zu scheitern', () => {
