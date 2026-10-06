@@ -28,7 +28,8 @@ describe('R-UI-13 Ein Fehler wird gezeigt, nicht verschwiegen', () => {
     expect(screen.getByRole('alertdialog')).toBeTruthy()
     expect(screen.getByText(/Kartenzeichnung fehlgeschlagen/)).toBeTruthy()
     expect(gesehen).toHaveBeenCalled()
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 599 ms, unter verify+Last max 6172 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('nennt den Weg zurueck', () => {
     render(

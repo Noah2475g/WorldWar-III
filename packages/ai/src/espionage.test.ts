@@ -778,7 +778,8 @@ describe('Z7 Eigenschaft ueber 60 Spieltage: Budget, kein Frieden sabotiert, kei
     expect(anwerbungen.intel).toBeGreaterThan(0)
     expect(anwerbungen.economicSabotage).toBeGreaterThan(0)
     expect(berichte).toBeGreaterThan(0)
-  }, 30_000)
+    // Zeitlimit wegen Last, nicht Verhalten: allein 806 ms, unter verify+Last max 15921 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 })
 
 /** DISMISS entfernt, REASSIGN aendert, RECRUIT haengt an — die Planlage nach den KI-Befehlen. */

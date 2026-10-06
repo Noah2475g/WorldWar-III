@@ -154,7 +154,8 @@ describe('R-ASSET-01 Kein Asset ohne Herkunfts- und Lizenzeintrag', () => {
     // Kein <img src>, kein CSS url(), kein new Audio(): was nicht im Programm steht,
     // muesste zur Laufzeit geholt werden — und das ginge nur uebers Netz (R-FREE-04).
     expect(scan(/new\s+Audio\s*\(|<img\s|url\(\s*['"]?https?:/)).toEqual([])
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 96 ms, unter verify+Last max 3576 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('findet jeden Bildsatz der Anwendung selbst, statt einen zu kennen', () => {
     // Bis zum 2026-09-11 nannte dieser Waechter `icons.tsx` NAMENTLICH. Ein zweiter

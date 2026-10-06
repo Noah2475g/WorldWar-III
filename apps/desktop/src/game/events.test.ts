@@ -1400,7 +1400,8 @@ describe('R-SPY-04/AK3 Der Opfertext nennt keinen Urheber — ueber einen Lauf m
     expect(detectedForP3, 'Vorbedingung: p3 hat einen Spion enttarnt').toBeDefined()
     const detectedText = describeEvent(detectedForP3!, 0, testMap, { ...naming, viewer: 'p3' }).text
     expect(detectedText).toContain('Nordland')
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 164 ms, unter verify+Last max 4003 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 })
 
 /**

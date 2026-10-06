@@ -27,7 +27,8 @@ describe('R-ARCH-03 Aufzeichnen und Wiedergeben', () => {
     const { recording } = recordGame({ config: CONFIG, map, rules, ticks: 240, setup })
     const replayed = replayGame(recording, map, rules, setup)
     expect(replayed.matches).toBe(true)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 126 ms, unter verify+Last max 5088 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('zeichnet die Kommandos mit ihrem Zeitpunkt auf', () => {
     const { recording } = recordGame({ config: CONFIG, map, rules, ticks: 100, setup })

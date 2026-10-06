@@ -73,7 +73,8 @@ describe('Tooltip: Hinweis und Lage je Eingabeart', () => {
     expect(tip.querySelector('.tooltip__hint')!.textContent).toBe('Klicken: auswählen · Escape: schließen')
     expect(tip.style.left).toBe('24px')
     expect(tip.style.top).toBe('34px')
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 200 ms, unter verify+Last max 8436 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 30_000)
 
   it('spricht im Touch-Betrieb vom Tippen und vom langen Druck', () => {
     dispose = applyInputMode({ location: { search: '?touch=1' }, document })

@@ -20,14 +20,16 @@ describe('R-AI-06 KI gegen KI', () => {
     expect(result.ticks).toBeGreaterThan(0)
     expect(result.scores['p1']).toBeGreaterThan(0)
     expect(['victory', 'timeLimit']).toContain(result.reason)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 998 ms, unter verify+Last max 22250 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 
   it('liefert bei gleichem Seed dasselbe Ergebnis', () => {
     const a = playMatch({ map, rules, seed: 11, difficulties: ['hard', 'easy'], days: 20 })
     const b = playMatch({ map, rules, seed: 11, difficulties: ['hard', 'easy'], days: 20 })
     expect(a.scores).toEqual(b.scores)
     expect(a.winner).toBe(b.winner)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 207 ms, unter verify+Last max 6297 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('wertet paarweise, damit die Startposition nicht entscheidet', () => {
     // **Am 2026-09-06 umgestellt (T-M15-05).** Vorher tauschte das Turnier zwar die
@@ -41,7 +43,8 @@ describe('R-AI-06 KI gegen KI', () => {
     expect(result.winsA + result.winsB + result.draws, 'zwei Paare, zwei Wertungen').toBe(2)
     expect(result.winRateA).toBeGreaterThanOrEqual(0)
     expect(result.winRateA).toBeLessThanOrEqual(1)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 488 ms, unter verify+Last max 10614 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 
   // Befund M17-D9 (T-M17-10, gemessen 2026-09-25): B6 ("Antrag statt Marsch") behebt genau die
   // Ueberfaelle, die dieser Test bis hierhin gemessen hat. Vor T-M17-10 marschierten Armeen
@@ -67,7 +70,8 @@ describe('R-AI-06 KI gegen KI', () => {
     expect(handelnd.hard.warDeclarations).toBeGreaterThan(0)
     expect(handelnd.normal.warDeclarations).toBeGreaterThan(0)
     expect(handelnd.hard.warDeclarations + handelnd.normal.warDeclarations).toBe(result.warDeclarations.hard)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 604 ms, unter verify+Last max 20309 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 
   /**
    * Nacharbeit Turnier M17, Option C (2026-09-25, loest M17-D9 ab): m1 faellt Ostmark unterwegs
@@ -97,7 +101,8 @@ describe('R-AI-06 KI gegen KI', () => {
       }
       expect(wars[0], `seed ${seed}`).toMatchObject({ playerId: 'p1', targetPlayerId: 'p2' })
     }
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 1119 ms, unter verify+Last max 30704 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 
   // Ist-Stand vor Option C (bis 2026-09-25, Befund M17-D9): keine Kriegserklaerung, kein Beschuss
   // in dieser Paarung. Seit Option C erklaert Nordland foermlich (Test oben); die Summenbildung
@@ -111,7 +116,8 @@ describe('R-AI-06 KI gegen KI', () => {
       result.automaticBombardments.hard,
     )
     expect(handelnd.easy).toEqual({ warDeclarations: 0, automaticBombardments: 0, formalWarDeclarations: 0 })
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 532 ms, unter verify+Last max 6647 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 })
 
 /**
@@ -156,7 +162,8 @@ describe('R-AI-06 Drei Maechte reihum (Plan D)', () => {
     expect(Object.values(result.winsByNation).reduce((sum, n) => sum + n, 0)).toBeLessThanOrEqual(6)
     expect(result.outcomes).toBeGreaterThanOrEqual(1)
     expect(result.outcomes).toBeLessThanOrEqual(6)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 591 ms, unter verify+Last max 7478 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 30_000)
 
   it('S1 - bySetup je Sitzordnung, und die Teile addieren sich zur Summe (T-M17-15)', () => {
     const DREI = [
@@ -189,14 +196,16 @@ describe('R-AI-06 Drei Maechte reihum (Plan D)', () => {
     expect(summeWinsA).toBe(result.winsA)
     expect(summeWinsB).toBe(result.winsB)
     expect(summeDraws).toBe(result.draws)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 418 ms, unter verify+Last max 7085 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 30_000)
 
   it('S2 - ohne Aufstellung ein Eintrag in bySetup, gleich den Summenfeldern (T-M17-15)', () => {
     const result = playTournament({ map, rules, difficulties: ['hard', 'easy'], matches: 4, days: 20 })
     expect(Object.keys(result.bySetup)).toEqual(['Nordland/Ostmark'])
     const eintrag = result.bySetup['Nordland/Ostmark']!
     expect(eintrag).toEqual({ winsA: result.winsA, winsB: result.winsB, draws: result.draws, winRateA: result.winRateA })
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 263 ms, unter verify+Last max 2940 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('verlangt, dass die Paare sich auf die Aufstellungen teilen lassen', () => {
     expect(() =>
@@ -234,5 +243,6 @@ describe('R-AI-06 Drei Maechte reihum (Plan D)', () => {
     })
 
     expect(mitEinerAufstellung).toEqual(ohne)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 603 ms, unter verify+Last max 6106 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 })

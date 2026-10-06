@@ -81,7 +81,8 @@ describe('ArmiesPanel', () => {
     expect(within(items[1]!).getByText('marschiert nach X')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Armee 3 auswählen und auf der Karte zeigen' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Armee 3 marschieren lassen' })).toBeTruthy()
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 269 ms, unter verify+Last max 8319 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 30_000)
 
   it('ruft Auswaehlen und Marschieren mit der Armee', () => {
     const onSelect = vi.fn()

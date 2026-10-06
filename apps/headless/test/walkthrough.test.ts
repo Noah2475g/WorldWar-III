@@ -109,7 +109,8 @@ describe('R-ARCH-01 Der Durchstich ist reproduzierbar', () => {
     expect(hashValue(a.state, { omitKeys: HASH_OMIT_KEYS })).toBe(
       hashValue(b.state, { omitKeys: HASH_OMIT_KEYS }),
     )
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 87 ms, unter verify+Last max 3178 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('stimmt mit dem festgeschriebenen Lauf ueberein', () => {
     const result = walkthrough()

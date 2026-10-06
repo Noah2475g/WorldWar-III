@@ -184,7 +184,8 @@ describe('R-MP-12/AK2 Vom Link zur Partie: fuenf Nachrichten, dann rechnet es', 
     expect(gast.value?.phase).toBe('playing')
     expect(gastgeber.value?.seat).toBe('p1')
     expect(gast.value?.seat).toBe('p2')
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 200 ms, unter verify+Last max 2642 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('gibt beiden Seiten denselben Startzustand — ohne dass einer ueber die Leitung ging', () => {
     // Der Kern von D28.2: uebertragen werden Befehle, nie Zustaende. Dass beide trotzdem
@@ -244,7 +245,8 @@ describe('R-MP-12/AK2 Vom Link zur Partie: fuenf Nachrichten, dann rechnet es', 
     expect(vergleiche).toBe(200)
     expect(eins.tick).toBe(200)
     expect(eins.status).not.toBe('desynced')
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 1031 ms, unter verify+Last max 21671 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 
   it('bricht ab, wenn die Gegenseite ein anderes Spiel rechnet — statt es zu merken, wenn es zu spaet ist', () => {
     // Die Gegenprobe, die beissen muss: eine Willkommensnachricht mit einer fremden
@@ -378,7 +380,8 @@ describe('R-MP-12/AK1 Der Beitrittsbildschirm zeigt, worauf man sich einlaesst',
     expect(text, 'die feste Rate fehlt').toMatch(/Feste Geschwindigkeit: 25/)
     // Und die Einschraenkung, die er sonst erst hinterher merkt (D28.2).
     expect(text).toMatch(/Schummelschutz/)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 683 ms, unter verify+Last max 9205 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 30_000)
 
   it('zeigt die Bedingungen VOR dem Namensfeld und sperrt den Knopf, solange keiner steht', () => {
     // „Dann Name eintragen und beitreten" (§3.7): die Reihenfolge ist die Zusage. Gemessen
@@ -399,7 +402,8 @@ describe('R-MP-12/AK1 Der Beitrittsbildschirm zeigt, worauf man sich einlaesst',
 
     fireEvent.change(feld, { target: { value: 'Jonas' } })
     expect((knopf as HTMLButtonElement).disabled).toBe(false)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 229 ms, unter verify+Last max 4569 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('wartet ohne Spielstand — und ohne Anlegedialog, denn der Gast legt nichts an', () => {
     alsGast()
@@ -425,7 +429,8 @@ describe('R-MP-12/AK1 Der Beitrittsbildschirm zeigt, worauf man sich einlaesst',
     expect(document.body.textContent, 'der Gast sieht die Nation seines Gegners').toContain(
       config.players[1]!.nation,
     )
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 467 ms, unter verify+Last max 7429 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 30_000)
 })
 
 describe('R-MP-12/AK1 Die Bedingungen kommen aus der Partiedefinition, nicht aus einem Formular', () => {

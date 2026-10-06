@@ -92,7 +92,8 @@ describe('R-UI-13 Die Lage der Maechte', () => {
     expect(leader.getAttribute('aria-valuenow')).toBe('300')
     expect(leader.getAttribute('aria-valuemax')).toBe('300')
     expect(screen.getByRole('meter', { name: 'Nordland' }).getAttribute('aria-valuenow')).toBe('100')
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 256 ms, unter verify+Last max 10439 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 
   it('rendert den Machtnamen je Zeile nur einmal (T-M23-02, Befund V2-17)', () => {
     // "Indien Indien 6148": der Punktebalken wiederholte den Namen als Textknoten neben
@@ -521,7 +522,8 @@ describe('R-GAME-08/AK3 Die Rangliste zeigt die eigenen Zwischenziele', () => {
     } finally {
       style.remove()
     }
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 228 ms, unter verify+Last max 4242 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('bindet sich an eine echte Sicht aus Karte und ausgelieferten Regeln — fuer die zweite Macht', () => {
     // Bindungstest, kein Rot-zuerst: die Zeilen oben stehen auf einer ausgedachten Sicht. Hier

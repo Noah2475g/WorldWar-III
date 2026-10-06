@@ -175,7 +175,8 @@ describe('R-UI-10 Vorkommen und Gebaeude als Symbolzeile', () => {
     expect(screen.getByRole('img', { name: '5 Nahrung' })).toBeTruthy()
     expect(screen.getByRole('img', { name: 'Kaserne' })).toBeTruthy()
     expect(screen.getByRole('img', { name: '2 Fabrik' })).toBeTruthy()
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 410 ms, unter verify+Last max 10840 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 })
 
 describe('R-UI-10 Befehlsknoepfe tragen ihr Symbol', () => {
@@ -836,7 +837,8 @@ describe('R-UX-03/AK1 Sperrgründe der Verträge gebündelt, Leerzustände als F
       expect(document.getElementById(id!)?.textContent).toBe(action.disabledReason)
     }
     expect(screen.getByRole('button', { name: 'Krieg erklären' }).hasAttribute('aria-describedby')).toBe(false)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 114 ms, unter verify+Last max 2794 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('die Leerzustände sind Fließtext und keine Überschrift', () => {
     const { container } = render(<DiplomacyPanel view={view} nameOf={() => 'Ostmark'} />)
@@ -1124,7 +1126,8 @@ describe('R-DIP-07 Das Diplomatiepanel (T-M17-14)', () => {
 
     fireEvent.click(ostmark)
     expect(onChoose).toHaveBeenCalledWith('p2')
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 75 ms, unter verify+Last max 3850 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('das Angebotsformular rechnet in ganzen Einheiten und fragt evaluate', () => {
     const action: Action = { id: 'trade-offer', label: 'Handel anbieten', disabledReason: null, onRun: vi.fn() }
@@ -1362,7 +1365,8 @@ describe('T-M22-02 Die Seitenleiste kriecht nicht seitwaerts', () => {
     } finally {
       style.remove()
     }
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 255 ms, unter verify+Last max 5125 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 })
 
 /** Eine Zeile der Spionageuebersicht, fuer die Panel-Tests von Hand gebaut (T-M17-13). */

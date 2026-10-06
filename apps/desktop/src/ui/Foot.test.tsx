@@ -94,7 +94,8 @@ describe('T-M31-03 Der Fuss', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Spionage' }))
     expect(onPanel).toHaveBeenCalledWith('espionage')
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 681 ms, unter verify+Last max 11874 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 
   it('sperrt die Depesche, solange es keinen Tagesbericht gibt', () => {
     render(
@@ -163,5 +164,6 @@ describe('T-M46-10 Das Protokoll klappt auf dem Telefon als Blatt auf', () => {
     expect(footer.getAttribute('data-log')).toBe('open')
     const close = screen.getByRole('button', { name: 'Protokoll schließen' })
     expect(close.getAttribute('aria-expanded')).toBe('true')
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 90 ms, unter verify+Last max 4997 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 })

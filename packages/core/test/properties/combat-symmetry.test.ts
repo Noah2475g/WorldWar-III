@@ -192,7 +192,8 @@ describe('T-M41-07 Der Seitentausch im Nahkampf spiegelt bei Streuung 0 exakt', 
       ),
       { numRuns: 40 },
     )
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 168 ms, unter verify+Last max 12520 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 })
 
 describe('R-BAT-07/AK1 Verbleibende Staerke plus gemeldete Verluste ergeben die Ausgangsstaerke', () => {

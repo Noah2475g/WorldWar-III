@@ -222,7 +222,8 @@ describe('R-UNIT-09/AK4 Vorspulen und Uhr geben dieselben Befehle (T-M40-08)', (
     expect(halte, 'das Vorspulen hielt an keinem Alarm - der Weg ueber mehrere Haeppchen ist ungeprueft').toContain('alert')
     expect(aufbrueche(events)).toEqual(ueberDieUhr)
     expect(hashValue(current, { omitKeys: HASH_OMIT_KEYS })).toBe(hashValue(uhr.state, { omitKeys: HASH_OMIT_KEYS }))
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 188 ms, unter verify+Last max 10064 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 
   it('liefert aus jedem Haeppchen die Befehle der Automatik, dieselben wie die Uhr (T-M40-13)', () => {
     // Daraus schreibt die Oberflaeche die leise Zeile „rueckt von selbst nach" — auch beim Vorspulen.
@@ -241,7 +242,8 @@ describe('R-UNIT-09/AK4 Vorspulen und Uhr geben dieselben Befehle (T-M40-08)', (
 
     expect(uhr.adjutant.length, 'die Automatik hat ueber die Uhr nichts befohlen - der Vergleich misst nichts').toBeGreaterThan(0)
     expect(automatik).toEqual(uhr.adjutant)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 118 ms, unter verify+Last max 5458 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 })
 
 /**
