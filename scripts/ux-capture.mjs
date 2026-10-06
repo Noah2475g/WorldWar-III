@@ -263,7 +263,27 @@ async function layout(page) {
     }
     const chip = document.querySelector('.alarm-chip')
     const goal = document.querySelector('header .meter')
+    // B0 v3b (M3/K19, reines Messfeld): je Ort die Meldungen. [data-msg] wenn vorhanden, sonst normalisierter innerText je Zeile (Info).
+    const orte = { toast: '[data-sonner-toast]:not([data-visible="false"])', alerts: '.alerts', chip: '.alarm-chip', dock: 'section.dock' }
+    const norm = (s) => s.replace(/\s+/g, ' ').trim().slice(0, 80)
+    const meldungsorte = { orte: {} }
+    for (const [name, sel] of Object.entries(orte)) {
+      const msgs = []
+      for (const el of document.querySelectorAll(sel)) {
+        const tagged = [...el.querySelectorAll('[data-msg]')]
+        if (el.hasAttribute('data-msg')) tagged.unshift(el)
+        if (tagged.length > 0) msgs.push(...tagged.map((n) => ({ key: n.getAttribute('data-msg'), via: 'data-msg' })))
+        else if (name === 'alerts') msgs.push(...[...el.querySelectorAll('li')].map((li) => ({ key: norm(li.innerText), via: 'text' })))
+        else if (el.getBoundingClientRect().height > 0) msgs.push(...(el.innerText || '').split('\n').map(norm).filter(Boolean).map((key) => ({ key, via: 'text' })))
+      }
+      meldungsorte.orte[name] = msgs
+    }
+    const seenAt = {}
+    for (const [name, msgs] of Object.entries(meldungsorte.orte)) for (const m of new Set(msgs.map((x) => x.key))) (seenAt[m] ??= []).push(name)
+    meldungsorte.doppelt = Object.entries(seenAt).filter(([, o]) => o.length >= 2).map(([key, o]) => ({ key, orte: o }))
+    meldungsorte.anzahl = Object.fromEntries(Object.entries(meldungsorte.orte).map(([k, v]) => [k, v.length]))
     return {
+      meldungsorte,
       viewport: { w: innerWidth, h: innerHeight },
       // Zustand der Kopfleiste, damit R-UX-02/AK1 weiss, ob Alarmchip und Siegziel dabei waren.
       alarmChipVisible: Boolean(chip && drawn(chip)),

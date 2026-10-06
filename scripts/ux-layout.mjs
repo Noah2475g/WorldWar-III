@@ -258,6 +258,51 @@ const diplomacyScene = (page) =>
     return { sideClientH: side.clientHeight, sideScrollH: side.scrollHeight, probes: rows, belowFold: rows.filter((r) => r.found && !r.inView).length }
   })
 
+/**
+ * B0-Sonden v3b (D16, reine Messfelder): K3 sichtbar = Element ganz im Fenster UND elementFromPoint(Mitte des
+ * ersten und letzten Feldes) liegt im Element. Bauplaetze `.slots[data-group="build"]` (Felder `.slot`), Ausheben
+ * `section.group[data-group="recruit"]` (Felder = button). K7 freeMap = Anteil der Punkte eines 8-px-Rasters
+ * ueber dem Karten-Canvas (`canvas.map-layer--overlay`), an denen elementFromPoint das Karten-Canvas trifft.
+ */
+const probeVisible = (page) =>
+  page.evaluate(() => {
+    const check = (root, cells) => {
+      if (!root) return { present: false }
+      const r = root.getBoundingClientRect()
+      const inView = r.width > 0 && r.height > 0 && r.left >= -0.5 && r.right <= innerWidth + 0.5 && r.top >= -0.5 && r.bottom <= innerHeight + 0.5
+      const list = [...root.querySelectorAll(cells)]
+      const hit = (el) => {
+        if (!el) return false
+        const b = el.getBoundingClientRect()
+        const t = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2)
+        return Boolean(t && root.contains(t))
+      }
+      const first = list[0]
+      const last = list[list.length - 1]
+      return { present: true, inView, cells: list.length, firstHit: hit(first), lastHit: hit(last), visible: inView && hit(first) && hit(last) }
+    }
+    return {
+      slots: check(document.querySelector('aside.side .slots[data-group="build"]'), '.slot'),
+      recruit: check(document.querySelector('aside.side section.group[data-group="recruit"]'), 'button'),
+    }
+  })
+
+const probeFreeMap = (page) =>
+  page.evaluate(() => {
+    const cv = document.querySelector('canvas.map-layer--overlay')
+    if (!cv) return null
+    const r = cv.getBoundingClientRect()
+    let total = 0
+    let hits = 0
+    for (let y = Math.max(0, r.top) + 4; y < Math.min(innerHeight, r.bottom); y += 8) {
+      for (let x = Math.max(0, r.left) + 4; x < Math.min(innerWidth, r.right); x += 8) {
+        total += 1
+        if (document.elementFromPoint(x, y) === cv) hits += 1
+      }
+    }
+    return { rect: { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) }, points: total, hits, share: total ? +(hits / total).toFixed(3) : null }
+  })
+
 async function runViewport(browser, vp) {
   const context = await browser.newContext({
     viewport: { width: vp.width, height: vp.height },
@@ -286,6 +331,7 @@ async function runViewport(browser, vp) {
   out.scenes.kopf = await headerScene(page)
   out.scenes.protokollKarte = await logScene(page)
   out.scenes.ohnePanel = await sideScene(page)
+  out.scenes.ohnePanel.freeMap = await probeFreeMap(page)
   out.scenes.protokollZeilen = await logStats(page)
   await shot('kopf')
 
@@ -382,6 +428,8 @@ async function runViewport(browser, vp) {
   await picker.selectOption({ index: 1 }, { timeout: 5000 }).catch((e) => errors.push(String(e).split('\n')[0]))
   await page.waitForTimeout(500)
   out.scenes.panel = await sideScene(page)
+  out.scenes.panel.visible = await probeVisible(page)
+  out.scenes.panel.freeMap = await probeFreeMap(page)
   await shot('panel')
   out.errors = errors
   await context.close()

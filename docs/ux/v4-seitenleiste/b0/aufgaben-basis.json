@@ -1,0 +1,636 @@
+{
+  "erzeugt": "2026-10-06T03:53:41.268Z",
+  "skript": "scripts/ux-tasks.mjs",
+  "fenster": "1280x800",
+  "stand": "test/fixtures/v3/S300.json",
+  "begleitmessungen": {
+    "tabfolgeStart": {
+      "stationen": 38,
+      "provinzlisteAlsNummer": 19,
+      "davonImProtokollUndFuss": 15
+    },
+    "tabBisProvinzliste": 19,
+    "armeeZeichenImDom": 0,
+    "auswaehlenKnoepfe": [
+      {
+        "ariaLabel": "Auswählen: Armee 3172",
+        "title": "Auswählen"
+      }
+    ],
+    "marschzielliste": {
+      "eintraege": 237,
+      "erreichbar": 33,
+      "unerreichbar": 203
+    },
+    "rueckmeldungJeTempo": {
+      "1": 1658,
+      "10": 1635,
+      "100": 1671,
+      "Pause": "bleibt stehen (>3,5 s)"
+    }
+  },
+  "laeufe": [
+    {
+      "rueckmeldungMs": [
+        null
+      ],
+      "aufgabe": "armee-bewegen",
+      "bedienung": "maus",
+      "erreicht": true,
+      "klicks": 5,
+      "tasten": 0,
+      "davonTab": 0,
+      "bildlaeufe": 0,
+      "fehlwege": 0,
+      "fehlwegeListe": [],
+      "minimum": {
+        "klicks": 5,
+        "tasten": 0,
+        "hinweis": "Zeichen auf der Karte, Marschieren, Liste (2), Marsch befehlen"
+      },
+      "zeitMs": 1388,
+      "zeitHinweis": "Nebenwert, nicht lastfest",
+      "rueckmeldung": [
+        "✓ befohlen."
+      ],
+      "schritte": [
+        "Klick: Armeezeichen auf der Karte",
+        "Klick: Marschieren",
+        "Liste (2 Klicks): Marschziel = Südstaaten",
+        "Klick: Marsch befehlen"
+      ],
+      "einrichtung": [],
+      "beleg": "— keine — Mittlerer Westen Nordosten der USA Südstaaten Westen der USA Ostkanada Nordkanada Westkanada Kuba Südwestengland und Wales Nordjapan Nordostmexiko Nordwestmexiko Russischer Ferner Osten ✓ befohlen. Armee 3172 12 100 % ✓ befohlen — ausgeführt. 380 · 01:00 12",
+      "konsolenFehler": [],
+      "versuche": 1,
+      "titel": "Armee finden und bewegen (Mittlerer Westen nach Südstaaten)"
+    },
+    {
+      "rueckmeldungMs": [
+        null
+      ],
+      "aufgabe": "armee-bewegen",
+      "bedienung": "tastatur",
+      "erreicht": true,
+      "klicks": 0,
+      "tasten": 8,
+      "davonTab": 3,
+      "bildlaeufe": 0,
+      "fehlwege": 0,
+      "fehlwegeListe": [],
+      "minimum": {
+        "absichten": 7,
+        "hinweis": "Liste fokussieren, tippen, Auswählen, Marschieren, Ziel fokussieren, tippen, Marsch befehlen"
+      },
+      "zeitMs": 2399,
+      "zeitHinweis": "Nebenwert, nicht lastfest",
+      "rueckmeldung": [
+        "✓ befohlen."
+      ],
+      "schritte": [
+        "Taste: a (Heeruebersicht)",
+        "Taste: Tab",
+        "Fokus: Marschieren (erste Armee) nach 1 Tab",
+        "Taste: Enter (Marschieren)",
+        "Taste: ArrowDown (Marschziel Pfeil ab)",
+        "Taste: ArrowDown (Marschziel Pfeil ab)",
+        "Fokus: Marschziel = Südstaaten — Ankunft Tag 379 nach 2 Pfeil-ab",
+        "Taste: Tab",
+        "Taste: Tab",
+        "Fokus: Marsch befehlen nach 2 Tab",
+        "Taste: Enter (Marsch befehlen)"
+      ],
+      "einrichtung": [],
+      "beleg": "— keine — Mittlerer Westen Nordosten der USA Südstaaten Westen der USA Ostkanada Nordkanada Westkanada Kuba Südwestengland und Wales Nordjapan Nordostmexiko Nordwestmexiko Russischer Ferner Osten ✓ befohlen. Armee 3172 12 100 % ✓ befohlen — ausgeführt. 380 · 09:00 12",
+      "konsolenFehler": [],
+      "versuche": 1,
+      "titel": "Armee finden und bewegen (Mittlerer Westen nach Südstaaten)"
+    },
+    {
+      "rueckmeldungMs": [
+        null
+      ],
+      "aufgabe": "armee-teilen-zusammenlegen",
+      "bedienung": "maus",
+      "erreicht": true,
+      "klicks": 3,
+      "tasten": 0,
+      "davonTab": 0,
+      "bildlaeufe": 0,
+      "fehlwege": 0,
+      "fehlwegeListe": [],
+      "minimum": {
+        "klicks": 3,
+        "tasten": 0,
+        "hinweis": "Zeichen, Teilen, Zusammenlegen"
+      },
+      "zeitMs": 1021,
+      "zeitHinweis": "Nebenwert, nicht lastfest",
+      "rueckmeldung": [
+        "✓ befohlen: Teilen",
+        "✓ befohlen: Zusammenlegen"
+      ],
+      "schritte": [
+        "Klick: Armeezeichen auf der Karte",
+        "Klick: Teilen",
+        "Klick: Zusammenlegen"
+      ],
+      "einrichtung": [],
+      "beleg": "geteilt=true, wieder eine Armee=true",
+      "konsolenFehler": [],
+      "versuche": 1,
+      "titel": "Armee teilen und wieder zusammenlegen (Mittlerer Westen)"
+    },
+    {
+      "rueckmeldungMs": [
+        null
+      ],
+      "aufgabe": "armee-teilen-zusammenlegen",
+      "bedienung": "tastatur",
+      "erreicht": true,
+      "klicks": 0,
+      "tasten": 6,
+      "davonTab": 2,
+      "bildlaeufe": 0,
+      "fehlwege": 0,
+      "fehlwegeListe": [],
+      "minimum": {
+        "absichten": 6,
+        "hinweis": "Liste, tippen, Auswählen, Teilen, Zusammenlegen"
+      },
+      "zeitMs": 1625,
+      "zeitHinweis": "Nebenwert, nicht lastfest",
+      "rueckmeldung": [],
+      "schritte": [
+        "Taste: a (Heeruebersicht)",
+        "Taste: Enter (Auswählen (erste Armee))",
+        "Taste: Tab",
+        "Fokus: Teilen nach 1 Tab",
+        "Taste: Enter (Teilen)",
+        "Taste: Shift+Tab",
+        "Fokus: Zusammenlegen nach 1 Umschalt+Tab",
+        "Taste: Enter (Zusammenlegen)"
+      ],
+      "einrichtung": [],
+      "beleg": "geteilt=true, wieder eine Armee=true",
+      "konsolenFehler": [],
+      "versuche": 1,
+      "titel": "Armee teilen und wieder zusammenlegen (Mittlerer Westen)"
+    },
+    {
+      "rueckmeldungMs": [
+        null
+      ],
+      "aufgabe": "bauen",
+      "bedienung": "maus",
+      "erreicht": true,
+      "klicks": 2,
+      "tasten": 0,
+      "davonTab": 0,
+      "bildlaeufe": 0,
+      "fehlwege": 0,
+      "fehlwegeListe": [],
+      "minimum": {
+        "klicks": 2,
+        "tasten": 0,
+        "hinweis": "Provinz auf der Karte, Kaserne bauen"
+      },
+      "zeitMs": 723,
+      "zeitHinweis": "Nebenwert, nicht lastfest",
+      "rueckmeldung": [
+        "✓ befohlen: Kaserne"
+      ],
+      "schritte": [
+        "Klick: Provinz Mittlerer Westen auf der Karte",
+        "Klick: Kaserne bauen"
+      ],
+      "einrichtung": [],
+      "beleg": "Rückmeldung gesehen: true; Fortschrittsanzeige (noch N h) im Panel: true",
+      "konsolenFehler": [],
+      "versuche": 1,
+      "titel": "Kaserne bauen (Mittlerer Westen)"
+    },
+    {
+      "rueckmeldungMs": [
+        null
+      ],
+      "aufgabe": "bauen",
+      "bedienung": "tastatur",
+      "erreicht": true,
+      "klicks": 0,
+      "tasten": 4,
+      "davonTab": 0,
+      "bildlaeufe": 0,
+      "fehlwege": 0,
+      "fehlwegeListe": [],
+      "minimum": {
+        "absichten": 4,
+        "hinweis": "Liste, tippen, Kaserne bauen"
+      },
+      "zeitMs": 967,
+      "zeitHinweis": "Nebenwert, nicht lastfest",
+      "rueckmeldung": [
+        "✓ befohlen: Kaserne"
+      ],
+      "schritte": [
+        "Taste: p (Provinzliste)",
+        "Taste: m (Provinz tippen)",
+        "Taste: Enter (Wahl bestaetigen (Fokus zu den Handlungen der Provinz))",
+        "Fokus: Kaserne bauen schon beim Oeffnen",
+        "Taste: Enter (Kaserne bauen)"
+      ],
+      "einrichtung": [],
+      "beleg": "Rückmeldung gesehen: true; Fortschrittsanzeige (noch N h) im Panel: true",
+      "panel": "— keine — Mittlerer Westen Nordosten der USA Südstaaten Westen der USA Ostkanada Nordkanada Westkanada Kuba Südwestengland und Wales Nordjapan Nordostmexiko Nordwestmexiko Russischer Ferner Osten Brasilien Argentinien China ✓ befohlen: Kaserne Mittlerer Westen ? Vereinigte Staaten 670 Tsd 100 % 5 2 noch 21 h ? ? ? ? ? ? Ausheben Infanterie ? Dafür fehlt das Gebäude: Kaserne. Motorisierte Infanteri",
+      "konsolenFehler": [],
+      "versuche": 1,
+      "titel": "Kaserne bauen (Mittlerer Westen)"
+    },
+    {
+      "rueckmeldungMs": [
+        null
+      ],
+      "aufgabe": "ausheben",
+      "bedienung": "maus",
+      "erreicht": true,
+      "klicks": 2,
+      "tasten": 0,
+      "davonTab": 0,
+      "bildlaeufe": 0,
+      "fehlwege": 0,
+      "fehlwegeListe": [],
+      "minimum": {
+        "klicks": 2,
+        "tasten": 0,
+        "hinweis": "Provinz auf der Karte, Infanterie ausheben"
+      },
+      "zeitMs": 670,
+      "zeitHinweis": "Nebenwert, nicht lastfest",
+      "rueckmeldung": [
+        "✓ befohlen: Infanterie"
+      ],
+      "schritte": [
+        "Klick: Provinz Mittlerer Westen auf der Karte",
+        "Klick: Infanterie ausheben"
+      ],
+      "einrichtung": [],
+      "beleg": "Rückmeldung gesehen: true; Fortschrittsanzeige (noch N h) im Panel: true",
+      "konsolenFehler": [],
+      "versuche": 1,
+      "titel": "Infanterie ausheben (Mittlerer Westen, Kaserne steht)"
+    },
+    {
+      "rueckmeldungMs": [
+        null
+      ],
+      "aufgabe": "ausheben",
+      "bedienung": "tastatur",
+      "erreicht": true,
+      "klicks": 0,
+      "tasten": 5,
+      "davonTab": 0,
+      "bildlaeufe": 0,
+      "fehlwege": 0,
+      "fehlwegeListe": [],
+      "minimum": {
+        "absichten": 4,
+        "hinweis": "Liste, tippen, Infanterie ausheben"
+      },
+      "zeitMs": 1111,
+      "zeitHinweis": "Nebenwert, nicht lastfest",
+      "rueckmeldung": [
+        "✓ befohlen: Infanterie"
+      ],
+      "schritte": [
+        "Taste: p (Provinzliste)",
+        "Taste: m (Provinz tippen)",
+        "Taste: Enter (Wahl bestaetigen (Fokus zu den Handlungen der Provinz))",
+        "Taste: e (Aushebeknoepfe)",
+        "Fokus: Infanterie ausheben schon beim Oeffnen",
+        "Taste: Enter (Infanterie ausheben)"
+      ],
+      "einrichtung": [],
+      "beleg": "Rückmeldung gesehen: true; Fortschrittsanzeige (noch N h) im Panel: true",
+      "panel": "— keine — Mittlerer Westen Nordosten der USA Südstaaten Westen der USA Ostkanada Nordkanada Westkanada Kuba Südwestengland und Wales Nordjapan Nordostmexiko Nordwestmexiko Russischer Ferner Osten ✓ befohlen: Infanterie Mittlerer Westen ? Vereinigte Staaten 670 Tsd 100 % 5 2 + ? ? ? ? ? ? ? 1 × Infanterie noch 11 h Armee 3172 12 Ausheben Infanterie ? ✓ befohlen — ausgeführt. Motorisierte Infanterie",
+      "konsolenFehler": [],
+      "versuche": 1,
+      "titel": "Infanterie ausheben (Mittlerer Westen, Kaserne steht)"
+    },
+    {
+      "rueckmeldungMs": [
+        null
+      ],
+      "aufgabe": "krieg-erklaeren",
+      "bedienung": "maus",
+      "erreicht": true,
+      "klicks": 4,
+      "tasten": 0,
+      "davonTab": 0,
+      "bildlaeufe": 0,
+      "fehlwege": 0,
+      "fehlwegeListe": [],
+      "minimum": {
+        "klicks": 4,
+        "tasten": 0,
+        "hinweis": "Diplomatie, Mexiko, Krieg erklären, noch einmal klicken"
+      },
+      "zeitMs": 1472,
+      "zeitHinweis": "Nebenwert, nicht lastfest",
+      "rueckmeldung": [
+        "✓ befohlen: Krieg erklären"
+      ],
+      "schritte": [
+        "Klick: Diplomatie",
+        "Klick: Mexiko",
+        "Klick: Krieg erklären",
+        "Klick: Bestätigung \"noch einmal klicken\""
+      ],
+      "einrichtung": [],
+      "beleg": "Tabelle zeigt Krieg mit Mexiko",
+      "konsolenFehler": [],
+      "versuche": 1,
+      "titel": "Mexiko den Krieg erklären"
+    },
+    {
+      "rueckmeldungMs": [
+        null
+      ],
+      "aufgabe": "krieg-erklaeren",
+      "bedienung": "tastatur",
+      "erreicht": true,
+      "klicks": 0,
+      "tasten": 6,
+      "davonTab": 2,
+      "bildlaeufe": 0,
+      "fehlwege": 0,
+      "fehlwegeListe": [],
+      "minimum": {
+        "absichten": 4,
+        "hinweis": "D, Mexiko, Krieg erklären, Bestätigung"
+      },
+      "zeitMs": 2106,
+      "zeitHinweis": "Nebenwert, nicht lastfest",
+      "rueckmeldung": [
+        "✓ befohlen: Krieg erklären"
+      ],
+      "schritte": [
+        "Taste: d (Diplomatie)",
+        "Taste: Tab",
+        "Taste: Tab",
+        "Fokus: Mexiko nach 2 Tab",
+        "Taste: Enter (Mexiko)",
+        "Fokus: Krieg erklären schon beim Oeffnen",
+        "Taste: Enter (Krieg erklären)",
+        "Taste: Enter (Bestätigung)"
+      ],
+      "einrichtung": [],
+      "beleg": "Tabelle zeigt Krieg mit Mexiko",
+      "konsolenFehler": [],
+      "versuche": 1,
+      "titel": "Mexiko den Krieg erklären"
+    },
+    {
+      "rueckmeldungMs": [
+        null
+      ],
+      "aufgabe": "frieden-anbieten",
+      "bedienung": "maus",
+      "erreicht": true,
+      "klicks": 3,
+      "tasten": 0,
+      "davonTab": 0,
+      "bildlaeufe": 0,
+      "fehlwege": 0,
+      "fehlwegeListe": [],
+      "minimum": {
+        "klicks": 3,
+        "tasten": 0,
+        "hinweis": "Diplomatie, Mexiko, Frieden anbieten"
+      },
+      "zeitMs": 1009,
+      "zeitHinweis": "Nebenwert, nicht lastfest",
+      "rueckmeldung": [
+        "✓ befohlen: Krieg erklären",
+        "✓ befohlen: Frieden anbieten"
+      ],
+      "schritte": [
+        "Klick: Diplomatie",
+        "Klick: Mexiko",
+        "Klick: Frieden anbieten"
+      ],
+      "einrichtung": [
+        "Einrichtung: Krieg gegen Mexiko wirksam: true"
+      ],
+      "beleg": "✓ befohlen: Frieden anbieten ✓ befohlen: Frieden anbieten",
+      "krieg": true,
+      "konsolenFehler": [],
+      "versuche": 1,
+      "titel": "Mexiko Frieden anbieten (Krieg besteht)"
+    },
+    {
+      "rueckmeldungMs": [],
+      "aufgabe": "frieden-anbieten",
+      "bedienung": "tastatur",
+      "erreicht": true,
+      "klicks": 0,
+      "tasten": 2,
+      "davonTab": 0,
+      "bildlaeufe": 0,
+      "fehlwege": 0,
+      "fehlwegeListe": [],
+      "minimum": {
+        "absichten": 3,
+        "hinweis": "D, Mexiko, Frieden anbieten"
+      },
+      "zeitMs": 987,
+      "zeitHinweis": "Nebenwert, nicht lastfest",
+      "rueckmeldung": [
+        "✓ befohlen: Frieden anbieten"
+      ],
+      "schritte": [
+        "Taste: d (Diplomatie)",
+        "Fokus: Frieden anbieten schon beim Oeffnen",
+        "Taste: Enter (Frieden anbieten)"
+      ],
+      "einrichtung": [
+        "Einrichtung: Krieg gegen Mexiko wirksam: true"
+      ],
+      "beleg": "✓ befohlen: Frieden anbieten ✓ befohlen: Frieden anbieten",
+      "krieg": true,
+      "konsolenFehler": [],
+      "versuche": 1,
+      "titel": "Mexiko Frieden anbieten (Krieg besteht)"
+    },
+    {
+      "rueckmeldungMs": [
+        null
+      ],
+      "aufgabe": "handel-anbieten",
+      "bedienung": "maus",
+      "erreicht": true,
+      "klicks": 5,
+      "tasten": 5,
+      "davonTab": 0,
+      "bildlaeufe": 0,
+      "fehlwege": 0,
+      "fehlwegeListe": [],
+      "minimum": {
+        "klicks": 5,
+        "tasten": 5,
+        "hinweis": "Diplomatie, Mexiko, Feld, 100, Feld, 50, Handel anbieten"
+      },
+      "zeitMs": 2412,
+      "zeitHinweis": "Nebenwert, nicht lastfest",
+      "rueckmeldung": [
+        "✓ befohlen: Handel anbieten"
+      ],
+      "schritte": [
+        "Klick: Diplomatie",
+        "Klick: Mexiko",
+        "Klick: Feld Nahrung geben",
+        "Taste: 1 (Menge)",
+        "Taste: 0 (Menge)",
+        "Taste: 0 (Menge)",
+        "Klick: Feld Material verlangen",
+        "Taste: 5 (Menge)",
+        "Taste: 0 (Menge)",
+        "Klick: Handel anbieten"
+      ],
+      "einrichtung": [],
+      "beleg": "✓ befohlen: Handel anbieten ✓ befohlen: Handel anbieten",
+      "konsolenFehler": [],
+      "versuche": 1,
+      "titel": "Mexiko 100 Nahrung gegen 50 Material anbieten"
+    },
+    {
+      "rueckmeldungMs": [
+        null
+      ],
+      "aufgabe": "handel-anbieten",
+      "bedienung": "tastatur",
+      "erreicht": true,
+      "klicks": 0,
+      "tasten": 16,
+      "davonTab": 8,
+      "bildlaeufe": 0,
+      "fehlwege": 0,
+      "fehlwegeListe": [],
+      "minimum": {
+        "absichten": 7,
+        "hinweis": "D, Mexiko, Feld, 100, Feld, 50, Handel anbieten"
+      },
+      "zeitMs": 3256,
+      "zeitHinweis": "Nebenwert, nicht lastfest",
+      "rueckmeldung": [
+        "✓ befohlen: Handel anbieten"
+      ],
+      "schritte": [
+        "Taste: d (Diplomatie)",
+        "Taste: Tab",
+        "Taste: Tab",
+        "Fokus: Mexiko nach 2 Tab",
+        "Taste: Enter (Mexiko)",
+        "Taste: Tab",
+        "Taste: Tab",
+        "Taste: Tab",
+        "Fokus: Feld Nahrung geben nach 3 Tab",
+        "Taste: 1 (Menge)",
+        "Taste: 0 (Menge)",
+        "Taste: 0 (Menge)",
+        "Taste: Tab",
+        "Taste: Tab",
+        "Taste: Tab",
+        "Fokus: Feld Material verlangen nach 3 Tab",
+        "Taste: 5 (Menge)",
+        "Taste: 0 (Menge)",
+        "Taste: Enter (Handel anbieten (im Mengenfeld))"
+      ],
+      "einrichtung": [],
+      "beleg": "✓ befohlen: Handel anbieten ✓ befohlen: Handel anbieten",
+      "konsolenFehler": [],
+      "versuche": 1,
+      "titel": "Mexiko 100 Nahrung gegen 50 Material anbieten"
+    },
+    {
+      "rueckmeldungMs": [
+        null
+      ],
+      "aufgabe": "spion-anwerben",
+      "bedienung": "maus",
+      "erreicht": true,
+      "klicks": 4,
+      "tasten": 0,
+      "davonTab": 0,
+      "bildlaeufe": 0,
+      "fehlwege": 1,
+      "fehlwegeListe": [
+        {
+          "wo": "Spionage (Übersicht)",
+          "was": "Übersicht ist leer; sie sagt \"Anwerben können Sie in der Provinzleiste\""
+        }
+      ],
+      "minimum": {
+        "klicks": 3,
+        "tasten": 0,
+        "hinweis": "Liste (2), Aufklärung -- ohne den Umweg über die Spionageübersicht"
+      },
+      "zeitMs": 1110,
+      "zeitHinweis": "Nebenwert, nicht lastfest",
+      "rueckmeldung": [
+        "✓ befohlen: Aufklärung"
+      ],
+      "schritte": [
+        "Klick: Spionage (Übersicht)",
+        "Liste (2 Klicks): Provinz = Nordostmexiko",
+        "Klick: Aufklärung anwerben"
+      ],
+      "einrichtung": [],
+      "beleg": "✓ befohlen: Aufklärung ✓ befohlen: Aufklärung",
+      "konsolenFehler": [],
+      "versuche": 1,
+      "titel": "Spion für Aufklärung in Nordostmexiko anwerben"
+    },
+    {
+      "rueckmeldungMs": [
+        null
+      ],
+      "aufgabe": "spion-anwerben",
+      "bedienung": "tastatur",
+      "erreicht": true,
+      "klicks": 0,
+      "tasten": 11,
+      "davonTab": 0,
+      "bildlaeufe": 0,
+      "fehlwege": 0,
+      "fehlwegeListe": [],
+      "minimum": {
+        "absichten": 4,
+        "hinweis": "Liste, tippen, Aufklärung"
+      },
+      "zeitMs": 2103,
+      "zeitHinweis": "Nebenwert, nicht lastfest",
+      "rueckmeldung": [
+        "✓ befohlen: Aufklärung"
+      ],
+      "schritte": [
+        "Taste: p (Provinzliste)",
+        "Taste: n (Provinz tippen)",
+        "Taste: o (Provinz tippen)",
+        "Taste: r (Provinz tippen)",
+        "Taste: d (Provinz tippen)",
+        "Taste: o (Provinz tippen)",
+        "Taste: s (Provinz tippen)",
+        "Taste: t (Provinz tippen)",
+        "Taste: m (Provinz tippen)",
+        "Taste: Enter (Wahl bestaetigen (Fokus zu den Handlungen der Provinz))",
+        "Fokus: Aufklärung anwerben schon beim Oeffnen",
+        "Taste: Enter (Aufklärung anwerben)"
+      ],
+      "einrichtung": [],
+      "beleg": "✓ befohlen: Aufklärung ✓ befohlen: Aufklärung",
+      "konsolenFehler": [],
+      "versuche": 1,
+      "titel": "Spion für Aufklärung in Nordostmexiko anwerben"
+    }
+  ]
+}

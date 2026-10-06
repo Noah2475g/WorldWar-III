@@ -1,0 +1,31 @@
+{
+ "info": "Touch quer Basis (K17, Info): Treffer-Ueberlapp der 44-px-Flaechen, 1280x800, data-input=touch, Logik touch-r2.mjs",
+ "viewport": "1280x800",
+ "scenes": {
+  "ohnePanel": {
+   "ziele": 51,
+   "min": 44,
+   "trefferUeberlapp": 1,
+   "beispiele": [
+    "Übersichtskarte x Was ist Besitz?: 66x12"
+   ]
+  },
+  "panel": {
+   "ziele": 90,
+   "min": 44,
+   "trefferUeberlapp": 32,
+   "beispiele": [
+    "Übersichtskarte x Was ist Besitz?: 66x12",
+    "Kaserne bauen x Was ist Kaserne?: 10x44",
+    "Festung bauen x Was ist Festung?: 10x44",
+    "Was ist Festung? x Was ist Werft?: 66x8",
+    "Fabrik bauen x Was ist Fabrik?: 10x44",
+    "Was ist Fabrik? x Was ist Flugplatz?: 66x8",
+    "Hafen bauen x Was ist Hafen?: 10x44",
+    "Werft bauen x Was ist Werft?: 10x44",
+    "Was ist Werft? x Depesche: 15x36",
+    "Flugplatz bauen x Was ist Flugplatz?: 10x44"
+   ]
+  }
+ }
+}
