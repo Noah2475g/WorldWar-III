@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs'
 import {
+  buildingCostForLevel,
   canApply,
   planRoute,
   createInitialState,
@@ -46,7 +47,7 @@ import {
   type TradeDraft,
 } from './actions.ts'
 import { hasKey, t } from '../i18n/text.ts'
-import { amount } from '../ui/format.ts'
+import { amount, missing } from '../ui/format.ts'
 import { UNIT_ART } from '../ui/art.tsx'
 import { SPY_MISSION_ICONS, UNIT_ICONS } from '../ui/icons.tsx'
 import { describeRejection, SPY_REASON_KEYS } from './rejections.ts'
@@ -1709,5 +1710,36 @@ describe('Liefervertrag B3 (D8, P2)', () => {
     const cancel = rows[0]!.actions[0]!
     expect(cancel.label).toBe(t('trade.contract.cancel'))
     expect(cancel.command).toEqual({ type: 'CANCEL_CONTRACT', playerId: 'p1', contractId: 'c1' })
+  })
+})
+
+describe('T-M34-04 Fehlbetrag beim Ausbau nennt den Preis der naechsten Stufe', () => {
+  function mitFabrik(stufe: number) {
+    const { ctx, capital } = fresh()
+    const rule = rules.buildings.factory!
+    ctx.state.tick = (rule.availableFromDay + 1) * rules.constants.ticksPerDay
+    const province = ctx.state.provinces[capital]!
+    province.buildings.factory = stufe
+    province.buildQueue = []
+    const player = ctx.state.players.p1!
+    for (const key of Object.keys(player.resources)) player.resources[key as 'money'] = 0
+    for (const [key, value] of Object.entries(rule.cost)) player.resources[key as 'money'] = value ?? 0
+    return { ctx, capital, rule, player }
+  }
+
+  it('Fehlbetrag beim Ausbau nutzt den Preis der naechsten Stufe (T-M34-04)', () => {
+    const { ctx, capital, rule, player } = mitFabrik(1)
+    const action = buildActions(ctx, capital).find((a) => a.id === 'build-factory')!
+    const short = missing(buildingCostForLevel(rule, 2, rules.constants), player.resources as Partial<Record<string, number>>)
+    expect(short, 'Stufe 2 kostet mehr als der Grundpreis — sonst belegt der Test nichts').not.toBe('')
+    expect(action.disabledReason).toContain(short)
+  })
+
+  it('Stufe 0: der Fehlbetrag bleibt der Grundpreis-Fall', () => {
+    const { ctx, capital, rule, player } = mitFabrik(0)
+    player.resources.money = 0
+    const action = buildActions(ctx, capital).find((a) => a.id === 'build-factory')!
+    const short = missing(buildingCostForLevel(rule, 1, rules.constants), player.resources as Partial<Record<string, number>>)
+    expect(action.disabledReason).toContain(short)
   })
 })

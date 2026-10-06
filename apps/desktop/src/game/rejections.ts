@@ -1,4 +1,4 @@
-import { RECRUIT_MIN_MORALE, type Command, type CommandError, type GameState, type ResourceKey, type Rules } from '@worldwar/core'
+import { RECRUIT_MIN_MORALE, buildingCostForLevel, type Command, type CommandError, type GameState, type ResourceKey, type Rules } from '@worldwar/core'
 import { t } from '../i18n/text.ts'
 import { amount, missing, unfix } from '../ui/format.ts'
 
@@ -26,11 +26,20 @@ export interface Rejection {
 }
 
 /** The resources an order would consume, so the shortfall can be named. */
-function costOf(command: Command | null, rules: Rules): Partial<Record<string, number>> {
+function costOf(
+  command: Command | null,
+  rules: Rules,
+  detail: Record<string, string | number> | undefined,
+): Partial<Record<string, number>> {
   if (!command) return {}
   switch (command.type) {
-    case 'BUILD':
-      return rules.buildings[command.building]?.cost ?? {}
+    case 'BUILD': {
+      const rule = rules.buildings[command.building]
+      if (!rule) return {}
+      // Der Kern lehnt mit dem Preis der naechsten Stufe ab (detail.level), nicht mit dem Grundpreis.
+      const level = typeof detail?.level === 'number' ? detail.level : 1
+      return buildingCostForLevel(rule, level, rules.constants)
+    }
     case 'RECRUIT': {
       const unit = rules.units[command.unitKey]
       if (!unit) return {}
@@ -221,7 +230,7 @@ export function describeRejection(rejection: Rejection, command: Command | null,
     case 'INSUFFICIENT_RESOURCES': {
       const player = ctx.state.players[ctx.playerId]
       const available = (player?.resources ?? {}) as Partial<Record<string, number>>
-      const short = missing(costOf(command, ctx.rules), available)
+      const short = missing(costOf(command, ctx.rules, rejection.detail), available)
       values.missing = short || (typeof detail.resource === 'string' ? t(`resources.${detail.resource}`) : t('resources.money'))
       break
     }
