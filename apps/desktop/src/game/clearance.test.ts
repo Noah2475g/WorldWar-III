@@ -439,7 +439,8 @@ describe('R-DIP-10/AK5 clearanceNotices spiegelt die Kernbedingung aus der Sicht
       expect(verstoesse).toBe(0)
       // leerer Beweis waere kein Beweis — Startzahlen neu waehlen, wenn das reisst.
       expect(gemeldet).toBeGreaterThanOrEqual(1)
+      // Zeitlimit wegen Last, nicht Verhalten: allein 3638 ms, unter verify+Last max 80071 ms (gemessen 2026-10-05, t_3cad0a35).
     },
-    30_000,
+    60_000,
   )
 })

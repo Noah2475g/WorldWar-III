@@ -254,7 +254,8 @@ describe('R-AI-03 Die KI spielt eine Partie', () => {
 
     expect(seen.has('BUILD_STARTED')).toBe(true)
     expect(current.tick).toBe(200)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 70 ms, unter verify+Last max 2719 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('verschuldet sich nicht', () => {
     let current = state
@@ -267,7 +268,8 @@ describe('R-AI-03 Die KI spielt eine Partie', () => {
     for (const key of Object.keys(current.players['p2']!.resources)) {
       expect(current.players['p2']!.resources[key as 'food']).toBeGreaterThanOrEqual(0)
     }
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 71 ms, unter verify+Last max 2567 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 })
 
 describe('R-AI-01 Die KI fuehrt mehr als zwei Einheitenarten', () => {

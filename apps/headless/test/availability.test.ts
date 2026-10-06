@@ -47,5 +47,6 @@ describe('R-TECH-02/AK2 Die KI erzeugt keine Befehle, die der Tag verbietet', ()
     ).toBe(true)
 
     expect(zuFrueh.length, `Ablehnungen wegen des Spieltags: ${zuFrueh.length}`).toBe(0)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 597 ms, unter verify+Last max 30374 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 })

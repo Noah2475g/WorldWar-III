@@ -119,7 +119,8 @@ describe('T-M41-13 Tempo waehrend des Vorspulens', () => {
 
     const pause = within(screen.getByRole('group', { name: 'Geschwindigkeit' })).getByRole('button', { name: 'Pause' })
     expect(pause.hasAttribute('disabled')).toBe(false)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 391 ms, unter verify+Last max 10070 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 
   it('laesst die Stufen ohne Vorspulen frei', () => {
     renderHeader(view(100, [100], 900), { speed: 0, fastForwarding: false })
@@ -128,7 +129,8 @@ describe('T-M41-13 Tempo waehrend des Vorspulens', () => {
       expect(stufe.hasAttribute('disabled'), `Stufe ${stufe.textContent}`).toBe(false)
       expect(stufe.getAttribute('title')).toBe(`${stufe.textContent} Stunden je Sekunde`)
     }
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 65 ms, unter verify+Last max 4296 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 })
 
 describe('R-UI-13 Der Weg zum Sieg', () => {
@@ -169,7 +171,8 @@ describe('R-TIME-02 Eine stehende Uhr sagt es', () => {
 
     expect(screen.getByRole('status')).toBeTruthy()
     expect(screen.getByText('Pausiert')).toBeTruthy()
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 138 ms, unter verify+Last max 3316 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('schweigt, solange die Uhr laeuft oder bewusst pausiert ist', () => {
     renderHeader(view(300, [400], 900), { stalled: false, speed: 10 })
@@ -644,7 +647,8 @@ describe('T-M36-06 Der Ton der knappen Zelle kommt auch wirklich an', () => {
       expect(window.getComputedStyle(reach).color).toBe('var(--warn)')
       expect(window.getComputedStyle(pfeil).color).toBe('var(--warn)')
     })
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 248 ms, unter verify+Last max 4039 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('laesst die ruhigen Zellen im Nebentext', () => {
     mitStylesheet((container) => {
@@ -652,7 +656,8 @@ describe('T-M36-06 Der Ton der knappen Zelle kommt auch wirklich an', () => {
 
       expect(window.getComputedStyle(pfeil).color).toBe('var(--ink-soft)')
     })
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 123 ms, unter verify+Last max 2593 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 })
 
 /**

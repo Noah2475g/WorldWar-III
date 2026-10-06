@@ -1,0 +1,39 @@
+{
+  "erzeugt": "2026-10-06T10:30:01.752Z",
+  "skript": "scripts/ux-bauvorschau-bild.mjs",
+  "stand": "S575G (Rohstoffe des Menschen vor dem Laden auf 0, A12-Rueckfall)",
+  "grenze": 0.5,
+  "hinweis": "Textanteil der gefuellten Vorschauzeile (.cost-preview). Ausbau Stufe >= 2: nur dokumentiert, bekannte Grenze bis 0,61 (Spec §5).",
+  "provinzOptionIndex": 1,
+  "ausbauStufeAb2": {
+    "slotKlassen": "slot slot--built slot--short",
+    "gesperrterKnopf": true,
+    "costChipShort": true,
+    "chars": 14,
+    "symbols": 3,
+    "textArea": 1092,
+    "symbolArea": 1164,
+    "textShare": 0.484,
+    "zeile": "599−599450−450",
+    "hoehe": 22
+  },
+  "desktop1280x800": {
+    "slotKlassen": "slot slot--free slot--short",
+    "gesperrterKnopf": true,
+    "costChipShort": true,
+    "chars": 21,
+    "symbols": 4,
+    "textArea": 1638,
+    "symbolArea": 1648,
+    "textShare": 0.498,
+    "zeile": "500−500250−250583−583",
+    "hoehe": 22
+  },
+  "a11CostChipShortGefunden": true,
+  "telefonProvinzOptionIndex": 1,
+  "telefon375x667": {
+    "costPreviewImDom": false,
+    "slotShort": 5
+  },
+  "urteil": "Stufe-1-Fall <= 0,5"
+}

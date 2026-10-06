@@ -629,7 +629,8 @@ describe('T-M46-03 Aufgefaecherte Stapel', () => {
         expect(dx >= ARMY_BOX.width || dy >= ARMY_BOX.height, `Stapel ${i} und ${j} ueberdecken sich`).toBe(true)
       }
     }
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 184 ms, unter verify+Last max 3302 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('fanOut ist rein: es veraendert die Eingabe nicht und kennt die leere Liste', () => {
     expect(fanOut([])).toEqual([])

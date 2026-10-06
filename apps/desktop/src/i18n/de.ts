@@ -336,6 +336,7 @@ export const de = {
 
   actions: {
     build: 'Bauen',
+    costShort: '−{{amount}}',
     // Hoerbare Namen mit Verb (T-M22-06, Befund V2-13): sichtbar bleibt die kurze
     // Beschriftung, ein Vorleseprogramm hoert die Handlung.
     buildAria: '{{thing}} bauen',
@@ -797,12 +798,14 @@ export const de = {
     nation: 'Macht',
     seed: 'Startzahl',
     seedHint: 'Dieselbe Startzahl ergibt dieselbe Partie.',
-    // Kurzhilfe je Feld (T-M44-15, R-UX-05/AK4). Die Zahlen stammen aus data/rules/default/ai.json
-    // (planningDepth und maxFronts: leicht 1/1, normal 2/2, schwer 3/3).
+    // Kurzhilfe je Feld (T-M44-15, R-UX-05/AK4). Die Zahlen stammen aus data/rules/default/ai.json:
+    // maxFronts 1/2/3, recruitShare 80/200/280 Promille (= 8/20/28 %), warThreshold 300/450/600
+    // (hoeher = eher Krieg). planningDepth steht dort auch, wird von der KI aber nicht gelesen —
+    // deshalb nennt kein Satz es (Fix t_54e1bf8e). Der Wächter steht in text.test.ts.
     opponentsHint: 'So viele Mächte führt der Rechner gegen Sie (höchstens {{max}}).',
-    easyHint: 'Der Rechner plant einen Schritt voraus und führt höchstens eine Front.',
-    normalHint: 'Der Rechner plant zwei Schritte voraus und führt bis zu zwei Fronten.',
-    hardHint: 'Der Rechner plant drei Schritte voraus und führt bis zu drei Fronten.',
+    easyHint: 'Der Rechner führt höchstens eine Front, steckt je Aushebung bis zu 8 % seiner Vorräte in Truppen und lässt sich am schwersten zum Krieg reizen.',
+    normalHint: 'Der Rechner führt bis zu zwei Fronten, steckt je Aushebung bis zu 20 % seiner Vorräte in Truppen und lässt sich leichter zum Krieg reizen.',
+    hardHint: 'Der Rechner führt bis zu drei Fronten, steckt je Aushebung bis zu 28 % seiner Vorräte in Truppen und lässt sich am leichtesten zum Krieg reizen.',
     difficulty: 'Schwierigkeit',
     easy: 'leicht',
     normal: 'normal',

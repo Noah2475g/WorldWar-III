@@ -99,7 +99,8 @@ describe('ActionButton im Mausbetrieb: unveraendert', () => {
 
     expect(container.querySelector('.action__hint')).toBeNull()
     expect(screen.getByRole('button', { name: 'Fabrik' }).getAttribute('title')).toBe('400 Eisen · 3 Tage')
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 426 ms, unter verify+Last max 10462 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 })
 
 describe('ActionButton im Touch-Betrieb: der Hinweis steht sichtbar da', () => {
@@ -176,7 +177,8 @@ describe('ActionButton im Touch-Betrieb: der Hinweis steht sichtbar da', () => {
     } finally {
       for (const style of styles) style.remove()
     }
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 522 ms, unter verify+Last max 12779 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 })
 
 /**
@@ -195,5 +197,19 @@ describe('R-UX-06/AK3 Mindestmass der Ziele', () => {
     const touch = css('touch.css')
     const rules = [...touch.matchAll(/:root\[data-input='touch'\] \.explain__toggle \{([^}]*)\}/g)].map((m) => m[1]!)
     expect(rules.some((body) => /width: 44px;/.test(body) && /height: 44px;/.test(body))).toBe(true)
+  })
+})
+
+describe('ActionButton im Touch-Betrieb: Bauvorschau B2', () => {
+  it('zeigt keine Vorschauzeile; der Sperrgrund "fehlt" ist rot markiert', () => {
+    touch()
+    const fehlt = act({
+      disabledReason: 'Es fehlen 400 Eisen.',
+      blockCode: 'INSUFFICIENT_RESOURCES',
+      costLines: [{ resource: 'iron', need: 800_000, short: 400_000 }],
+    })
+    const { container } = render(<Bauplaetze actions={[fehlt]} />)
+    expect(container.querySelector('.cost-preview')).toBeNull()
+    expect(container.querySelector('.action__hint-reason--short')!.textContent).toBe('Es fehlen 400 Eisen.')
   })
 })

@@ -175,7 +175,8 @@ describe('R-UI-10 Vorkommen und Gebaeude als Symbolzeile', () => {
     expect(screen.getByRole('img', { name: '5 Nahrung' })).toBeTruthy()
     expect(screen.getByRole('img', { name: 'Kaserne' })).toBeTruthy()
     expect(screen.getByRole('img', { name: '2 Fabrik' })).toBeTruthy()
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 410 ms, unter verify+Last max 10840 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 })
 
 describe('R-UI-10 Befehlsknoepfe tragen ihr Symbol', () => {
@@ -836,7 +837,8 @@ describe('R-UX-03/AK1 Sperrgründe der Verträge gebündelt, Leerzustände als F
       expect(document.getElementById(id!)?.textContent).toBe(action.disabledReason)
     }
     expect(screen.getByRole('button', { name: 'Krieg erklären' }).hasAttribute('aria-describedby')).toBe(false)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 114 ms, unter verify+Last max 2794 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('die Leerzustände sind Fließtext und keine Überschrift', () => {
     const { container } = render(<DiplomacyPanel view={view} nameOf={() => 'Ostmark'} />)
@@ -1124,7 +1126,8 @@ describe('R-DIP-07 Das Diplomatiepanel (T-M17-14)', () => {
 
     fireEvent.click(ostmark)
     expect(onChoose).toHaveBeenCalledWith('p2')
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 75 ms, unter verify+Last max 3850 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('das Angebotsformular rechnet in ganzen Einheiten und fragt evaluate', () => {
     const action: Action = { id: 'trade-offer', label: 'Handel anbieten', disabledReason: null, onRun: vi.fn() }
@@ -1362,7 +1365,8 @@ describe('T-M22-02 Die Seitenleiste kriecht nicht seitwaerts', () => {
     } finally {
       style.remove()
     }
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 255 ms, unter verify+Last max 5125 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 })
 
 /** Eine Zeile der Spionageuebersicht, fuer die Panel-Tests von Hand gebaut (T-M17-13). */
@@ -2845,5 +2849,65 @@ describe('Liefervertrag B3 (D8)', () => {
 
   it('CONTRACT_CLOSED gehoert zur Kategorie diplomacy', () => {
     expect(categoryOf('CONTRACT_CLOSED')).toBe('diplomacy')
+  })
+})
+
+describe('Bauvorschau B2: Zustandsmarken und Vorschauzeile (K4)', () => {
+  const bau = (key: string, over: Partial<Action> = {}): Action => ({
+    id: `build-${key}`,
+    label: key,
+    disabledReason: null,
+    onRun: () => undefined,
+    costLines: [{ resource: 'iron', need: 800_000, short: 400_000 }],
+    ...over,
+  })
+  const actions = [
+    bau('factory', { disabledReason: 'fehlt', blockCode: 'INSUFFICIENT_RESOURCES' }),
+    bau('harbour', { disabledReason: 'gesperrt', blockCode: 'NOT_YET_AVAILABLE' }),
+    bau('shipyard', { disabledReason: 'voll', blockCode: 'QUEUE_FULL' }),
+    bau('airfield'),
+    bau('railway', { disabledReason: 'max', blockCode: 'BUILDING_MAX_LEVEL' }),
+  ]
+  const panel = (extra: Partial<VisibleProvince> = {}) => (
+    <ProvincePanel
+      province={{ ...province, buildings: { barracks: 1 }, buildQueue: [], ...extra }}
+      ownerName="Vereinigte Staaten"
+      actions={[]}
+      groups={[{ id: 'build', title: 'Bauen', actions }]}
+      ticksPerDay={24}
+      currentTick={0}
+    />
+  )
+
+  it('setzt die Klasse je Zustand, keine bei ok/none', () => {
+    const { container } = render(panel())
+    const slots = [...container.querySelectorAll('.slot')]
+    const cls = (id: string) => slots.find((s) => s.querySelector(`[data-action-id="build-${id}"]`))!.className
+    expect(cls('factory')).toContain('slot--short')
+    expect(cls('harbour')).toContain('slot--locked')
+    expect(cls('shipyard')).toContain('slot--queue')
+    expect(cls('airfield')).not.toMatch(/slot--(short|locked|queue)/)
+    expect(cls('railway')).not.toMatch(/slot--(short|locked|queue)/)
+    expect(container.querySelectorAll('.slot__mark')).toHaveLength(2)
+  })
+
+  it('pointerOver auf einen Platz fuellt die Zeile, pointerLeave leert sie', () => {
+    const { container } = render(panel())
+    expect(container.querySelector('.cost-preview .cost-chip')).toBeNull()
+    fireEvent.pointerOver(container.querySelector('[data-action-id="build-factory"] button')!)
+    expect(container.querySelector('.cost-preview .cost-chip--short')!.textContent).toContain('\u2212400')
+    fireEvent.pointerLeave(container.querySelector('.preview-area')!)
+    expect(container.querySelector('.cost-preview .cost-chip')).toBeNull()
+  })
+
+  it('pointerOver auf Rand/Ecke des Feldes: frei fuellt die Zeile, im Bau leert sie ohne Marke', () => {
+    const { container } = render(panel({ buildQueue: [{ id: 'q1', building: 'airfield', startedTick: 0, completesAtTick: 10 }] }))
+    const free = [...container.querySelectorAll('.slot')].find((s) => s.querySelector('[data-action-id="build-factory"]'))!
+    fireEvent.pointerOver(free)
+    expect(container.querySelector('.cost-preview .cost-chip')).not.toBeNull()
+    const queued = container.querySelector('.slot--queued')!
+    fireEvent.pointerOver(queued)
+    expect(container.querySelector('.cost-preview .cost-chip')).toBeNull()
+    expect(queued.querySelector('.slot__mark')).toBeNull()
   })
 })

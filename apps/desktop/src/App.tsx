@@ -1420,6 +1420,7 @@ export function App(props: AppProps) {
       ...(spec.art ? { art: spec.art } : {}),
       ...(spec.explainKey ? { explainKey: spec.explainKey } : {}),
       ...(spec.hint ? { hint: spec.hint } : {}),
+      ...(spec.costLines ? { costLines: spec.costLines } : {}), ...(spec.blockCode ? { blockCode: spec.blockCode } : {}),
       // Die Quittung am ausloesenden Knopf (T-M22-05, D24.5): abgeschickt, noch nicht
       // angewendet — bei stehender Uhr mit dem Hinweis, wann es so weit sein wird.
       ...(pendingIds.has(spec.id)

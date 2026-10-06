@@ -37,7 +37,8 @@ describe('R-UX-04/AK1 Der Bestätigungsknopf fragt mit einem zweiten Klick nach'
 
     expect(onConfirm).not.toHaveBeenCalled()
     expect(knopf().textContent).toBe(FOLGE)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 337 ms, unter verify+Last max 8308 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 30_000)
 
   it('sagt die Folge über aria-live an, in einer Region, die schon vor dem Klick da ist', () => {
     // Eine Live-Region, die erst mit ihrem Text entsteht, wird von Vorleseprogrammen

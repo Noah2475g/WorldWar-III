@@ -15,6 +15,7 @@ import { placeArmy, TEST_RULES } from '@worldwar/testkit'
 import { t } from './i18n/text.ts'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from './App.tsx'
+import { ACK_MIN_MS, ACK_SLACK_MS } from './game/ack.ts'
 import { defaultViewer } from './state/uiState.ts'
 import type * as FastForwardModule from './game/fastForward.ts'
 import type * as AdvanceModule from './game/advance.ts'
@@ -158,7 +159,8 @@ describe('R-UI-03 Die Partie startet', () => {
 
     expect(screen.getByRole('dialog', { name: 'Neue Partie' })).toBeTruthy()
     expect(screen.getByText('Die Welt wird aufgebaut …')).toBeTruthy()
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 551 ms, unter verify+Last max 12782 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 
   it('weist den KI-Bonus offen aus', () => {
     // R-AI-02: a player who loses should be able to see whether they were outplayed
@@ -166,7 +168,8 @@ describe('R-UI-03 Die Partie startet', () => {
     render(<App map={world} rules={TEST_RULES} maps={maps} />)
 
     expect(screen.getByText(/ohne Bonus/)).toBeTruthy()
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 130 ms, unter verify+Last max 2855 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('zeigt nach dem Start Kopfleiste, Karte und Ereignisleiste', () => {
     startGame()
@@ -174,7 +177,8 @@ describe('R-UI-03 Die Partie startet', () => {
     expect(screen.getByRole('group', { name: 'Geschwindigkeit' })).toBeTruthy()
     expect(screen.getByRole('application', { name: 'Weltkarte' })).toBeTruthy()
     expect(screen.getByRole('region', { name: 'Ereignisse' })).toBeTruthy()
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 403 ms, unter verify+Last max 12527 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 
   it('zeigt echte Rohstoffzahlen statt Platzhalter', () => {
     startGame()
@@ -184,13 +188,15 @@ describe('R-UI-03 Die Partie startet', () => {
     // The starting stock from the rules, formatted — not a dash and not raw fixed-point.
     expect(within(resources).queryByText('—')).toBeNull()
     expect(resources.textContent).toMatch(/\d\.\d{3}/)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 477 ms, unter verify+Last max 8220 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 30_000)
 
   it('nennt Tag und Uhrzeit', () => {
     startGame()
 
     expect(screen.getByText(/Tag 1 · 00:00/)).toBeTruthy()
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 303 ms, unter verify+Last max 6186 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 })
 
 describe('R-UX-01 T-M44-03b Das Blatt oeffnet auf halb', () => {
@@ -208,7 +214,8 @@ describe('R-UX-01 T-M44-03b Das Blatt oeffnet auf halb', () => {
 
     fireEvent.keyDown(screen.getByRole('button', { name: new RegExp(t('sheet.handle')) }), { key: 'Escape' })
     expect(app.getAttribute('data-panel')).toBe('closed')
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 895 ms, unter verify+Last max 18142 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 })
 
 describe('R-UI-06 Bedienung ohne Maus', () => {
@@ -229,7 +236,8 @@ describe('R-UI-06 Bedienung ohne Maus', () => {
 
     fireEvent.keyDown(window, { key: ' ' })
     expect(pressed()).toBe('Pause')
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 365 ms, unter verify+Last max 6001 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('wechselt den Kartenmodus mit M', () => {
     startGame()
@@ -243,7 +251,8 @@ describe('R-UI-06 Bedienung ohne Maus', () => {
     expect(pressed()).toEqual(['Besitz'])
     fireEvent.keyDown(window, { key: 'm' })
     expect(pressed()).toEqual(['Rohstoffe'])
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 256 ms, unter verify+Last max 6264 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('oeffnet die Tastaturuebersicht mit F1 und schliesst sie mit Escape', () => {
     startGame()
@@ -253,7 +262,8 @@ describe('R-UI-06 Bedienung ohne Maus', () => {
 
     fireEvent.keyDown(window, { key: 'Escape' })
     expect(screen.queryByRole('dialog', { name: 'Tastenkürzel' })).toBeNull()
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 259 ms, unter verify+Last max 4919 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('oeffnet die Spielstaende mit Strg+S', () => {
     startGame()
@@ -261,7 +271,8 @@ describe('R-UI-06 Bedienung ohne Maus', () => {
     fireEvent.keyDown(window, { key: 's', ctrlKey: true })
 
     expect(screen.getByRole('dialog', { name: 'Spielstände' })).toBeTruthy()
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 217 ms, unter verify+Last max 5140 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 })
 
 describe('R-UI-05 Einstellungen wirken', () => {
@@ -278,7 +289,8 @@ describe('R-UI-05 Einstellungen wirken', () => {
     // A setting that changes nothing visible is worse than no setting at all.
     const app = document.querySelector('.app') as HTMLElement
     expect(app.style.fontSize).toBe('125%')
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 499 ms, unter verify+Last max 10859 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 
   it('blendet die Debug-Ansicht erst auf Wunsch ein', () => {
     startGame()
@@ -290,7 +302,8 @@ describe('R-UI-05 Einstellungen wirken', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Schließen' }))
 
     expect(screen.getByRole('region', { name: 'Debug' })).toBeTruthy()
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 662 ms, unter verify+Last max 5772 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 })
 
 describe('R-GAME-03 Speichern und Laden aus der Oberflaeche', () => {
@@ -303,7 +316,8 @@ describe('R-GAME-03 Speichern und Laden aus der Oberflaeche', () => {
     fireEvent.click(buttons[0]!)
 
     expect(await screen.findByText('Gespeichert.')).toBeTruthy()
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 529 ms, unter verify+Last max 7422 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 30_000)
 
   it('nennt den Eigentuemer bei seinem Namen, nicht bei seiner Kennung', async () => {
     // "p1" is an internal id. A player knows nations.
@@ -312,7 +326,8 @@ describe('R-GAME-03 Speichern und Laden aus der Oberflaeche', () => {
     fireEvent.click(map, { clientX: 100, clientY: 100 })
 
     expect(screen.queryByText('p1')).toBeNull()
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 342 ms, unter verify+Last max 4907 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 })
 
 describe('R-TIME-04 Datum und Uhrzeit sind jederzeit sichtbar', () => {
@@ -321,7 +336,8 @@ describe('R-TIME-04 Datum und Uhrzeit sind jederzeit sichtbar', () => {
   it('steht von der ersten Sekunde an in der Kopfleiste', () => {
     startGame()
     expect(clock()).toBeTruthy()
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 242 ms, unter verify+Last max 2560 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('bleibt sichtbar, waehrend ein Dialog offen ist', () => {
     // "Jederzeit" heisst auch: waehrend der Spieler etwas anderes tut. Eine Uhr, die
@@ -342,7 +358,8 @@ describe('R-TIME-04 Datum und Uhrzeit sind jederzeit sichtbar', () => {
 
     expect(screen.queryByText(/Tag 1 · 00:00/)).toBeNull()
     expect(screen.getByText(/Tag 2 · 00:00/)).toBeTruthy()
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 669 ms, unter verify+Last max 7018 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 30_000)
 })
 
 describe('R-ECON-06 Die Wirtschaft steht vollstaendig auf dem Bildschirm', () => {
@@ -368,7 +385,8 @@ describe('R-ECON-06 Die Wirtschaft steht vollstaendig auf dem Bildschirm', () =>
       expect(within(panel).getByLabelText(resource), `Zeile ${resource} fehlt`).toBeTruthy()
     }
     localStorage.removeItem('worldwar.economyOpen')
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 292 ms, unter verify+Last max 3903 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('nennt in der Kopfleiste die Richtung, nicht nur den Bestand (T-M36-02)', () => {
     startGame()
@@ -385,7 +403,8 @@ describe('R-ECON-06 Die Wirtschaft steht vollstaendig auf dem Bildschirm', () =>
     // Der Name eines Zeichens steht im <title> des SVG und wird nicht gezeichnet (T-M46-17).
     for (const versteckt of sichtbar.querySelectorAll('.visually-hidden, svg title')) versteckt.remove()
     expect(sichtbar.textContent).not.toMatch(/[+−]\d/)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 250 ms, unter verify+Last max 3046 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 })
 
 /**
@@ -449,7 +468,8 @@ describe('R-TIME-06 Das Protokoll spricht in ganzen Zeilen', () => {
     } finally {
       style.remove()
     }
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 1372 ms, unter verify+Last max 29912 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 })
 
 /**
@@ -476,7 +496,8 @@ describe('R-TIME-06 Der Tagesbericht im Protokoll klappt auf', () => {
       fireEvent(bericht!, new Event('toggle'))
       expect(bericht!.textContent).toMatch(/Bilanz|Moral|Morgen neu|ruhiger Tag/)
     })
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 229 ms, unter verify+Last max 8850 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 30_000)
 })
 
 /**
@@ -504,7 +525,8 @@ describe('R-UI-13 Der Machtverlauf erreicht das Lage-Panel', () => {
       const kurve = document.querySelector('.chart path[data-series="p1"]')
       expect(kurve, 'keine eigene Kurve im Lage-Panel').toBeTruthy()
     })
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 1032 ms, unter verify+Last max 16707 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 
   it('sagt ohne zweiten Tag den ehrlichen Satz', () => {
     startGame()
@@ -512,7 +534,8 @@ describe('R-UI-13 Der Machtverlauf erreicht das Lage-Panel', () => {
     fireEvent.keyDown(window, { key: 'l' })
 
     expect(document.querySelector('.chart__empty'), 'kein Leerzustand im Lage-Panel').toBeTruthy()
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 298 ms, unter verify+Last max 2994 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 })
 
 describe('R-UI-07 / R-DIP-04 Das Protokoll spricht deutsch und verraet nichts', () => {
@@ -524,7 +547,8 @@ describe('R-UI-07 / R-DIP-04 Das Protokoll spricht deutsch und verraet nichts', 
 
     const log = screen.getByRole('region', { name: 'Ereignisse' })
     expect(log.textContent).not.toMatch(/\{\{|abgelehnt|barracks|\bp\d\b/)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 594 ms, unter verify+Last max 4531 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 })
 
 /**
@@ -600,7 +624,8 @@ describe('R-UI-05 Befehle aus der Oberflaeche', () => {
     // Und die Stoppmeldung zaehlt den Sprung nicht doppelt ("nach 2 Tagen" bei einem):
     // ticksRun += im doppelt gelaufenen Updater war derselbe Fehler von der anderen Seite.
     expect(screen.getByRole('status').textContent).not.toContain('2 Tag')
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 1201 ms, unter verify+Last max 11916 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 
   it('bietet in der eigenen Provinz jedes Gebaeude mit Preis und jede Einheit mit Grund', () => {
     startGame()
@@ -614,7 +639,8 @@ describe('R-UI-05 Befehle aus der Oberflaeche', () => {
     expect(within(recruit).getByRole('button', { name: 'Infanterie ausheben' }).hasAttribute('disabled')).toBe(true)
     // One shared reason above the group, not ten below the buttons.
     expect(recruit.textContent).toContain('Dafür fehlt das Gebäude: Kaserne.')
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 549 ms, unter verify+Last max 4457 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('baut, hebt aus, waehlt die Armee und marschiert mit angesagter Ankunft', () => {
     startGame()
@@ -654,7 +680,8 @@ describe('R-UI-05 Befehle aus der Oberflaeche', () => {
     // wie der Renderbenchmark (T-M10-03b) und die ESLint-Guards: gemessen wird dann die
     // Auslastung der Maschine, nicht das Verhalten des Codes. Ein zu knappes Limit macht
     // aus einer langsamen Maschine einen roten Test und aus einem roten Test Rauschen.
-  }, 20_000)
+    // Zeitlimit wegen Last, nicht Verhalten: allein 3929 ms, unter verify+Last max 43380 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 
   it('erklaert den Krieg aus der Diplomatie und nennt den Wirkungstag', () => {
     startGame()
@@ -669,7 +696,8 @@ describe('R-UI-05 Befehle aus der Oberflaeche', () => {
     // Mehrzahl (T-M23-02, V2-11).
     expect(log()).toMatch(/Vereinigte Staaten erklären .* den Krieg\. Wirksam ab Tag \d+/)
     expect(log()).not.toMatch(/\bp\d\b/)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 972 ms, unter verify+Last max 8795 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 30_000)
 
   it('nennt am Markt den Gegenwert vor dem Tausch und fuehrt ihn aus', () => {
     startGame()
@@ -681,7 +709,8 @@ describe('R-UI-05 Befehle aus der Oberflaeche', () => {
     // Der Befehl wirkt im naechsten Tick (T-M22-05).
     fastForward(1)
     expect(log()).toMatch(/gegen \d+ .* getauscht/)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 446 ms, unter verify+Last max 3944 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('bricht die Zielwahl mit Escape ab, ohne das Panel zu schliessen', () => {
     startGame()
@@ -698,7 +727,8 @@ describe('R-UI-05 Befehle aus der Oberflaeche', () => {
     fireEvent.keyDown(window, { key: 'Escape' })
     expect(screen.getByRole('region', { name: 'Armee' })).toBeTruthy()
     expect(screen.queryByRole('combobox', { name: 'Ziel' })).toBeNull()
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 1331 ms, unter verify+Last max 22229 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 })
 
 /**
@@ -753,7 +783,8 @@ describe('R-SPY-06 Spionage aus der Oberflaeche', () => {
     expect(uebersicht.textContent).toContain('Spion 1')
     expect(uebersicht.textContent).toContain('Aufklärung')
     expect(document.body.textContent ?? '').not.toMatch(/\bs\d+\b/)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 371 ms, unter verify+Last max 7390 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 30_000)
 
   it('setzt um und entlaesst (R-SPY-06)', () => {
     startGame()
@@ -782,7 +813,8 @@ describe('R-SPY-06 Spionage aus der Oberflaeche', () => {
     ).toContain(
       'Sie haben keine Spione. Anwerben können Sie in der Provinzleiste: in einer fremden Provinz Aufklärung und Sabotage, in einer eigenen die Gegenspionage.',
     )
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 629 ms, unter verify+Last max 16669 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 
   it('oeffnet mit s die Uebersicht und laesst Strg+S bei den Spielstaenden', () => {
     startGame()
@@ -807,7 +839,8 @@ describe('R-SPY-06 Spionage aus der Oberflaeche', () => {
 
     pickOwnedForeign()
     expect(within(screen.getByRole('region', { name: 'Spionage' })).getAllByRole('button', { name: /anwerben$/ })).toHaveLength(3)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 335 ms, unter verify+Last max 11064 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 })
 
 /**
@@ -844,21 +877,35 @@ describe('R-UI-05 Jeder Befehl quittiert sofort sichtbar', () => {
     const nachher = screen.getByRole('region', { name: 'Diplomatie' }).textContent ?? ''
     expect(nachher).toContain('befohlen — ausgeführt')
     expect(nachher).not.toContain('wirkt beim Weiterlaufen')
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 415 ms, unter verify+Last max 10095 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 
   it('T-M46-11: die Quittung verschwindet erst nach anderthalb Sekunden (vorher: mit dem Tick, bei Tempo 100 nach ~100 ms)', async () => {
     startGame({ storage: new MemoryStorage() })
     fireEvent.keyDown(window, { key: 'd' })
     const panel = screen.getByRole('region', { name: 'Diplomatie' })
     waehleErsteMacht(panel)
-    klickeKrieg(within(panel))
-    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
-    const text = () => screen.getByRole('region', { name: 'Diplomatie' }).textContent ?? ''
-    expect(text()).toContain('befohlen — ausgeführt')
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    expect(text()).toContain('befohlen — ausgeführt')
-    await waitFor(() => expect(text()).not.toContain('befohlen'), { timeout: 2500 })
-  }, 10_000)
+    // Deterministisch: falsche Uhr statt Wandzeit (vor dem Befehl, der Zeitgeber startet dort), sonst laeuft die
+    // 1,5-s-Quittung unter Last waehrend der Wartezeit ab.
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    try {
+      klickeKrieg(within(panel))
+      fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+      const text = () => screen.getByRole('region', { name: 'Diplomatie' }).textContent ?? ''
+      expect(text()).toContain('befohlen — ausgeführt')
+      act(() => {
+        vi.advanceTimersByTime(1000)
+      })
+      expect(text()).toContain('befohlen — ausgeführt')
+      act(() => {
+        vi.advanceTimersByTime(ACK_MIN_MS + ACK_SLACK_MS - 1000)
+      })
+      expect(text()).not.toContain('befohlen')
+    } finally {
+      vi.useRealTimers()
+    }
+    // Zeitlimit wegen Last, nicht Verhalten: allein 1966 ms, unter verify+Last max 19969 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 
   it('sperrt den Knopf, solange sein Befehl aussteht — ein Doppelklick ist kein Doppelbefehl', () => {
     startGame({ storage: new MemoryStorage() })
@@ -868,7 +915,8 @@ describe('R-UI-05 Jeder Befehl quittiert sofort sichtbar', () => {
     klickeKrieg(within(panel))
 
     expect(within(panel).getByRole('button', { name: 'Krieg erklären' }).hasAttribute('disabled')).toBe(true)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 389 ms, unter verify+Last max 7825 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 30_000)
 
   /**
    * Auch die Zielwahl quittiert sichtbar (T-M28-02, D26.2, Debugging 2026-09-08).
@@ -925,7 +973,8 @@ describe('R-UI-05 Jeder Befehl quittiert sofort sichtbar', () => {
     await waitFor(() => expect(within(screen.getByRole('region', { name: 'Armee' })).queryByRole('status')).toBeNull(), {
       timeout: 2500,
     })
-  }, 20_000)
+    // Zeitlimit wegen Last, nicht Verhalten: allein 3288 ms, unter verify+Last max 39914 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 })
 
 describe('R-TIME-02 Eine stehende Uhr nennt sich Pausiert', () => {
@@ -1020,7 +1069,8 @@ describe('T-M41-04/T-M41-17 Die Uhrschleife im Spiel verliert keine Ticks', () =
 
     // 100 Stunden nach Tag 1, 00:00 Uhr.
     expect(screen.getByText(/Tag \d+ · \d{2}:\d{2}/).textContent).toMatch(/Tag 5 · 04:00/)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 764 ms, unter verify+Last max 18856 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 
   it('laeuft bei Tempo 50 und 30 Bildern in einer Sekunde 50 Spielstunden', () => {
     gestellteUhr()
@@ -1030,7 +1080,8 @@ describe('T-M41-04/T-M41-17 Die Uhrschleife im Spiel verliert keine Ticks', () =
     bilder(30, 1000 / 30)
 
     expect(screen.getByText(/Tag \d+ · \d{2}:\d{2}/).textContent).toMatch(/Tag 3 · 02:00/)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 530 ms, unter verify+Last max 7619 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 30_000)
 
   /**
    * Zwei Bilder in EINEM JS-Zug (T-M41-17).
@@ -1087,7 +1138,8 @@ describe('T-M41-04/T-M41-17 Die Uhrschleife im Spiel verliert keine Ticks', () =
     bilderImSelbenZug(30, 1000 / 30)
 
     expect(screen.getByText(/Tag \d+ · \d{2}:\d{2}/).textContent).toMatch(/Tag 5 · 04:00/)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 157 ms, unter verify+Last max 3356 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
 })
 
@@ -1242,7 +1294,8 @@ describe('R-UI-15 Escape blendet den Tooltip aus, ohne die Uhr in eine Schleife 
 
     const schleife = fehler.mock.calls.filter((args) => args.some((arg) => String(arg).includes('Maximum update depth')))
     expect(schleife.length, 'React meldet setState in einem Effekt bei jedem Bild').toBe(0)
-  }, 20_000)
+    // Zeitlimit wegen Last, nicht Verhalten: allein 4350 ms, unter verify+Last max 13218 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 })
 
 /**
@@ -1289,7 +1342,8 @@ describe('R-UI-04 Der Ton haengt am Spiel', () => {
     buildAndFinish(3)
 
     expect(audio.started.length, 'Das Spiel hat keinen einzigen Ton ausgeloest').toBeGreaterThan(0)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 444 ms, unter verify+Last max 5930 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('bleibt still, wenn der Ton abgeschaltet ist', () => {
     const audio = fakeAudio()
@@ -1302,7 +1356,8 @@ describe('R-UI-04 Der Ton haengt am Spiel', () => {
     buildAndFinish(3)
 
     expect(audio.started.length).toBe(0)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 410 ms, unter verify+Last max 6067 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('spielt dasselbe Ereignis nicht zweimal', () => {
     const audio = fakeAudio()
@@ -1314,7 +1369,8 @@ describe('R-UI-04 Der Ton haengt am Spiel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Diplomatie' }))
 
     expect(audio.started.length).toBe(after)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 431 ms, unter verify+Last max 5809 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 })
 
 describe('R-UI-05 Die Einstiegshilfe empfaengt den neuen Spieler', () => {
@@ -1353,7 +1409,8 @@ describe('R-UI-05 Die Einstiegshilfe empfaengt den neuen Spieler', () => {
     fireEvent.keyDown(window, { key: 'l' })
 
     expect(hint(), 'der Blick auf die Lage hat den Schritt nicht beendet').toContain('Schritt 5 von 10')
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 238 ms, unter verify+Last max 4447 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('bleibt weg, wenn der Spieler sie abgeschaltet hat', () => {
     globalThis.localStorage?.clear()
@@ -1409,7 +1466,8 @@ describe('R-GAME-04 Automatisches Speichern in der laufenden Partie', () => {
 
     await waitFor(async () => expect((await autosaves(storage)).length).toBeGreaterThan(1))
     expect((await autosaves(storage)).length).toBeLessThanOrEqual(3)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 296 ms, unter verify+Last max 5521 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('schreibt nichts, solange die Partie steht', async () => {
     const storage = new MemoryStorage()
@@ -1502,7 +1560,8 @@ describe('R-GAME-01/AK1 Nach dem Ende beginnt die naechste Partie', () => {
     // Befund vorbeigekommen.
     expect(await screen.findByRole('dialog', { name: 'Neue Partie' })).toBeTruthy()
     expect(screen.getByText('Die Welt wird aufgebaut …')).toBeTruthy()
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 131 ms, unter verify+Last max 2867 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('spielt die zweite Partie wirklich an', async () => {
     const storage = await entschiedenerStand()
@@ -1519,7 +1578,8 @@ describe('R-GAME-01/AK1 Nach dem Ende beginnt die naechste Partie', () => {
     // Tag 1 statt des Tages, an dem die alte Partie endete.
     await waitFor(() => expect(screen.getByText(/Tag 1\b/)).toBeTruthy())
     expect(screen.queryByRole('dialog', { name: 'Die Partie ist entschieden' })).toBeNull()
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 148 ms, unter verify+Last max 2803 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('meldet auch der ZWEITEN Partie ihr Ende', async () => {
     // Die Flagge victoryAcknowledged wird nirgends sonst zurueckgesetzt. Bliebe sie
@@ -1539,7 +1599,8 @@ describe('R-GAME-01/AK1 Nach dem Ende beginnt die naechste Partie', () => {
       fireEvent.click(await screen.findByRole('button', { name: 'Partie beginnen' }))
       await waitFor(() => expect(screen.getByText(/Tag 1\b/)).toBeTruthy())
     }
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 307 ms, unter verify+Last max 4389 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 })
 
 /**
@@ -1572,14 +1633,16 @@ describe('R-GAME-01 Die Kartenwahl wirkt', () => {
 
     expect(saved.mapId).toBe('testworld')
     expect(saved.provinceOrder).toHaveLength(12)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 202 ms, unter verify+Last max 2740 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('bleibt ohne Wahl bei der Weltkarte', async () => {
     const saved = await startOn('world')
 
     expect(saved.mapId).toBe('world')
     expect(saved.provinceOrder).toHaveLength(237)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 209 ms, unter verify+Last max 2792 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('zeigt die Provinzen der gewaehlten Karte, nicht die der Welt', async () => {
     render(<App map={world} rules={TEST_RULES} maps={maps} storage={new MemoryStorage()} skipTutorial />)
@@ -1767,7 +1830,8 @@ describe('R-UI-05 Das Menue kennt drei Wege — auch aus der laufenden Partie', 
     fireEvent.keyDown(window, { key: 'Escape' })
     expect(screen.queryByRole('dialog', { name: 'Neue Partie' })).toBeNull()
     expect(screen.getByRole('banner')).toBeTruthy()
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 145 ms, unter verify+Last max 3510 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 })
 
 /**
@@ -1879,7 +1943,8 @@ describe('R-UI-14 Die Meldungen erreichen den Spieler', () => {
 
       fireEvent.click(within(eingehend).getByRole('button', { name: 'Angebot annehmen' }))
       expect(within(eingehend).getByText(/befohlen/)).toBeTruthy()
-    })
+      // Zeitlimit wegen Last, nicht Verhalten: allein 137 ms, unter verify+Last max 4282 ms (gemessen 2026-10-05, t_3cad0a35).
+    }, 20_000)
   })
 
   /**
@@ -1917,7 +1982,8 @@ describe('R-UI-14 Die Meldungen erreichen den Spieler', () => {
       expect((beantragen as HTMLButtonElement).disabled).toBe(false)
       expect((annehmen as HTMLButtonElement).disabled).toBe(false)
       expect((kuendigen as HTMLButtonElement).disabled).toBe(true)
-    })
+      // Zeitlimit wegen Last, nicht Verhalten: allein 152 ms, unter verify+Last max 3257 ms (gemessen 2026-10-05, t_3cad0a35).
+    }, 20_000)
   })
 
   /**
@@ -1994,7 +2060,8 @@ describe('R-UI-14 Die Meldungen erreichen den Spieler', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
       await waitFor(() => expect(document.querySelector('.clock__time')?.textContent).toMatch(/Tag/))
       expect(meldungen.textContent).not.toContain('Wirtschaftssabotage')
-    })
+      // Zeitlimit wegen Last, nicht Verhalten: allein 229 ms, unter verify+Last max 7071 ms (gemessen 2026-10-05, t_3cad0a35).
+    }, 30_000)
   })
 
   describe('R-DIP-10/AK5 Die Raeumfrist erreicht den Bildschirm und springt zur Armee', () => {
@@ -2054,7 +2121,8 @@ describe('R-UI-14 Die Meldungen erreichen den Spieler', () => {
       const provinzPanel = await screen.findByRole('region', { name: state.provinces[hostProvinceId]!.name })
       expect(provinzPanel).toBeTruthy()
       expect(screen.queryByRole('region', { name: t('army.title') })).toBeNull()
-    })
+      // Zeitlimit wegen Last, nicht Verhalten: allein 144 ms, unter verify+Last max 2975 ms (gemessen 2026-10-05, t_3cad0a35).
+    }, 20_000)
 
     it('AP2 ohne versetzte Armee steht keine Raeumfrist-Meldung', async () => {
       const { state, p1, hostId } = grenzfall()
@@ -2102,7 +2170,8 @@ describe('R-UI-14 Die Meldungen erreichen den Spieler', () => {
       const krieg = within(gruppeP3).getByRole('button', { name: 'Krieg erklären' })
       expect((krieg as HTMLButtonElement).disabled).toBe(false)
       expect(within(gruppeP3).queryByText(/befohlen/)).toBeNull()
-    })
+      // Zeitlimit wegen Last, nicht Verhalten: allein 186 ms, unter verify+Last max 3013 ms (gemessen 2026-10-05, t_3cad0a35).
+    }, 20_000)
   })
 })
 
@@ -3014,7 +3083,8 @@ describe('R-MP-03/AK1 Die Oberflaeche rechnet keinen Tick ohne Freigabe des Mits
     expect(meine.tick, 'kein einziger Tick gelaufen').toBeGreaterThan(10)
     expect(Math.abs(meine.tick - peer.tick)).toBeLessThanOrEqual(1)
     expect(screen.queryByText('Warte auf Mitspieler …')).toBeNull()
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 249 ms, unter verify+Last max 3109 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('zeigt den Pausenantrag des Mitspielers als Dialog mit zwei Knoepfen', () => {
     const { leitung, peer } = zuZweit()
@@ -3126,7 +3196,8 @@ describe('R-MP-03/AK1 Die Oberflaeche rechnet keinen Tick ohne Freigabe des Mits
     expect(screen.getByRole('button', { name: 'Vorspulen' })).toBeTruthy()
     expect(screen.queryByText(/\(fest\)/)).toBeNull()
     expect(screen.queryByRole('alert'), 'der Hinweis stand nach der Uebernahme noch da').toBeNull()
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 161 ms, unter verify+Last max 3479 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('laeuft nach der Uebernahme ohne Verbindung weiter', () => {
     // Die Partie ist danach eine Einzelspielerpartie mit allem, was dazugehoert - und das
@@ -3145,7 +3216,8 @@ describe('R-MP-03/AK1 Die Oberflaeche rechnet keinen Tick ohne Freigabe des Mits
 
     expect(screen.queryByText('Warte auf Mitspieler …')).toBeNull()
     expect(meine.tick, 'der Gleichschritt rechnete nach der Uebernahme weiter').toBe(vorher)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 141 ms, unter verify+Last max 3015 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('uebernimmt nichts von selbst, auch nach Minuten nicht', () => {
     // R-MP-08/AK2 an der ganzen Anwendung.
@@ -3202,7 +3274,8 @@ describe('R-MP-03/AK1 Die Oberflaeche rechnet keinen Tick ohne Freigabe des Mits
       warte(100)
 
       expect(screen.queryByText(GESTELLT), 'der Satz blieb nach der Antwort stehen').toBeNull()
-    })
+      // Zeitlimit wegen Last, nicht Verhalten: allein 347 ms, unter verify+Last max 3496 ms (gemessen 2026-10-05, t_3cad0a35).
+    }, 20_000)
 
     it('zeigt den eigenen Antrag nicht auch noch als Dialog — der gehoert dem Gegenueber', () => {
       zuZweit()
@@ -3211,7 +3284,8 @@ describe('R-MP-03/AK1 Die Oberflaeche rechnet keinen Tick ohne Freigabe des Mits
 
       // Der Dialog mit „Pause zulassen"/„Weiterspielen" ist die Frage AN den anderen.
       expect(screen.queryByRole('dialog', { name: 'Partie zu zweit' })).toBeNull()
-    })
+      // Zeitlimit wegen Last, nicht Verhalten: allein 294 ms, unter verify+Last max 4402 ms (gemessen 2026-10-05, t_3cad0a35).
+    }, 20_000)
 
     it('sagt dem Antragsteller, dass abgelehnt wurde', () => {
       const { leitung, peer } = zuZweit()
@@ -3227,7 +3301,8 @@ describe('R-MP-03/AK1 Die Oberflaeche rechnet keinen Tick ohne Freigabe des Mits
       // stuende es sonst, bis jemand wieder eine Pause beantragt.
       const meldung = screen.getByText(ABGELEHNT)
       expect(meldung.className).toMatch(/notice--info/)
-    })
+      // Zeitlimit wegen Last, nicht Verhalten: allein 336 ms, unter verify+Last max 3400 ms (gemessen 2026-10-05, t_3cad0a35).
+    }, 20_000)
 
     it('sagt dem Ablehnenden nichts ueber sich selbst', () => {
       // Die andere Seite derselben Nachricht: hier hat der Bildschirm gerade selbst
@@ -3246,7 +3321,8 @@ describe('R-MP-03/AK1 Die Oberflaeche rechnet keinen Tick ohne Freigabe des Mits
       expect(screen.queryByText(ABGELEHNT)).toBeNull()
       expect(screen.queryByText(GESTELLT)).toBeNull()
       expect(screen.queryByText(STEHT)).toBeNull()
-    })
+      // Zeitlimit wegen Last, nicht Verhalten: allein 317 ms, unter verify+Last max 3542 ms (gemessen 2026-10-05, t_3cad0a35).
+    }, 20_000)
 
     it('sagt dem Antragsteller, dass sein Antrag verfallen ist', () => {
       zuZweit({ peerLaeuft: false })
@@ -3293,7 +3369,8 @@ describe('R-MP-03/AK1 Die Oberflaeche rechnet keinen Tick ohne Freigabe des Mits
       const satz = screen.getByText(STEHT)
       expect(satz.getAttribute('role')).toBe('status')
       expect(screen.getByRole('button', { name: 'Fortsetzen' })).toBeTruthy()
-    })
+      // Zeitlimit wegen Last, nicht Verhalten: allein 331 ms, unter verify+Last max 2946 ms (gemessen 2026-10-05, t_3cad0a35).
+    }, 20_000)
 
     it('kuendigt das Fortsetzen an und nimmt die Ankuendigung nach drei Sekunden zurueck', () => {
       const { leitung, peer } = zuZweit()
@@ -3315,7 +3392,8 @@ describe('R-MP-03/AK1 Die Oberflaeche rechnet keinen Tick ohne Freigabe des Mits
 
       expect(screen.queryByText(WEITER), 'die Ankuendigung blieb stehen').toBeNull()
       expect(screen.queryByText(STEHT), 'die Partie stand nach dem Vorlauf noch').toBeNull()
-    })
+      // Zeitlimit wegen Last, nicht Verhalten: allein 374 ms, unter verify+Last max 2627 ms (gemessen 2026-10-05, t_3cad0a35).
+    }, 20_000)
 
     it('laesst eine fremde Meldung stehen, wenn der Mitspieler eine Pause beantragt', () => {
       // Befund der Durchsicht vom 2026-09-18 (Stufe niedrig): „ein neuer Antrag loescht
@@ -3354,7 +3432,8 @@ describe('R-MP-03/AK1 Die Oberflaeche rechnet keinen Tick ohne Freigabe des Mits
       for (let takt = 0; takt < 5; takt++) warte(100)
       expect(screen.queryByText(ABGELEHNT), 'die alte Antwort stand neben dem neuen Antrag').toBeNull()
       expect(screen.getByText(GESTELLT)).toBeTruthy()
-    })
+      // Zeitlimit wegen Last, nicht Verhalten: allein 404 ms, unter verify+Last max 2723 ms (gemessen 2026-10-05, t_3cad0a35).
+    }, 20_000)
 
     it('zeigt im Einzelspieler keinen einzigen dieser Saetze', () => {
       // Der Pausenvertrag ist eine Sache zu zweit. Allein ist die Pause eine Raste.

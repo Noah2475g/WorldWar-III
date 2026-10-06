@@ -147,7 +147,8 @@ describe('Eingabeart: useInputMode zeichnet bei einem Wechsel neu', () => {
   it('liefert die Maus, solange nichts angewandt ist', () => {
     render(<Anzeige />)
     expect(screen.getByRole('status').textContent).toBe('mouse')
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 430 ms, unter verify+Last max 6311 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('wechselt mit der Medienabfrage', () => {
     const media = fakeMedia({ [INPUT_QUERIES.coarse]: false })

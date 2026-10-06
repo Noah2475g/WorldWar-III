@@ -104,7 +104,8 @@ describe('Touch-Bedienung: Zentrieren im gemessenen Ausschnitt der Karte', () =>
     const hauptstadt = anlegen()
 
     sichtbar(toScreen(hauptstadt, ausschnitt()))
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 1154 ms, unter verify+Last max 23158 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 
   it('zoomt mit der Tastatur um die Mitte der kleinen Karte', () => {
     const hauptstadt = anlegen()
@@ -115,7 +116,8 @@ describe('Touch-Bedienung: Zentrieren im gemessenen Ausschnitt der Karte', () =>
     const nachher = ausschnitt()
     expect(nachher.scale).toBeLessThan(1.6)
     sichtbar(toScreen(hauptstadt, nachher))
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 594 ms, unter verify+Last max 11769 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 
   it('zieht den Blick nach, wenn die Karte waechst, solange niemand sie bewegt hat', () => {
     const hauptstadt = anlegen()
@@ -123,7 +125,8 @@ describe('Touch-Bedienung: Zentrieren im gemessenen Ausschnitt der Karte', () =>
     messe(700, 400)
 
     sichtbar(toScreen(hauptstadt, ausschnitt()), { width: 700, height: 400 })
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 369 ms, unter verify+Last max 9078 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 30_000)
 
   it('reisst den Spieler nicht zurueck, nachdem er die Karte bewegt hat', () => {
     anlegen()
@@ -133,5 +136,6 @@ describe('Touch-Bedienung: Zentrieren im gemessenen Ausschnitt der Karte', () =>
     messe(700, 400)
 
     expect(ausschnitt()).toEqual(bewegt)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 432 ms, unter verify+Last max 6737 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 30_000)
 })

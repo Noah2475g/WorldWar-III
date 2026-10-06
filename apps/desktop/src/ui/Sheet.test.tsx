@@ -32,7 +32,8 @@ describe('R-UX-01 T-M44-03b Das Blatt hat drei Rasten', () => {
     handle('half')
     const button = screen.getByRole('button', { name: new RegExp(t('sheet.handle')) })
     expect(button.textContent).toContain(t('sheet.snap.half'))
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 451 ms, unter verify+Last max 8175 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 30_000)
 
   it('ein Klick schaltet reihum weiter (Streifen, halb, voll, Streifen)', () => {
     const onSnap = vi.fn()
@@ -43,7 +44,8 @@ describe('R-UX-01 T-M44-03b Das Blatt hat drei Rasten', () => {
       expect(onSnap, `von ${from}`).toHaveBeenCalledWith(to)
       unmount()
     }
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 116 ms, unter verify+Last max 2712 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('Pfeil hoch vergroessert, Pfeil runter verkleinert, Escape schliesst', () => {
     const onSnap = vi.fn()
@@ -115,5 +117,6 @@ describe('T-M46-10 Die Panelwahl im Kopf des Blatts', () => {
     expect(screen.getByRole('button', { name: 'Heer' }).getAttribute('aria-pressed')).toBe('false')
     fireEvent.click(screen.getByRole('button', { name: 'Heer' }))
     expect(onPanel).toHaveBeenCalledWith('armies')
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 61 ms, unter verify+Last max 3058 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 })

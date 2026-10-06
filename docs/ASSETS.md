@@ -849,3 +849,13 @@ nur 1280x800 und 375x667 (PLAN-V3 Regel 12). Kein Fremdinhalt: Bildschirmfotos d
 | `docs/ux/v4-seitenleiste/e1/S575G-e1-protokoll-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E1: Aufnahme nach Tokens, Toasts und Hinweisspalte, S575G-e1-protokoll-375x667.png |
 | `docs/ux/v4-seitenleiste/e1/S575G-e1-puls-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E1: Aufnahme nach Tokens, Toasts und Hinweisspalte, S575G-e1-puls-1280x800.png |
 | `docs/ux/v4-seitenleiste/e1/S575G-e1-puls-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E1: Aufnahme nach Tokens, Toasts und Hinweisspalte, S575G-e1-puls-375x667.png |
+
+## Bildschirmfotos der Bauvorschau (Bauvorschau B3, 2026-10-06)
+
+Kein Fremdinhalt — Bildschirmfotos des eigenen Spiels, erzeugt mit `node scripts/ux-bauvorschau-bild.mjs`. Sie stehen hier, weil
+`test/guards/no-foreign-assets.test.ts` jede eingecheckte Bilddatei namentlich verlangt.
+
+| Datei | Erzeugt von | Zeigt |
+|---|---|---|
+| `docs/ux/bauvorschau/desktop-1280x800.png` | `scripts/ux-bauvorschau-bild.mjs` | Bauvorschau, 1280x800 |
+| `docs/ux/bauvorschau/telefon-375x667.png` | `scripts/ux-bauvorschau-bild.mjs` | Bauvorschau, 375x667 |

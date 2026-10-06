@@ -149,7 +149,8 @@ describe('R-TIME-06/AK1 Jeder Alarm nennt seine Betroffenen', () => {
       .filter((event) => event.audience.length > 0 && event.concerns.some((id) => !event.audience.includes(id)))
       .map((event) => event.type)
     expect([...new Set(ausserhalb)], 'Betroffene ausserhalb der Leserschaft').toEqual([])
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 447 ms, unter verify+Last max 17162 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
 })
 
 describe('R-SPY-04/AK3 Wer sabotiert wird, erfaehrt nie, von wem (T-M17-09)', () => {
@@ -251,5 +252,6 @@ describe('R-SPY-04/AK3 Wer sabotiert wird, erfaehrt nie, von wem (T-M17-09)', ()
 
     // Gegenkontrolle: die Suche kann Namen sehen.
     expect(seen.some((e) => e.type === 'SPY_DETECTED' && e.targetPlayerId === 'p3' && e.playerId === 'p1')).toBe(true)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 93 ms, unter verify+Last max 6200 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 })

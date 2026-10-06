@@ -57,7 +57,8 @@ describe('R-UI-15/AK1 Ein Dialog laesst sich mit der Tastatur bedienen', () => {
 
     const dialog = screen.getByRole('dialog', { name: 'Beispiel' })
     expect(dialog.contains(document.activeElement)).toBe(true)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 364 ms, unter verify+Last max 9371 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 30_000)
 
   it('schliesst mit Escape', () => {
     const onClose = zeige()
@@ -105,7 +106,8 @@ describe('R-UI-15/AK1 Ein Dialog laesst sich mit der Tastatur bedienen', () => {
     schliessen.focus()
     fireEvent.keyDown(dialog, { key: 'Tab', shiftKey: true })
     expect(document.activeElement).toBe(letzter)
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 52 ms, unter verify+Last max 2502 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 })
 
 /**

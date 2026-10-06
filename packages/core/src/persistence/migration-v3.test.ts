@@ -188,7 +188,8 @@ describe('R-GAME-09/AK1 Ein Stand der Stufe 3 laeuft nach der Migration weiter',
     expect(state.tick).toBe(V3.savedAtTick + 48)
     expect(state.espionage).toEqual({ spies: [], reveals: [] })
     expect(hashOf(deserialise(serialise(state)))).toBe(hashOf(state))
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 306 ms, unter verify+Last max 3040 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('rechnet nach Speichern und Laden dasselbe wie ohne Unterbrechung', () => {
     // Laufen allein reicht nicht: ein migrierter Stand, der nach dem Laden anders
@@ -203,7 +204,8 @@ describe('R-GAME-09/AK1 Ein Stand der Stufe 3 laeuft nach der Migration weiter',
     for (let i = 0; i < 24; i++) geteilt = step(geteilt, [], WELT).state
 
     expect(hashOf(geteilt)).toBe(hashOf(durch))
-  })
+    // Zeitlimit wegen Last, nicht Verhalten: allein 375 ms, unter verify+Last max 3327 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 20_000)
 
   it('weist einen Stand ohne die Felder der Stufe 4 ab, statt ihn halb zu verstehen', () => {
     const ohneSpionage = migrate(copy(V3)).state as unknown as Record<string, unknown>
