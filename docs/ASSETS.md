@@ -842,6 +842,8 @@ nur 1280x800 und 375x667 (PLAN-V3 Regel 12). Kein Fremdinhalt: Bildschirmfotos d
 | `docs/ux/v4-seitenleiste/e1/S575G-e1-diplomatie-auswahl-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E1: Aufnahme nach Tokens, Toasts und Hinweisspalte, S575G-e1-diplomatie-auswahl-1280x800.png |
 | `docs/ux/v4-seitenleiste/e1/S575G-e1-kopf-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E1: Aufnahme nach Tokens, Toasts und Hinweisspalte, S575G-e1-kopf-1280x800.png |
 | `docs/ux/v4-seitenleiste/e1/S575G-e1-kopf-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E1: Aufnahme nach Tokens, Toasts und Hinweisspalte, S575G-e1-kopf-375x667.png |
+| `docs/ux/v4-seitenleiste/e1/S575G-e1-toast-1280x800.png` | `scripts/ux-capture.mjs` | Seitenleiste v3b E1 R1: stehender Toast, 12 px ueber dem Kartenrand, S575G-e1-toast-1280x800.png |
+| `docs/ux/v4-seitenleiste/e1/S575G-e1-toast-375x667.png` | `scripts/ux-capture.mjs` | Seitenleiste v3b E1 R1: stehender Toast unter dem Kopf, S575G-e1-toast-375x667.png |
 | `docs/ux/v4-seitenleiste/e1/S575G-e1-panel-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E1: Aufnahme nach Tokens, Toasts und Hinweisspalte, S575G-e1-panel-1280x800.png |
 | `docs/ux/v4-seitenleiste/e1/S575G-e1-panel-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E1: Aufnahme nach Tokens, Toasts und Hinweisspalte, S575G-e1-panel-375x667.png |
 | `docs/ux/v4-seitenleiste/e1/S575G-e1-protokoll-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E1: Aufnahme nach Tokens, Toasts und Hinweisspalte, S575G-e1-protokoll-375x667.png |

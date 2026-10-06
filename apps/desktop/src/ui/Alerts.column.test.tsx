@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { readFileSync } from 'node:fs'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Alerts, COLUMN_MAX, type Alert, type AlertKind } from './Alerts.tsx'
 import { MESSAGE_ROUTE } from './notice.ts'
@@ -82,5 +83,18 @@ describe('Hinweisspalte (D3)', () => {
     for (const kind of KINDS) {
       expect(MESSAGE_ROUTE[kind], kind).toBe('alerts')
     }
+  })
+
+  it('jede Art der Union AlertKind in Alerts.tsx steht in MESSAGE_ROUTE (Quelltext gelesen) und in KINDS', () => {
+    const source = readFileSync(`${process.cwd()}/apps/desktop/src/ui/Alerts.tsx`, 'utf8')
+    const union = /export type AlertKind =([\s\S]*?)\n\nexport /.exec(source)
+    expect(union, 'Union AlertKind nicht gefunden').not.toBeNull()
+    const declared = [...union![1]!.matchAll(/^\s*\|\s*'([a-z]+)'/gm)].map((m) => m[1]!)
+    expect(declared.length).toBeGreaterThanOrEqual(12)
+    for (const kind of declared) {
+      expect(Object.keys(MESSAGE_ROUTE), kind).toContain(kind)
+      expect(MESSAGE_ROUTE[kind as keyof typeof MESSAGE_ROUTE], kind).toBe('alerts')
+    }
+    expect([...declared].sort()).toEqual([...KINDS].sort())
   })
 })

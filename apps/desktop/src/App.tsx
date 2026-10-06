@@ -150,6 +150,7 @@ import {
 } from './ui/Alerts.tsx'
 import { cueForOwnEvents, play } from './ui/sound.ts'
 import { Toaster } from 'sonner'
+import { useToastInsets } from './ui/useToastInsets.ts'
 import { dismissNotice, showNotice } from './ui/notice.ts'
 import {
   TUTORIAL_OFF,
@@ -1485,6 +1486,8 @@ export function App(props: AppProps) {
 
   /** Nur auf dem Telefon im Hochformat gibt es die Panelwahl im Kopf des Blatts (T-M46-10). */
   const phonePortrait = usePhonePortrait()
+  const appRef = useRef<HTMLDivElement>(null)
+  useToastInsets(appRef, Boolean(state && view && ctx && viewerId))
 
   /** Ein Panel aus Fuss oder Blattleiste oeffnen. Die Lage oeffnen heisst: gesehen, die Neu-Marke faellt auf null. */
   const openFootPanel = useCallback(
@@ -2541,6 +2544,7 @@ export function App(props: AppProps) {
   return (
     <div
       className="app"
+      ref={appRef}
       style={fontScaleStyle(ui.settings)}
       // Ein offenes Panel verkleinert im Hochformat die Karte (T-M44-03a, touch.css `--map-h`).
       data-panel={ui.panel ? 'open' : 'closed'}
@@ -2550,8 +2554,8 @@ export function App(props: AppProps) {
       <Toaster
         position={phonePortrait ? 'top-center' : 'bottom-left'}
         visibleToasts={1}
-        offset={{ bottom: 'calc(var(--edge) + var(--dock-h))', left: 'var(--edge)', top: 'var(--edge)' }}
-        mobileOffset={{ bottom: 'calc(var(--edge) + var(--dock-h))', left: 'var(--edge)', top: 'var(--edge)' }}
+        offset={{ bottom: 'calc(var(--edge) + var(--dock-h))', left: 'var(--edge)', top: 'calc(var(--edge) + var(--head-h))' }}
+        mobileOffset={{ bottom: 'calc(var(--edge) + var(--dock-h))', left: 'var(--edge)', top: 'calc(var(--edge) + var(--head-h))' }}
         className="toaster"
       />
       <Header

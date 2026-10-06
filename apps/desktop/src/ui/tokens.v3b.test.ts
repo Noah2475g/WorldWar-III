@@ -55,6 +55,11 @@ describe('v3b Toast-Regeln und Mikro-Bewegung', () => {
     expect(css).toMatch(/\[data-sonner-toast\]\[data-visible='false'\],\s*\[data-sonner-toast\]\[data-removed='true'\]\s*\{\s*visibility:\s*hidden;/)
   })
 
+  it('D5: Toaster z-index 9, Dialoge und Einfuehrung darueber (10)', () => {
+    expect(css).toMatch(/:root \.app \[data-sonner-toaster\]\s*\{\s*z-index:\s*9;/)
+    expect(css).toMatch(/\.dialog-backdrop,\s*\.tutorial\s*\{\s*z-index:\s*10;/)
+  })
+
   it('der Toast-Container faengt keine Klicks, die Karte schon', () => {
     expect(css).toMatch(/\[data-sonner-toaster\]\s*\{[^}]*pointer-events:\s*none/)
     expect(css).toMatch(/\[data-sonner-toast\]\s*\{[^}]*pointer-events:\s*auto/)
@@ -67,8 +72,7 @@ describe('v3b Toast-Regeln und Mikro-Bewegung', () => {
     const properties = [...neu.matchAll(/transition:\s*([^;]+);/g)].flatMap((m) =>
       m[1]!.split(',').map((part) => part.trim().split(/\s+/)[0]!),
     )
-    // `height` am Toast ist die Transition der Bibliothek (sonner) und wird nur auf die Token-Dauer gesetzt.
-    const erlaubt = new Set(['transform', 'opacity', 'height'])
+    const erlaubt = new Set(['transform', 'opacity'])
     expect(properties.filter((p) => !erlaubt.has(p))).toEqual([])
     expect(properties).toEqual(expect.arrayContaining(['transform', 'opacity']))
   })

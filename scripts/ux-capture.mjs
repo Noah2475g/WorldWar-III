@@ -689,6 +689,32 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
     await btn('Kaserne bauen').click({ timeout: 5000 })
     await page.waitForTimeout(300)
     await shot('rueckmeldung-bau-befohlen')
+    // E1-Nachbesserung (K19/K15, nur Messfeld): hier steht der Toast; Meldungsorte und Freihaltung messen.
+    data.layout.toast = await layout(page)
+    data.probes.toastFrei = await page.evaluate(() => {
+      const toast = document.querySelector('[data-sonner-toast]:not([data-visible="false"])')
+      const hit = (el) => {
+        if (!el) return null
+        const r = el.getBoundingClientRect()
+        if (r.width === 0 || r.height === 0) return null
+        const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)
+        return { frei: top !== null && (top === el || el.contains(top) || top.contains(el)), treffer: top ? `${top.tagName.toLowerCase()}.${String(top.getAttribute('class') || '').split(' ')[0]}` : null }
+      }
+      const pause = [...document.querySelectorAll('button')].find((b) => (b.getAttribute('aria-label') || b.textContent || '').trim() === 'Pause')
+      const box = toast ? toast.getBoundingClientRect() : null
+      const map = document.querySelector('.main, main')
+      return {
+        toastSteht: Boolean(toast),
+        toast: box ? { left: Math.round(box.left), top: Math.round(box.top), bottom: Math.round(box.bottom), right: Math.round(box.right) } : null,
+        footTop: document.querySelector('.foot') ? Math.round(document.querySelector('.foot').getBoundingClientRect().top) : null,
+        headBottom: document.querySelector('.header') ? Math.round(document.querySelector('.header').getBoundingClientRect().bottom) : null,
+        mapBottom: map ? Math.round(map.getBoundingClientRect().bottom) : null,
+        pause: hit(pause),
+        // Erste Protokollzeile; noch ohne Eintrag steht der Protokollkasten selbst an dieser Stelle.
+        logZeile: hit(document.querySelector('.log__row') || document.querySelector('.foot .log')),
+        toasterZ: getComputedStyle(document.querySelector('[data-sonner-toaster]') || document.body).zIndex,
+      }
+    })
   })
   await step('tempo-laeuft', async () => {
     await speed('100')

@@ -80,7 +80,7 @@ Last beim Messen: CPU 4–49 % (Spitzen bis 100 % durch fremde Läufe anderer Ta
 - **A1 (M49 auf main):** `gebaeude.slow.test.ts` am gemergten main = `b0/gebaeude-basis-m49.json` (Region 296 / 72 / 122, Welt 0, identisch zu B0). `ux-tasks` am gemergten main = `b0/aufgaben-basis-m49.json` (alle 16 Läufe identisch zu B0, Tab 38). Die Schwelle für K4/K5 bleibt damit B0 = B0-m49.
 - **A3 (`css-mirrors-tokens.test.ts`):** `rootColorVariables` und `strayColors` sehen nur `#hex`, `rgb()`, `hsl()`; `color-mix()` in `:root` ist erlaubt und kein Spiegelfall. Die Ableitungen (`--hair`, `--line-soft`, `--glass`, `--primary-soft`, `--danger-soft`, `--bezel`) stehen deshalb als `color-mix` in `app.css`. Die Hex-Werte der sieben Rollen und ihrer Aliase stehen in `tokens.ts` und `app.css` und werden gespiegelt (Test grün).
 - **A4 (sonner, Plan D2 Punkt 1, Auflage A2):** Ersetzen mit gleicher id (`'notice'`) startet den Zeitgeber neu. `notice.test.tsx`: (a) Quittung dann Fehler = 1 Toast mit Fehlertext, (b) nach neuer Dauer + 200 ms = 0, (c) Hover hält, (d) Hover, Ersetzen, Maus weg: der Toast steht die volle neue Dauer (±50 ms), (e) kein `aria-live`/`role=alert` im Toast und genau 1 `section[aria-live=polite]`. Alle grün. Der Ausweg (`dismiss` + laufende id) war nicht nötig; gewählter Weg: eine id `'notice'`. Die Regel `[data-visible='false'], [data-removed='true'] { visibility: hidden }` steht trotzdem (abtretender Toast 200 ms nicht fokussierbar), mit Wächter-Test.
-- **Bibliothek (K18):** sonner bringt eigenes CSS mit (u. a. eine `height`-Transition am Toast). Die eigenen Regeln bewegen nur `transform`/`opacity`; `height` steht nur mit Token-Dauer. Wächter in `tokens.v3b.test.ts`.
+- **Bibliothek (K18):** sonner bringt eigenes CSS mit (u. a. eine `height`-Transition am Toast, nur Bibliothek). Die eigenen Regeln bewegen nur `transform`/`opacity` (R1: `height` aus der eigenen `transition` entfernt, `tokens.v3b.test.ts` erlaubt nur noch `transform`/`opacity`).
 
 ### Messtabelle K (E1 gegen B0, 1280x800 wenn nicht anders)
 | K | B0 | E1 | Urteil |
@@ -139,7 +139,22 @@ rueckmeldungJeTempo (ms, Quittung bis weg): B0 1658 / 1635 / 1671, E1 1878 / 198
 ### Abweichungen / Entscheidungen
 - **D3 gegen K9:** Zeichen in der Hinweisspalte 28 px statt der 18 aus D3. Bei 18 px misst K9 `.alerts` mit 0,683 (> 0,5), bei 28 px 0,49. K9 ist Abnahme, D3 ein Maß; Entscheidung bitte an Reviewer/Planner.
 - **Meldungsart `completion`** (Bau fertig) bleibt in E1 in der Hinweisspalte (`MESSAGE_ROUTE.completion = 'alerts'`); `done` ist die Toast-Art ohne Aufrufer. Der Sprung-Knopf im Toast ist als Option `jump` vorhanden, noch ohne Aufrufer.
-- **Toast-Bild:** kein Bildschirmfoto mit stehendem Toast (Messläufe liefen unter Fremdlast). Das Toast-Verhalten ist per `notice.test.tsx` mit echtem `<Toaster>` belegt. Bilder `e1/S575G-e1-*.png` (1280x800 und 375x667): Hinweisspalte oben links wie final-v3b-1 (Glas, 3-px-Leiste links in Danger/Primary/Muted, Zeile 36, „+1“ unter drei Zeilen); Telefon-Hochformat unverändert im Blatt.
+- **Toast-Bild:** siehe Abschnitt „Review-Runde 1“ unten (`e1/S575G-e1-toast-*.png`). Das Toast-Verhalten ist zusätzlich per `notice.test.tsx` mit echtem `<Toaster>` belegt. `e1/S575G-e1-*.png` (1280x800 und 375x667): Hinweisspalte oben links wie final-v3b-1 (Glas, 3-px-Leiste links in Danger/Primary/Muted, Zeile 36, „+1“ unter drei Zeilen); Telefon-Hochformat unverändert im Blatt.
 - **N1:** 9 Grün-Stellen neutral (`--text`/`--muted`), Wächter `test/guards/no-green-ui.test.ts` (Allowlist `.unit-marker`, `.unit-art--own`).
 - **Skripte (D16):** neue `scripts/ux-sel.mjs` (SIDE, ALERTS, PICKER); in E1 nur `ux-layout.mjs` auf ALERTS umgestellt, Zählregeln und Schwellen unverändert.
 - **Nebenbefund B0:** 14 B0-PNGs fehlten in `docs/ASSETS.md` (Wächter `no-foreign-assets` rot); in E1 nachgetragen, dazu der Eintrag `sonner` (MIT).
+
+### Review-Runde 1 (E1, PR #34)
+Messung 2026-10-06 ca. 13:50-14:10, Port 5361 (danach frei, eigene PIDs beendet), Edge/Playwright. Last: CPU 5-12 % beim Capture und ux-tasks/ux-bild, beim `ux:check`-Start 47 % (Fremdlast), GPU 0-1 %, RAM frei ca. 14 GB, kein Unreal. Es zaehlen nur Zaehlwerte, keine Zeiten.
+
+1. **Toast-Lage (D2/D19):** `useToastInsets` setzt `--dock-h` (Fusshoehe) und `--head-h` (Kopf-Unterkante) am Raster `.app`; der Toaster nutzt beide.
+   - 1280x800: Toast unten 631 = Kartenunterkante 643 - 12 px, Fuss beginnt bei 643 (Toast steht ueber dem Fuss).
+   - 375x667: Toast oben 150 = Kopf-Unterkante 138 + 12 px.
+   - elementFromPoint bei stehendem Toast: Pause-Knopf-Mitte trifft den Knopf (1280 und 375, frei = true); Mitte der ersten Protokollzeile bzw. des Protokollkastens (noch keine Zeile) trifft `section.log` (1280, frei = true). Zahl: 3 von 3 Proben frei (`probes.toastFrei`).
+   - Bilder: `e1/S575G-e1-toast-1280x800.png`, `e1/S575G-e1-toast-375x667.png`.
+2. **K18:** `height` aus der eigenen `transition` an `[data-sonner-toast]` entfernt; Waechter erlaubt nur `transform`/`opacity`.
+3. **K19/K15 mit Toast:** die vorhandene Szene `rueckmeldung-bau-befohlen` misst jetzt `layout()` (`layout.toast`): Toast 1 (`ack:befohlen-kaserne`, `data-msg`), `.alerts` 1; doppelt 0, ohneKennung 0 (14 Messfelder dieses Laufs, 2 mit stehendem Toast). Nur Messfeld und Sonde, keine neue Szene, Zaehlregeln/Schwellen unveraendert.
+4. **D5:** Toaster z-index 9 (`:root .app [data-sonner-toaster]`, hoeher als das Bibliotheks-CSS mit 999999999); Dialoge (`.dialog-backdrop`, vorher z-index auto) und Einfuehrung (`.tutorial`, vorher auto) auf 10, darueber. Gemessen `toasterZ = 9`; Waechter in `tokens.v3b.test.ts`.
+5. **MESSAGE_ROUTE:** Test liest die Union `AlertKind` aus `Alerts.tsx` und verlangt jede Art in `MESSAGE_ROUTE` (Ort `alerts`) und in `KINDS`. Doppelte `.notice--warn`-Regel in `app.css` entfernt.
+
+Abnahme gegen B0: K4 `ux-tasks` 16/16 Laeufe identisch zu `b0/aufgaben-basis-m49.json`, K5 38 Stationen, K9 `ux-bild` max 0,498 = B0, `ux:check` 12 gruen, 5 rot (dieselben 5 wie B0: R-UX-01/AK1-3, R-UX-02/AK1, R-UX-06/AK3), 2 offen.

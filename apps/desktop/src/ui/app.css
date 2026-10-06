@@ -3012,12 +3012,22 @@ body {
   font-family: var(--font-ui);
 }
 
+/* z-Leiter D5: Toast 9; Dialoge und Einfuehrung (heute z-index auto) stehen mit 10 darueber. Hoehere
+   Spezifitaet, weil das CSS der Bibliothek 999999999 setzt und nach diesem Blatt eingefuegt wird. */
+:root .app [data-sonner-toaster] {
+  z-index: 9;
+}
+
+.dialog-backdrop,
+.tutorial {
+  z-index: 10;
+}
+
 [data-sonner-toast] {
   pointer-events: auto;
   transition:
     transform var(--dur-2) var(--ease-out),
-    opacity var(--dur-2) var(--ease-out),
-    height var(--dur-2) var(--ease-out);
+    opacity var(--dur-2) var(--ease-out);
 }
 
 [data-sonner-toast][data-visible='false'],
@@ -3065,10 +3075,6 @@ body {
   padding: var(--sp-1) var(--sp-3);
   min-height: 28px;
   cursor: pointer;
-}
-
-.notice--warn {
-  border-left-color: var(--primary);
 }
 
 /* Hinweisspalte oben links ueber der Karte (D3): Zeile 36 px (Touch 44), Glas, Radius 8, Farbleiste 3 px.
