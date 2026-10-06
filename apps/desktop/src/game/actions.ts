@@ -20,6 +20,7 @@ import {
   RESOURCE_KEYS,
   type Army,
   type Command,
+  type CommandError,
   type CommandResult,
   type DiplomacyAction,
   type DiplomaticOffer,
@@ -92,6 +93,10 @@ export interface ActionSpec {
   explainKey?: string
   /** What it costs and how long it takes, for the tooltip. */
   hint?: string
+  /** Kosten der naechsten Stufe als Zeilen (Bedarf + Fehlbetrag), fuer die Bauvorschau (B2). */
+  costLines?: readonly CostLine[]
+  /** Der Ablehnungscode des Kerns, wenn die Aktion gesperrt ist; fehlt bei leistbaren Aktionen. */
+  blockCode?: CommandError
   /** Null when the order can be given; otherwise why not. */
   disabledReason: string | null
   /** The order itself. Absent for orders that first need a target on the map. */
@@ -105,6 +110,19 @@ export interface ActionSpec {
   followUp?: Command
   /** Orders that need a province chosen next: the panel switches to target mode. */
   targetKind?: 'move' | 'bombard'
+}
+
+export interface CostLine {
+  resource: ResourceKey
+  need: number
+  short: number
+}
+
+/** Kosten als Zeilen mit Fehlbetrag; dieselbe Wahrheit wie `missing()` (Invariante D2). */
+export function costLines(cost: Partial<Record<string, number>>, available: Partial<Record<string, number>>): CostLine[] {
+  return Object.entries(cost)
+    .filter(([, v]) => (v ?? 0) > 0)
+    .map(([key, v]) => ({ resource: key as ResourceKey, need: v ?? 0, short: Math.max(0, (v ?? 0) - (available[key] ?? 0)) }))
 }
 
 function checked(
@@ -129,6 +147,7 @@ function checked(
     ...(explainKey ? { explainKey } : {}),
     ...(hint ? { hint } : {}),
     disabledReason: result.ok ? null : describeRejection(result, command, ctx),
+    ...(result.ok ? {} : { blockCode: result.code }),
     command,
   }
 }
@@ -235,6 +254,7 @@ export function buildActions(ctx: ActionContext, provinceId: string): ActionSpec
       ),
       // Sichtbar "Kaserne", hoerbar "Kaserne bauen" (T-M22-06, V2-13).
       aria: t('actions.buildAria', { thing: t(`buildings.${key}`) }),
+      costLines: costLines(cost, (ctx.state.players[ctx.playerId]?.resources ?? {}) as Partial<Record<string, number>>),
     }
   })
 }
@@ -298,6 +318,7 @@ export function recruitActions(ctx: ActionContext, provinceId: string): ActionSp
       ),
       // Sichtbar "Infanterie", hoerbar "Infanterie ausheben" (T-M22-06, V2-13).
       aria: t('actions.recruitAria', { thing: t(`units.${key}`) }),
+      costLines: costLines(rule.cost, (ctx.state.players[ctx.playerId]?.resources ?? {}) as Partial<Record<string, number>>),
       // Das Bild fuer die Liste (T-M33-02); die Glyphe oben bleibt unberuehrt.
       ...(UNIT_ART[key] ? { art: UNIT_ART[key] } : {}),
     }

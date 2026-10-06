@@ -820,3 +820,13 @@ nur 1280x800 und 375x667 (PLAN-V3 Regel 12). Kein Fremdinhalt: Bildschirmfotos d
 | `docs/ux/v4-sammel/nah-nachher.png` | `scripts/v4-sammel-bild.mjs` | T-M49-04: Stand S575G, SAU, 4 Rad-Schritte hinein (near, scale 0.9645), Einzelkaesten, 1280x800 |
 | `docs/ux/v4-stellung/marsch-vorher.png` | `scripts/v4-stellung-bild.mjs` | T-M48-04: eine Spielstunde Marsch, ohne Stellung, 1280x800 |
 | `docs/ux/v4-stellung/marsch-nachher.png` | `scripts/v4-stellung-bild.mjs` | T-M48-04: eine Spielstunde Marsch, mit Stellung, 1280x800 |
+
+## Bildschirmfotos der Bauvorschau (Bauvorschau B3, 2026-10-06)
+
+Kein Fremdinhalt — Bildschirmfotos des eigenen Spiels, erzeugt mit `node scripts/ux-bauvorschau-bild.mjs`. Sie stehen hier, weil
+`test/guards/no-foreign-assets.test.ts` jede eingecheckte Bilddatei namentlich verlangt.
+
+| Datei | Erzeugt von | Zeigt |
+|---|---|---|
+| `docs/ux/bauvorschau/desktop-1280x800.png` | `scripts/ux-bauvorschau-bild.mjs` | Bauvorschau, 1280x800 |
+| `docs/ux/bauvorschau/telefon-375x667.png` | `scripts/ux-bauvorschau-bild.mjs` | Bauvorschau, 375x667 |

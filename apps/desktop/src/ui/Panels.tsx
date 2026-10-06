@@ -1,10 +1,10 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react'
 import { MAX_DEPART_DELAY_DAYS } from '@worldwar/core'
-import type { PublicView, ResourceKey, Terrain, VisibleArmy, VisibleProvince } from '@worldwar/core'
+import type { CommandError, PublicView, ResourceKey, Terrain, VisibleArmy, VisibleProvince } from '@worldwar/core'
 // Nur der Typ: zur Laufzeit importiert weiterhin events.ts aus Panels.tsx, nicht umgekehrt.
 import type { BattleReportData, PricePoint } from '../game/events.ts'
 import type { TimelineEntry } from '../game/saves.ts'
-import type { NextUnlock, TradeDraft } from '../game/actions.ts'
+import type { CostLine, NextUnlock, TradeDraft } from '../game/actions.ts'
 import { t } from '../i18n/text.ts'
 import { DeltaBar } from './charts/DeltaBar.tsx'
 import { Sparkline } from './charts/Sparkline.tsx'
@@ -28,6 +28,7 @@ import { UnitMarker } from './UnitMarker.tsx'
 import { Explain } from './Explain.tsx'
 import { ConfirmButton } from './ConfirmButton.tsx'
 import { useInputMode } from './inputMode.ts'
+import { PreviewArea, slotState } from './CostPreview.tsx'
 import { scrollWithin } from './scrollWithin.ts'
 // Die Richtung einer Bilanz als Klassenzusatz - dieselbe Funktion wie in der
 // Kopfleiste (T-M36-05). Zwei Tabellen, die dieselbe Zahl verschieden einfaerben,
@@ -51,6 +52,18 @@ const MORALE_SCALE = 100_000
  * answers the only question the player actually has.
  */
 
+const stateClass = (a: Action | undefined): string => {
+  const state = a ? slotState(a) : 'none'
+  return state === 'short' || state === 'locked' || state === 'queue' ? ` slot--${state}` : ''
+}
+
+/** Schloss oder Sanduhr oben links im Bauplatz; der rote Punkt kommt allein aus CSS (D5). */
+function SlotMark({ state }: { state: ReturnType<typeof slotState> }) {
+  if (state === 'locked') return <Icon name="lock" size={12} className="slot__mark" />
+  if (state === 'queue') return <Icon name="queue" size={12} className="slot__mark" />
+  return null
+}
+
 export interface Action {
   id: string
   label: string
@@ -73,6 +86,10 @@ export interface Action {
   disabledReason: string | null
   /** What it costs and how long it takes, for the tooltip. */
   hint?: string
+  /** Kosten der naechsten Stufe als Zeilen (Bedarf + Fehlbetrag), fuer die Bauvorschau. */
+  costLines?: readonly CostLine[]
+  /** Der Ablehnungscode des Kerns; fehlt bei leistbaren Aktionen. */
+  blockCode?: CommandError
   /**
    * Die Quittung (T-M22-05, Befund V2-08): der Befehl ist abgeschickt und noch nicht
    * angewendet. Der Knopf zeigt den Satz und ist gesperrt, bis der naechste Tick den
@@ -256,7 +273,7 @@ function ActionButton({
   const reasonId = `${action.id}-reason`
   const touchInfo = useInputMode() === 'touch' ? touchHint(action, showReason || reasonInGroup) : null
   return (
-    <div className={compact ? 'action action--compact' : 'action'}>
+    <div className={compact ? 'action action--compact' : 'action'} data-action-id={action.id}>
       {/* Knopf und Fragezeichen in einer Zeile: untereinander ergaeben die
           Erklaerzeichen eine eigene Reihe einsamer Kreise (in der Sichtpruefung
           zu T-M13-17 gefunden). */}
@@ -297,7 +314,13 @@ function ActionButton({
           sagen Titel und Beschreibung es schon — deshalb aria-hidden, nicht doppelt. */}
       {touchInfo && (
         <small className="action__hint" aria-hidden="true">
-          {touchInfo.reason && <span className="action__hint-reason">{touchInfo.reason}</span>}
+          {touchInfo.reason && <span
+              className={
+                action.blockCode === 'INSUFFICIENT_RESOURCES' ? 'action__hint-reason action__hint-reason--short' : 'action__hint-reason'
+              }
+            >
+              {touchInfo.reason}
+            </span>}
           {touchInfo.cost && <span>{touchInfo.cost}</span>}
         </small>
       )}
@@ -368,6 +391,7 @@ export function ActionGroup({
   collectReasons = false,
   confirms,
   iconOnly = false,
+  preview = false,
 }: {
   group: ActionGroupSpec
   /**
@@ -375,6 +399,8 @@ export function ActionGroup({
    * `aria-label` und Tooltip, der Sperrgrund als `aria-description`. Handlungen ohne Zeichen behalten ihr Wort.
    */
   iconOnly?: boolean
+  /** Hover/Fokus zeigt die Kosten in einer Vorschauzeile unter der Liste (Bauvorschau D6). */
+  preview?: boolean
   /** Folgesätze je Aktionskennung: diese Knöpfe fragen vor dem Senden nach (T-M44-09b). */
   confirms?: Readonly<Record<string, string>>
   next?: NextUnlock | null | undefined
@@ -414,6 +440,22 @@ export function ActionGroup({
     }
   }
 
+  const list = (
+      <div className="actions">
+        {group.actions.map((action) => (
+          <ActionButton
+            key={action.id}
+            action={action}
+            showReason={showsReason(action)}
+            reasonInGroup={collectReasons}
+            confirm={confirms?.[action.id]}
+            iconOnly={iconOnly && Boolean(action.icon) && !action.art}
+            iconSize={26}
+          />
+        ))}
+      </div>
+  )
+
   return (
     <section className="group" aria-label={group.title} data-group={group.id}>
       <h3 className="group__title">{group.title}</h3>
@@ -428,19 +470,7 @@ export function ActionGroup({
           ))}
         </p>
       )}
-      <div className="actions">
-        {group.actions.map((action) => (
-          <ActionButton
-            key={action.id}
-            action={action}
-            showReason={showsReason(action)}
-            reasonInGroup={collectReasons}
-            confirm={confirms?.[action.id]}
-            iconOnly={iconOnly && Boolean(action.icon) && !action.art}
-            iconSize={26}
-          />
-        ))}
-      </div>
+      {preview ? <PreviewArea actions={group.actions}>{list}</PreviewArea> : list}
     </section>
   )
 }
@@ -655,6 +685,12 @@ export function ProvincePanel(props: ProvincePanelProps) {
       <h3 className="panel__icon-title">
         <Icon name="slots" size={26} title={t('province.buildSlots')} />
       </h3>
+      <PreviewArea
+        actions={buildActions.map((entry) => {
+          const key = BUILDING_ORDER.find((k) => entry.id === `build-${k}`)
+          return key ? { ...entry, icon: BUILDING_ICONS[key] ?? 'warning' } : entry
+        })}
+      >
       <div className="slots" data-group="build">
         {BUILDING_ORDER.map((key) => {
           const level = province.buildings?.[key] ?? 0
@@ -692,18 +728,19 @@ export function ProvincePanel(props: ProvincePanelProps) {
 
           if (level > 0) {
             return (
-              <div key={key} className="slot slot--built">
+              <div key={key} className={`slot slot--built${stateClass(build)}`}>
                 {/* Die Textfassung wie in der alten Symbolzeile: "2 Fabrik" fuers Ohr. */}
                 <Icon name={BUILDING_ICONS[key] ?? 'warning'} size={SLOT_ICON_SIZE} title={level > 1 ? `${level} ${name}` : name} />
                 {level > 1 && <sup className="slot__level">{level}</sup>}
                 {/* Die Ausbau-Aktion bleibt erreichbar — als Knopf im gebauten Feld. */}
                 {build && <ActionButton action={build} showReason={false} compact />}
+                {build && <SlotMark state={slotState(build)} />}
               </div>
             )
           }
 
           return (
-            <div key={key} className="slot slot--free">
+            <div key={key} className={`slot slot--free${stateClass(build)}`}>
               {/* Dasselbe Bild wie im gebauten und im laufenden Feld (T-M33-03) — es
                   steht IM Knopf, damit das Feld genau ein Klickziel hat und nicht ein
                   Bild neben einem. */}
@@ -717,10 +754,12 @@ export function ProvincePanel(props: ProvincePanelProps) {
               ) : (
                 <Icon name={BUILDING_ICONS[key] ?? 'warning'} size={SLOT_ICON_SIZE} title={name} />
               )}
+              {build && <SlotMark state={slotState(build)} />}
             </div>
           )
         })}
       </div>
+      </PreviewArea>
       </>
       )}
 
@@ -780,7 +819,7 @@ export function ProvincePanel(props: ProvincePanelProps) {
 
       <ActionRow actions={props.actions} />
       {otherGroups.map((group) => (
-        <ActionGroup key={group.id} group={group} next={group.id === 'recruit' ? props.nextUnlock : undefined} iconOnly={group.id === 'espionage'} />
+        <ActionGroup key={group.id} group={group} next={group.id === 'recruit' ? props.nextUnlock : undefined} iconOnly={group.id === 'espionage'} preview={group.id === 'recruit'} />
       ))}
     </section>
   )

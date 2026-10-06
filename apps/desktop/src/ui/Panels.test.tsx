@@ -2851,3 +2851,63 @@ describe('Liefervertrag B3 (D8)', () => {
     expect(categoryOf('CONTRACT_CLOSED')).toBe('diplomacy')
   })
 })
+
+describe('Bauvorschau B2: Zustandsmarken und Vorschauzeile (K4)', () => {
+  const bau = (key: string, over: Partial<Action> = {}): Action => ({
+    id: `build-${key}`,
+    label: key,
+    disabledReason: null,
+    onRun: () => undefined,
+    costLines: [{ resource: 'iron', need: 800_000, short: 400_000 }],
+    ...over,
+  })
+  const actions = [
+    bau('factory', { disabledReason: 'fehlt', blockCode: 'INSUFFICIENT_RESOURCES' }),
+    bau('harbour', { disabledReason: 'gesperrt', blockCode: 'NOT_YET_AVAILABLE' }),
+    bau('shipyard', { disabledReason: 'voll', blockCode: 'QUEUE_FULL' }),
+    bau('airfield'),
+    bau('railway', { disabledReason: 'max', blockCode: 'BUILDING_MAX_LEVEL' }),
+  ]
+  const panel = (extra: Partial<VisibleProvince> = {}) => (
+    <ProvincePanel
+      province={{ ...province, buildings: { barracks: 1 }, buildQueue: [], ...extra }}
+      ownerName="Vereinigte Staaten"
+      actions={[]}
+      groups={[{ id: 'build', title: 'Bauen', actions }]}
+      ticksPerDay={24}
+      currentTick={0}
+    />
+  )
+
+  it('setzt die Klasse je Zustand, keine bei ok/none', () => {
+    const { container } = render(panel())
+    const slots = [...container.querySelectorAll('.slot')]
+    const cls = (id: string) => slots.find((s) => s.querySelector(`[data-action-id="build-${id}"]`))!.className
+    expect(cls('factory')).toContain('slot--short')
+    expect(cls('harbour')).toContain('slot--locked')
+    expect(cls('shipyard')).toContain('slot--queue')
+    expect(cls('airfield')).not.toMatch(/slot--(short|locked|queue)/)
+    expect(cls('railway')).not.toMatch(/slot--(short|locked|queue)/)
+    expect(container.querySelectorAll('.slot__mark')).toHaveLength(2)
+  })
+
+  it('pointerOver auf einen Platz fuellt die Zeile, pointerLeave leert sie', () => {
+    const { container } = render(panel())
+    expect(container.querySelector('.cost-preview .cost-chip')).toBeNull()
+    fireEvent.pointerOver(container.querySelector('[data-action-id="build-factory"] button')!)
+    expect(container.querySelector('.cost-preview .cost-chip--short')!.textContent).toContain('\u2212400')
+    fireEvent.pointerLeave(container.querySelector('.preview-area')!)
+    expect(container.querySelector('.cost-preview .cost-chip')).toBeNull()
+  })
+
+  it('pointerOver auf Rand/Ecke des Feldes: frei fuellt die Zeile, im Bau leert sie ohne Marke', () => {
+    const { container } = render(panel({ buildQueue: [{ id: 'q1', building: 'airfield', startedTick: 0, completesAtTick: 10 }] }))
+    const free = [...container.querySelectorAll('.slot')].find((s) => s.querySelector('[data-action-id="build-factory"]'))!
+    fireEvent.pointerOver(free)
+    expect(container.querySelector('.cost-preview .cost-chip')).not.toBeNull()
+    const queued = container.querySelector('.slot--queued')!
+    fireEvent.pointerOver(queued)
+    expect(container.querySelector('.cost-preview .cost-chip')).toBeNull()
+    expect(queued.querySelector('.slot__mark')).toBeNull()
+  })
+})

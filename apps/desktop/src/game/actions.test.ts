@@ -34,6 +34,7 @@ import {
   routeCostsFrom,
   MarchTargetCache,
   cancelActions,
+  costLines,
   nextUnlock,
   recruitActions,
   spyActions,
@@ -1741,5 +1742,105 @@ describe('T-M34-04 Fehlbetrag beim Ausbau nennt den Preis der naechsten Stufe', 
     const action = buildActions(ctx, capital).find((a) => a.id === 'build-factory')!
     const short = missing(buildingCostForLevel(rule, 1, rules.constants), player.resources as Partial<Record<string, number>>)
     expect(action.disabledReason).toContain(short)
+  })
+})
+
+describe('Bauvorschau B1: Kostenzeilen und Ablehnungscode (D1, D2)', () => {
+  const reich = (ctx: ActionContext): void => {
+    for (const key of Object.keys(ctx.state.players.p1!.resources)) ctx.state.players.p1!.resources[key as 'money'] = 10_000_000
+  }
+  const spaet = (ctx: ActionContext): void => {
+    ctx.state.tick = 90 * rules.constants.ticksPerDay
+  }
+  const text = (lines: readonly { resource: string; short: number }[]): string =>
+    lines
+      .filter((l) => l.short > 0)
+      .map((l) => `${amount(l.short)} ${t('resources.' + l.resource)}`)
+      .join(', ')
+
+  it('build-factory bei Fabrik Stufe 2: need ist der Preis von Stufe 3 (T-M34-04)', () => {
+    const { ctx, capital } = fresh()
+    spaet(ctx)
+    ctx.state.provinces[capital]!.buildings.factory = 2
+    ctx.state.provinces[capital]!.buildQueue = []
+    const expected = buildingCostForLevel(rules.buildings.factory!, 3, rules.constants)
+    const lines = buildActions(ctx, capital).find((a) => a.id === 'build-factory')!.costLines!
+    for (const [key, value] of Object.entries(expected)) {
+      if ((value ?? 0) > 0) expect(lines.find((l) => l.resource === key)?.need).toBe(value)
+    }
+    expect(lines.length).toBe(Object.values(expected).filter((v) => (v ?? 0) > 0).length)
+  })
+
+  it('D2: Zeilen mit Fehlbetrag entsprechen missing() — mit und ohne Fehlbetrag', () => {
+    const { ctx, capital } = fresh()
+    spaet(ctx)
+    ctx.state.provinces[capital]!.buildings.factory = 2
+    ctx.state.provinces[capital]!.buildQueue = []
+    const own = () => ctx.state.players.p1!.resources as Partial<Record<string, number>>
+    const cost = buildingCostForLevel(rules.buildings.factory!, 3, rules.constants)
+    // mit Fehlbetrag: Kasse leer
+    for (const key of Object.keys(ctx.state.players.p1!.resources)) ctx.state.players.p1!.resources[key as 'money'] = 0
+    const arm = costLines(cost, own())
+    expect(arm.some((l) => l.short > 0)).toBe(true)
+    expect(text(arm)).toBe(missing(cost, own()))
+    // ohne Fehlbetrag: reich
+    reich(ctx)
+    const reichLines = costLines(cost, own())
+    expect(reichLines.every((l) => l.short === 0)).toBe(true)
+    expect(text(reichLines)).toBe(missing(cost, own()))
+    // die Aktion traegt dieselben Zeilen
+    const action = buildActions(ctx, capital).find((a) => a.id === 'build-factory')!
+    expect(action.costLines).toEqual(reichLines)
+  })
+
+  it('recruit traegt rule.cost als Zeilen', () => {
+    const { ctx, capital } = fresh()
+    spaet(ctx)
+    const rule = rules.units.infantry!
+    const lines = recruitActions(ctx, capital).find((a) => a.id === 'recruit-infantry')!.costLines!
+    expect(lines.map((l) => [l.resource, l.need])).toEqual(
+      Object.entries(rule.cost).filter(([, v]) => (v ?? 0) > 0).map(([k, v]) => [k, v]),
+    )
+  })
+
+  it('blockCode INSUFFICIENT_RESOURCES', () => {
+    const { ctx, capital } = fresh()
+    spaet(ctx)
+    ctx.state.provinces[capital]!.buildQueue = []
+    for (const key of Object.keys(ctx.state.players.p1!.resources)) ctx.state.players.p1!.resources[key as 'money'] = 0
+    expect(buildActions(ctx, capital).find((a) => a.id === 'build-barracks')!.blockCode).toBe('INSUFFICIENT_RESOURCES')
+  })
+
+  it('blockCode QUEUE_FULL', () => {
+    const { ctx, capital } = fresh()
+    spaet(ctx)
+    reich(ctx)
+    ctx.state.provinces[capital]!.buildQueue = Array.from({ length: 8 }, (_, i) => ({
+      id: `q${i}`,
+      building: 'harbour',
+      level: 1,
+      startedTick: 0,
+      completesAtTick: 9999,
+    })) as never
+    expect(buildActions(ctx, capital).find((a) => a.id === 'build-barracks')!.blockCode).toBe('QUEUE_FULL')
+  })
+
+  it('blockCode NOT_YET_AVAILABLE', () => {
+    const { ctx, capital } = fresh()
+    reich(ctx)
+    ctx.state.provinces[capital]!.buildQueue = []
+    ctx.state.provinces[capital]!.buildings.factory = 0
+    ctx.state.tick = 0
+    expect(buildActions(ctx, capital).find((a) => a.id === 'build-factory')!.blockCode).toBe('NOT_YET_AVAILABLE')
+  })
+
+  it('leistbare Aktion hat keinen blockCode-Schluessel', () => {
+    const { ctx, capital } = fresh()
+    spaet(ctx)
+    reich(ctx)
+    ctx.state.provinces[capital]!.buildQueue = []
+    const action = buildActions(ctx, capital).find((a) => a.id === 'build-barracks')!
+    expect(action.disabledReason).toBeNull()
+    expect('blockCode' in action).toBe(false)
   })
 })
