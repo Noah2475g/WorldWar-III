@@ -1,6 +1,6 @@
 # Auto-Pause-Zaehlung (VM-06, B1)
 
-Gemessen auf: 551e907 · Ausloeser: WAR_DECLARED an mich, CAPITAL_LOST (ARMY_INTRUDED gestrichen, siehe unten) · Pause = Tick mit >= 1 Ausloeser, keine Sperrzeit · jede Macht als Betrachter · Gate: max. 10 je Macht und Partie.
+Gemessen auf: 409eee9 · Ausloeser: WAR_DECLARED an mich, CAPITAL_LOST (ARMY_INTRUDED gestrichen, siehe unten) · Pause = Tick mit >= 1 Ausloeser, keine Sperrzeit · jede Macht als Betrachter · Gate: max. 10 je Macht und Partie.
 
 Erzeugt von `apps/headless/test/autopause-zaehlung.slow.test.ts`. Simulation (KI spielt alle Maechte), keine Zeitmessung.
 
