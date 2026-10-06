@@ -88,6 +88,11 @@ export interface DifficultyRule {
   defence: Fixed
   distance: Fixed
   weakness: Fixed
+  /**
+   * Wird von keiner Zeile in packages/ai gelesen (gemessen 2026-10-05, t_54e1bf8e). Bleibt im
+   * Regelwerk, weil Entfernen den Regel-Fingerabdruck (rulesHash, netplay/handshake.ts) aendert.
+   * Kein Text im Spiel darf damit werben.
+   */
   planningDepth: number
   maxFronts: number
   /** Hours between tactical passes: a cautious AI reacts more slowly. */
