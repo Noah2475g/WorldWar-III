@@ -232,4 +232,28 @@ describe('T-M45-04 Der Treiber haelt das Zeitbudget und verliert nichts', () => 
     expect(driver.msToNextTick()).toBeCloseTo(5, 5)
     expect(createClockDriver({ speed: 0, now: () => 0, run: () => undefined }).msToNextTick()).toBe(Infinity)
   })
+
+  it('VM-06: bricht beim Stoppsignal ab, verwirft die Schuld und steht danach still', () => {
+    const clock = { t: 1000 }
+    let ticks = 0
+    const driver = createClockDriver({
+      speed: 100,
+      now: () => clock.t,
+      run: () => {
+        ticks += 1
+        return ticks === 2
+      },
+    })
+    // 50 ms bei Tempo 100: fuenf Ticks sind faellig.
+    clock.t += 50
+    expect(driver.isStopped()).toBe(false)
+    expect(driver.advance(1000)).toBe(2)
+    expect(ticks).toBe(2)
+    expect(driver.isStopped()).toBe(true)
+
+    clock.t += 1000
+    expect(driver.advance(1000)).toBe(0)
+    expect(ticks).toBe(2)
+    expect(driver.msToNextTick()).toBe(Infinity)
+  })
 })

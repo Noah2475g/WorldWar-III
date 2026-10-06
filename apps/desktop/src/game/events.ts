@@ -242,6 +242,28 @@ export function isSelfSetback(event: GameEvent, viewer: string | undefined): boo
 }
 
 /**
+ * Loest dieses Ereignis die Auto-Pause aus (VM-06, P1)? `capitalProvinceId` ist die
+ * Hauptstadt des Betrachters VOR dem Tick (CAPITAL_LOST setzt sie auf null und entsteht
+ * nach ARMY_INTRUDED im selben Tick). Seit der P2-Streichung ungenutzt (ARMY_INTRUDED
+ * loest nicht mehr aus); die Signatur bleibt fuer den Aufrufer stabil.
+ */
+export function isAutoPauseTrigger(
+  event: GameEvent,
+  viewer: string | null | undefined,
+  _capitalProvinceId: string | null,
+): boolean {
+  if (!viewer) return false
+  switch (event.type) {
+    case 'WAR_DECLARED':
+      return event.targetPlayerId === viewer
+    case 'CAPITAL_LOST':
+      return event.playerId === viewer
+    default:
+      return false
+  }
+}
+
+/**
  * Eine Seite des Kampfberichts, mit Namen statt Kennungen (T-M27-01, R-BAT-05).
  *
  * Die Zahlen bleiben Festkomma — formatiert wird beim Zeichnen, nicht beim Sammeln,

@@ -1,0 +1,40 @@
+{
+  "base": "6ca34a486672ba7b3c4dc9c09934c9fd2a3d1a08",
+  "viewer": "p6",
+  "byScale": {
+    "0.97": {
+      "ohne": 154,
+      "mit": 154,
+      "gruppen": 0,
+      "groessteGruppe": 0
+    },
+    "1.6": {
+      "ohne": 216,
+      "mit": 54,
+      "gruppen": 17,
+      "groessteGruppe": 18
+    },
+    "2.3": {
+      "ohne": 237,
+      "mit": 57,
+      "gruppen": 18,
+      "groessteGruppe": 26
+    }
+  },
+  "ganzeKarte": {
+    "1.6": {
+      "ownTotal": 193,
+      "ownSingles": 37,
+      "ownGroups": 14,
+      "ownMembers": 156,
+      "groessteEigeneGruppe": 26
+    },
+    "2.3": {
+      "ownTotal": 193,
+      "ownSingles": 37,
+      "ownGroups": 14,
+      "ownMembers": 156,
+      "groessteEigeneGruppe": 26
+    }
+  }
+}

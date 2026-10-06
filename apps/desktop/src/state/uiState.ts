@@ -33,6 +33,8 @@ export interface Settings {
   maxSpeed: number
   fontScale: 'small' | 'normal' | 'large'
   debug: boolean
+  /** Stop the running clock on a war declaration against me or the loss of my capital. */
+  autoPause: boolean
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -41,6 +43,7 @@ export const DEFAULT_SETTINGS: Settings = {
   maxSpeed: 100,
   fontScale: 'normal',
   debug: false,
+  autoPause: true,
 }
 
 export interface UiState {
@@ -216,6 +219,7 @@ export function parseSettings(raw: unknown): Settings {
         ? input.fontScale
         : DEFAULT_SETTINGS.fontScale,
     debug: typeof input.debug === 'boolean' ? input.debug : DEFAULT_SETTINGS.debug,
+    autoPause: typeof input.autoPause === 'boolean' ? input.autoPause : DEFAULT_SETTINGS.autoPause,
   }
 }
 

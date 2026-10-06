@@ -785,6 +785,15 @@ export function SettingsDialog({
         <span>{t('settings.debug')}</span>
       </label>
 
+      <label className="field field--switch">
+        <input
+          type="checkbox"
+          checked={settings.autoPause}
+          onChange={(e) => onChange({ autoPause: e.target.checked })}
+        />
+        <span>{t('settings.autoPause')}</span>
+      </label>
+
       <ConfirmButton
         label={t('settings.reset')}
         consequence={t('settings.resetConfirm')}

@@ -8161,6 +8161,47 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Tests zuerst:** `scripts/v4-stellung-bild.mjs`
 - **Fertig wenn:** Bilder vorhanden und angesehen, `pnpm verify` Exit 0, PR-URL, `gh auth status` = Noah2475g.
 
+## Meilenstein M49 — Armee-Sammelmarke
+
+> **Herkunft.** Noahs Antwort A auf t_cba7118a, Gate t_facb9d60 „ja“ (2026-10-05). **Grenze:** nur die Hülle;
+> `packages/` und `data/` bleiben unberührt.
+
+### T-M49-01 · Sammelmarke: Gruppierung als reine Funktion (sammel.ts)
+- **Ziel:** Ab 4 Armeen mit gleichem Schluessel (Provinz, Station, Seite) entsteht auf mid/far eine Sammelmarke als reine, getestete Funktion; Zeichnen und Klick teilen dasselbe Layout.
+- **Paket und Priorität:** Armee-Sammelmarke · P1
+- **Anforderungen:** R-MAP-05
+- **Abhängigkeiten:** —
+- **Dateien:** `apps/desktop/src/map/sammel.ts`, `apps/desktop/src/map/markers.ts`
+- **Tests zuerst:** `apps/desktop/src/map/sammel.test.ts`
+- **Fertig wenn:** Tests (a)-(m) gruen, Gegenproben rot gesehen, Typecheck/Lint/plan-consistency Exit 0.
+
+### T-M49-02 · Zeichnen und Klick der Sammelmarke in MapCanvas
+- **Ziel:** MapCanvas zeichnet die Sammelmarke und springt beim Klick auf Massstab 1 an die Marke (D6-D9).
+- **Paket und Priorität:** Armee-Sammelmarke · P1
+- **Anforderungen:** R-MAP-05
+- **Abhängigkeiten:** T-M49-01
+- **Dateien:** `apps/desktop/src/map/MapCanvas.tsx`, `apps/desktop/src/map/MapCanvas.test.tsx`, `apps/desktop/src/App.tsx`
+- **Tests zuerst:** `apps/desktop/src/map/MapCanvas.test.tsx`
+- **Fertig wenn:** Neue MapCanvas-Tests gruen, alte unveraendert gruen.
+
+### T-M49-03 · Waechter: Sammelmarke an S575
+- **Ziel:** Der Waechter misst am echten Stand S575, dass Gruppierung Marken reduziert und keine Armee unerreichbar macht.
+- **Paket und Priorität:** Armee-Sammelmarke · P1
+- **Anforderungen:** R-MAP-05
+- **Abhängigkeiten:** T-M49-02
+- **Dateien:** `apps/desktop/src/map/sammel.slow.test.ts`, `docs/reports/v4/sammel.json`
+- **Tests zuerst:** `apps/desktop/src/map/sammel.slow.test.ts`
+- **Fertig wenn:** Slow-Test gruen, Messwerte in sammel.json.
+
+### T-M49-04 · Abnahme am laufenden Programm, Bericht, PR
+- **Ziel:** Abnahme der Sammelmarke am laufenden Programm mit Bildern, Bericht und PR.
+- **Paket und Priorität:** Armee-Sammelmarke · P1
+- **Anforderungen:** R-MAP-05
+- **Abhängigkeiten:** T-M49-03
+- **Dateien:** `scripts/v4-sammel-bild.mjs`, `docs/ux/v4-sammel/`, `docs/reports/v4/sammel.md`, `docs/plan/PROGRESS.md`, `docs/ASSETS.md`
+- **Tests zuerst:** `scripts/v4-sammel-bild.mjs`
+- **Fertig wenn:** Bilder angesehen, pnpm verify Exit 0, PR offen (Noah2475g), Merge nur durch reviewer.
+
 ## Meilenstein M50 — Liefervertrag Etappe 1
 
 > **Herkunft.** Plan „Liefervertrag Etappe 1“ (Noahs Ja). **Grenze:** B1 = Kern, Speichern, Parität; KI (B2) und
