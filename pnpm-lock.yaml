@@ -125,6 +125,9 @@ importers:
       react-dom:
         specifier: ^19.2.8
         version: 19.2.8(react@19.2.8)
+      sonner:
+        specifier: 2.0.8
+        version: 2.0.8(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
     devDependencies:
       '@worldwar/testkit':
         specifier: workspace:*
@@ -1665,6 +1668,16 @@ packages:
 
   slice-source@0.4.1:
     resolution: {integrity: sha512-YiuPbxpCj4hD9Qs06hGAz/OZhQ0eDuALN0lRWJez0eD/RevzKqGdUx1IOMUnXgpr+sXZLq3g8ERwbAH0bCb8vg==}
+
+  sonner@2.0.8:
+    resolution: {integrity: sha512-UM/ByIoFra8yzV75n1o0Puu0bw5U/9UNnDacrJNspekBewIfsQ3D6ez1nvlWpt7aTsO6rujQtifBpycwIivqlg==}
+    peerDependencies:
+      '@types/react': ^18.0.0 || ^19.0.0
+      react: ^18.0.0 || ^19.0.0 || ^19.0.0-rc
+      react-dom: ^18.0.0 || ^19.0.0 || ^19.0.0-rc
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
 
   source-map-js@1.2.1:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
@@ -3249,6 +3262,13 @@ snapshots:
   siginfo@2.0.0: {}
 
   slice-source@0.4.1: {}
+
+  sonner@2.0.8(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8):
+    dependencies:
+      react: 19.2.8
+      react-dom: 19.2.8(react@19.2.8)
+    optionalDependencies:
+      '@types/react': 19.2.18
 
   source-map-js@1.2.1: {}
 

@@ -263,7 +263,27 @@ async function layout(page) {
     }
     const chip = document.querySelector('.alarm-chip')
     const goal = document.querySelector('header .meter')
+    // B0 v3b (M3/K19, reines Messfeld): je Ort die Meldungen. [data-msg] wenn vorhanden, sonst normalisierter innerText je Zeile (Info).
+    const orte = { toast: '[data-sonner-toast]:not([data-visible="false"])', alerts: '.alerts', chip: '.alarm-chip', dock: 'section.dock' }
+    const norm = (s) => s.replace(/\s+/g, ' ').trim().slice(0, 80)
+    const meldungsorte = { orte: {} }
+    for (const [name, sel] of Object.entries(orte)) {
+      const msgs = []
+      for (const el of document.querySelectorAll(sel)) {
+        const tagged = [...el.querySelectorAll('[data-msg]')]
+        if (el.hasAttribute('data-msg')) tagged.unshift(el)
+        if (tagged.length > 0) msgs.push(...tagged.map((n) => ({ key: n.getAttribute('data-msg'), via: 'data-msg' })))
+        else if (name === 'alerts') msgs.push(...[...el.querySelectorAll('li')].map((li) => ({ key: norm(li.innerText), via: 'text' })))
+        else if (el.getBoundingClientRect().height > 0) msgs.push(...(el.innerText || '').split('\n').map(norm).filter(Boolean).map((key) => ({ key, via: 'text' })))
+      }
+      meldungsorte.orte[name] = msgs
+    }
+    const seenAt = {}
+    for (const [name, msgs] of Object.entries(meldungsorte.orte)) for (const m of new Set(msgs.map((x) => x.key))) (seenAt[m] ??= []).push(name)
+    meldungsorte.doppelt = Object.entries(seenAt).filter(([, o]) => o.length >= 2).map(([key, o]) => ({ key, orte: o }))
+    meldungsorte.anzahl = Object.fromEntries(Object.entries(meldungsorte.orte).map(([k, v]) => [k, v.length]))
     return {
+      meldungsorte,
       viewport: { w: innerWidth, h: innerHeight },
       // Zustand der Kopfleiste, damit R-UX-02/AK1 weiss, ob Alarmchip und Siegziel dabei waren.
       alarmChipVisible: Boolean(chip && drawn(chip)),
@@ -669,6 +689,32 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
     await btn('Kaserne bauen').click({ timeout: 5000 })
     await page.waitForTimeout(300)
     await shot('rueckmeldung-bau-befohlen')
+    // E1-Nachbesserung (K19/K15, nur Messfeld): hier steht der Toast; Meldungsorte und Freihaltung messen.
+    data.layout.toast = await layout(page)
+    data.probes.toastFrei = await page.evaluate(() => {
+      const toast = document.querySelector('[data-sonner-toast]:not([data-visible="false"])')
+      const hit = (el) => {
+        if (!el) return null
+        const r = el.getBoundingClientRect()
+        if (r.width === 0 || r.height === 0) return null
+        const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)
+        return { frei: top !== null && (top === el || el.contains(top) || top.contains(el)), treffer: top ? `${top.tagName.toLowerCase()}.${String(top.getAttribute('class') || '').split(' ')[0]}` : null }
+      }
+      const pause = [...document.querySelectorAll('button')].find((b) => (b.getAttribute('aria-label') || b.textContent || '').trim() === 'Pause')
+      const box = toast ? toast.getBoundingClientRect() : null
+      const map = document.querySelector('.main, main')
+      return {
+        toastSteht: Boolean(toast),
+        toast: box ? { left: Math.round(box.left), top: Math.round(box.top), bottom: Math.round(box.bottom), right: Math.round(box.right) } : null,
+        footTop: document.querySelector('.foot') ? Math.round(document.querySelector('.foot').getBoundingClientRect().top) : null,
+        headBottom: document.querySelector('.header') ? Math.round(document.querySelector('.header').getBoundingClientRect().bottom) : null,
+        mapBottom: map ? Math.round(map.getBoundingClientRect().bottom) : null,
+        pause: hit(pause),
+        // Erste Protokollzeile; noch ohne Eintrag steht der Protokollkasten selbst an dieser Stelle.
+        logZeile: hit(document.querySelector('.log__row') || document.querySelector('.foot .log')),
+        toasterZ: getComputedStyle(document.querySelector('[data-sonner-toaster]') || document.body).zIndex,
+      }
+    })
   })
   await step('tempo-laeuft', async () => {
     await speed('100')

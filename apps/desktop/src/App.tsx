@@ -149,6 +149,9 @@ import {
   type NewsState,
 } from './ui/Alerts.tsx'
 import { cueForOwnEvents, play } from './ui/sound.ts'
+import { Toaster } from 'sonner'
+import { useToastInsets } from './ui/useToastInsets.ts'
+import { dismissNotice, showNotice } from './ui/notice.ts'
 import {
   TUTORIAL_OFF,
   TUTORIAL_STORAGE_KEY,
@@ -595,6 +598,7 @@ export function App(props: AppProps) {
    * Quittungen, die nach dem Anwenden noch ACK_MIN_MS stehen bleiben (T-M46-11): bei Tempo 100 wendet der naechste Tick
    * den Befehl nach ~100 ms an, und die Quittung war weg, bevor jemand hinsah.
    */
+  const noticeShown = useRef<'ack' | 'ui' | null>(null)
   const [ackHeld, setAckHeld] = useState<ReadonlySet<string>>(new Set())
   const ackTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>())
   /**
@@ -602,19 +606,12 @@ export function App(props: AppProps) {
    * wirkt (aus „Kaserne bauen“ wird der Bauauftrag), und mit ihnen ihre Quittung. Diese Zeile haengt am Befehl, nicht
    * am Knopf, und steht ACK_MIN_MS lang - bei jedem Tempo.
    */
-  const [ackLine, setAckLine] = useState<string | null>(null)
-  const ackLineTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Seit Seitenleiste v3b E1 (D2) ein Toast (`ui/notice.ts`, id 'notice', Dauer ACK_MIN_MS + ACK_SLACK_MS wie vorher).
+  // LOESCHVERMERK: bis E1 stand hier ackLine-State plus Timer und die Zeile oben in der Seitenleiste.
   const showAckLine = useCallback((text: string): void => {
-    if (ackLineTimer.current) clearTimeout(ackLineTimer.current)
-    setAckLine(text)
-    ackLineTimer.current = setTimeout(() => setAckLine(null), ACK_MIN_MS + ACK_SLACK_MS)
+    noticeShown.current = 'ack'
+    showNotice('ack', text)
   }, [])
-  useEffect(
-    () => () => {
-      if (ackLineTimer.current) clearTimeout(ackLineTimer.current)
-    },
-    [],
-  )
   const holdAck = useCallback((key: string): void => {
     if (!key) return
     const old = ackTimers.current.get(key)
@@ -1490,6 +1487,8 @@ export function App(props: AppProps) {
 
   /** Nur auf dem Telefon im Hochformat gibt es die Panelwahl im Kopf des Blatts (T-M46-10). */
   const phonePortrait = usePhonePortrait()
+  const appRef = useRef<HTMLDivElement>(null)
+  useToastInsets(appRef, Boolean(state && view && ctx && viewerId))
 
   /** Ein Panel aus Fuss oder Blattleiste oeffnen. Die Lage oeffnen heisst: gesehen, die Neu-Marke faellt auf null. */
   const openFootPanel = useCallback(
@@ -2027,6 +2026,36 @@ export function App(props: AppProps) {
     }
   }, [state, viewerId, alarmSeenTick, activeMap.provinces])
 
+  // `ui.notice` bleibt im uiState; nur die Darstellung ist ein Toast (D2). Wird die Meldung
+  // geloescht (clearNotice), geht auch ihr Toast; eine Quittung bleibt bis zu ihrem Ablauf.
+  useEffect(() => {
+    if (ui.notice) {
+      noticeShown.current = 'ui'
+      showNotice(ui.notice.kind === 'error' ? 'error' : 'info', ui.notice.text)
+    } else if (noticeShown.current === 'ui') {
+      noticeShown.current = null
+      dismissNotice()
+    }
+  }, [ui.notice])
+
+  /** Ueberrannt-Zeile derselben Provinz entfaellt, solange der Alarmchip den Einmarsch zeigt (D3, Spec 10.9.4). */
+  const shownAlerts = useMemo(
+    () => (alarm ? alerts.filter((alert) => !(alert.kind === 'overrun' && alert.provinceId === alarm.provinceId)) : alerts),
+    [alerts, alarm],
+  )
+  const alertsElement = (
+    <Alerts
+      alerts={shownAlerts}
+      onJump={jumpToTarget}
+      column={!phonePortrait}
+      onDismiss={(id) =>
+        news.alerts.has(id)
+          ? setNews((old) => dismissNews(old, id))
+          : setDismissedAlerts((old) => new Map(old).set(id, view?.tick ?? 0))
+      }
+    />
+  )
+
   /** Player ids never reach the screen: the player knows nations, not "p2". */
   const nameOf = useMemo(
     () => (state ? nationNamer(state.players) : (playerId: string): string => playerId),
@@ -2516,11 +2545,20 @@ export function App(props: AppProps) {
   return (
     <div
       className="app"
+      ref={appRef}
       style={fontScaleStyle(ui.settings)}
       // Ein offenes Panel verkleinert im Hochformat die Karte (T-M44-03a, touch.css `--map-h`).
       data-panel={ui.panel ? 'open' : 'closed'}
       data-sheet={ui.panel ? sheetSnap : undefined}
     >
+      {/* Ein Toaster (D2): Desktop unten links, Telefon-Hochformat oben mittig; hoechstens einer sichtbar. */}
+      <Toaster
+        position={phonePortrait ? 'top-center' : 'bottom-left'}
+        visibleToasts={1}
+        offset={{ bottom: 'calc(var(--edge) + var(--dock-h))', left: 'var(--edge)', top: 'calc(var(--edge) + var(--head-h))' }}
+        mobileOffset={{ bottom: 'calc(var(--edge) + var(--dock-h))', left: 'var(--edge)', top: 'calc(var(--edge) + var(--head-h))' }}
+        className="toaster"
+      />
       <Header
         view={view}
         ticksPerDay={ticksPerDay}
@@ -2619,6 +2657,8 @@ export function App(props: AppProps) {
             }}
             labelFor={nameOfProvince}
           />
+          {/* Die Hinweisspalte oben links ueber der Karte (v3b E1, D3); im Telefon-Hochformat bleibt sie im Blatt (E8). */}
+          {!phonePortrait && alertsElement}
           {/* Der Schluessel gehoert zu seiner Karte, nicht in die Seitenleiste. */}
           <Legend mode={ui.mode} {...(colorOf(viewerId) ? { ownColor: colorOf(viewerId)! } : {})} />
           {tooltip && tooltipAt && <Tooltip data={tooltip} x={tooltipAt.x} y={tooltipAt.y} selected={tooltipSelected} />}
@@ -2651,28 +2691,8 @@ export function App(props: AppProps) {
                 }}
               />
           }
-          alerts={
-              <Alerts
-                alerts={alerts}
-                onJump={jumpToTarget}
-                onDismiss={(id) =>
-                  news.alerts.has(id)
-                    ? setNews((old) => dismissNews(old, id))
-                    : setDismissedAlerts((old) => new Map(old).set(id, view.tick))
-                }
-              />
-          }
-          notice={
-            <>
-              {/* Die Quittung haengt am Befehl und steht mindestens anderthalb Sekunden (T-M46-11). */}
-              {ackLine && (
-                <p className="action__pending notice notice--ack" aria-live="polite">
-                  {ackLine}
-                </p>
-              )}
-              {ui.notice && <p className={`notice notice--${ui.notice.kind}`}>{ui.notice.text}</p>}
-            </>
-          }
+          alerts={phonePortrait ? alertsElement : null}
+          notice={null}
           panel={
             <>
               {ui.panel === 'province' && (

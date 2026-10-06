@@ -734,6 +734,10 @@ für die zehn Einheitenarten; es wird keine Datei eingecheckt.
 npm-Paket `lucide-react` (`apps/desktop/package.json`). Oberflächensymbole (Uhr, Pause, Warnung, Beziehungen,
 Gelände, Spionage); keine Datei eingecheckt.
 
+**sonner** 2.0.8 — Emil Kowalski, Lizenz **MIT**, https://github.com/emilkowalski/sonner, npm-Paket `sonner`
+(`apps/desktop/package.json`, 0 Abhängigkeiten). Zeigt die Meldungen als Toast (Seitenleiste v3b E1, D2); liefert
+kein Bild und keine Schrift, nur Verhalten und ein kleines Stylesheet; keine Datei eingecheckt.
+
 ## Klänge von Dritten — Kenney (V3 Welle 2, T-M46-14, 2026-10-04)
 
 Urheber **Kenney** (www.kenney.nl), Lizenz **CC0 1.0** (https://creativecommons.org/publicdomain/zero/1.0/, gemeinfrei
@@ -820,6 +824,31 @@ nur 1280x800 und 375x667 (PLAN-V3 Regel 12). Kein Fremdinhalt: Bildschirmfotos d
 | `docs/ux/v4-sammel/nah-nachher.png` | `scripts/v4-sammel-bild.mjs` | T-M49-04: Stand S575G, SAU, 4 Rad-Schritte hinein (near, scale 0.9645), Einzelkaesten, 1280x800 |
 | `docs/ux/v4-stellung/marsch-vorher.png` | `scripts/v4-stellung-bild.mjs` | T-M48-04: eine Spielstunde Marsch, ohne Stellung, 1280x800 |
 | `docs/ux/v4-stellung/marsch-nachher.png` | `scripts/v4-stellung-bild.mjs` | T-M48-04: eine Spielstunde Marsch, mit Stellung, 1280x800 |
+| `docs/ux/v4-seitenleiste/b0/S575G-basis-diplomatie-1280x800.png` | `scripts/ux-capture.mjs` | Seitenleiste v3b B0: Basisaufnahme, S575G-basis-diplomatie-1280x800.png |
+| `docs/ux/v4-seitenleiste/b0/S575G-basis-diplomatie-1920x1080.png` | `scripts/ux-capture.mjs` | Seitenleiste v3b B0: Basisaufnahme, S575G-basis-diplomatie-1920x1080.png |
+| `docs/ux/v4-seitenleiste/b0/S575G-basis-diplomatie-auswahl-1280x800.png` | `scripts/ux-capture.mjs` | Seitenleiste v3b B0: Basisaufnahme, S575G-basis-diplomatie-auswahl-1280x800.png |
+| `docs/ux/v4-seitenleiste/b0/S575G-basis-diplomatie-auswahl-1920x1080.png` | `scripts/ux-capture.mjs` | Seitenleiste v3b B0: Basisaufnahme, S575G-basis-diplomatie-auswahl-1920x1080.png |
+| `docs/ux/v4-seitenleiste/b0/S575G-basis-kopf-1280x800.png` | `scripts/ux-capture.mjs` | Seitenleiste v3b B0: Basisaufnahme, S575G-basis-kopf-1280x800.png |
+| `docs/ux/v4-seitenleiste/b0/S575G-basis-kopf-1920x1080.png` | `scripts/ux-capture.mjs` | Seitenleiste v3b B0: Basisaufnahme, S575G-basis-kopf-1920x1080.png |
+| `docs/ux/v4-seitenleiste/b0/S575G-basis-kopf-375x667.png` | `scripts/ux-capture.mjs` | Seitenleiste v3b B0: Basisaufnahme, S575G-basis-kopf-375x667.png |
+| `docs/ux/v4-seitenleiste/b0/S575G-basis-panel-1280x800.png` | `scripts/ux-capture.mjs` | Seitenleiste v3b B0: Basisaufnahme, S575G-basis-panel-1280x800.png |
+| `docs/ux/v4-seitenleiste/b0/S575G-basis-panel-1920x1080.png` | `scripts/ux-capture.mjs` | Seitenleiste v3b B0: Basisaufnahme, S575G-basis-panel-1920x1080.png |
+| `docs/ux/v4-seitenleiste/b0/S575G-basis-panel-375x667.png` | `scripts/ux-capture.mjs` | Seitenleiste v3b B0: Basisaufnahme, S575G-basis-panel-375x667.png |
+| `docs/ux/v4-seitenleiste/b0/S575G-basis-protokoll-375x667.png` | `scripts/ux-capture.mjs` | Seitenleiste v3b B0: Basisaufnahme, S575G-basis-protokoll-375x667.png |
+| `docs/ux/v4-seitenleiste/b0/S575G-basis-puls-1280x800.png` | `scripts/ux-capture.mjs` | Seitenleiste v3b B0: Basisaufnahme, S575G-basis-puls-1280x800.png |
+| `docs/ux/v4-seitenleiste/b0/S575G-basis-puls-1920x1080.png` | `scripts/ux-capture.mjs` | Seitenleiste v3b B0: Basisaufnahme, S575G-basis-puls-1920x1080.png |
+| `docs/ux/v4-seitenleiste/b0/S575G-basis-puls-375x667.png` | `scripts/ux-capture.mjs` | Seitenleiste v3b B0: Basisaufnahme, S575G-basis-puls-375x667.png |
+| `docs/ux/v4-seitenleiste/e1/S575G-e1-diplomatie-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E1: Aufnahme nach Tokens, Toasts und Hinweisspalte, S575G-e1-diplomatie-1280x800.png |
+| `docs/ux/v4-seitenleiste/e1/S575G-e1-diplomatie-auswahl-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E1: Aufnahme nach Tokens, Toasts und Hinweisspalte, S575G-e1-diplomatie-auswahl-1280x800.png |
+| `docs/ux/v4-seitenleiste/e1/S575G-e1-kopf-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E1: Aufnahme nach Tokens, Toasts und Hinweisspalte, S575G-e1-kopf-1280x800.png |
+| `docs/ux/v4-seitenleiste/e1/S575G-e1-kopf-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E1: Aufnahme nach Tokens, Toasts und Hinweisspalte, S575G-e1-kopf-375x667.png |
+| `docs/ux/v4-seitenleiste/e1/S575G-e1-toast-1280x800.png` | `scripts/ux-capture.mjs` | Seitenleiste v3b E1 R1: stehender Toast, 12 px ueber dem Kartenrand, S575G-e1-toast-1280x800.png |
+| `docs/ux/v4-seitenleiste/e1/S575G-e1-toast-375x667.png` | `scripts/ux-capture.mjs` | Seitenleiste v3b E1 R1: stehender Toast unter dem Kopf, S575G-e1-toast-375x667.png |
+| `docs/ux/v4-seitenleiste/e1/S575G-e1-panel-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E1: Aufnahme nach Tokens, Toasts und Hinweisspalte, S575G-e1-panel-1280x800.png |
+| `docs/ux/v4-seitenleiste/e1/S575G-e1-panel-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E1: Aufnahme nach Tokens, Toasts und Hinweisspalte, S575G-e1-panel-375x667.png |
+| `docs/ux/v4-seitenleiste/e1/S575G-e1-protokoll-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E1: Aufnahme nach Tokens, Toasts und Hinweisspalte, S575G-e1-protokoll-375x667.png |
+| `docs/ux/v4-seitenleiste/e1/S575G-e1-puls-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E1: Aufnahme nach Tokens, Toasts und Hinweisspalte, S575G-e1-puls-1280x800.png |
+| `docs/ux/v4-seitenleiste/e1/S575G-e1-puls-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E1: Aufnahme nach Tokens, Toasts und Hinweisspalte, S575G-e1-puls-375x667.png |
 
 ## Bildschirmfotos der Bauvorschau (Bauvorschau B3, 2026-10-06)
 

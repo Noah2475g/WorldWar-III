@@ -608,17 +608,31 @@ function AlertGroup({ alert, group, onJump }: { alert: Alert; group: readonly Al
 
 /** Die Groesse des Meldungszeichens (T-M46-17): gross genug, dass es und nicht das Kurzwort die Meldung traegt. */
 const ALERT_ICON = 28
+/**
+ * Hinweisspalte (v3b E1, D3): hoechstens 3 Zeilen, der Rest hinter „+n“. Zeichen 28 px statt der 18 aus D3:
+ * K9 (Textanteil <= 0,5) misst die Flaeche der Zeichen gegen die des Kurzworts; bei 18 px lag `.alerts` im
+ * Bild S300/1280x800 bei 0,683, bei 28 px bei ca. 0,49. Konflikt D3 gegen K9 steht im Bericht (E1).
+ */
+const COLUMN_ICON = 28
+export const COLUMN_MAX = 3
 
 export function Alerts({
   alerts,
   onJump,
   onDismiss,
+  column = false,
 }: {
   alerts: readonly Alert[]
   onJump: (target: JumpTarget) => void
   /** Eine Ankuendigung oder Freischaltung bis zum Ende ihres Spieltags ausblenden. */
   onDismiss?: (id: string) => void
+  /**
+   * Hinweisspalte oben links ueber der Karte (v3b E1, D3): `.alerts.map-alerts`, hoechstens
+   * COLUMN_MAX Zeilen, der Rest hinter „+n“. Ohne: die Liste im Blatt (Telefon-Hochformat, E8).
+   */
+  column?: boolean
 }) {
+  const [expanded, setExpanded] = useState(false)
   if (alerts.length === 0) return null
 
   // Mehrere Freischaltungen am selben Tag belegten je eine Zeile Panelhoehe (T-M44-12): sie
@@ -651,28 +665,32 @@ export function Alerts({
   // Zeichen gross, Kurzwort klein (T-M46-17): der Satz steht als Name des Zeichens und als Tooltip.
   // LOESCHVERMERK (Review): bis T-M46-17 stand der ganze Satz neben einem 14-px-Zeichen
   // (<Icon name={alert.icon} size={14} /> und {alert.text} im Knopf bzw. in der Zusammenfassung).
+  const hidden = column && !expanded ? Math.max(0, rows.length - COLUMN_MAX) : 0
+  const visibleRows = hidden > 0 ? rows.slice(0, COLUMN_MAX) : rows
+  const iconSize = column ? COLUMN_ICON : ALERT_ICON
   return (
-    <section className="alerts" aria-label={t('alerts.title')}>
+    <section className={column ? 'alerts map-alerts' : 'alerts'} aria-label={t('alerts.title')}>
       <ul>
-        {rows.map(({ alert, ids, group }) => {
+        {visibleRows.map(({ alert, ids, group }) => {
           const target = targetOf(alert)
+          const msg = alert.id.startsWith(`${alert.kind}:`) ? alert.id : `${alert.kind}:${alert.id}`
           if (group) {
             return (
-              <li key={alert.id} className={`alert alert--${alert.kind} alert--group`}>
+              <li key={alert.id} className={`alert alert--${alert.kind} alert--group`} data-msg={msg}>
                 <AlertGroup alert={alert} group={group} onJump={onJump} />
               </li>
             )
           }
           return (
-            <li key={alert.id} className={`alert alert--${alert.kind}`}>
+            <li key={alert.id} className={`alert alert--${alert.kind}`} data-msg={msg}>
               {target ? (
                 <button type="button" className="alert__jump" aria-label={alert.text} title={alert.text} onClick={() => onJump(target)}>
-                  <Icon name={alert.icon} size={ALERT_ICON} />
+                  <Icon name={alert.icon} size={iconSize} />
                   {alert.short}
                 </button>
               ) : (
                 <span className="alert__plain" title={alert.text}>
-                  <Icon name={alert.icon} size={ALERT_ICON} title={alert.text} />
+                  <Icon name={alert.icon} size={iconSize} title={alert.text} />
                   {alert.short}
                 </span>
               )}
@@ -691,6 +709,19 @@ export function Alerts({
             </li>
           )
         })}
+        {column && rows.length > COLUMN_MAX && (
+          <li className="alert alert--more">
+            <button
+              type="button"
+              className="alert__more"
+              aria-expanded={expanded}
+              aria-label={expanded ? t('alerts.less') : t('alerts.more', { count: rows.length - COLUMN_MAX })}
+              onClick={() => setExpanded((open) => !open)}
+            >
+              {expanded ? '−' : `+${hidden}`}
+            </button>
+          </li>
+        )}
       </ul>
     </section>
   )

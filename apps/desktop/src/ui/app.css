@@ -49,18 +49,27 @@
 }
 
 :root {
+  /* v3b (E1, D1): sieben Rollen; die alten Namen darunter sind Aliase mit gleichen Werten.
+     Hex steht doppelt, damit css-mirrors-tokens.test.ts beide Namen vergleicht. */
+  --surface: #121821;
+  --raised: #1c2531;
+  --text: #ece6da;
+  --muted: #a4abb6;
+  --primary: #e9ab3c;
+  --danger: #f07a5f;
+  --on-primary: #1a1205;
   --ground: #0d1117;
-  --paper: #161c25;
-  --paper-sunk: #1e2632;
-  --ink: #e6e1d3;
-  --ink-soft: #9aa0a8;
-  --line: #5c6a78;
+  --paper: #121821;
+  --paper-sunk: #1c2531;
+  --ink: #ece6da;
+  --ink-soft: #a4abb6;
+  --line: #657382;
   --water: #0a0e14;
-  --accent: #e8583f;
+  --accent: #f07a5f;
   --good: #7ec57e;
-  --warn: #e0a220;
+  --warn: #e9ab3c;
   --on-dark: #f7f4ec;
-  --on-warn: #1a1200;
+  --on-warn: #1a1205;
   --on-player: #e6e1d3;
   --building: #c9b98a;
   --ally: #6fa8dc;
@@ -74,6 +83,58 @@
   --sp-md: 8px;
   --sp-lg: 12px;
   --sp-xl: 20px;
+
+  /* Ableitungen (keine neuen Farben; color-mix ist fuer den Spiegel-Waechter kein Hex).
+     hair = text 9 %, line-soft = text 22 % (nur Deko), glass = surface 98 % (ohne Weichzeichner:
+     die Karte zeichnet je Bild neu), *-soft = Farbe 14-16 % ueber surface. */
+  --hair: color-mix(in srgb, var(--text) 9%, transparent);
+  --line-soft: color-mix(in srgb, var(--text) 22%, transparent);
+  --glass: color-mix(in srgb, var(--surface) 98%, transparent);
+  --primary-soft: color-mix(in srgb, var(--primary) 16%, var(--surface));
+  --danger-soft: color-mix(in srgb, var(--danger) 14%, var(--surface));
+
+  --fs-xs: 10.5px;
+  --fs-s: 12px;
+  --fs-m: 13.5px;
+  --fs-l: 16px;
+  --fs-xl: 20px;
+
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --edge: 12px;
+
+  --r-s: 8px;
+  --r-m: 12px;
+  --r-l: 16px;
+  --r-xl: 20px;
+  --r-pill: 999px;
+
+  --sh-1: 0 1px 2px rgb(3 6 10 / 0.45);
+  --sh-2: 0 8px 24px rgb(3 6 10 / 0.55), 0 1px 3px rgb(3 6 10 / 0.4);
+  --sh-3: 0 18px 48px rgb(3 6 10 / 0.6), 0 2px 6px rgb(3 6 10 / 0.4);
+  --bezel: inset 0 1px 0 color-mix(in srgb, var(--text) 8%, transparent), 0 0 0 1px var(--hair);
+
+  /* Bewegung: nur transform/opacity */
+  --dur-1: 140ms;
+  --dur-2: 260ms;
+  --dur-3: 420ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --spring: linear(0, 0.009, 0.035 2.1%, 0.141 4.4%, 0.723 12.9%, 0.938 16.7%, 1.017 19.8%, 1.051 23%, 1.056 26.5%, 1.032 33.6%, 1.006 41.5%, 0.996 50%, 1);
+  --stagger: 24ms;
+  --dock-h: 0px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-1: 0ms;
+    --dur-2: 120ms;
+    --dur-3: 120ms;
+    --spring: linear(0, 1);
+    --stagger: 0ms;
+  }
 }
 
 * {
@@ -1132,7 +1193,7 @@ body {
 }
 
 .eco__balance--plus {
-  color: var(--good);
+  color: var(--text);
 }
 
 .eco__balance--minus {
@@ -1213,7 +1274,7 @@ body {
 /* Die Befehls-Quittung (T-M22-05): abgeschickt, wirkt im naechsten Tick. */
 .action__pending {
   font-size: 11px;
-  color: var(--good);
+  color: var(--text);
   margin: 0 0 var(--sp-sm);
 }
 
@@ -1815,7 +1876,7 @@ body {
 }
 
 .meter__fill--good {
-  background: var(--good);
+  background: var(--muted);
 }
 
 .meter__fill--warn {
@@ -1839,7 +1900,7 @@ body {
 }
 
 .meter__trend--up {
-  color: var(--good);
+  color: var(--text);
 }
 
 .meter__trend--down {
@@ -1865,7 +1926,7 @@ body {
 }
 
 .meter__segments--good {
-  color: var(--good);
+  color: var(--muted);
 }
 
 .meter__segments--warn {
@@ -2171,7 +2232,7 @@ body {
 }
 
 .goal--reached .goal__mark {
-  color: var(--good);
+  color: var(--text);
 }
 
 .goal__state {
@@ -2226,7 +2287,7 @@ body {
 }
 
 .delta__fill--plus {
-  background: var(--good);
+  background: var(--muted);
 }
 
 .delta__fill--minus {
@@ -2461,7 +2522,7 @@ body {
 /* Ein fertiger Bau leuchtet einmal auf — derselbe Gedanke, dieselbe Kuerze. */
 @keyframes meter-done {
   from {
-    background: var(--good);
+    background: var(--muted);
   }
   to {
     background: var(--paper-sunk);
@@ -3012,5 +3073,197 @@ body {
 
 /* ---- T-M46-11 · Quittung oben in der Seitenleiste, anderthalb Sekunden bei jedem Tempo --------- */
 .notice--ack {
-  border-left-color: var(--good);
+  border-left-color: var(--muted);
+}
+
+/* ---------------------------------------------------------------- v3b E1: Toasts, Hinweisspalte, Mikro-Bewegung */
+
+/* Toasts (sonner 2.0.8, D2). Der Container faengt nichts, nur die Karte (Spec 10.9.6); die Karte steht
+   unten links, 12 px ueber der Unterkante (--edge + --dock-h, die Leiste unten kommt in E5). Ein
+   abtretender oder ausgeblendeter Toast ist unsichtbar UND nicht fokussierbar (K5/K19): sonner haengt
+   ihn 200 ms (TIME_BEFORE_UNMOUNT) noch ins DOM. Die Bibliothek bringt eigenes CSS mit (u. a. eine
+   height-Transition am Toast); die eigenen Regeln hier bewegen nur transform und opacity (K18). */
+[data-sonner-toaster] {
+  --width: 340px;
+  pointer-events: none;
+  font-family: var(--font-ui);
+}
+
+/* z-Leiter D5: Toast 9; Dialoge und Einfuehrung (heute z-index auto) stehen mit 10 darueber. Hoehere
+   Spezifitaet, weil das CSS der Bibliothek 999999999 setzt und nach diesem Blatt eingefuegt wird. */
+:root .app [data-sonner-toaster] {
+  z-index: 9;
+}
+
+.dialog-backdrop,
+.tutorial {
+  z-index: 10;
+}
+
+[data-sonner-toast] {
+  pointer-events: auto;
+  transition:
+    transform var(--dur-2) var(--ease-out),
+    opacity var(--dur-2) var(--ease-out);
+}
+
+[data-sonner-toast][data-visible='false'],
+[data-sonner-toast][data-removed='true'] {
+  visibility: hidden;
+}
+
+[data-sonner-toast] .notice {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+  min-height: 40px;
+  padding: var(--sp-2) var(--sp-3);
+  font-size: var(--fs-m);
+  color: var(--text);
+  background: var(--glass);
+  border-radius: var(--r-m);
+  border-left: 3px solid var(--line);
+  box-shadow: var(--sh-2), var(--bezel);
+}
+
+[data-sonner-toast] .notice--error {
+  border-left-color: var(--danger);
+}
+
+[data-sonner-toast] .notice--warn {
+  border-left-color: var(--primary);
+}
+
+[data-sonner-toast] .notice--info,
+[data-sonner-toast] .notice--ack {
+  border-left-color: var(--muted);
+}
+
+
+.notice__jump {
+  flex: none;
+  font: inherit;
+  font-size: var(--fs-s);
+  color: var(--text);
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  padding: var(--sp-1) var(--sp-3);
+  min-height: 28px;
+  cursor: pointer;
+}
+
+/* Hinweisspalte oben links ueber der Karte (D3): Zeile 36 px (Touch 44), Glas, Radius 8, Farbleiste 3 px.
+   Das Kurzwort steht ohne text-overflow (R-UI: kein abgeschnittener Text). */
+.alerts.map-alerts {
+  position: absolute;
+  top: var(--edge);
+  left: var(--edge);
+  z-index: 3;
+  max-width: 220px;
+}
+
+.map-alerts ul {
+  gap: var(--sp-1);
+}
+
+.map-alerts .alert {
+  min-height: 36px;
+  padding: 0 var(--sp-2);
+  gap: var(--sp-2);
+  font-size: var(--fs-s);
+  color: var(--text);
+  background: var(--glass);
+  border-radius: var(--r-s);
+  border-left: 3px solid var(--muted);
+  box-shadow: var(--sh-1), var(--bezel);
+  animation: none;
+}
+
+.map-alerts .alert--battle,
+.map-alerts .alert--unrest,
+.map-alerts .alert--overrun,
+.map-alerts .alert--capital,
+.map-alerts .alert--sabotage {
+  border-left-color: var(--danger);
+  color: var(--text);
+}
+
+.map-alerts .alert--offer,
+.map-alerts .alert--shortage,
+.map-alerts .alert--clearance {
+  border-left-color: var(--primary);
+  color: var(--text);
+}
+
+.map-alerts .alert__jump,
+.map-alerts .alert__plain {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 36px;
+  text-decoration: none;
+  white-space: normal;
+}
+
+.map-alerts .alert__more {
+  font: inherit;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  min-height: 36px;
+  padding: 0 var(--sp-1);
+  cursor: pointer;
+}
+
+.map-alerts .alert--more {
+  border-left-color: var(--line);
+}
+
+:root[data-input='touch'] .map-alerts .alert,
+:root[data-input='touch'] .map-alerts .alert__jump,
+:root[data-input='touch'] .map-alerts .alert__plain,
+:root[data-input='touch'] .map-alerts .alert__more {
+  min-height: 44px;
+}
+
+/* Mikro-Bewegung (D13): Hover hebt 2 px, Druck scale(.97); nur transform/opacity. Die Dauern kommen
+   aus den Tokens, der Reduced-Motion-Block oben setzt --dur-1 auf 0. */
+.button,
+.alert__jump,
+.notice__jump,
+.alert__more {
+  transition: transform var(--dur-1) var(--ease-out), opacity var(--dur-1) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .button:not(:disabled):hover,
+  .alert__jump:hover,
+  .notice__jump:hover {
+    transform: translateY(-2px);
+  }
+}
+
+.button:not(:disabled):active,
+.alert__jump:active,
+.notice__jump:active {
+  transform: scale(0.97);
+}
+
+/* Fokusring neuer Bauteile: 2 px var(--text), Abstand 2 px. */
+.alert__jump:focus-visible,
+.alert__more:focus-visible,
+.notice__jump:focus-visible,
+[data-sonner-toast]:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+
+/* Der Container von sonner (section, aria-live) ist ein Kind des Rasters .app; er darf keine Zelle belegen —
+   die Toasts selbst sind position: fixed. */
+.app > section[aria-live='polite'][tabindex='-1'] {
+  position: absolute;
+  width: 0;
+  height: 0;
 }
