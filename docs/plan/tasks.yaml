@@ -4380,7 +4380,7 @@ tasks:
   - id: T-M49-02
     milestone: M49
     title: "Zeichnen und Klick der Sammelmarke in MapCanvas"
-    status: todo
+    status: done
     deps: [T-M49-01]
     requirements: [R-MAP-05]
     design: []
@@ -4390,7 +4390,7 @@ tasks:
   - id: T-M49-03
     milestone: M49
     title: "Waechter: Sammelmarke an S575"
-    status: todo
+    status: done
     deps: [T-M49-02]
     requirements: [R-MAP-05]
     design: []
@@ -4400,7 +4400,7 @@ tasks:
   - id: T-M49-04
     milestone: M49
     title: "Abnahme am laufenden Programm, Bericht, PR"
-    status: todo
+    status: done
     deps: [T-M49-03]
     requirements: [R-MAP-05]
     design: []
