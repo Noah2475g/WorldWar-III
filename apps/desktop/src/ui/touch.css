@@ -912,6 +912,41 @@ select,
     min-width: 44px;
     min-height: 44px;
   }
+
+  /* Dialoge: nicht breiter als Viewport (B1, Bau-Fenster) */
+  :root:root .dialog {
+    min-width: 0;
+    max-width: calc(100vw - 32px);
+    margin: var(--sp-lg) auto;
+  }
+  :root:root .dialog__body {
+    max-height: calc(100dvh - 180px);
+    overflow-y: auto;
+  }
+
+  /* Panel-Inhalte (B2) */
+  :root:root .side .slots {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  }
+  :root:root .side .table {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  /* Touch-Ziele (B6) */
+  :root:root .map-control {
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 16px;
+  }
+}
+
+/* Safe-area iPhone 17 Pro (B3) */
+@media (max-width: 599px) and (orientation: portrait) {
+  :root:root .app {
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
 }
 
 /* ---- T-M44-05 · Dialog-Fußzeile (Paket B) ----
@@ -923,94 +958,7 @@ select,
   }
 }
 
-/* ================================================================ PWA v1: Telefon hochkant (≤ 600 px breit)
- *
- * Kernproblem: .main hat grid-template-columns: 1fr 380px.
- * Bei 375 px Viewport bleibt fuer die Karte 375 − 380 = 0 px — sie ist unsichtbar.
- * Loesung: Karte nimmt die gesamte Flaeche; die Seitenleiste (.side) wird ein
- * Overlay-Drawer von unten (transform: translateY(100%) <-> translateY(0)).
- * Ein Griff-Knopf (.side-toggle) oeffnet und schliesst sie.
- *
- * Keine neuen Abhaengigkeiten. Kein JS noetig fuer das Grund-Layout —
- * das [data-side-open] Attribut steuert bereits App.tsx (aus dem Touch-Block M44).
- */
-@media (max-width: 600px) {
-
-  /* Kopfzeile: Ressourcen scrollbar, kein Umbruch */
-  .header__top {
-    gap: var(--sp-sm);
-    padding: var(--sp-sm);
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    font-size: 11px;
-  }
-
-  .header__panels {
-    flex-shrink: 0;
-  }
-
-  /* Karte bekommt die volle Breite */
-  .main {
-    grid-template-columns: 1fr;
-    position: relative;
-  }
-
-  /* Seitenleiste: Overlay-Drawer von unten */
-  .side {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 20;
-    max-height: 75dvh;
-    border-left: none;
-    border-top: 1px solid var(--line);
-    border-radius: 12px 12px 0 0;
-    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.25);
-    transform: translateY(100%);
-    transition: transform 240ms cubic-bezier(0.4, 0, 0.2, 1);
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  /* Offener Zustand: App.tsx setzt data-side-open="true" auf .app */
-  .app[data-side-open='true'] .side {
-    transform: translateY(0);
-  }
-
-  /* Griff oben in der Seitenleiste (visueller Hinweis) */
-  .side::before {
-    content: '';
-    display: block;
-    width: 36px;
-    height: 4px;
-    border-radius: 2px;
-    background: var(--line);
-    margin: var(--sp-sm) auto var(--sp-xs);
-    flex-shrink: 0;
-  }
-
-  /* Map-wrapper nimmt den vollen Bereich */
-  .map-wrapper {
-    grid-column: 1;
-  }
-
-  /* Zoom-Knoepfe groesser fuer Touch */
-  .map-control {
-    width: 36px;
-    height: 36px;
-    font-size: 16px;
-  }
-
-  /* Dialog: volle Breite auf kleinen Schirmen */
-  .dialog {
-    max-width: 100%;
-    margin: 0 var(--sp-sm);
-  }
-
-  /* Startdialog: Hauptaktion immer sichtbar (nicht unter Dialogrand) */
-  .dialog__body {
-    max-height: calc(100dvh - 200px);
-    overflow-y: auto;
-  }
-}
+/* Quick-Fix-Block (@media max-width: 600px) entfernt (T-M887ed06b):
+ * brach das bestehende Sheet-System (Zeile 479ff.), da er in der Kaskade
+ * spaeter kam und den Portrait-Block ueberschrieb. Siehe Mentor-Befund
+ * t_19b316d0. Ersatz-Fixes (B1-B4, B6) stehen jetzt im Portrait-Block oben. */
