@@ -1,0 +1,3513 @@
+{
+  "createdAt": "2026-10-09T23:32:39.204Z",
+  "url": "http://localhost:5321/",
+  "outDir": "/home/pi/WorldWar-III/.claude/worktrees/seitenleiste-e2/docs/ux/v4-seitenleiste/e2",
+  "viewports": {
+    "1280x800": {
+      "steps": [
+        "01-start-neue-partie-1280x800.png",
+        "02-partie-anlegen-startknopf-1280x800.png",
+        "03-spielstaende-leer-1280x800.png",
+        "04-karte-start-tutorial-1280x800.png",
+        "05-kartenansicht-1280x800.png",
+        "06-kopfleiste-hud-1280x800.png",
+        "07-karte-gezoomt-1280x800.png",
+        "08-kartenmodus-rohstoffe-1280x800.png",
+        "09-provinz-auswahl-1280x800.png",
+        "10-hinweis-erklaerung-1280x800.png",
+        "11-rueckmeldung-bau-befohlen-1280x800.png",
+        "12-tempo-100-laeuft-1280x800.png",
+        "13-pause-armee-ausgehoben-1280x800.png",
+        "14-armee-auswahl-1280x800.png",
+        "15-beschuss-gesperrt-1280x800.png",
+        "16-marsch-zielwahl-1280x800.png",
+        "17-fehler-ungueltiges-ziel-1280x800.png",
+        "18-marsch-ziel-gewaehlt-1280x800.png",
+        "19-marsch-befohlen-1280x800.png",
+        "20-diplomatie-1280x800.png",
+        "x-krieg-fragt-nach-1280x800.png",
+        "21-krieg-erklaert-ohne-rueckfrage-1280x800.png",
+        "22-kampf-gefecht-1280x800.png",
+        "23-protokoll-kaempfe-1280x800.png",
+        "24-meldungen-depesche-1280x800.png",
+        "25-panel-markt-1280x800.png",
+        "26-panel-spionage-1280x800.png",
+        "27-panel-rangliste-sieg-1280x800.png",
+        "28-kartenmodus-beziehungen-1280x800.png",
+        "29-menue-1280x800.png",
+        "30-einstellungen-1280x800.png",
+        "31-spielstand-gespeichert-1280x800.png",
+        "32-fehler-spielstand-beschaedigt-1280x800.png",
+        "33-spielende-sieg-1280x800.png",
+        "34-spielende-niederlage-1280x800.png"
+      ],
+      "failures": [],
+      "axe": {
+        "startDialog": {
+          "passes": 22,
+          "incomplete": [],
+          "violations": 0,
+          "nodes": 0,
+          "byRule": []
+        },
+        "mapStart": {
+          "passes": 25,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 6
+            }
+          ],
+          "violations": 0,
+          "nodes": 0,
+          "byRule": []
+        },
+        "provincePanel": {
+          "passes": 28,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 15
+            }
+          ],
+          "violations": 0,
+          "nodes": 0,
+          "byRule": []
+        },
+        "armyPanel": {
+          "passes": 27,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 6
+            }
+          ],
+          "violations": 0,
+          "nodes": 0,
+          "byRule": []
+        },
+        "diplomacy": {
+          "passes": 29,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 7
+            }
+          ],
+          "violations": 0,
+          "nodes": 0,
+          "byRule": []
+        },
+        "settings": {
+          "passes": 30,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 15
+            }
+          ],
+          "violations": 0,
+          "nodes": 0,
+          "byRule": []
+        },
+        "saves": {
+          "passes": 27,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 5
+            }
+          ],
+          "violations": 0,
+          "nodes": 0,
+          "byRule": []
+        },
+        "victory": {
+          "passes": 27,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 9
+            }
+          ],
+          "violations": 0,
+          "nodes": 0,
+          "byRule": []
+        }
+      },
+      "touch": {
+        "startDialog": {
+          "total": 9,
+          "under44": 9,
+          "under24": 0,
+          "share": 1,
+          "regions": {
+            "header": {
+              "total": 0,
+              "under44": 0,
+              "under24": 0
+            },
+            "side": {
+              "total": 0,
+              "under44": 0,
+              "under24": 0
+            },
+            "dialog": {
+              "total": 9,
+              "under44": 9,
+              "under24": 0
+            }
+          },
+          "samples": [
+            {
+              "label": "Schließen",
+              "region": "dialog",
+              "w": 29,
+              "h": 28
+            },
+            {
+              "label": "Welt (237)Kleine Welt (12)",
+              "region": "dialog",
+              "w": 494,
+              "h": 29
+            },
+            {
+              "label": "Vereinigte StaatenRusslandChinaIndienDeutschlandFr",
+              "region": "dialog",
+              "w": 494,
+              "h": 29
+            },
+            {
+              "label": "INPUT",
+              "region": "dialog",
+              "w": 494,
+              "h": 30
+            },
+            {
+              "label": "leichtnormalschwer",
+              "region": "dialog",
+              "w": 494,
+              "h": 29
+            },
+            {
+              "label": "INPUT",
+              "region": "dialog",
+              "w": 494,
+              "h": 30
+            },
+            {
+              "label": "PunkteEroberung",
+              "region": "dialog",
+              "w": 494,
+              "h": 29
+            },
+            {
+              "label": "Partie beginnen",
+              "region": "dialog",
+              "w": 107,
+              "h": 28
+            },
+            {
+              "label": "Spielstände",
+              "region": "dialog",
+              "w": 86,
+              "h": 28
+            }
+          ]
+        },
+        "mapStart": {
+          "total": 34,
+          "under44": 32,
+          "under24": 1,
+          "share": 0.941,
+          "regions": {
+            "header": {
+              "total": 11,
+              "under44": 11,
+              "under24": 0
+            },
+            "side": {
+              "total": 2,
+              "under44": 2,
+              "under24": 0
+            },
+            "dialog": {
+              "total": 0,
+              "under44": 0,
+              "under24": 0
+            }
+          },
+          "samples": [
+            {
+              "label": "Pause",
+              "region": "header",
+              "w": 24,
+              "h": 24
+            },
+            {
+              "label": "1",
+              "region": "header",
+              "w": 24,
+              "h": 24
+            },
+            {
+              "label": "2",
+              "region": "header",
+              "w": 24,
+              "h": 24
+            },
+            {
+              "label": "5",
+              "region": "header",
+              "w": 24,
+              "h": 24
+            },
+            {
+              "label": "10",
+              "region": "header",
+              "w": 26,
+              "h": 24
+            },
+            {
+              "label": "25",
+              "region": "header",
+              "w": 26,
+              "h": 24
+            },
+            {
+              "label": "50",
+              "region": "header",
+              "w": 26,
+              "h": 24
+            },
+            {
+              "label": "100",
+              "region": "header",
+              "w": 33,
+              "h": 24
+            },
+            {
+              "label": "Vorspulen",
+              "region": "header",
+              "w": 34,
+              "h": 24
+            },
+            {
+              "label": "Spielstände",
+              "region": "header",
+              "w": 34,
+              "h": 24
+            },
+            {
+              "label": "Menü",
+              "region": "header",
+              "w": 34,
+              "h": 24
+            },
+            {
+              "label": "Hineinzoomen",
+              "region": "other",
+              "w": 26,
+              "h": 24
+            },
+            {
+              "label": "Herauszoomen",
+              "region": "other",
+              "w": 26,
+              "h": 24
+            },
+            {
+              "label": "Hauptstadt zentrieren",
+              "region": "other",
+              "w": 26,
+              "h": 24
+            },
+            {
+              "label": "Kartenmodus",
+              "region": "other",
+              "w": 140,
+              "h": 26
+            },
+            {
+              "label": "Ausblenden: Neu ab heute: Kaserne, Infanterie.",
+              "region": "other",
+              "w": 24,
+              "h": 21
+            },
+            {
+              "label": "Was ist Besitz?",
+              "region": "other",
+              "w": 24,
+              "h": 24
+            },
+            {
+              "label": "— keine —Mittlerer WestenNordosten der USASüdstaat",
+              "region": "side",
+              "w": 192,
+              "h": 24
+            },
+            {
+              "label": "Wirtschaft",
+              "region": "side",
+              "w": 355,
+              "h": 34
+            },
+            {
+              "label": "Wichtig",
+              "region": "foot",
+              "w": 36,
+              "h": 30
+            },
+            {
+              "label": "alles",
+              "region": "foot",
+              "w": 36,
+              "h": 30
+            },
+            {
+              "label": "Kämpfe",
+              "region": "foot",
+              "w": 36,
+              "h": 30
+            },
+            {
+              "label": "Aufbau",
+              "region": "foot",
+              "w": 36,
+              "h": 30
+            },
+            {
+              "label": "Verträge",
+              "region": "foot",
+              "w": 36,
+              "h": 30
+            },
+            {
+              "label": "Weltgeschehen",
+              "region": "foot",
+              "w": 36,
+              "h": 30
+            }
+          ]
+        },
+        "provincePanel": {
+          "total": 62,
+          "under44": 60,
+          "under24": 1,
+          "share": 0.968,
+          "regions": {
+            "header": {
+              "total": 13,
+              "under44": 13,
+              "under24": 0
+            },
+            "side": {
+              "total": 29,
+              "under44": 29,
+              "under24": 0
+            },
+            "dialog": {
+              "total": 0,
+              "under44": 0,
+              "under24": 0
+            }
+          },
+          "samples": [
+            {
+              "label": "Pause",
+              "region": "header",
+              "w": 24,
+              "h": 24
+            },
+            {
+              "label": "1",
+              "region": "header",
+              "w": 24,
+              "h": 24
+            },
+            {
+              "label": "2",
+              "region": "header",
+              "w": 24,
+              "h": 24
+            },
+            {
+              "label": "5",
+              "region": "header",
+              "w": 24,
+              "h": 24
+            },
+            {
+              "label": "10",
+              "region": "header",
+              "w": 26,
+              "h": 24
+            },
+            {
+              "label": "25",
+              "region": "header",
+              "w": 26,
+              "h": 24
+            },
+            {
+              "label": "50",
+              "region": "header",
+              "w": 26,
+              "h": 24
+            },
+            {
+              "label": "100",
+              "region": "header",
+              "w": 33,
+              "h": 24
+            },
+            {
+              "label": "Vorspulen",
+              "region": "header",
+              "w": 34,
+              "h": 24
+            },
+            {
+              "label": "Spielstände",
+              "region": "header",
+              "w": 34,
+              "h": 24
+            },
+            {
+              "label": "Menü",
+              "region": "header",
+              "w": 34,
+              "h": 24
+            },
+            {
+              "label": "Hineinzoomen",
+              "region": "other",
+              "w": 26,
+              "h": 24
+            },
+            {
+              "label": "Herauszoomen",
+              "region": "other",
+              "w": 26,
+              "h": 24
+            },
+            {
+              "label": "Hauptstadt zentrieren",
+              "region": "other",
+              "w": 26,
+              "h": 24
+            },
+            {
+              "label": "Kartenmodus",
+              "region": "other",
+              "w": 140,
+              "h": 26
+            },
+            {
+              "label": "Ausblenden: Neu ab heute: Kaserne, Infanterie.",
+              "region": "other",
+              "w": 24,
+              "h": 21
+            },
+            {
+              "label": "Was ist Besitz?",
+              "region": "other",
+              "w": 24,
+              "h": 24
+            },
+            {
+              "label": "— keine —Mittlerer WestenNordosten der USASüdstaat",
+              "region": "side",
+              "w": 192,
+              "h": 24
+            },
+            {
+              "label": "Schließen",
+              "region": "header",
+              "w": 30,
+              "h": 25
+            },
+            {
+              "label": "Was ist Ebene?",
+              "region": "header",
+              "w": 24,
+              "h": 24
+            },
+            {
+              "label": "Kaserne bauen",
+              "region": "side",
+              "w": 34,
+              "h": 44
+            },
+            {
+              "label": "Was ist Kaserne?",
+              "region": "side",
+              "w": 24,
+              "h": 24
+            },
+            {
+              "label": "Festung bauen",
+              "region": "side",
+              "w": 34,
+              "h": 44
+            },
+            {
+              "label": "Was ist Festung?",
+              "region": "side",
+              "w": 24,
+              "h": 24
+            },
+            {
+              "label": "Fabrik bauen",
+              "region": "side",
+              "w": 34,
+              "h": 44
+            }
+          ]
+        },
+        "armyPanel": {
+          "total": 45,
+          "under44": 37,
+          "under24": 1,
+          "share": 0.822,
+          "regions": {
+            "header": {
+              "total": 13,
+              "under44": 13,
+              "under24": 0
+            },
+            "side": {
+              "total": 12,
+              "under44": 6,
+              "under24": 0
+            },
+            "dialog": {
+              "total": 0,
+              "under44": 0,
+              "under24": 0
+            }
+          },
+          "samples": [
+            {
+              "label": "Pause",
+              "region": "header",
+              "w": 24,
+              "h": 24
+            },
+            {
+              "label": "1",
+              "region": "header",
+              "w": 24,
+              "h": 24
+            },
+            {
+              "label": "2",
+              "region": "header",
+              "w": 24,
+              "h": 24
+            },
+            {
+              "label": "5",
+              "region": "header",
+              "w": 24,
+              "h": 24
+            },
+            {
+              "label": "10",
+              "region": "header",
+              "w": 26,
+              "h": 24
+            },
+            {
+              "label": "25",
+              "region": "header",
+              "w": 26,
+              "h": 24
+            },
+            {
+              "label": "50",
+              "region": "header",
+              "w": 26,
+              "h": 24
+            },
+            {
+              "label": "100",
+              "region": "header",
+              "w": 33,
+              "h": 24
+            },
+            {
+              "label": "Vorspulen",
+              "region": "header",
+              "w": 34,
+              "h": 24
+            },
+            {
+              "label": "Spielstände",
+              "region": "header",
+              "w": 34,
+              "h": 24
+            },
+            {
+              "label": "Menü",
+              "region": "header",
+              "w": 34,
+              "h": 24
+            },
+            {
+              "label": "Hineinzoomen",
+              "region": "other",
+              "w": 26,
+              "h": 24
+            },
+            {
+              "label": "Herauszoomen",
+              "region": "other",
+              "w": 26,
+              "h": 24
+            },
+            {
+              "label": "Hauptstadt zentrieren",
+              "region": "other",
+              "w": 26,
+              "h": 24
+            },
+            {
+              "label": "Kartenmodus",
+              "region": "other",
+              "w": 140,
+              "h": 26
+            },
+            {
+              "label": "Was ist Besitz?",
+              "region": "other",
+              "w": 24,
+              "h": 24
+            },
+            {
+              "label": "— keine —Mittlerer WestenNordosten der USASüdstaat",
+              "region": "side",
+              "w": 192,
+              "h": 24
+            },
+            {
+              "label": "Zurück",
+              "region": "header",
+              "w": 30,
+              "h": 25
+            },
+            {
+              "label": "Schließen",
+              "region": "header",
+              "w": 30,
+              "h": 25
+            },
+            {
+              "label": "Haltung Angriff einnehmen",
+              "region": "side",
+              "w": 34,
+              "h": 44
+            },
+            {
+              "label": "Haltung Verteidigung einnehmen",
+              "region": "side",
+              "w": 34,
+              "h": 44
+            },
+            {
+              "label": "Haltung Rückzug einnehmen",
+              "region": "side",
+              "w": 34,
+              "h": 44
+            },
+            {
+              "label": "Haltung Garnison einnehmen",
+              "region": "side",
+              "w": 34,
+              "h": 44
+            },
+            {
+              "label": "Wirtschaft",
+              "region": "side",
+              "w": 355,
+              "h": 34
+            },
+            {
+              "label": "Wichtig",
+              "region": "foot",
+              "w": 36,
+              "h": 30
+            }
+          ]
+        }
+      },
+      "keyboard": {
+        "startDialog": {
+          "steps": 15,
+          "reached": 15,
+          "distinct": 8,
+          "withoutIndicator": 0,
+          "offscreen": 0,
+          "outsideDialog": 0,
+          "order": [
+            "button:Schließen",
+            "select:Welt (237)Kleine Welt (12)",
+            "select:Vereinigte StaatenRusslandChinaIndienDeu",
+            "input:",
+            "select:leichtnormalschwer",
+            "input:",
+            "select:PunkteEroberung",
+            "button:Partie beginnen",
+            "button:Spielstände",
+            "button:Schließen",
+            "select:Welt (237)Kleine Welt (12)",
+            "select:Vereinigte StaatenRusslandChinaIndienDeu",
+            "input:",
+            "select:leichtnormalschwer",
+            "input:"
+          ]
+        },
+        "mapStart": {
+          "steps": 40,
+          "reached": 39,
+          "distinct": 33,
+          "withoutIndicator": 0,
+          "offscreen": 0,
+          "outsideDialog": 39,
+          "order": [
+            "button:Pause",
+            "button:1",
+            "button:2",
+            "button:5",
+            "button:10",
+            "button:25",
+            "button:50",
+            "button:100",
+            "button:Vorspulen",
+            "button:Spielstände",
+            "button:Menü",
+            "canvas:Weltkarte",
+            "button:Hineinzoomen",
+            "button:Herauszoomen",
+            "button:Hauptstadt zentrieren",
+            "select:Kartenmodus",
+            "canvas:Übersichtskarte",
+            "button:Ausblenden: Neu ab heute: Kaserne, Infan",
+            "button:Was ist Besitz?",
+            "select:— keine —Mittlerer WestenNordosten der U",
+            "summary:Wirtschaft",
+            "button:Wichtig",
+            "button:alles",
+            "button:Kämpfe",
+            "button:Aufbau",
+            "button:Verträge",
+            "button:Weltgeschehen",
+            "button:Diplomatie",
+            "button:Markt",
+            "button:Heer",
+            "button:Spionage",
+            "button:Rangliste / Sieg1",
+            "button:Nicht mehr zeigen",
+            "button:Pause",
+            "button:1",
+            "button:2",
+            "button:5",
+            "button:10",
+            "button:25"
+          ]
+        },
+        "settings": {
+          "steps": 12,
+          "reached": 12,
+          "distinct": 4,
+          "withoutIndicator": 0,
+          "offscreen": 0,
+          "outsideDialog": 0,
+          "order": [
+            "button:Schließen",
+            "input:",
+            "input:",
+            "select:1 Stunden je Sekunde2 Stunden je Sekunde",
+            "select:kleinnormalgroß",
+            "input:",
+            "input:",
+            "button:Schließen",
+            "input:",
+            "input:",
+            "select:1 Stunden je Sekunde2 Stunden je Sekunde",
+            "select:kleinnormalgroß"
+          ]
+        },
+        "victory": {
+          "steps": 8,
+          "reached": 8,
+          "distinct": 3,
+          "withoutIndicator": 0,
+          "offscreen": 0,
+          "outsideDialog": 0,
+          "order": [
+            "button:Schließen",
+            "button:Neue Partie",
+            "button:Karte ansehen",
+            "button:Schließen",
+            "button:Neue Partie",
+            "button:Karte ansehen",
+            "button:Schließen",
+            "button:Neue Partie"
+          ]
+        }
+      },
+      "perf": {
+        "load": {
+          "domInteractiveMs": 201,
+          "domContentLoadedMs": 3034,
+          "loadEventMs": 3038,
+          "transferKB": 10240,
+          "resources": 223,
+          "first-paint": 3040,
+          "first-contentful-paint": 3380,
+          "startDialogInteractiveMs": 3421,
+          "note": "Dev-Server (vite, unbuendelt) — fuer den Vergleich vorher/nachher, nicht als absolute Zusage."
+        },
+        "startGameMs": 894,
+        "zoom": {
+          "wallMs": 639,
+          "longTasks": 4,
+          "longTaskTotalMs": 218,
+          "longTaskMaxMs": 61,
+          "frames": 48,
+          "frameP50Ms": 16.7,
+          "frameP95Ms": 50,
+          "framesOver50Ms": 1
+        },
+        "pan": {
+          "wallMs": 2437,
+          "longTasks": 7,
+          "longTaskTotalMs": 410,
+          "longTaskMaxMs": 88,
+          "frames": 144,
+          "frameP50Ms": 16.7,
+          "frameP95Ms": 33.3,
+          "framesOver50Ms": 1
+        },
+        "running100": {
+          "wallMs": 3001,
+          "longTasks": 13,
+          "longTaskTotalMs": 1915,
+          "longTaskMaxMs": 276,
+          "frames": 79,
+          "frameP50Ms": 16.7,
+          "frameP95Ms": 166.7,
+          "framesOver50Ms": 13
+        },
+        "machine": {
+          "loadAvg1": 2.77,
+          "cores": 4
+        },
+        "openMarch": {
+          "wallMs": 180,
+          "longTasks": 1,
+          "longTaskTotalMs": 127,
+          "longTaskMaxMs": 127,
+          "frames": 22,
+          "frameP50Ms": 16.7,
+          "frameP95Ms": 16.7,
+          "framesOver50Ms": 1
+        }
+      },
+      "notes": [
+        {
+          "startButtonInFirstView": true
+        },
+        {
+          "headerHeightPx": 56
+        },
+        {
+          "recruitClicks": 1
+        },
+        {
+          "marchTargetOptions": 237
+        },
+        {
+          "preparedSaves": "ok"
+        },
+        {
+          "victoryState": {
+            "real": true,
+            "moved": 82,
+            "share": 700,
+            "goal": 700,
+            "condition": "points"
+          }
+        },
+        {
+          "defeatState": {
+            "real": true,
+            "moved": 94,
+            "share": 700,
+            "goal": 700,
+            "condition": "points"
+          }
+        },
+        {
+          "victoryFocusLeavesDialog": false
+        }
+      ],
+      "probes": {
+        "tutorialCover": {
+          "measured": true,
+          "coversPicker": false,
+          "directionWords": false
+        },
+        "tooltip": {
+          "afterSelection": {
+            "visible": false,
+            "text": ""
+          },
+          "visibleWithDialog": false,
+          "text": "",
+          "mentionsMouse": false
+        },
+        "explain": {
+          "closedByEscape": true
+        },
+        "toastFrei": {
+          "toastSteht": true,
+          "toast": {
+            "left": 12,
+            "top": 587,
+            "bottom": 631,
+            "right": 171
+          },
+          "footTop": 643,
+          "headBottom": 56,
+          "mapBottom": 643,
+          "pause": {
+            "frei": true,
+            "treffer": "svg.lucide"
+          },
+          "logZeile": {
+            "frei": true,
+            "treffer": "section.log"
+          },
+          "toasterZ": "9"
+        },
+        "armyHead": {
+          "nameVisible": true,
+          "marchVisible": true,
+          "sideScrollTop": 0
+        },
+        "march": {
+          "options": 237,
+          "groups": [
+            {
+              "label": "Erreichbar — mit Ankunftstag",
+              "options": 33,
+              "disabled": 0
+            },
+            {
+              "label": "Nicht erreichbar",
+              "options": 203,
+              "disabled": 203
+            }
+          ],
+          "openLongTaskMaxMs": 127
+        },
+        "confirm": {
+          "asksOnFirstClick": true,
+          "warOnFirstClick": false
+        },
+        "log": {
+          "entries": 14,
+          "timeWrapped": 0,
+          "duplicateBattleRuns": 0,
+          "standingsFirstIsRankOne": true
+        },
+        "endDialog": {
+          "text": "Sieg×Sie haben gewonnen.Siegbedingung erfüllt: Ihnen gehören 6 % aller Siegpunkte, verlangt waren 70 %.Tag 32 · 2.098 Punkte · 85 ProvinzenNeue PartieKarte ansehen",
+          "namesCondition": true
+        },
+        "endDialogDefeat": {
+          "text": "Niederlage×Kanada hat gewonnen.Siegbedingung: 70 % aller Siegpunkte — erreicht von Kanada.Tag 32 · 2.098 Punkte · 3 ProvinzenNeue PartieKarte ansehen",
+          "namesCondition": true
+        }
+      },
+      "dialogs": {
+        "settings": {
+          "present": true,
+          "steps": 12,
+          "focusLeaves": false,
+          "outside": 0,
+          "closable": true,
+          "closedByEscape": true
+        },
+        "victory": {
+          "present": true,
+          "steps": 10,
+          "focusLeaves": false,
+          "outside": 0,
+          "closable": true,
+          "closedByEscape": true
+        }
+      },
+      "layout": {
+        "mapStart": {
+          "meldungsorte": {
+            "orte": {
+              "toast": [],
+              "alerts": [
+                {
+                  "key": "unlock:building:barracks",
+                  "via": "data-msg"
+                }
+              ],
+              "chip": [],
+              "dock": []
+            },
+            "doppelt": [],
+            "anzahl": {
+              "toast": 0,
+              "alerts": 1,
+              "chip": 0,
+              "dock": 0
+            }
+          },
+          "viewport": {
+            "w": 1280,
+            "h": 800
+          },
+          "alarmChipVisible": false,
+          "goalVisible": false,
+          "hiddenDrawn": [],
+          "pageOverflowX": false,
+          "header": {
+            "x": 0,
+            "y": 0,
+            "w": 1280,
+            "h": 56,
+            "visibleArea": 71680
+          },
+          "map": {
+            "x": 0,
+            "y": 56,
+            "w": 900,
+            "h": 587,
+            "visibleArea": 528300
+          },
+          "mapShareOfViewport": 0.516,
+          "side": {
+            "x": 900,
+            "y": 56,
+            "w": 380,
+            "h": 587,
+            "visibleArea": 223060
+          },
+          "foot": {
+            "x": 0,
+            "y": 643,
+            "w": 1280,
+            "h": 157,
+            "visibleArea": 200960
+          },
+          "overflowingRegions": []
+        },
+        "provincePanel": {
+          "meldungsorte": {
+            "orte": {
+              "toast": [],
+              "alerts": [
+                {
+                  "key": "unlock:building:barracks",
+                  "via": "data-msg"
+                }
+              ],
+              "chip": [],
+              "dock": []
+            },
+            "doppelt": [],
+            "anzahl": {
+              "toast": 0,
+              "alerts": 1,
+              "chip": 0,
+              "dock": 0
+            }
+          },
+          "viewport": {
+            "w": 1280,
+            "h": 800
+          },
+          "alarmChipVisible": false,
+          "goalVisible": false,
+          "hiddenDrawn": [],
+          "pageOverflowX": false,
+          "header": {
+            "x": 0,
+            "y": 0,
+            "w": 1280,
+            "h": 56,
+            "visibleArea": 71680
+          },
+          "map": {
+            "x": 0,
+            "y": 56,
+            "w": 900,
+            "h": 587,
+            "visibleArea": 528300
+          },
+          "mapShareOfViewport": 0.516,
+          "side": {
+            "x": 900,
+            "y": 56,
+            "w": 380,
+            "h": 587,
+            "visibleArea": 223060
+          },
+          "foot": {
+            "x": 0,
+            "y": 643,
+            "w": 1280,
+            "h": 157,
+            "visibleArea": 200960
+          },
+          "overflowingRegions": []
+        },
+        "toast": {
+          "meldungsorte": {
+            "orte": {
+              "toast": [
+                {
+                  "key": "ack:befohlen-kaserne",
+                  "via": "data-msg"
+                }
+              ],
+              "alerts": [
+                {
+                  "key": "unlock:building:barracks",
+                  "via": "data-msg"
+                }
+              ],
+              "chip": [],
+              "dock": []
+            },
+            "doppelt": [],
+            "anzahl": {
+              "toast": 1,
+              "alerts": 1,
+              "chip": 0,
+              "dock": 0
+            }
+          },
+          "viewport": {
+            "w": 1280,
+            "h": 800
+          },
+          "alarmChipVisible": false,
+          "goalVisible": false,
+          "hiddenDrawn": [],
+          "pageOverflowX": false,
+          "header": {
+            "x": 0,
+            "y": 0,
+            "w": 1280,
+            "h": 56,
+            "visibleArea": 71680
+          },
+          "map": {
+            "x": 0,
+            "y": 56,
+            "w": 900,
+            "h": 587,
+            "visibleArea": 528300
+          },
+          "mapShareOfViewport": 0.516,
+          "side": {
+            "x": 900,
+            "y": 56,
+            "w": 380,
+            "h": 587,
+            "visibleArea": 223060
+          },
+          "foot": {
+            "x": 0,
+            "y": 643,
+            "w": 1280,
+            "h": 157,
+            "visibleArea": 200960
+          },
+          "overflowingRegions": []
+        },
+        "running": {
+          "meldungsorte": {
+            "orte": {
+              "toast": [],
+              "alerts": [],
+              "chip": [],
+              "dock": []
+            },
+            "doppelt": [],
+            "anzahl": {
+              "toast": 0,
+              "alerts": 0,
+              "chip": 0,
+              "dock": 0
+            }
+          },
+          "viewport": {
+            "w": 1280,
+            "h": 800
+          },
+          "alarmChipVisible": false,
+          "goalVisible": true,
+          "hiddenDrawn": [],
+          "pageOverflowX": false,
+          "header": {
+            "x": 0,
+            "y": 0,
+            "w": 1280,
+            "h": 56,
+            "visibleArea": 71680
+          },
+          "map": {
+            "x": 0,
+            "y": 56,
+            "w": 900,
+            "h": 576,
+            "visibleArea": 518400
+          },
+          "mapShareOfViewport": 0.506,
+          "side": {
+            "x": 900,
+            "y": 56,
+            "w": 380,
+            "h": 576,
+            "visibleArea": 218880
+          },
+          "foot": {
+            "x": 0,
+            "y": 632,
+            "w": 1280,
+            "h": 168,
+            "visibleArea": 215040
+          },
+          "overflowingRegions": []
+        },
+        "armyPanel": {
+          "meldungsorte": {
+            "orte": {
+              "toast": [],
+              "alerts": [],
+              "chip": [],
+              "dock": []
+            },
+            "doppelt": [],
+            "anzahl": {
+              "toast": 0,
+              "alerts": 0,
+              "chip": 0,
+              "dock": 0
+            }
+          },
+          "viewport": {
+            "w": 1280,
+            "h": 800
+          },
+          "alarmChipVisible": false,
+          "goalVisible": true,
+          "hiddenDrawn": [],
+          "pageOverflowX": true,
+          "header": {
+            "x": 0,
+            "y": 0,
+            "w": 1287,
+            "h": 56,
+            "visibleArea": 71680
+          },
+          "map": {
+            "x": 0,
+            "y": 56,
+            "w": 907,
+            "h": 576,
+            "visibleArea": 522387
+          },
+          "mapShareOfViewport": 0.51,
+          "side": {
+            "x": 907,
+            "y": 56,
+            "w": 380,
+            "h": 576,
+            "visibleArea": 214893
+          },
+          "foot": {
+            "x": 0,
+            "y": 632,
+            "w": 1287,
+            "h": 168,
+            "visibleArea": 215040
+          },
+          "overflowingRegions": []
+        },
+        "battle": {
+          "meldungsorte": {
+            "orte": {
+              "toast": [],
+              "alerts": [
+                {
+                  "key": "upcoming:unit:artillery",
+                  "via": "data-msg"
+                }
+              ],
+              "chip": [],
+              "dock": []
+            },
+            "doppelt": [],
+            "anzahl": {
+              "toast": 0,
+              "alerts": 1,
+              "chip": 0,
+              "dock": 0
+            }
+          },
+          "viewport": {
+            "w": 1280,
+            "h": 800
+          },
+          "alarmChipVisible": false,
+          "goalVisible": true,
+          "hiddenDrawn": [],
+          "pageOverflowX": true,
+          "header": {
+            "x": 0,
+            "y": 0,
+            "w": 1302,
+            "h": 56,
+            "visibleArea": 71680
+          },
+          "map": {
+            "x": 0,
+            "y": 56,
+            "w": 922,
+            "h": 576,
+            "visibleArea": 531351
+          },
+          "mapShareOfViewport": 0.519,
+          "side": {
+            "x": 922,
+            "y": 56,
+            "w": 380,
+            "h": 576,
+            "visibleArea": 205929
+          },
+          "foot": {
+            "x": 0,
+            "y": 632,
+            "w": 1302,
+            "h": 168,
+            "visibleArea": 215040
+          },
+          "overflowingRegions": [
+            "side 391>379"
+          ]
+        },
+        "saves": {
+          "meldungsorte": {
+            "orte": {
+              "toast": [],
+              "alerts": [
+                {
+                  "key": "upcoming:unit:artillery",
+                  "via": "data-msg"
+                }
+              ],
+              "chip": [],
+              "dock": []
+            },
+            "doppelt": [],
+            "anzahl": {
+              "toast": 0,
+              "alerts": 1,
+              "chip": 0,
+              "dock": 0
+            }
+          },
+          "viewport": {
+            "w": 1280,
+            "h": 800
+          },
+          "alarmChipVisible": false,
+          "goalVisible": true,
+          "hiddenDrawn": [],
+          "pageOverflowX": true,
+          "header": {
+            "x": -14,
+            "y": 0,
+            "w": 1302,
+            "h": 56,
+            "visibleArea": 71680
+          },
+          "map": {
+            "x": -14,
+            "y": 56,
+            "w": 922,
+            "h": 576,
+            "visibleArea": 523287
+          },
+          "mapShareOfViewport": 0.511,
+          "side": {
+            "x": 908,
+            "y": 56,
+            "w": 380,
+            "h": 576,
+            "visibleArea": 213993
+          },
+          "foot": {
+            "x": -14,
+            "y": 632,
+            "w": 1302,
+            "h": 168,
+            "visibleArea": 215040
+          },
+          "overflowingRegions": []
+        }
+      },
+      "consoleErrors": [],
+      "durationMs": 64733,
+      "url": "http://localhost:5321/"
+    },
+    "375x667": {
+      "steps": [
+        "01-start-neue-partie-375x667.png",
+        "02-partie-anlegen-startknopf-375x667.png",
+        "03-spielstaende-leer-375x667.png",
+        "04-karte-start-tutorial-375x667.png",
+        "05-kartenansicht-375x667.png",
+        "06-kopfleiste-hud-375x667.png",
+        "07-karte-gezoomt-375x667.png",
+        "08-kartenmodus-rohstoffe-375x667.png",
+        "09-provinz-auswahl-375x667.png",
+        "10-hinweis-erklaerung-375x667.png",
+        "11-rueckmeldung-bau-befohlen-375x667.png",
+        "12-tempo-100-laeuft-375x667.png",
+        "13-pause-armee-ausgehoben-375x667.png",
+        "14-armee-auswahl-375x667.png",
+        "15-beschuss-gesperrt-375x667.png",
+        "16-marsch-zielwahl-375x667.png",
+        "17-fehler-ungueltiges-ziel-375x667.png",
+        "18-marsch-ziel-gewaehlt-375x667.png",
+        "19-marsch-befohlen-375x667.png",
+        "20-diplomatie-375x667.png",
+        "x-krieg-fragt-nach-375x667.png",
+        "21-krieg-erklaert-ohne-rueckfrage-375x667.png",
+        "22-kampf-gefecht-375x667.png",
+        "23-protokoll-kaempfe-375x667.png",
+        "x-meldungen-nicht-erreichbar-375x667.png",
+        "25-panel-markt-375x667.png",
+        "26-panel-spionage-375x667.png",
+        "27-panel-rangliste-sieg-375x667.png",
+        "28-kartenmodus-beziehungen-375x667.png",
+        "29-menue-375x667.png",
+        "30-einstellungen-375x667.png",
+        "31-spielstand-gespeichert-375x667.png",
+        "32-fehler-spielstand-beschaedigt-375x667.png",
+        "33-spielende-sieg-375x667.png",
+        "34-spielende-niederlage-375x667.png"
+      ],
+      "failures": [
+        {
+          "step": "meldungen",
+          "error": "TimeoutError: locator.click: Timeout 5000ms exceeded."
+        }
+      ],
+      "axe": {
+        "startDialog": {
+          "passes": 22,
+          "incomplete": [],
+          "violations": 0,
+          "nodes": 0,
+          "byRule": []
+        },
+        "mapStart": {
+          "passes": 25,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 9
+            }
+          ],
+          "violations": 0,
+          "nodes": 0,
+          "byRule": []
+        },
+        "provincePanel": {
+          "passes": 27,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 34
+            }
+          ],
+          "violations": 0,
+          "nodes": 0,
+          "byRule": []
+        },
+        "armyPanel": {
+          "passes": 26,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 24
+            }
+          ],
+          "violations": 0,
+          "nodes": 0,
+          "byRule": []
+        },
+        "diplomacy": {
+          "passes": 28,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 36
+            }
+          ],
+          "violations": 0,
+          "nodes": 0,
+          "byRule": []
+        },
+        "settings": {
+          "passes": 29,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 54
+            }
+          ],
+          "violations": 0,
+          "nodes": 0,
+          "byRule": []
+        },
+        "saves": {
+          "passes": 26,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 9
+            }
+          ],
+          "violations": 0,
+          "nodes": 0,
+          "byRule": []
+        },
+        "victory": {
+          "passes": 26,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 9
+            }
+          ],
+          "violations": 0,
+          "nodes": 0,
+          "byRule": []
+        }
+      },
+      "touch": {
+        "startDialog": {
+          "total": 8,
+          "under44": 0,
+          "under24": 0,
+          "share": 0,
+          "regions": {
+            "header": {
+              "total": 0,
+              "under44": 0,
+              "under24": 0
+            },
+            "side": {
+              "total": 0,
+              "under44": 0,
+              "under24": 0
+            },
+            "dialog": {
+              "total": 8,
+              "under44": 0,
+              "under24": 0
+            }
+          },
+          "samples": []
+        },
+        "mapStart": {
+          "total": 30,
+          "under44": 0,
+          "under24": 0,
+          "share": 0,
+          "regions": {
+            "header": {
+              "total": 11,
+              "under44": 0,
+              "under24": 0
+            },
+            "side": {
+              "total": 3,
+              "under44": 0,
+              "under24": 0
+            },
+            "dialog": {
+              "total": 0,
+              "under44": 0,
+              "under24": 0
+            }
+          },
+          "samples": []
+        },
+        "provincePanel": {
+          "total": 29,
+          "under44": 0,
+          "under24": 0,
+          "share": 0,
+          "regions": {
+            "header": {
+              "total": 13,
+              "under44": 0,
+              "under24": 0
+            },
+            "side": {
+              "total": 8,
+              "under44": 0,
+              "under24": 0
+            },
+            "dialog": {
+              "total": 0,
+              "under44": 0,
+              "under24": 0
+            }
+          },
+          "samples": []
+        },
+        "armyPanel": {
+          "total": 33,
+          "under44": 0,
+          "under24": 0,
+          "share": 0,
+          "regions": {
+            "header": {
+              "total": 13,
+              "under44": 0,
+              "under24": 0
+            },
+            "side": {
+              "total": 12,
+              "under44": 0,
+              "under24": 0
+            },
+            "dialog": {
+              "total": 0,
+              "under44": 0,
+              "under24": 0
+            }
+          },
+          "samples": []
+        }
+      },
+      "keyboard": {
+        "startDialog": {
+          "steps": 15,
+          "reached": 15,
+          "distinct": 8,
+          "withoutIndicator": 0,
+          "offscreen": 0,
+          "outsideDialog": 0,
+          "order": [
+            "button:Schließen",
+            "select:Welt (237)Kleine Welt (12)",
+            "select:Vereinigte StaatenRusslandChinaIndienDeu",
+            "input:",
+            "select:leichtnormalschwer",
+            "input:",
+            "select:PunkteEroberung",
+            "button:Partie beginnen",
+            "button:Spielstände",
+            "button:Schließen",
+            "select:Welt (237)Kleine Welt (12)",
+            "select:Vereinigte StaatenRusslandChinaIndienDeu",
+            "input:",
+            "select:leichtnormalschwer",
+            "input:"
+          ]
+        },
+        "mapStart": {
+          "steps": 40,
+          "reached": 39,
+          "distinct": 29,
+          "withoutIndicator": 0,
+          "offscreen": 0,
+          "outsideDialog": 39,
+          "order": [
+            "button:Pause",
+            "button:1",
+            "button:2",
+            "button:5",
+            "button:10",
+            "button:25",
+            "button:50",
+            "button:100",
+            "button:Vorspulen",
+            "button:Spielstände",
+            "button:Menü",
+            "canvas:Weltkarte",
+            "button:Hineinzoomen",
+            "button:Herauszoomen",
+            "button:Hauptstadt zentrieren",
+            "button:Vollbild",
+            "select:Kartenmodus",
+            "button:Was ist Besitz?",
+            "button:Hinweis ausblenden",
+            "select:— keine —Mittlerer WestenNordosten der U",
+            "button:Ausblenden: Neu ab heute: Kaserne, Infan",
+            "summary:Wirtschaft",
+            "button:Protokoll öffnen",
+            "button:Diplomatie",
+            "button:Markt",
+            "button:Heer",
+            "button:Spionage",
+            "button:Rangliste / Sieg1",
+            "button:Nicht mehr zeigen",
+            "button:Pause",
+            "button:1",
+            "button:2",
+            "button:5",
+            "button:10",
+            "button:25",
+            "button:50",
+            "button:100",
+            "button:Vorspulen",
+            "button:Spielstände"
+          ]
+        },
+        "settings": {
+          "steps": 12,
+          "reached": 12,
+          "distinct": 4,
+          "withoutIndicator": 0,
+          "offscreen": 0,
+          "outsideDialog": 0,
+          "order": [
+            "button:Schließen",
+            "input:",
+            "input:",
+            "select:1 Stunden je Sekunde2 Stunden je Sekunde",
+            "select:kleinnormalgroß",
+            "input:",
+            "input:",
+            "button:Schließen",
+            "input:",
+            "input:",
+            "select:1 Stunden je Sekunde2 Stunden je Sekunde",
+            "select:kleinnormalgroß"
+          ]
+        },
+        "victory": {
+          "steps": 8,
+          "reached": 8,
+          "distinct": 3,
+          "withoutIndicator": 0,
+          "offscreen": 0,
+          "outsideDialog": 0,
+          "order": [
+            "button:Schließen",
+            "button:Neue Partie",
+            "button:Karte ansehen",
+            "button:Schließen",
+            "button:Neue Partie",
+            "button:Karte ansehen",
+            "button:Schließen",
+            "button:Neue Partie"
+          ]
+        }
+      },
+      "perf": {
+        "load": {
+          "domInteractiveMs": 14,
+          "domContentLoadedMs": 654,
+          "loadEventMs": 656,
+          "transferKB": 10240,
+          "resources": 223,
+          "first-paint": 656,
+          "first-contentful-paint": 932,
+          "startDialogInteractiveMs": 966,
+          "note": "Dev-Server (vite, unbuendelt) — fuer den Vergleich vorher/nachher, nicht als absolute Zusage."
+        },
+        "startGameMs": 753,
+        "zoom": {
+          "wallMs": 593,
+          "longTasks": 2,
+          "longTaskTotalMs": 108,
+          "longTaskMaxMs": 56,
+          "frames": 48,
+          "frameP50Ms": 16.7,
+          "frameP95Ms": 33.3,
+          "framesOver50Ms": 0
+        },
+        "pan": {
+          "wallMs": 1881,
+          "longTasks": 0,
+          "longTaskTotalMs": 0,
+          "longTaskMaxMs": 0,
+          "frames": 130,
+          "frameP50Ms": 16.7,
+          "frameP95Ms": 16.7,
+          "framesOver50Ms": 0
+        },
+        "running100": {
+          "wallMs": 3001,
+          "longTasks": 14,
+          "longTaskTotalMs": 1688,
+          "longTaskMaxMs": 222,
+          "frames": 99,
+          "frameP50Ms": 16.7,
+          "frameP95Ms": 116.7,
+          "framesOver50Ms": 12
+        },
+        "machine": {
+          "loadAvg1": 1.77,
+          "cores": 4
+        },
+        "openMarch": {
+          "wallMs": 191,
+          "longTasks": 1,
+          "longTaskTotalMs": 117,
+          "longTaskMaxMs": 117,
+          "frames": 23,
+          "frameP50Ms": 16.7,
+          "frameP95Ms": 16.8,
+          "framesOver50Ms": 1
+        }
+      },
+      "notes": [
+        {
+          "startButtonInFirstView": true
+        },
+        {
+          "headerHeightPx": 142
+        },
+        {
+          "recruitClicks": 1
+        },
+        {
+          "marchTargetOptions": 237
+        },
+        {
+          "preparedSaves": "ok"
+        },
+        {
+          "victoryState": {
+            "real": true,
+            "moved": 79,
+            "share": 700,
+            "goal": 700,
+            "condition": "points"
+          }
+        },
+        {
+          "defeatState": {
+            "real": true,
+            "moved": 92,
+            "share": 700,
+            "goal": 700,
+            "condition": "points"
+          }
+        },
+        {
+          "victoryFocusLeavesDialog": false
+        }
+      ],
+      "probes": {
+        "tutorialCover": {
+          "measured": true,
+          "coversPicker": false,
+          "directionWords": false
+        },
+        "orientationHint": true,
+        "tooltip": {
+          "afterSelection": {
+            "visible": false,
+            "text": ""
+          },
+          "visibleWithDialog": false,
+          "text": "",
+          "mentionsMouse": false
+        },
+        "explain": {
+          "closedByEscape": true
+        },
+        "toastFrei": {
+          "toastSteht": true,
+          "toast": {
+            "left": 12,
+            "top": 154,
+            "bottom": 198,
+            "right": 363
+          },
+          "footTop": 0,
+          "headBottom": 142,
+          "mapBottom": 667,
+          "pause": {
+            "frei": true,
+            "treffer": "svg.lucide"
+          },
+          "logZeile": null,
+          "toasterZ": "9"
+        },
+        "armyHead": {
+          "nameVisible": true,
+          "marchVisible": false,
+          "sideScrollTop": 0
+        },
+        "march": {
+          "options": 237,
+          "groups": [
+            {
+              "label": "Erreichbar — mit Ankunftstag",
+              "options": 33,
+              "disabled": 0
+            },
+            {
+              "label": "Nicht erreichbar",
+              "options": 203,
+              "disabled": 203
+            }
+          ],
+          "openLongTaskMaxMs": 117
+        },
+        "confirm": {
+          "asksOnFirstClick": true,
+          "warOnFirstClick": false
+        },
+        "log": {
+          "entries": 8,
+          "timeWrapped": 0,
+          "duplicateBattleRuns": 0,
+          "standingsFirstIsRankOne": true
+        },
+        "endDialog": {
+          "text": "Sieg×Sie haben gewonnen.Siegbedingung erfüllt: Ihnen gehören 7 % aller Siegpunkte, verlangt waren 70 %.Tag 30 · 2.098 Punkte · 82 ProvinzenNeue PartieKarte ansehen",
+          "namesCondition": true
+        },
+        "endDialogDefeat": {
+          "text": "Niederlage×Kanada hat gewonnen.Siegbedingung: 70 % aller Siegpunkte — erreicht von Kanada.Tag 30 · 2.098 Punkte · 3 ProvinzenNeue PartieKarte ansehen",
+          "namesCondition": true
+        }
+      },
+      "dialogs": {
+        "settings": {
+          "present": true,
+          "steps": 12,
+          "focusLeaves": false,
+          "outside": 0,
+          "closable": true,
+          "closedByEscape": true
+        },
+        "victory": {
+          "present": true,
+          "steps": 10,
+          "focusLeaves": false,
+          "outside": 0,
+          "closable": true,
+          "closedByEscape": true
+        }
+      },
+      "layout": {
+        "mapStart": {
+          "meldungsorte": {
+            "orte": {
+              "toast": [],
+              "alerts": [
+                {
+                  "key": "unlock:building:barracks",
+                  "via": "data-msg"
+                }
+              ],
+              "chip": [],
+              "dock": []
+            },
+            "doppelt": [],
+            "anzahl": {
+              "toast": 0,
+              "alerts": 1,
+              "chip": 0,
+              "dock": 0
+            }
+          },
+          "viewport": {
+            "w": 375,
+            "h": 667
+          },
+          "alarmChipVisible": false,
+          "goalVisible": false,
+          "hiddenDrawn": [],
+          "pageOverflowX": false,
+          "header": {
+            "x": 0,
+            "y": 0,
+            "w": 375,
+            "h": 142,
+            "visibleArea": 53402
+          },
+          "map": {
+            "x": 0,
+            "y": 142,
+            "w": 375,
+            "h": 300,
+            "visibleArea": 112553
+          },
+          "mapShareOfViewport": 0.45,
+          "side": {
+            "x": 0,
+            "y": 443,
+            "w": 375,
+            "h": 139,
+            "visibleArea": 52295
+          },
+          "foot": {
+            "x": 0,
+            "y": 582,
+            "w": 375,
+            "h": 85,
+            "visibleArea": 31875
+          },
+          "overflowingRegions": [
+            "header__top 394>375"
+          ]
+        },
+        "provincePanel": {
+          "meldungsorte": {
+            "orte": {
+              "toast": [],
+              "alerts": [
+                {
+                  "key": "unlock:building:barracks",
+                  "via": "data-msg"
+                }
+              ],
+              "chip": [],
+              "dock": []
+            },
+            "doppelt": [],
+            "anzahl": {
+              "toast": 0,
+              "alerts": 1,
+              "chip": 0,
+              "dock": 0
+            }
+          },
+          "viewport": {
+            "w": 375,
+            "h": 667
+          },
+          "alarmChipVisible": false,
+          "goalVisible": false,
+          "hiddenDrawn": [],
+          "pageOverflowX": false,
+          "header": {
+            "x": 0,
+            "y": 0,
+            "w": 375,
+            "h": 142,
+            "visibleArea": 53402
+          },
+          "map": {
+            "x": 0,
+            "y": 142,
+            "w": 375,
+            "h": 191,
+            "visibleArea": 71660
+          },
+          "mapShareOfViewport": 0.286,
+          "side": {
+            "x": 0,
+            "y": 334,
+            "w": 375,
+            "h": 334,
+            "visibleArea": 125063
+          },
+          "foot": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "visibleArea": 0
+          },
+          "overflowingRegions": [
+            "header__top 394>375"
+          ]
+        },
+        "toast": {
+          "meldungsorte": {
+            "orte": {
+              "toast": [
+                {
+                  "key": "ack:befohlen-kaserne",
+                  "via": "data-msg"
+                }
+              ],
+              "alerts": [
+                {
+                  "key": "unlock:building:barracks",
+                  "via": "data-msg"
+                }
+              ],
+              "chip": [],
+              "dock": []
+            },
+            "doppelt": [],
+            "anzahl": {
+              "toast": 1,
+              "alerts": 1,
+              "chip": 0,
+              "dock": 0
+            }
+          },
+          "viewport": {
+            "w": 375,
+            "h": 667
+          },
+          "alarmChipVisible": false,
+          "goalVisible": false,
+          "hiddenDrawn": [],
+          "pageOverflowX": false,
+          "header": {
+            "x": 0,
+            "y": 0,
+            "w": 375,
+            "h": 142,
+            "visibleArea": 53402
+          },
+          "map": {
+            "x": 0,
+            "y": 142,
+            "w": 375,
+            "h": 191,
+            "visibleArea": 71660
+          },
+          "mapShareOfViewport": 0.286,
+          "side": {
+            "x": 0,
+            "y": 334,
+            "w": 375,
+            "h": 334,
+            "visibleArea": 125063
+          },
+          "foot": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "visibleArea": 0
+          },
+          "overflowingRegions": [
+            "header__top 394>375"
+          ]
+        },
+        "running": {
+          "meldungsorte": {
+            "orte": {
+              "toast": [],
+              "alerts": [
+                {
+                  "key": "unlock:building:fortress",
+                  "via": "data-msg"
+                }
+              ],
+              "chip": [],
+              "dock": []
+            },
+            "doppelt": [],
+            "anzahl": {
+              "toast": 0,
+              "alerts": 1,
+              "chip": 0,
+              "dock": 0
+            }
+          },
+          "viewport": {
+            "w": 375,
+            "h": 667
+          },
+          "alarmChipVisible": false,
+          "goalVisible": true,
+          "hiddenDrawn": [],
+          "pageOverflowX": false,
+          "header": {
+            "x": 0,
+            "y": 0,
+            "w": 375,
+            "h": 158,
+            "visibleArea": 59402
+          },
+          "map": {
+            "x": 0,
+            "y": 158,
+            "w": 375,
+            "h": 175,
+            "visibleArea": 65660
+          },
+          "mapShareOfViewport": 0.263,
+          "side": {
+            "x": 0,
+            "y": 334,
+            "w": 375,
+            "h": 334,
+            "visibleArea": 125063
+          },
+          "foot": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "visibleArea": 0
+          },
+          "overflowingRegions": [
+            "header__top 394>375"
+          ]
+        },
+        "armyPanel": {
+          "meldungsorte": {
+            "orte": {
+              "toast": [],
+              "alerts": [
+                {
+                  "key": "upcoming:unit:motorized",
+                  "via": "data-msg"
+                }
+              ],
+              "chip": [],
+              "dock": []
+            },
+            "doppelt": [],
+            "anzahl": {
+              "toast": 0,
+              "alerts": 1,
+              "chip": 0,
+              "dock": 0
+            }
+          },
+          "viewport": {
+            "w": 375,
+            "h": 667
+          },
+          "alarmChipVisible": false,
+          "goalVisible": true,
+          "hiddenDrawn": [],
+          "pageOverflowX": false,
+          "header": {
+            "x": 0,
+            "y": 0,
+            "w": 375,
+            "h": 158,
+            "visibleArea": 59402
+          },
+          "map": {
+            "x": 0,
+            "y": 158,
+            "w": 375,
+            "h": 175,
+            "visibleArea": 65660
+          },
+          "mapShareOfViewport": 0.263,
+          "side": {
+            "x": 0,
+            "y": 334,
+            "w": 375,
+            "h": 334,
+            "visibleArea": 125063
+          },
+          "foot": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "visibleArea": 0
+          },
+          "overflowingRegions": [
+            "header__top 394>375"
+          ]
+        },
+        "battle": {
+          "meldungsorte": {
+            "orte": {
+              "toast": [],
+              "alerts": [
+                {
+                  "key": "unlock:unit:tank",
+                  "via": "data-msg"
+                }
+              ],
+              "chip": [],
+              "dock": []
+            },
+            "doppelt": [],
+            "anzahl": {
+              "toast": 0,
+              "alerts": 1,
+              "chip": 0,
+              "dock": 0
+            }
+          },
+          "viewport": {
+            "w": 375,
+            "h": 667
+          },
+          "alarmChipVisible": false,
+          "goalVisible": true,
+          "hiddenDrawn": [],
+          "pageOverflowX": false,
+          "header": {
+            "x": 0,
+            "y": 0,
+            "w": 375,
+            "h": 158,
+            "visibleArea": 59402
+          },
+          "map": {
+            "x": 0,
+            "y": 158,
+            "w": 375,
+            "h": 175,
+            "visibleArea": 65660
+          },
+          "mapShareOfViewport": 0.263,
+          "side": {
+            "x": 0,
+            "y": 334,
+            "w": 375,
+            "h": 334,
+            "visibleArea": 125063
+          },
+          "foot": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "visibleArea": 0
+          },
+          "overflowingRegions": [
+            "header__top 394>375"
+          ]
+        },
+        "saves": {
+          "meldungsorte": {
+            "orte": {
+              "toast": [],
+              "alerts": [
+                {
+                  "key": "unlock:unit:tank",
+                  "via": "data-msg"
+                }
+              ],
+              "chip": [],
+              "dock": []
+            },
+            "doppelt": [],
+            "anzahl": {
+              "toast": 0,
+              "alerts": 1,
+              "chip": 0,
+              "dock": 0
+            }
+          },
+          "viewport": {
+            "w": 375,
+            "h": 667
+          },
+          "alarmChipVisible": false,
+          "goalVisible": true,
+          "hiddenDrawn": [],
+          "pageOverflowX": false,
+          "header": {
+            "x": 0,
+            "y": 0,
+            "w": 375,
+            "h": 158,
+            "visibleArea": 59402
+          },
+          "map": {
+            "x": 0,
+            "y": 158,
+            "w": 375,
+            "h": 300,
+            "visibleArea": 112553
+          },
+          "mapShareOfViewport": 0.45,
+          "side": {
+            "x": 0,
+            "y": 459,
+            "w": 375,
+            "h": 106,
+            "visibleArea": 39920
+          },
+          "foot": {
+            "x": 0,
+            "y": 565,
+            "w": 375,
+            "h": 102,
+            "visibleArea": 38250
+          },
+          "overflowingRegions": [
+            "header__top 394>375"
+          ]
+        }
+      },
+      "consoleErrors": [],
+      "durationMs": 69562,
+      "url": "http://localhost:5321/"
+    },
+    "667x375": {
+      "steps": [
+        "01-start-neue-partie-667x375.png",
+        "02-partie-anlegen-startknopf-667x375.png",
+        "03-spielstaende-leer-667x375.png",
+        "04-karte-start-tutorial-667x375.png",
+        "05-kartenansicht-667x375.png",
+        "06-kopfleiste-hud-667x375.png",
+        "07-karte-gezoomt-667x375.png",
+        "08-kartenmodus-rohstoffe-667x375.png",
+        "09-provinz-auswahl-667x375.png",
+        "10-hinweis-erklaerung-667x375.png",
+        "11-rueckmeldung-bau-befohlen-667x375.png",
+        "12-tempo-100-laeuft-667x375.png",
+        "13-pause-armee-ausgehoben-667x375.png",
+        "14-armee-auswahl-667x375.png",
+        "15-beschuss-gesperrt-667x375.png",
+        "16-marsch-zielwahl-667x375.png",
+        "17-fehler-ungueltiges-ziel-667x375.png",
+        "18-marsch-ziel-gewaehlt-667x375.png",
+        "19-marsch-befohlen-667x375.png",
+        "20-diplomatie-667x375.png",
+        "x-krieg-fragt-nach-667x375.png",
+        "21-krieg-erklaert-ohne-rueckfrage-667x375.png",
+        "22-kampf-gefecht-667x375.png",
+        "23-protokoll-kaempfe-667x375.png",
+        "24-meldungen-depesche-667x375.png",
+        "25-panel-markt-667x375.png",
+        "26-panel-spionage-667x375.png",
+        "27-panel-rangliste-sieg-667x375.png",
+        "28-kartenmodus-beziehungen-667x375.png",
+        "29-menue-667x375.png",
+        "30-einstellungen-667x375.png",
+        "31-spielstand-gespeichert-667x375.png",
+        "32-fehler-spielstand-beschaedigt-667x375.png",
+        "33-spielende-sieg-667x375.png",
+        "34-spielende-niederlage-667x375.png"
+      ],
+      "failures": [],
+      "axe": {
+        "startDialog": {
+          "passes": 22,
+          "incomplete": [],
+          "violations": 0,
+          "nodes": 0,
+          "byRule": []
+        },
+        "mapStart": {
+          "passes": 26,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 22
+            }
+          ],
+          "violations": 0,
+          "nodes": 0,
+          "byRule": []
+        },
+        "provincePanel": {
+          "passes": 28,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 45
+            }
+          ],
+          "violations": 0,
+          "nodes": 0,
+          "byRule": []
+        },
+        "armyPanel": {
+          "passes": 27,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 35
+            }
+          ],
+          "violations": 0,
+          "nodes": 0,
+          "byRule": []
+        },
+        "diplomacy": {
+          "passes": 29,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 47
+            }
+          ],
+          "violations": 0,
+          "nodes": 0,
+          "byRule": []
+        },
+        "settings": {
+          "passes": 30,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 57
+            }
+          ],
+          "violations": 0,
+          "nodes": 0,
+          "byRule": []
+        },
+        "saves": {
+          "passes": 27,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 15
+            }
+          ],
+          "violations": 0,
+          "nodes": 0,
+          "byRule": []
+        },
+        "victory": {
+          "passes": 27,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 19
+            }
+          ],
+          "violations": 0,
+          "nodes": 0,
+          "byRule": []
+        }
+      },
+      "touch": {
+        "startDialog": {
+          "total": 6,
+          "under44": 0,
+          "under24": 0,
+          "share": 0,
+          "regions": {
+            "header": {
+              "total": 0,
+              "under44": 0,
+              "under24": 0
+            },
+            "side": {
+              "total": 0,
+              "under44": 0,
+              "under24": 0
+            },
+            "dialog": {
+              "total": 6,
+              "under44": 0,
+              "under24": 0
+            }
+          },
+          "samples": []
+        },
+        "mapStart": {
+          "total": 31,
+          "under44": 0,
+          "under24": 0,
+          "share": 0,
+          "regions": {
+            "header": {
+              "total": 9,
+              "under44": 0,
+              "under24": 0
+            },
+            "side": {
+              "total": 2,
+              "under44": 0,
+              "under24": 0
+            },
+            "dialog": {
+              "total": 0,
+              "under44": 0,
+              "under24": 0
+            }
+          },
+          "samples": []
+        },
+        "provincePanel": {
+          "total": 31,
+          "under44": 0,
+          "under24": 0,
+          "share": 0,
+          "regions": {
+            "header": {
+              "total": 11,
+              "under44": 0,
+              "under24": 0
+            },
+            "side": {
+              "total": 1,
+              "under44": 0,
+              "under24": 0
+            },
+            "dialog": {
+              "total": 0,
+              "under44": 0,
+              "under24": 0
+            }
+          },
+          "samples": []
+        },
+        "armyPanel": {
+          "total": 34,
+          "under44": 0,
+          "under24": 0,
+          "share": 0,
+          "regions": {
+            "header": {
+              "total": 11,
+              "under44": 0,
+              "under24": 0
+            },
+            "side": {
+              "total": 5,
+              "under44": 0,
+              "under24": 0
+            },
+            "dialog": {
+              "total": 0,
+              "under44": 0,
+              "under24": 0
+            }
+          },
+          "samples": []
+        }
+      },
+      "keyboard": {
+        "startDialog": {
+          "steps": 15,
+          "reached": 15,
+          "distinct": 8,
+          "withoutIndicator": 0,
+          "offscreen": 0,
+          "outsideDialog": 0,
+          "order": [
+            "button:Schließen",
+            "select:Welt (237)Kleine Welt (12)",
+            "select:Vereinigte StaatenRusslandChinaIndienDeu",
+            "input:",
+            "select:leichtnormalschwer",
+            "input:",
+            "select:PunkteEroberung",
+            "button:Partie beginnen",
+            "button:Spielstände",
+            "button:Schließen",
+            "select:Welt (237)Kleine Welt (12)",
+            "select:Vereinigte StaatenRusslandChinaIndienDeu",
+            "input:",
+            "select:leichtnormalschwer",
+            "input:"
+          ]
+        },
+        "mapStart": {
+          "steps": 40,
+          "reached": 39,
+          "distinct": 32,
+          "withoutIndicator": 0,
+          "offscreen": 0,
+          "outsideDialog": 39,
+          "order": [
+            "button:Pause",
+            "button:1",
+            "button:2",
+            "button:5",
+            "button:10",
+            "button:25",
+            "button:50",
+            "button:100",
+            "button:Vorspulen",
+            "button:Spielstände",
+            "button:Menü",
+            "canvas:Weltkarte",
+            "button:Hineinzoomen",
+            "button:Herauszoomen",
+            "button:Hauptstadt zentrieren",
+            "button:Vollbild",
+            "button:Besitz",
+            "button:Rohstoffe",
+            "button:Moral",
+            "button:Truppenstärke",
+            "button:Beziehungen",
+            "canvas:Übersichtskarte",
+            "button:Ausblenden: Neu ab heute: Kaserne, Infan",
+            "button:Was ist Besitz?",
+            "select:— keine —Mittlerer WestenNordosten der U",
+            "summary:Wirtschaft",
+            "button:Diplomatie",
+            "button:Markt",
+            "button:Heer",
+            "button:Spionage",
+            "button:Rangliste / Sieg1",
+            "button:Nicht mehr zeigen",
+            "button:Pause",
+            "button:1",
+            "button:2",
+            "button:5",
+            "button:10",
+            "button:25",
+            "button:50"
+          ]
+        },
+        "settings": {
+          "steps": 12,
+          "reached": 12,
+          "distinct": 4,
+          "withoutIndicator": 0,
+          "offscreen": 0,
+          "outsideDialog": 0,
+          "order": [
+            "button:Schließen",
+            "input:",
+            "input:",
+            "select:1 Stunden je Sekunde2 Stunden je Sekunde",
+            "select:kleinnormalgroß",
+            "input:",
+            "input:",
+            "button:Schließen",
+            "input:",
+            "input:",
+            "select:1 Stunden je Sekunde2 Stunden je Sekunde",
+            "select:kleinnormalgroß"
+          ]
+        },
+        "victory": {
+          "steps": 8,
+          "reached": 8,
+          "distinct": 3,
+          "withoutIndicator": 0,
+          "offscreen": 0,
+          "outsideDialog": 0,
+          "order": [
+            "button:Schließen",
+            "button:Neue Partie",
+            "button:Karte ansehen",
+            "button:Schließen",
+            "button:Neue Partie",
+            "button:Karte ansehen",
+            "button:Schließen",
+            "button:Neue Partie"
+          ]
+        }
+      },
+      "perf": {
+        "load": {
+          "domInteractiveMs": 15,
+          "domContentLoadedMs": 667,
+          "loadEventMs": 670,
+          "transferKB": 10240,
+          "resources": 223,
+          "first-paint": 672,
+          "first-contentful-paint": 940,
+          "startDialogInteractiveMs": 979,
+          "note": "Dev-Server (vite, unbuendelt) — fuer den Vergleich vorher/nachher, nicht als absolute Zusage."
+        },
+        "startGameMs": 757,
+        "zoom": {
+          "wallMs": 580,
+          "longTasks": 0,
+          "longTaskTotalMs": 0,
+          "longTaskMaxMs": 0,
+          "frames": 51,
+          "frameP50Ms": 16.7,
+          "frameP95Ms": 16.8,
+          "framesOver50Ms": 0
+        },
+        "pan": {
+          "wallMs": 2201,
+          "longTasks": 3,
+          "longTaskTotalMs": 158,
+          "longTaskMaxMs": 55,
+          "frames": 143,
+          "frameP50Ms": 16.7,
+          "frameP95Ms": 16.8,
+          "framesOver50Ms": 0
+        },
+        "running100": {
+          "wallMs": 3001,
+          "longTasks": 15,
+          "longTaskTotalMs": 1761,
+          "longTaskMaxMs": 223,
+          "frames": 100,
+          "frameP50Ms": 16.7,
+          "frameP95Ms": 116.7,
+          "framesOver50Ms": 12
+        },
+        "machine": {
+          "loadAvg1": 0.99,
+          "cores": 4
+        },
+        "openMarch": {
+          "wallMs": 151,
+          "longTasks": 1,
+          "longTaskTotalMs": 114,
+          "longTaskMaxMs": 114,
+          "frames": 21,
+          "frameP50Ms": 16.7,
+          "frameP95Ms": 16.8,
+          "framesOver50Ms": 1
+        }
+      },
+      "notes": [
+        {
+          "startButtonInFirstView": true
+        },
+        {
+          "headerHeightPx": 57
+        },
+        {
+          "recruitClicks": 1
+        },
+        {
+          "marchTargetOptions": 237
+        },
+        {
+          "preparedSaves": "ok"
+        },
+        {
+          "victoryState": {
+            "real": true,
+            "moved": 77,
+            "share": 700,
+            "goal": 700,
+            "condition": "points"
+          }
+        },
+        {
+          "defeatState": {
+            "real": true,
+            "moved": 90,
+            "share": 701,
+            "goal": 700,
+            "condition": "points"
+          }
+        },
+        {
+          "victoryFocusLeavesDialog": false
+        }
+      ],
+      "probes": {
+        "tutorialCover": {
+          "measured": true,
+          "coversPicker": false,
+          "directionWords": false
+        },
+        "tooltip": {
+          "afterSelection": {
+            "visible": false,
+            "text": ""
+          },
+          "visibleWithDialog": false,
+          "text": "",
+          "mentionsMouse": false
+        },
+        "explain": {
+          "closedByEscape": true
+        },
+        "toastFrei": {
+          "toastSteht": true,
+          "toast": {
+            "left": 12,
+            "top": 274,
+            "bottom": 318,
+            "right": 171
+          },
+          "footTop": 330,
+          "headBottom": 57,
+          "mapBottom": 330,
+          "pause": {
+            "frei": false,
+            "treffer": null
+          },
+          "logZeile": {
+            "frei": true,
+            "treffer": "p.log__empty"
+          },
+          "toasterZ": "9"
+        },
+        "armyHead": {
+          "nameVisible": true,
+          "marchVisible": false,
+          "sideScrollTop": 0
+        },
+        "march": {
+          "options": 237,
+          "groups": [
+            {
+              "label": "Erreichbar — mit Ankunftstag",
+              "options": 33,
+              "disabled": 0
+            },
+            {
+              "label": "Nicht erreichbar",
+              "options": 203,
+              "disabled": 203
+            }
+          ],
+          "openLongTaskMaxMs": 114
+        },
+        "confirm": {
+          "asksOnFirstClick": true,
+          "warOnFirstClick": false
+        },
+        "log": {
+          "entries": 9,
+          "timeWrapped": 0,
+          "duplicateBattleRuns": 0,
+          "standingsFirstIsRankOne": true
+        },
+        "endDialog": {
+          "text": "Sieg×Sie haben gewonnen.Siegbedingung erfüllt: Ihnen gehören 7 % aller Siegpunkte, verlangt waren 70 %.Tag 29 · 2.098 Punkte · 80 ProvinzenNeue PartieKarte ansehen",
+          "namesCondition": true
+        },
+        "endDialogDefeat": {
+          "text": "Niederlage×Kanada hat gewonnen.Siegbedingung: 70 % aller Siegpunkte — erreicht von Kanada.Tag 29 · 2.098 Punkte · 3 ProvinzenNeue PartieKarte ansehen",
+          "namesCondition": true
+        }
+      },
+      "dialogs": {
+        "settings": {
+          "present": true,
+          "steps": 12,
+          "focusLeaves": false,
+          "outside": 0,
+          "closable": true,
+          "closedByEscape": true
+        },
+        "victory": {
+          "present": true,
+          "steps": 10,
+          "focusLeaves": false,
+          "outside": 0,
+          "closable": true,
+          "closedByEscape": true
+        }
+      },
+      "layout": {
+        "mapStart": {
+          "meldungsorte": {
+            "orte": {
+              "toast": [],
+              "alerts": [
+                {
+                  "key": "unlock:building:barracks",
+                  "via": "data-msg"
+                }
+              ],
+              "chip": [],
+              "dock": []
+            },
+            "doppelt": [],
+            "anzahl": {
+              "toast": 0,
+              "alerts": 1,
+              "chip": 0,
+              "dock": 0
+            }
+          },
+          "viewport": {
+            "w": 667,
+            "h": 375
+          },
+          "alarmChipVisible": false,
+          "goalVisible": false,
+          "hiddenDrawn": [],
+          "pageOverflowX": false,
+          "header": {
+            "x": 0,
+            "y": 0,
+            "w": 667,
+            "h": 57,
+            "visibleArea": 38019
+          },
+          "map": {
+            "x": 0,
+            "y": 57,
+            "w": 414,
+            "h": 273,
+            "visibleArea": 112898
+          },
+          "mapShareOfViewport": 0.451,
+          "side": {
+            "x": 414,
+            "y": 57,
+            "w": 253,
+            "h": 273,
+            "visibleArea": 69193
+          },
+          "foot": {
+            "x": 0,
+            "y": 330,
+            "w": 667,
+            "h": 45,
+            "visibleArea": 30015
+          },
+          "overflowingRegions": [
+            "header__top 1268>667"
+          ]
+        },
+        "provincePanel": {
+          "meldungsorte": {
+            "orte": {
+              "toast": [],
+              "alerts": [
+                {
+                  "key": "unlock:building:barracks",
+                  "via": "data-msg"
+                }
+              ],
+              "chip": [],
+              "dock": []
+            },
+            "doppelt": [],
+            "anzahl": {
+              "toast": 0,
+              "alerts": 1,
+              "chip": 0,
+              "dock": 0
+            }
+          },
+          "viewport": {
+            "w": 667,
+            "h": 375
+          },
+          "alarmChipVisible": false,
+          "goalVisible": false,
+          "hiddenDrawn": [],
+          "pageOverflowX": false,
+          "header": {
+            "x": 0,
+            "y": 0,
+            "w": 667,
+            "h": 57,
+            "visibleArea": 38019
+          },
+          "map": {
+            "x": 0,
+            "y": 57,
+            "w": 414,
+            "h": 273,
+            "visibleArea": 112898
+          },
+          "mapShareOfViewport": 0.451,
+          "side": {
+            "x": 414,
+            "y": 57,
+            "w": 253,
+            "h": 273,
+            "visibleArea": 69193
+          },
+          "foot": {
+            "x": 0,
+            "y": 330,
+            "w": 667,
+            "h": 45,
+            "visibleArea": 30015
+          },
+          "overflowingRegions": [
+            "header__top 1268>667"
+          ]
+        },
+        "toast": {
+          "meldungsorte": {
+            "orte": {
+              "toast": [
+                {
+                  "key": "ack:befohlen-kaserne",
+                  "via": "data-msg"
+                }
+              ],
+              "alerts": [
+                {
+                  "key": "unlock:building:barracks",
+                  "via": "data-msg"
+                }
+              ],
+              "chip": [],
+              "dock": []
+            },
+            "doppelt": [],
+            "anzahl": {
+              "toast": 1,
+              "alerts": 1,
+              "chip": 0,
+              "dock": 0
+            }
+          },
+          "viewport": {
+            "w": 667,
+            "h": 375
+          },
+          "alarmChipVisible": false,
+          "goalVisible": false,
+          "hiddenDrawn": [],
+          "pageOverflowX": false,
+          "header": {
+            "x": 0,
+            "y": 0,
+            "w": 667,
+            "h": 57,
+            "visibleArea": 38019
+          },
+          "map": {
+            "x": 0,
+            "y": 57,
+            "w": 414,
+            "h": 273,
+            "visibleArea": 112898
+          },
+          "mapShareOfViewport": 0.451,
+          "side": {
+            "x": 414,
+            "y": 57,
+            "w": 253,
+            "h": 273,
+            "visibleArea": 69193
+          },
+          "foot": {
+            "x": 0,
+            "y": 330,
+            "w": 667,
+            "h": 45,
+            "visibleArea": 30015
+          },
+          "overflowingRegions": [
+            "header__top 1268>667"
+          ]
+        },
+        "running": {
+          "meldungsorte": {
+            "orte": {
+              "toast": [],
+              "alerts": [],
+              "chip": [],
+              "dock": []
+            },
+            "doppelt": [],
+            "anzahl": {
+              "toast": 0,
+              "alerts": 0,
+              "chip": 0,
+              "dock": 0
+            }
+          },
+          "viewport": {
+            "w": 667,
+            "h": 375
+          },
+          "alarmChipVisible": false,
+          "goalVisible": true,
+          "hiddenDrawn": [],
+          "pageOverflowX": false,
+          "header": {
+            "x": 0,
+            "y": 0,
+            "w": 667,
+            "h": 57,
+            "visibleArea": 38019
+          },
+          "map": {
+            "x": 0,
+            "y": 57,
+            "w": 414,
+            "h": 273,
+            "visibleArea": 112898
+          },
+          "mapShareOfViewport": 0.451,
+          "side": {
+            "x": 414,
+            "y": 57,
+            "w": 253,
+            "h": 273,
+            "visibleArea": 69193
+          },
+          "foot": {
+            "x": 0,
+            "y": 330,
+            "w": 667,
+            "h": 45,
+            "visibleArea": 30015
+          },
+          "overflowingRegions": [
+            "header__top 1414>667"
+          ]
+        },
+        "armyPanel": {
+          "meldungsorte": {
+            "orte": {
+              "toast": [],
+              "alerts": [],
+              "chip": [],
+              "dock": []
+            },
+            "doppelt": [],
+            "anzahl": {
+              "toast": 0,
+              "alerts": 0,
+              "chip": 0,
+              "dock": 0
+            }
+          },
+          "viewport": {
+            "w": 667,
+            "h": 375
+          },
+          "alarmChipVisible": false,
+          "goalVisible": true,
+          "hiddenDrawn": [],
+          "pageOverflowX": false,
+          "header": {
+            "x": 0,
+            "y": 0,
+            "w": 667,
+            "h": 57,
+            "visibleArea": 38019
+          },
+          "map": {
+            "x": 0,
+            "y": 57,
+            "w": 414,
+            "h": 273,
+            "visibleArea": 112898
+          },
+          "mapShareOfViewport": 0.451,
+          "side": {
+            "x": 414,
+            "y": 57,
+            "w": 253,
+            "h": 273,
+            "visibleArea": 69193
+          },
+          "foot": {
+            "x": 0,
+            "y": 330,
+            "w": 667,
+            "h": 45,
+            "visibleArea": 30015
+          },
+          "overflowingRegions": [
+            "header__top 1429>667",
+            "side 256>252"
+          ]
+        },
+        "battle": {
+          "meldungsorte": {
+            "orte": {
+              "toast": [],
+              "alerts": [],
+              "chip": [],
+              "dock": []
+            },
+            "doppelt": [],
+            "anzahl": {
+              "toast": 0,
+              "alerts": 0,
+              "chip": 0,
+              "dock": 0
+            }
+          },
+          "viewport": {
+            "w": 667,
+            "h": 375
+          },
+          "alarmChipVisible": false,
+          "goalVisible": true,
+          "hiddenDrawn": [],
+          "pageOverflowX": false,
+          "header": {
+            "x": 0,
+            "y": 0,
+            "w": 667,
+            "h": 57,
+            "visibleArea": 38019
+          },
+          "map": {
+            "x": 0,
+            "y": 57,
+            "w": 414,
+            "h": 273,
+            "visibleArea": 112898
+          },
+          "mapShareOfViewport": 0.451,
+          "side": {
+            "x": 414,
+            "y": 57,
+            "w": 253,
+            "h": 273,
+            "visibleArea": 69193
+          },
+          "foot": {
+            "x": 0,
+            "y": 330,
+            "w": 667,
+            "h": 45,
+            "visibleArea": 30015
+          },
+          "overflowingRegions": [
+            "header__top 1445>667"
+          ]
+        },
+        "saves": {
+          "meldungsorte": {
+            "orte": {
+              "toast": [],
+              "alerts": [],
+              "chip": [],
+              "dock": []
+            },
+            "doppelt": [],
+            "anzahl": {
+              "toast": 0,
+              "alerts": 0,
+              "chip": 0,
+              "dock": 0
+            }
+          },
+          "viewport": {
+            "w": 667,
+            "h": 375
+          },
+          "alarmChipVisible": false,
+          "goalVisible": true,
+          "hiddenDrawn": [],
+          "pageOverflowX": false,
+          "header": {
+            "x": 0,
+            "y": 0,
+            "w": 667,
+            "h": 57,
+            "visibleArea": 38019
+          },
+          "map": {
+            "x": 0,
+            "y": 57,
+            "w": 414,
+            "h": 273,
+            "visibleArea": 112898
+          },
+          "mapShareOfViewport": 0.451,
+          "side": {
+            "x": 414,
+            "y": 57,
+            "w": 253,
+            "h": 273,
+            "visibleArea": 69193
+          },
+          "foot": {
+            "x": 0,
+            "y": 330,
+            "w": 667,
+            "h": 45,
+            "visibleArea": 30015
+          },
+          "overflowingRegions": [
+            "header__top 1445>667"
+          ]
+        }
+      },
+      "consoleErrors": [],
+      "durationMs": 62229,
+      "url": "http://localhost:5321/"
+    }
+  }
+}

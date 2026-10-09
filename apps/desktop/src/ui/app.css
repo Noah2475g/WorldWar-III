@@ -194,8 +194,9 @@ body {
 
 /* ---------------------------------------------------------------- header */
 
-/* Zwei Zeilen seit dem Kriegsrat (T-M29-02, D27.6): oben Uhr, Tempo, Modus, Knoepfe
-   und der Alarmchip; darunter die Rohstoffleiste mit Tagesbilanz. */
+/* E2 (v3b): EINE Zeile 56 px — Pause · Tempo-Stepper · Tag/Uhr · 7 Rohstoffe (in 2. Zeile) · Alarmchip · Speichern · Menue.
+   Kartenmodus verschoben in .map-tools (Werkzeug-Cluster oben rechts an Karte). Siegziel in .clock .stat--victory neben Tag/Uhr.
+   fastForwardNotice als sonner Toast (ausserhalb Header). Titel "WorldWar" entfällt. */
 .header {
   background: var(--paper);
   border-bottom: 1px solid var(--line);
@@ -204,7 +205,7 @@ body {
 .header__top {
   display: flex;
   align-items: center;
-  gap: var(--sp-lg);
+  gap: var(--sp-md);
   padding: var(--sp-sm) var(--sp-lg);
   flex-wrap: wrap;
   font-family: var(--font-map);
@@ -214,9 +215,14 @@ body {
   text-transform: uppercase;
 }
 
-.header__title {
-  color: var(--ink);
-}
+/* Ab 1280 px (D4): eine Zeile 56 px, Knoepfe rollen statt zu brechen — siehe die
+   min-width:1280px-Regel weiter unten in dieser Datei. Darunter (schmales Maus-/
+   Tastatur-Fenster, NICHT Telefon-Touch — das regelt touch.css eigenstaendig) bricht
+   die Zeile wie vor E2, sonst verschwinden Speichern/Menue ausserhalb des Bilds
+   (Befund E2 R1: 6 von 34 Bildern bei 375x667 ohne Touch scheiterten an genau diesen
+   Knoepfen). */
+
+/* .header__title entfernt (D25) */
 
 .header__panels {
   display: flex;
@@ -236,26 +242,101 @@ body {
   font-size: 11px;
 }
 
+/* Kartenmodus im Werkzeug-Cluster (D22): unter Zoomstufe, vor Minikarte. */
+.map-tools {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  margin-top: var(--sp-xs);
+}
+
+.map-tools .modes {
+  display: flex;
+  gap: var(--sp-xs);
+  padding: 2px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.map-tools .mode {
+  background: none;
+  border: 0;
+  color: var(--ink-soft);
+  font: 600 10.5px var(--font-map);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.map-tools .mode--active {
+  background: var(--warn);
+  color: var(--on-warn);
+}
+
+.map-tools .modes-select {
+  display: none;
+  font: 600 10.5px var(--font-map);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+  min-width: 140px;
+}
+
+/*
+  E2 (v3b, D4): die Rohstoffleiste sitzt JETZT in der 56-px-Kopfzeile selbst (kein
+  eigenes Zeilenpaar mehr) — ein Flex-Kind von `.header__top`, mit eigenem
+  Ueberlauf-Scrollen (wischbar, T-M44-03a), wenn die Breite nicht reicht.
+*/
 .resources {
   display: flex;
+  align-items: center;
   gap: 0;
   margin: 0;
-  padding: 0 var(--sp-md);
+  padding: 0;
   list-style: none;
-  background: var(--paper-sunk);
-  border-top: 1px solid var(--line);
   font-family: var(--font-num);
   font-variant-numeric: tabular-nums;
   font-size: 11px;
+  height: 56px;
   overflow-x: auto;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .resource {
   display: flex;
   align-items: center;
   gap: 5px;
-  padding: 5px 6px;
+  padding: 0 6px;
   white-space: nowrap;
+  flex: none;
+}
+
+/* Zahl/Zeichen oben, Name 10,5 px darunter (D4) — ein Flex-Kind je Rohstoff. */
+.resource__figures {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  line-height: 1.15;
+}
+
+.resource__row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.resource__name {
+  font-size: 10.5px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0.01em;
+  color: var(--ink-soft);
 }
 
 /*
@@ -2598,16 +2679,9 @@ body {
  * Umbruch wie bisher — dort entscheidet das Paket Layout (R-UX-01).
  */
 
-/* Der Titel ist Beiwerk: unter 1500 px steht an seinem Platz die Uhr. */
-@media (max-width: 1499px) {
-  .header__title {
-    display: none;
-  }
-}
-
-/* Die Auswahl der Kartenmodi: Grundregel verborgen, unter 1400 px an Stelle der fünf Knöpfe.
+/* Kartenmodus im Werkzeug-Cluster (D22): Auswahl Grundregel verborgen, unter 1400 px an Stelle der fünf Knöpfe.
    Im Touch-Betrieb bleiben die Knöpfe (die Zeile wischt dort, touch.css). */
-.modes-select {
+.map-tools .modes-select {
   display: none;
   font: 600 10.5px var(--font-map);
   text-transform: uppercase;
@@ -2619,14 +2693,15 @@ body {
   background: var(--paper-sunk);
   color: var(--ink);
   cursor: pointer;
+  min-width: 140px;
 }
 
 @media (max-width: 1399px) {
-  :root:not([data-input='touch']) .modes {
+  :root:not([data-input='touch']) .map-tools .modes {
     display: none;
   }
 
-  :root:not([data-input='touch']) .modes-select {
+  :root:not([data-input='touch']) .map-tools .modes-select {
     display: inline-block;
   }
 }
@@ -2676,9 +2751,15 @@ body {
 /* Ab 1280 px bricht die obere Zeile nicht mehr um; was nicht passt, schrumpft (Uhr und Hinweise
    dürfen kürzer werden, die Knöpfe nicht). */
 @media (min-width: 1280px) {
+  .header {
+    height: 56px;
+  }
+
   .header__top {
     flex-wrap: nowrap;
     gap: var(--sp-md);
+    padding: 0 var(--sp-lg);
+    height: 56px;
   }
 
   .header__top > * {
@@ -2686,9 +2767,7 @@ body {
   }
 
   .header__panels,
-  .header__alarm,
-  .modes,
-  .modes-select {
+  .header__alarm {
     flex: none;
   }
 

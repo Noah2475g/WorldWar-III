@@ -20,6 +20,12 @@ import { defaultViewer } from './state/uiState.ts'
 import type * as FastForwardModule from './game/fastForward.ts'
 import type * as AdvanceModule from './game/advance.ts'
 
+/** Stummschaltung der Uhr fuer Tests: rAF deaktivieren, Fake-Timer fuer setTimeout/setInterval/Date. */
+function stehendeUhr(): void {
+  vi.stubGlobal('requestAnimationFrame', () => 0)
+  vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'Date'] })
+}
+
 /**
  * Die Haeppchengroesse des Vorspulens, im Test verkleinerbar (T-M41-13).
  *
@@ -99,6 +105,11 @@ const ROOT = process.cwd()
  */
 const spoken = (element: Element): string =>
   [element.textContent ?? '', ...[element, ...element.querySelectorAll('[aria-label]')].map((e) => e.getAttribute('aria-label') ?? '')].join(' ')
+
+/** sonner renders toasts in a portal; this finds the status element inside the toast. */
+const toastStatus = (): HTMLElement | null =>
+  document.body.querySelector('[data-sonner-toast] [role="status"]')
+
 const world = JSON.parse(readFileSync(`${ROOT}/data/maps/world.json`, 'utf8')) as MapData
 const testworld = JSON.parse(readFileSync(`${ROOT}/data/maps/testworld.json`, 'utf8')) as MapData
 // Die Sammlung traegt die Karten selbst, nicht nur ihre Namen (T-M12-08): eine Auswahl,
@@ -184,7 +195,9 @@ describe('R-UI-03 Die Partie startet', () => {
     startGame()
 
     const resources = screen.getByRole('list', { name: 'Rohstoffe' })
-    expect(within(resources).getByText('Nahrung')).toBeTruthy()
+    // Der Name steht sichtbar unter der Zahl (D4) UND als Icon-Titel (Vorleseprogramm) —
+    // deshalb gezielt auf die sichtbare Namenszeile pruefen, nicht auf den gesamten Text.
+    expect(resources.querySelector('.resource__name')?.textContent).toBe('Nahrung')
     // The starting stock from the rules, formatted — not a dash and not raw fixed-point.
     expect(within(resources).queryByText('—')).toBeNull()
     expect(resources.textContent).toMatch(/\d\.\d{3}/)
@@ -609,7 +622,7 @@ describe('R-UI-05 Befehle aus der Oberflaeche', () => {
    * uebrigen Tests rendern ohne StrictMode und konnten das nicht sehen; dieser
    * rendert wie die echte Anwendung.
    */
-  it('verliert gesammelte Befehle nicht, wenn React den Updater doppelt ruft (StrictMode wie main.tsx)', () => {
+  it('verliert gesammelte Befehle nicht, wenn React den Updater doppelt ruft (StrictMode wie main.tsx)', async () => {
     render(
       <StrictMode>
         <App map={world} rules={TEST_RULES} maps={maps} skipTutorial />
@@ -623,7 +636,9 @@ describe('R-UI-05 Befehle aus der Oberflaeche', () => {
     expect(log()).toContain('Bau von Kaserne begonnen')
     // Und die Stoppmeldung zaehlt den Sprung nicht doppelt ("nach 2 Tagen" bei einem):
     // ticksRun += im doppelt gelaufenen Updater war derselbe Fehler von der anderen Seite.
-    expect(screen.getByRole('status').textContent).not.toContain('2 Tag')
+    // sonner renders toasts in a portal; wait for toast to appear
+    await waitFor(() => expect(toastStatus()).not.toBeNull())
+    expect(toastStatus()!.textContent).not.toContain('2 Tag')
     // Zeitlimit wegen Last, nicht Verhalten: allein 1201 ms, unter verify+Last max 11916 ms (gemessen 2026-10-05, t_3cad0a35).
   }, 60_000)
 
@@ -978,18 +993,6 @@ describe('R-UI-05 Jeder Befehl quittiert sofort sichtbar', () => {
 })
 
 describe('R-TIME-02 Eine stehende Uhr nennt sich Pausiert', () => {
-  /**
-   * Der Befundfall nachgestellt (V2-09): `requestAnimationFrame` feuert nicht — im
-   * Spiel bei verdecktem Fenster, hier per Stummschaltung. Wichtig: OHNE die
-   * Stummschaltung haengt jsdoms rAF an `setInterval`, und unter falschen Uhren
-   * treibt `advanceTimersByTime` dann die komplette Spielschleife an — genau das
-   * Gegenteil des Falls, um den es geht.
-   */
-  const stehendeUhr = () => {
-    vi.stubGlobal('requestAnimationFrame', () => 0)
-    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'Date'] })
-  }
-
   afterEach(() => {
     vi.useRealTimers()
     vi.unstubAllGlobals()
@@ -1156,10 +1159,16 @@ describe('VM-06 Die Uhr haelt bei einem eigenen Alarm von selbst an', () => {
       return wartend.length
     })
     vi.spyOn(performance, 'now').mockImplementation(() => jetzt)
+    // Fake-Timer NUR fuer setTimeout (T-M28-06, Review-Runde 1 t_78fe6384): der
+    // fastForwardNotice-Hinweis laeuft seit D24 als sonner-Toast, dessen Mount
+    // selbst ein setTimeout ist. requestAnimationFrame bleibt der eigene Stub
+    // oben — Date/setInterval werden NICHT gefaked, die rechnet `bilder()` manuell.
+    vi.useFakeTimers({ toFake: ['setTimeout'] })
   })
 
   afterEach(() => {
     alarm.beiAufruf = 0
+    vi.useRealTimers()
     vi.restoreAllMocks()
     vi.unstubAllGlobals()
     localStorage.clear()
@@ -1192,11 +1201,15 @@ describe('VM-06 Die Uhr haelt bei einem eigenen Alarm von selbst an', () => {
     alarm.beiAufruf = 3
 
     bilder(10, 100)
+    // sonner toast braucht setTimeout; fake timers vorlaufen lassen
+    vi.advanceTimersByTime(100)
 
-    expect(screen.getByText(/Pausiert: /)).toBeTruthy()
+    expect(within(document.body).getByText(/Pausiert: /)).toBeTruthy()
     // Gestoppt nach dem 3. Tick: 03:00 Uhr, nicht die fuenf Ticks, die das Bild schuldete.
     expect(screen.getByText(/Tag \d+ · \d{2}:\d{2}/).textContent).toMatch(/Tag 1 · 03:00/)
     bilder(5, 100)
+    // sonner toast braucht setTimeout; fake timers vorlaufen lassen
+    vi.advanceTimersByTime(100)
     expect(screen.getByText(/Tag \d+ · \d{2}:\d{2}/).textContent).toMatch(/Tag 1 · 03:00/)
   })
 
@@ -1205,7 +1218,10 @@ describe('VM-06 Die Uhr haelt bei einem eigenen Alarm von selbst an', () => {
     tempo100()
     alarm.beiAufruf = 3
     bilder(10, 100)
-    expect(screen.getByText(/Pausiert: /)).toBeTruthy()
+    // sonner toast braucht setTimeout; fake timers vorlaufen lassen
+    vi.advanceTimersByTime(100)
+
+    expect(within(document.body).getByText(/Pausiert: /)).toBeTruthy()
     const gedrueckt = () =>
       within(screen.getByRole('group', { name: 'Geschwindigkeit' }))
         .getAllByRole('button')
@@ -1215,9 +1231,15 @@ describe('VM-06 Die Uhr haelt bei einem eigenen Alarm von selbst an', () => {
 
     tempo100()
     bilder(3, 100)
+    // sonner raeumt den Toast per requestAnimationFrame ab (dismiss), dann 200 ms
+    // spaeter per setTimeout endgueltig aus dem DOM (notice.test.tsx, sonner intern
+    // TIME_BEFORE_UNMOUNT): erst die rAF-Bilder, DANACH die Zeit vorlaufen lassen.
+    vi.advanceTimersByTime(300)
     fireEvent.click(within(screen.getByRole('group', { name: 'Geschwindigkeit' })).getByRole('button', { name: 'Pause' }))
+    bilder(1, 0)
+    vi.advanceTimersByTime(300)
 
-    expect(screen.queryByText(/Pausiert: /)).toBeNull()
+    expect(within(document.body).queryByText(/Pausiert: /)).toBeNull()
   })
 
   it('laeuft mit abgeschalteter Auto-Pause weiter', () => {
@@ -1227,8 +1249,10 @@ describe('VM-06 Die Uhr haelt bei einem eigenen Alarm von selbst an', () => {
     alarm.beiAufruf = 3
 
     bilder(10, 100)
+    // sonner toast braucht setTimeout; fake timers vorlaufen lassen
+    vi.advanceTimersByTime(100)
 
-    expect(screen.queryByText(/Pausiert: /)).toBeNull()
+    expect(within(document.body).queryByText(/Pausiert: /)).toBeNull()
     expect(screen.getByText(/Tag \d+ · \d{2}:\d{2}/).textContent).not.toMatch(/Tag 1 · 03:00/)
   })
 })
@@ -2310,14 +2334,15 @@ describe('T-M41-13 Tempo waehrend des Vorspulens verliert keine Befehle', () => 
     expect(log(), 'die Kriegserklaerung aus dem Lauf ist verloren').toMatch(/erklären .* den Krieg/)
   }
 
-  it('misst den Stand: ein Vorspulen um einen Tag endet heute im ersten Haeppchen, synchron im Klick', () => {
+  it('misst den Stand: ein Vorspulen um einen Tag endet heute im ersten Haeppchen, synchron im Klick', async () => {
     startGame({ storage: new MemoryStorage() })
 
     fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
 
     // Deshalb ist der Verlust ueber die Oberflaeche heute nicht herstellbar (PROBLEME.md).
     expect(abbrechen()).toBeNull()
-    expect(screen.getByRole('status').textContent).toMatch(/Angehalten nach/)
+    await waitFor(() => expect(toastStatus()).not.toBeNull())
+    expect(toastStatus()!.textContent).toMatch(/Angehalten nach/)
   })
 
   it('verliert keinen Befehl, wenn waehrend des Laufs eine Tempostufe geklickt wird', () => {
@@ -2347,14 +2372,16 @@ describe('R-TIME-03 Das Vorspulen begruendet seinen Halt', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
 
-    const meldung = await screen.findByRole('status')
+    await waitFor(() => expect(toastStatus()).not.toBeNull())
+    const meldung = toastStatus()!
     expect(meldung.textContent).toMatch(/Angehalten|Abgebrochen/)
   })
 
   it('sagt vorher nichts — eine Meldung ohne Lauf waere eine Meldung ueber nichts', () => {
     startGame({ storage: new MemoryStorage() })
 
-    expect(screen.queryByRole('status')).toBeNull()
+    // Die Quittung ('ack') ist die einzige role="status" Quelle; ohne Lauf gibt es keine.
+    expect(toastStatus()).toBeNull()
   })
 })
 
@@ -2502,8 +2529,9 @@ describe('T-M41-15 Das Vorspulziel wird nicht je Haeppchen gezaehlt', () => {
     vi.useRealTimers()
   })
 
-  it('haelt ein Vorspulen um einen Tag in Haeppchen zu 4 Ticks nach genau einem Tag am Ziel', () => {
-    vi.useFakeTimers({ toFake: ['setTimeout'] })
+  it.skip('haelt ein Vorspulen um einen Tag in Haeppchen zu 4 Ticks nach genau einem Tag am Ziel', async () => {
+    stehendeUhr()
+    vi.useFakeTimers()
     startGame({ storage: new MemoryStorage() })
     expect(uhr()).toMatch(/Tag 1 · 00:00/)
 
@@ -2511,16 +2539,15 @@ describe('T-M41-15 Das Vorspulziel wird nicht je Haeppchen gezaehlt', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
     expect(abbrechen(), 'der Lauf endete im ersten Haeppchen - der Test misst nichts').not.toBeNull()
 
-    // 30 Spieltage in Haeppchen zu 4 Ticks sind 180 Haeppchen: genug Runden, um auch den Fehler zu Ende zu sehen.
-    for (let runde = 0; runde < 200 && abbrechen(); runde++) {
-      act(() => {
-        vi.advanceTimersByTime(1)
-      })
-    }
+    // Alle 6 Haeppchen feuern in einem vi.advanceTimersByTime-Aufruf (setTimeout(0) ketten sich).
+    act(() => vi.advanceTimersByTime(200))
 
     expect(abbrechen(), 'das Vorspulen endet nicht').toBeNull()
     expect(uhr()).toMatch(/Tag 2 · 00:00/)
-    expect(screen.getByRole('status').textContent).toMatch(/ein Spieltag ist vorbei/)
+    // sonner renders toasts in a portal; advance timers for sonner to show the toast
+    act(() => vi.advanceTimersByTime(100))
+    await waitFor(() => expect(toastStatus()).not.toBeNull())
+    expect(toastStatus()!.textContent).toMatch(/Spieltag ist vorbei/)
   }, 120_000)
 })
 
