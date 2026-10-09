@@ -912,6 +912,41 @@ select,
     min-width: 44px;
     min-height: 44px;
   }
+
+  /* Dialoge: nicht breiter als Viewport (B1, Bau-Fenster) */
+  :root:root .dialog {
+    min-width: 0;
+    max-width: calc(100vw - 32px);
+    margin: var(--sp-lg) auto;
+  }
+  :root:root .dialog__body {
+    max-height: calc(100dvh - 180px);
+    overflow-y: auto;
+  }
+
+  /* Panel-Inhalte (B2) */
+  :root:root .side .slots {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  }
+  :root:root .side .table {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  /* Touch-Ziele (B6) */
+  :root:root .map-control {
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 16px;
+  }
+}
+
+/* Safe-area iPhone 17 Pro (B3) */
+@media (max-width: 599px) and (orientation: portrait) {
+  :root:root .app {
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
 }
 
 /* ---- T-M44-05 · Dialog-Fußzeile (Paket B) ----
@@ -922,3 +957,8 @@ select,
     padding: var(--sp-sm) var(--sp-lg);
   }
 }
+
+/* Quick-Fix-Block (@media max-width: 600px) entfernt (T-M887ed06b):
+ * brach das bestehende Sheet-System (Zeile 479ff.), da er in der Kaskade
+ * spaeter kam und den Portrait-Block ueberschrieb. Siehe Mentor-Befund
+ * t_19b316d0. Ersatz-Fixes (B1-B4, B6) stehen jetzt im Portrait-Block oben. */
