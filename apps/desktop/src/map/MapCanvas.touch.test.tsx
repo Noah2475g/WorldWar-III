@@ -128,7 +128,6 @@ function karte(extra: Partial<Parameters<typeof MapCanvas>[0]> = {}) {
       onHover={(id, at) => calls.hovers.push({ id, at })}
       onViewChange={(view) => calls.views.push(view)}
       onViewportChange={(size) => calls.viewports.push(size)}
-      onMode={() => undefined}
       labelFor={(id) => id}
       {...extra}
     />,
@@ -425,7 +424,6 @@ describe('Touch-Bedienung: die Karte ist fuer einen Testroboter lesbar', () => {
         speed={100}
         onSelect={() => undefined}
         onViewChange={() => undefined}
-        onMode={() => undefined}
         labelFor={(id) => id}
       />,
     )

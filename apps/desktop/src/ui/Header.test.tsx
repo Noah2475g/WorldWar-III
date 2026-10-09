@@ -54,6 +54,7 @@ const renderHeader = (
     stalled?: boolean
     speed?: number
     onSpeed?: (s: number) => void
+    onMode?: (m: string) => void
     alarm?: { provinceId: string; provinceName: string; intruder: string } | null
     onAlarm?: () => void
     fastForwarding?: boolean
@@ -71,9 +72,12 @@ const renderHeader = (
       speed={extra.speed ?? 0}
       stalled={extra.stalled ?? false}
       fastForwarding={extra.fastForwarding ?? false}
+      fastForwardNotice={null}
+      mode="political"
       onSpeed={extra.onSpeed ?? noop}
       onFastForward={noop}
       onAbort={noop}
+      onMode={extra.onMode ?? noop}
       onMenu={noop}
       onSaves={noop}
       onPanel={noop}
@@ -301,6 +305,18 @@ describe('T-M29-02 Kopfleiste im Kriegsrat', () => {
     const plus = renderHeader(withBalance(2200)).container.querySelector('.resource--food em')
     expect(plus?.getAttribute('title')).toContain('Bilanz +2')
     expect(plus?.className).toContain('resource__dir--plus')
+  })
+
+  it('macht den Kartenmodus zur Knopfgruppe mit genau einem gedrueckten Knopf', () => {
+    const onMode = vi.fn()
+    renderHeader(view(100, [100], 900), { onMode })
+    const group = screen.getByRole('group', { name: 'Kartenmodus' })
+
+    const pressed = within(group).getAllByRole('button').filter((b) => b.getAttribute('aria-pressed') === 'true')
+    expect(pressed.map((b) => b.textContent)).toEqual(['Besitz'])
+
+    fireEvent.click(within(group).getByRole('button', { name: 'Moral' }))
+    expect(onMode).toHaveBeenCalledWith('morale')
   })
 
   it('fuellt den Alarmchip mit dem Provinznamen und fuehrt zur Provinz (T-M28-06)', () => {
@@ -823,20 +839,43 @@ describe('R-UX-02/AK1 Die Kopfleiste ist einzeilig, mit Siegziel in der Uhrzeile
     expect(container.querySelector('.meter')).toBeNull()
   })
 
+  it('bietet die Kartenmodi zusaetzlich als Auswahl an, mit demselben Namen und demselben Befehl', () => {
+    const onMode = vi.fn()
+    renderHeader(view(100, [100], 900), { onMode })
+    const select = screen.getByRole('combobox', { name: 'Kartenmodus' }) as HTMLSelectElement
+
+    expect(select.value).toBe('political')
+    expect([...select.options].map((o) => o.textContent)).toEqual([
+      'Besitz',
+      'Rohstoffe',
+      'Moral',
+      'Truppenstärke',
+      'Beziehungen',
+    ])
+    fireEvent.change(select, { target: { value: 'morale' } })
+    expect(onMode).toHaveBeenCalledWith('morale')
+  })
+
   it('stellt die obere Zeile ab 1280 px auf nowrap (die Zeile bricht nicht mehr um)', () => {
     const wide = media('(min-width: 1280px)')
     expect(wide, '@media (min-width: 1280px) in app.css').not.toBeNull()
     expect(wide).toMatch(/\.header__top\s*\{[^}]*flex-wrap:\s*nowrap/)
   })
 
-  it('ersetzt unter 1400 px die Modusknoepfe durch die Auswahl im Werkzeug-Cluster — ausser im Touch-Betrieb', () => {
+  it('nimmt den Titel unter 1500 px aus der Zeile (Kompaktregel)', () => {
+    const compact = media('(max-width: 1499px)')
+    expect(compact, '@media (max-width: 1499px) in app.css').not.toBeNull()
+    expect(compact).toMatch(/\.header__title\s*\{[^}]*display:\s*none/)
+  })
+
+  it('ersetzt unter 1400 px die Modusknoepfe durch die Auswahl — ausser im Touch-Betrieb', () => {
     const compact = media('(max-width: 1399px)')
     expect(compact, '@media (max-width: 1399px) in app.css').not.toBeNull()
-    expect(compact).toMatch(/\.map-tools\s+\.modes\s*\{[^}]*display:\s*none/)
-    expect(compact).toMatch(/\.map-tools\s+\.modes-select\s*\{[^}]*display:\s*inline-/)
+    expect(compact).toMatch(/\.modes\s*\{[^}]*display:\s*none/)
+    expect(compact).toMatch(/\.modes-select\s*\{[^}]*display:\s*inline-/)
     expect(compact).toMatch(/:not\(\[data-input='touch'\]\)/)
     // Darueber bleibt die Auswahl verborgen (Grundregel ausserhalb jeder Abfrage).
-    expect(css).toMatch(/\n\.map-tools\s+\.modes-select\s*\{[^}]*display:\s*none/)
+    expect(css).toMatch(/\n\.modes-select\s*\{[^}]*display:\s*none/)
   })
 
   it('fasst die Tempoknoepfe zu einer Gruppe zusammen: ohne Luecke, mit gemeinsamem Rand', () => {

@@ -6,9 +6,9 @@ import { ACK_MIN_MS, ACK_SLACK_MS } from '../game/ack.ts'
  * Meldungen als Toast (Seitenleiste v3b E1, Plan D2/D21, Spec §10.9.4).
  *
  * Alle Arten teilen EINE id ('notice'): ein neuer Toast ersetzt den stehenden, es gibt nie
- * mehr als einen im DOM. Die Quittung ('ack') traegt `role="status"` fuer die Ansage,
- * alle anderen Arten haben keine Rolle — die Ansage macht der Container von sonner
- * (`section[aria-live=polite]`); verschachtelte Live-Regionen wuerden doppelt vorlesen.
+ * mehr als einen im DOM. Das Markup traegt weder `aria-live` noch `role="alert"` — die
+ * Ansage macht einmal der Container von sonner (`section[aria-live=polite]`); verschachtelte
+ * Live-Regionen wuerden doppelt vorlesen, und die Tests erwarten genau EIN `role=alert` (Kopf).
  *
  * Die Darstellung wechselt, der Zustand nicht: `ui.notice` bleibt im uiState.
  */
@@ -91,8 +91,7 @@ export function noticeMarkup(kind: NoticeKind, text: string, options: NoticeOpti
       ),
     )
   }
-  const role = kind === 'ack' ? 'status' : undefined
-  return createElement('p', { className, 'data-msg': messageId(kind, text), role }, ...children)
+  return createElement('p', { className, 'data-msg': messageId(kind, text) }, ...children)
 }
 
 /** Zeigt die Meldung und ersetzt eine stehende (gleiche id). */

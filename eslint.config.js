@@ -31,8 +31,6 @@ export default tseslint.config(
       // beim ersten verify auf `main` nach dem Merge). Im Worktree selbst faellt es nicht
       // auf, weil dort keine weiteren Baeume liegen.
       '.claude/**',
-      // Playwright-Messskript (läuft im Browser-Kontext via page.evaluate)
-      'measure-header.mjs',
     ],
   },
   js.configs.recommended,
