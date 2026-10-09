@@ -15,7 +15,7 @@ import { join, resolve, dirname } from 'node:path'
 import { gunzipSync } from 'node:zlib'
 import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright'
-import { ALERTS } from './ux-sel.mjs'
+import { ALERTS, RAIL_ITEM } from './ux-sel.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const arg = (name, fallback) => {
@@ -151,7 +151,7 @@ const sideScene = (page) =>
       sideScrollH: side?.scrollHeight ?? null,
       map: box('.map-layer--overlay'),
       mapShare: +((document.querySelector('.map-layer--overlay')?.getBoundingClientRect().height ?? 0) / innerHeight).toFixed(3),
-      foot: box('.foot'),
+      foot: box('nav.rail'), // seit E3: die Leiste rechts statt des Fusses
       sheet: document.querySelector('.app')?.getAttribute('data-sheet') ?? null,
       panelOpen: document.querySelector('.app')?.getAttribute('data-panel') ?? null,
     }
@@ -160,7 +160,7 @@ const sideScene = (page) =>
 /** Protokoll: Hoehe, sichtbare Zeilen, Filter sichtbar, Eintraege gesamt, Zeilen je Spieltag. */
 const logScene = (page) =>
   page.evaluate(() => {
-    const log = document.querySelector('.foot .log') ?? document.querySelector('.log')
+    const log = document.querySelector('.log')
     if (!log) return { present: false }
     const r = log.getBoundingClientRect()
     const items = [...log.querySelectorAll('li')]
@@ -189,7 +189,7 @@ const logScene = (page) =>
       }).length,
       rowHeight: Math.round(items.filter((li) => li.classList.contains('log__row')).slice(0, 5).reduce((a, li) => a + li.getBoundingClientRect().height, 0) / Math.max(1, Math.min(5, items.filter((li) => li.classList.contains('log__row')).length))),
       footBox: (() => {
-        const f = document.querySelector('.foot')
+        const f = document.querySelector('nav.rail')
         return f ? { h: Math.round(f.getBoundingClientRect().height), w: Math.round(f.getBoundingClientRect().width) } : null
       })(),
       filterVisible: Boolean(filters && fs.display !== 'none' && filters.getBoundingClientRect().height > 0),
@@ -206,7 +206,7 @@ const logScene = (page) =>
  */
 const logStats = (page) =>
   page.evaluate(() => {
-    const rows = [...document.querySelectorAll('.foot .log > ul > li, .log > ul > li')]
+    const rows = [...document.querySelectorAll('.log > ul > li')]
     const perDay = {}
     let withPlace = 0
     let collected = 0
@@ -337,8 +337,9 @@ async function runViewport(browser, vp) {
   await shot('kopf')
 
   // Telefon: das Protokoll klappt auf (T-M46-10) — dann zaehlen Hoehe, Zeilen und Filter im offenen Blatt.
-  const toggle = page.locator('.foot__logtoggle')
-  if (await toggle.isVisible().catch(() => false)) {
+  // Seit E3 (D7): der Bereich Protokoll der Leiste rechts statt des Fussknopfs; gemessen wie bisher nur auf dem Telefon.
+  const toggle = page.locator(RAIL_ITEM('log'))
+  if ((page.viewportSize()?.width ?? 1280) < 600 && (await toggle.isVisible().catch(() => false))) {
     await toggle.click({ timeout: 4000 })
     await page.waitForTimeout(300)
     out.scenes.protokollOffen = await logScene(page)

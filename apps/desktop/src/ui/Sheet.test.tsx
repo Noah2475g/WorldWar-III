@@ -107,7 +107,8 @@ describe('T-M46-10 Die Panelwahl im Kopf des Blatts', () => {
   it('bietet Diplomatie, Markt, Heer, Spionage und Lage als Knoepfe mit Namen', () => {
     render(<SheetNav active={null} onPanel={() => undefined} />)
     const names = screen.getAllByRole('button').map((button) => button.getAttribute('aria-label'))
-    expect(names).toEqual(['Diplomatie', 'Markt', 'Heer', 'Spionage', 'Rangliste / Sieg'])
+    // Seit E3 (D7) dazu Wirtschaft und Protokoll: der Fuss, der sie trug, entfaellt.
+    expect(names).toEqual(['Diplomatie', 'Markt', 'Heer', 'Spionage', 'Rangliste / Sieg', 'Wirtschaft', 'Protokoll'])
   })
 
   it('meldet das gewaehlte Panel und markiert das offene', () => {

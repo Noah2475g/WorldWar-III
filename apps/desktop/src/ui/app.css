@@ -3305,3 +3305,435 @@ body {
   width: 0;
   height: 0;
 }
+
+/* ---------------------------------------------------------------- Seitenleiste v3b E3 (D5–D8)
+   Geruest: die Karte nimmt die ganze Breite unter dem Kopf (1280 x Hoehe − 56); alles andere schwebt
+   darueber (position: absolute). z-Leiter D5: Karte 0 · Werkzeuge 2 · Hinweise 3 · Leiste unten 4 ·
+   Raster 5 · Leiste rechts 6 · Seitenleiste 7 · Popup 8 · Toast 9 · Dialoge/Einfuehrung 10.
+   Storyboard B: die Seitenleiste kommt in 260 ms 40 px von rechts und blendet ein, ihre Zeilen
+   30 ms versetzt; die Werkzeuge rutschen mit. Bewegt werden nur transform und opacity. */
+.app {
+  grid-template-rows: auto 1fr;
+}
+
+.main {
+  position: relative;
+  grid-template-columns: minmax(0, 1fr);
+  overflow: hidden;
+}
+
+/* Werkzeug-Spalte oben rechts (D8): 148 px, links neben der Leiste rechts. */
+.map-tools-col {
+  position: absolute;
+  top: var(--edge);
+  right: calc(var(--edge) + 64px + var(--edge));
+  z-index: 2;
+  width: 148px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--sp-2);
+  transition: transform var(--dur-2) var(--ease-out);
+}
+
+.app[data-side-open='true'] .map-tools-col {
+  transform: translateX(-332px);
+}
+
+.map-tools-col .map-controls {
+  position: static;
+  flex-direction: row;
+  justify-content: flex-end;
+  gap: var(--sp-1);
+}
+
+.map-tools-col .map-control {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-s);
+  border: 0;
+  background: var(--glass);
+  box-shadow: var(--sh-1), var(--bezel);
+  color: var(--text);
+  transition: transform var(--dur-1) var(--ease-out);
+}
+
+.map-tools-col .map-control:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.map-tiers {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--r-s);
+  background: var(--glass);
+  box-shadow: var(--sh-1), var(--bezel);
+}
+
+.map-tier {
+  flex: 1;
+  height: 26px;
+  padding: 0 var(--sp-1);
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--muted);
+  font: 600 var(--fs-xs) var(--font-ui);
+  cursor: pointer;
+}
+
+.map-tier--active {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.map-tools-col .map-tools {
+  margin-top: 0;
+}
+
+.map-tools-col .map-tools .modes {
+  flex-wrap: wrap;
+  border: 0;
+  border-radius: var(--r-s);
+  background: var(--glass);
+  box-shadow: var(--sh-1), var(--bezel);
+}
+
+.map-tools-col .map-tools .modes-select {
+  min-width: 0;
+  width: 100%;
+}
+
+.map-tools-col .map-overview {
+  position: static;
+  width: 148px;
+  height: 83px;
+  border: 0;
+  border-radius: var(--r-s);
+  box-shadow: var(--sh-1), var(--bezel);
+}
+
+.map-tools-col .legend {
+  position: static;
+  border: 0;
+  border-radius: var(--r-s);
+  background: var(--glass);
+  box-shadow: var(--sh-1), var(--bezel);
+}
+
+.map-tools-col .legend__items {
+  flex-wrap: wrap;
+}
+
+/* Die Provinzwahl schwebt bis E5 (Leiste unten) unten mittig auf der Karte. */
+.map-picker {
+  position: absolute;
+  left: 50%;
+  bottom: var(--edge);
+  z-index: 4;
+  transform: translateX(-50%);
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--r-m);
+  background: var(--glass);
+  box-shadow: var(--sh-2), var(--bezel);
+}
+
+.map-picker select {
+  min-height: 28px;
+}
+
+.map-picker .picker {
+  margin: 0;
+}
+
+/* Leiste rechts (D6): schwebend 64 px, Radius 20, sieben Eintraege mit Bild, Name und Taste. */
+.rail {
+  position: absolute;
+  top: var(--edge);
+  right: var(--edge);
+  z-index: 6;
+  width: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  padding: var(--sp-1);
+  border-radius: var(--r-xl);
+  background: var(--glass);
+  box-shadow: var(--sh-2), var(--bezel);
+}
+
+.rail__toggle,
+.rail__item {
+  position: relative;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: var(--r-l);
+  transition: transform var(--dur-1) var(--ease-out);
+}
+
+.rail__toggle {
+  height: 32px;
+  font: 600 var(--fs-l) var(--font-ui);
+}
+
+.rail__toggle span {
+  display: inline-block;
+  transition: transform var(--dur-2) var(--ease-out);
+}
+
+.rail[data-open='true'] .rail__toggle span {
+  transform: rotate(180deg);
+}
+
+.rail__item {
+  min-height: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: var(--sp-1) 0;
+}
+
+.rail__item:hover,
+.rail__toggle:hover {
+  color: var(--text);
+  background: var(--hair);
+}
+
+.rail__item:active {
+  transform: scale(0.96);
+}
+
+.rail__item--active {
+  color: var(--on-primary);
+  background: var(--primary);
+}
+
+.rail__item--active:hover {
+  color: var(--on-primary);
+  background: var(--primary);
+}
+
+.rail__name {
+  font: 600 9.5px var(--font-ui);
+  line-height: 1.1;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.rail__key {
+  position: absolute;
+  top: 3px;
+  right: 5px;
+  font: 600 9px var(--font-num);
+  opacity: 0.7;
+}
+
+/* Zaehler-Pille (D28, DR H3): 18 x 16, mono 10, neutral; zwei Ziffern 20 x 16. */
+.badge {
+  min-width: 18px;
+  height: 16px;
+  padding: 0 4px;
+  box-sizing: border-box;
+  border-radius: var(--r-pill);
+  background: var(--raised);
+  color: var(--text);
+  font: 600 10px/16px var(--font-num);
+  text-align: center;
+}
+
+.rail__badge {
+  position: absolute;
+  top: 2px;
+  left: 4px;
+}
+
+/* Seitenleiste (D6): aside.side 320 px links neben der Leiste rechts, Radius 20, Kopf 52, Koerper rollt. */
+.side {
+  position: absolute;
+  top: var(--edge);
+  right: calc(var(--edge) + 64px + var(--sp-2));
+  bottom: calc(var(--edge) + var(--dock-h));
+  z-index: 7;
+  width: 320px;
+  padding: 0;
+  gap: 0;
+  border-left: 0;
+  border-radius: var(--r-xl);
+  background: var(--glass);
+  box-shadow: var(--sh-3), var(--bezel);
+  overflow: hidden;
+  transition:
+    transform var(--dur-2) var(--ease-out),
+    opacity var(--dur-2) var(--ease-out);
+}
+
+.side[data-open='false'] {
+  transform: translateX(40px);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.side__head {
+  flex: none;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 0 var(--sp-2) 0 var(--sp-4);
+  border-bottom: 1px solid var(--hair);
+}
+
+.side__title {
+  flex: 1;
+  margin: 0;
+  font: 600 var(--fs-l) var(--font-ui);
+  color: var(--text);
+}
+
+.side__key {
+  font: 600 10px var(--font-num);
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--raised);
+  color: var(--muted);
+}
+
+.side__close {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--r-s);
+  background: none;
+  color: var(--muted);
+  font-size: var(--fs-l);
+  cursor: pointer;
+}
+
+.side__close:hover {
+  background: var(--hair);
+  color: var(--text);
+}
+
+.side__body {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4) var(--sp-4);
+}
+
+/* Zeilen 30 ms versetzt (Storyboard B): die ersten Kinder des Koerpers gleiten mit ein. */
+.side[data-open='true'] .side__body > * {
+  animation: side-row-in var(--dur-2) var(--ease-out) both;
+}
+
+.side[data-open='true'] .side__body > :nth-child(2) {
+  animation-delay: 30ms;
+}
+
+.side[data-open='true'] .side__body > :nth-child(3) {
+  animation-delay: 60ms;
+}
+
+.side[data-open='true'] .side__body > :nth-child(n + 4) {
+  animation-delay: 90ms;
+}
+
+@keyframes side-row-in {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-tools-col,
+  .side,
+  .side[data-open='false'],
+  .rail__toggle span {
+    transition-duration: 0s;
+  }
+
+  .side[data-open='true'] .side__body > * {
+    animation: none;
+  }
+}
+
+/* Das Protokoll als Bereich (D7, D27): erste Zeile die Depesche. */
+.log-area {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.dispatch-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  min-height: 44px;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-m);
+  text-align: left;
+  white-space: normal;
+}
+
+.dispatch-card__label {
+  font: 600 var(--fs-xs) var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--primary);
+}
+
+.dispatch-card__text {
+  font-size: var(--fs-s);
+  color: var(--text);
+}
+
+.standings-top .foot__rows {
+  margin: 0;
+}
+
+/* Kopf 52 (D6) traegt Titel, Taste und ×: die Titelzeile des Panels darunter waere doppelt und kostete
+   rund 45 px Hoehe (K4: „Handel anbieten“ lag sonst unter der Unterkante). Ihr Untertitel (`sub`) bleibt. */
+.side__head + .side__body > .panel > .panel__head > .panel__bar {
+  display: none;
+}
+
+/* Handelsformular in der 320er Seitenleiste (E3): der Bestand bleibt in der Zeile des Rohstoffs
+   (T-M46-06), statt bei 288 px Koerperbreite unter das Feld zu brechen. Inhalte ordnet E4 neu. */
+.side .trade-form__table td {
+  white-space: nowrap;
+}
+
+.side .trade-form__table input[type='number'] {
+  width: 5ch;
+}
+
+.side .trade-form__stock {
+  margin-left: var(--sp-1);
+  font-size: var(--fs-xs);
+}
+
+/* Die Werkzeug-Spalte bleibt in der Karte (niedrige Fenster): lieber rollen als abschneiden. */
+@media (max-height: 560px) {
+  .map-tools-col {
+    max-height: calc(100% - 2 * var(--edge));
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+}

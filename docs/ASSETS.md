@@ -849,6 +849,18 @@ nur 1280x800 und 375x667 (PLAN-V3 Regel 12). Kein Fremdinhalt: Bildschirmfotos d
 | `docs/ux/v4-seitenleiste/e1/S575G-e1-protokoll-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E1: Aufnahme nach Tokens, Toasts und Hinweisspalte, S575G-e1-protokoll-375x667.png |
 | `docs/ux/v4-seitenleiste/e1/S575G-e1-puls-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E1: Aufnahme nach Tokens, Toasts und Hinweisspalte, S575G-e1-puls-1280x800.png |
 | `docs/ux/v4-seitenleiste/e1/S575G-e1-puls-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E1: Aufnahme nach Tokens, Toasts und Hinweisspalte, S575G-e1-puls-375x667.png |
+| `docs/ux/v4-seitenleiste/e3/e3-1280x800-diplomatie.png` | Playwright (headless Chromium), Aufnahme des eigenen Spiels | Seitenleiste v3b E3: Abnahmebild e3-1280x800-diplomatie.png |
+| `docs/ux/v4-seitenleiste/e3/e3-1280x800-protokoll.png` | Playwright (headless Chromium), Aufnahme des eigenen Spiels | Seitenleiste v3b E3: Abnahmebild e3-1280x800-protokoll.png |
+| `docs/ux/v4-seitenleiste/e3/e3-1280x800-zu.png` | Playwright (headless Chromium), Aufnahme des eigenen Spiels | Seitenleiste v3b E3: Abnahmebild e3-1280x800-zu.png |
+| `docs/ux/v4-seitenleiste/e3/e3-1920x1080-diplomatie.png` | Playwright (headless Chromium), Aufnahme des eigenen Spiels | Seitenleiste v3b E3: Abnahmebild e3-1920x1080-diplomatie.png |
+| `docs/ux/v4-seitenleiste/e3/e3-1920x1080-protokoll.png` | Playwright (headless Chromium), Aufnahme des eigenen Spiels | Seitenleiste v3b E3: Abnahmebild e3-1920x1080-protokoll.png |
+| `docs/ux/v4-seitenleiste/e3/e3-1920x1080-zu.png` | Playwright (headless Chromium), Aufnahme des eigenen Spiels | Seitenleiste v3b E3: Abnahmebild e3-1920x1080-zu.png |
+| `docs/ux/v4-seitenleiste/e3/e3-375x667-diplomatie.png` | Playwright (headless Chromium), Aufnahme des eigenen Spiels | Seitenleiste v3b E3: Abnahmebild e3-375x667-diplomatie.png |
+| `docs/ux/v4-seitenleiste/e3/e3-375x667-protokoll.png` | Playwright (headless Chromium), Aufnahme des eigenen Spiels | Seitenleiste v3b E3: Abnahmebild e3-375x667-protokoll.png |
+| `docs/ux/v4-seitenleiste/e3/e3-375x667-zu.png` | Playwright (headless Chromium), Aufnahme des eigenen Spiels | Seitenleiste v3b E3: Abnahmebild e3-375x667-zu.png |
+| `docs/ux/v4-seitenleiste/e3/e3-touch-quer-1280x800-diplomatie.png` | Playwright (headless Chromium), Aufnahme des eigenen Spiels | Seitenleiste v3b E3: Abnahmebild e3-touch-quer-1280x800-diplomatie.png |
+| `docs/ux/v4-seitenleiste/e3/e3-touch-quer-1280x800-protokoll.png` | Playwright (headless Chromium), Aufnahme des eigenen Spiels | Seitenleiste v3b E3: Abnahmebild e3-touch-quer-1280x800-protokoll.png |
+| `docs/ux/v4-seitenleiste/e3/e3-touch-quer-1280x800-zu.png` | Playwright (headless Chromium), Aufnahme des eigenen Spiels | Seitenleiste v3b E3: Abnahmebild e3-touch-quer-1280x800-zu.png |
 
 ## Bildschirmfotos der Bauvorschau (Bauvorschau B3, 2026-10-06)
 

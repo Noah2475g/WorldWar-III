@@ -503,7 +503,8 @@ export function ProvincePicker({
           // Auswahlliste gehoeren die Buchstaben dem Tippen, also kommt man mit B oder E erst von hier weg.
           if (event.key !== 'Enter') return
           const first = event.currentTarget
-            .closest('aside')
+            // Seit E3 schwebt die Provinzwahl ausserhalb der Seitenleiste: die Handlungen stehen in aside.side.
+            .ownerDocument.querySelector('aside.side')
             ?.querySelector<HTMLElement>('.panel :is(.slots, [data-group]) button:not(:disabled)')
           if (first) {
             event.preventDefault()

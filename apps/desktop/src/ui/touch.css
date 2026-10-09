@@ -920,3 +920,139 @@ select,
     padding: var(--sp-sm) var(--sp-lg);
   }
 }
+
+/* ---------------------------------------------------------------- Seitenleiste v3b E3 (D5–D8), Touch
+   Die Karte nimmt auch im Touch-Betrieb die ganze Breite; Seitenleiste und Leiste rechts schweben
+   darueber (app.css). Ziele 44 px: Zoomknoepfe, Zoomstufen, Umschalter und Schliessen. */
+:root[data-input='touch'] .main {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+:root[data-input='touch'] .side {
+  padding: 0;
+  gap: 0;
+}
+
+:root[data-input='touch'] .map-tools-col .map-control,
+:root[data-input='touch'] .rail__toggle,
+:root[data-input='touch'] .side__close {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+}
+
+:root[data-input='touch'] .rail__toggle {
+  width: auto;
+}
+
+:root[data-input='touch'] .map-tier {
+  height: 44px;
+}
+
+:root[data-input='touch'] .map-tools-col {
+  width: 184px;
+}
+
+/* Telefon im Hochformat: das Blatt bleibt unter der Karte wie bisher (E8 baut es um); die Leiste rechts
+   steht als Reihe darunter, wo frueher der Fuss mit seinen Knoepfen stand. */
+@media (max-width: 599px) and (orientation: portrait) {
+  :root:root .main {
+    grid-template-rows: var(--map-h) minmax(0, 1fr) auto;
+  }
+
+  :root:root .side,
+  :root:root .side[data-open='false'] {
+    position: static;
+    width: auto;
+    border-radius: 0;
+    box-shadow: none;
+    transform: none;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  :root:root .rail {
+    grid-row: 3;
+    position: static;
+    width: auto;
+    flex-direction: row;
+    border-radius: 0;
+    padding: 0;
+    overflow-x: auto;
+  }
+
+  :root:root .side {
+    grid-row: 2;
+  }
+
+  :root:root .rail__key {
+    display: none;
+  }
+
+  :root:root .map-tiers {
+    display: none;
+  }
+
+  :root:root .map-tools-col {
+    width: auto;
+  }
+
+  /* Kartenmodus als Auswahl statt fuenf Knoepfen: die Spalte deckt sonst ein Drittel der Telefonkarte. */
+  :root:root .map-tools-col .map-tools .modes {
+    display: none;
+  }
+
+  :root:root .map-tools-col .map-tools .modes-select {
+    display: inline-block;
+    min-height: 44px;
+  }
+
+  :root:root .rail__toggle {
+    display: none;
+  }
+
+  :root:root .rail__item {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 48px;
+  }
+
+  :root:root .map-tools-col {
+    right: var(--edge);
+    transform: none;
+  }
+}
+
+/* Niedrige Fenster (Telefon quer, 667x375): die Werkzeug-Spalte rollt in sich, statt unter der Karte
+   abgeschnitten zu werden; die Provinzwahl steht oben, weil unten links die Einfuehrung liegt. */
+@media (max-height: 480px) {
+  :root[data-input='touch'] .map-tools-col {
+    max-height: calc(100% - 2 * var(--edge));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  :root[data-input='touch'] .map-picker {
+    top: var(--edge);
+    bottom: auto;
+  }
+}
+
+/* Telefon hochkant: der Kopf (E2, 56 px) bricht in eine zweite Zeile um; mit fester Hoehe lagen Menue und
+   Spielstaende unter der Karte und nahmen keinen Klick an (gemessen an dfe0953 und E3, 375x667). Der Kopf
+   waechst darum mit seinem Inhalt; die Karte behaelt ihre Hoehe (--map-h). */
+@media (max-width: 599px) and (orientation: portrait) {
+  :root:root .header,
+  :root:root .header__top {
+    height: auto;
+    min-height: 56px;
+  }
+}
+
+/* Wie frueher der Fuss (T-M46-10): bei halb oder voll offenem Blatt tritt die Leiste zurueck; die Panelwahl
+   steht dann in der Leiste des Blatts (SheetNav). So bleibt der Karte ihr Anteil (R-UX-01/AK1). */
+@media (max-width: 599px) and (orientation: portrait) {
+  :root:root .app[data-panel='open']:not([data-sheet='peek']) .rail {
+    display: none;
+  }
+}

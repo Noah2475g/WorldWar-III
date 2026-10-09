@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { t } from '../i18n/text.ts'
 import { Icon } from './Icon.tsx'
-import type { IconName } from './icons.tsx'
+import type { PictureName } from './Icon.tsx'
 
 /**
  * Das Blatt (T-M44-03b, R-UX-01, Befund B-01): die Seitenleiste des Telefons im Hochformat hat
@@ -97,14 +97,17 @@ export function usePhonePortrait(): boolean {
 }
 
 /** Die Panels, die das Blatt direkt anbietet (T-M46-10): dieselben wie die Knoepfe im Fuss. */
-export type SheetPanel = 'diplomacy' | 'market' | 'armies' | 'espionage' | 'standings'
+export type SheetPanel = 'diplomacy' | 'market' | 'armies' | 'espionage' | 'standings' | 'economy' | 'log'
 
-const SHEET_NAV: readonly { panel: SheetPanel; icon: IconName; label: string }[] = [
+const SHEET_NAV: readonly { panel: SheetPanel; icon: PictureName; label: string }[] = [
   { panel: 'diplomacy', icon: 'alliance', label: 'header.diplomacy' },
   { panel: 'market', icon: 'money', label: 'header.market' },
   { panel: 'armies', icon: 'infantry', label: 'foot.armies' },
   { panel: 'espionage', icon: 'spyEconomic', label: 'foot.espionage' },
   { panel: 'standings', icon: 'capital', label: 'foot.standingsOpen' },
+  // Seit E3 (D7) gibt es keinen Fuss mehr: Wirtschaft und Protokoll sind Bereiche wie die anderen.
+  { panel: 'economy', icon: 'economy', label: 'rail.economy' },
+  { panel: 'log', icon: 'logbook', label: 'rail.log' },
 ]
 
 /**
@@ -121,6 +124,7 @@ export function SheetNav({ active, onPanel }: { active: string | null; onPanel: 
           key={entry.panel}
           type="button"
           className="sheet__navbutton"
+          data-area={entry.panel}
           aria-pressed={active === entry.panel}
           aria-label={t(entry.label)}
           title={t(entry.label)}

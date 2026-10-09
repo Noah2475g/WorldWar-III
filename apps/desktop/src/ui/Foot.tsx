@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { t } from '../i18n/text.ts'
 import { amount } from './format.ts'
 import { EventLog, type EventEntry } from './Panels.tsx'
@@ -58,79 +57,52 @@ export function footRowsWithLeader(rows: readonly StandingsRow[], count = 4): St
   return leader && around[0] !== leader ? [leader, ...around] : around
 }
 
-export interface FootProps {
+/**
+ * Seit Seitenleiste v3b E3 (D7) wird der Fuss nicht mehr gerendert. Seine Teile ziehen in die
+ * Bereiche der Leiste rechts um:
+ * - Protokoll -> Bereich `log` (`LogArea`), erste Zeile die Depesche (`button.dispatch-card`, D27),
+ * - Ranglisten-Zeilen -> Bereich `standings` (`StandingsTop`, ueber dem Ranglistenpanel),
+ * - Ungelesen-Zaehler -> `rail__item[data-area=standings] .badge` (`Rail.tsx`, D28),
+ * - die Knoepfe Diplomatie/Markt/Heer/Spionage/Rangliste -> die Eintraege der Leiste.
+ */
+export interface LogAreaProps {
   entries: readonly EventEntry[]
   ticksPerDay: number
-  rows: readonly StandingsRow[]
-  /** Der Tick, bis zu dem der Spieler das Protokoll zuletzt gesehen hat. */
-  seenTick: number
   onJump: (provinceId: string) => void
   onDispatch: () => void
-  onPanel: (panel: 'diplomacy' | 'market' | 'standings' | 'espionage' | 'armies') => void
 }
 
-export function Foot(props: FootProps) {
-  const unread = unreadCount(props.entries, props.seenTick)
-  const ranked = footRowsWithLeader(props.rows)
+export function LogArea(props: LogAreaProps) {
   const report = latestReport(props.entries)
-  // Telefon im Hochformat (T-M46-10): das Protokoll ist eine Zeile hoch und klappt auf Knopfdruck als
-  // Blatt ueber den Fuss auf — mit Filtern. Auf dem Schreibtisch ist der Knopf unsichtbar (touch.css).
-  const [logOpen, setLogOpen] = useState(false)
-
   return (
-    <footer className="foot" data-log={logOpen ? 'open' : 'closed'}>
-      <EventLog entries={props.entries} ticksPerDay={props.ticksPerDay} onJump={props.onJump} />
-      <button
-        type="button"
-        className="foot__logtoggle"
-        aria-expanded={logOpen}
-        aria-label={logOpen ? t('foot.logClose') : t('foot.logOpen')}
-        title={logOpen ? t('foot.logClose') : t('foot.logOpen')}
-        onClick={() => setLogOpen((open) => !open)}
-      >
-        <span aria-hidden="true">{logOpen ? '×' : '▴'}</span>
+    <div className="log-area">
+      <button type="button" className="button dispatch-card" onClick={props.onDispatch} disabled={!report} title={report?.text}>
+        <span className="dispatch-card__label">{t('foot.dispatch')}</span>
+        <span className="dispatch-card__text">{report?.text ?? t('foot.none')}</span>
       </button>
+      <EventLog entries={props.entries} ticksPerDay={props.ticksPerDay} onJump={props.onJump} />
+    </div>
+  )
+}
 
-      <section className="foot__standings" aria-label={t('foot.standings')}>
-        <h3 className="foot__title">{t('foot.standings')}</h3>
-        <ol className="foot__rows">
-          {ranked.map((row) => (
-            <li key={row.id} className={row.own ? 'foot__row foot__row--own' : 'foot__row'}>
-              <span className="foot__rank">{props.rows.indexOf(row) + 1}.</span>
-              <span className="foot__nation">{row.nation}</span>
-              <span className="foot__score">{amount(row.score)}</span>
-            </li>
-          ))}
-        </ol>
-      </section>
+export interface StandingsTopProps {
+  rows: readonly StandingsRow[]
+}
 
-      <div className="foot__buttons">
-        <button type="button" className="button foot__button" onClick={props.onDispatch} disabled={!report} title={report?.text}>
-          {t('foot.dispatch')}
-        </button>
-        <span className="foot__pair">
-          <button type="button" className="button foot__button" onClick={() => props.onPanel('diplomacy')}>
-            {t('header.diplomacy')}
-          </button>
-          <button type="button" className="button foot__button" onClick={() => props.onPanel('market')}>
-            {t('header.market')}
-          </button>
-        </span>
-        <button type="button" className="button foot__button" onClick={() => props.onPanel('armies')}>
-          {t('foot.armies')}
-        </button>
-        <button type="button" className="button foot__button" onClick={() => props.onPanel('espionage')}>
-          {t('foot.espionage')}
-        </button>
-        <button type="button" className="button foot__button" onClick={() => props.onPanel('standings')}>
-          {t('foot.standingsOpen')}
-          {unread > 0 && (
-            <span className="foot__badge" aria-label={t('foot.unread', { count: unread })}>
-              {unread}
-            </span>
-          )}
-        </button>
-      </div>
-    </footer>
+/** Die Ranglisten-Zeilen des alten Fusses: Platz 1 zuerst, dann vier Zeilen um die eigene Macht. */
+export function StandingsTop({ rows }: StandingsTopProps) {
+  const ranked = footRowsWithLeader(rows)
+  return (
+    <section className="foot__standings standings-top" aria-label={t('foot.standings')}>
+      <ol className="foot__rows">
+        {ranked.map((row) => (
+          <li key={row.id} className={row.own ? 'foot__row foot__row--own' : 'foot__row'}>
+            <span className="foot__rank">{rows.indexOf(row) + 1}.</span>
+            <span className="foot__nation">{row.nation}</span>
+            <span className="foot__score">{amount(row.score)}</span>
+          </li>
+        ))}
+      </ol>
+    </section>
   )
 }

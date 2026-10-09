@@ -892,6 +892,7 @@ describe('R-UX-05 Die Tastenübersicht nennt alle echten Tastenbelegungen', () =
     { key: 'p', type: 'focusZone', glyph: /P — zur Provinzliste/ },
     { key: 'b', type: 'focusZone', glyph: /B — zu den Bauknöpfen/ },
     { key: 'e', type: 'focusZone', glyph: /E — zu den Aushebeknöpfen/ },
+    { key: 'w', type: 'toggleSidebar', glyph: /W — Seitenleiste/ },
     { key: 's', ctrl: true, type: 'save', glyph: /Strg\+S/ },
     { key: 'l', ctrl: true, type: 'load', glyph: /Strg\+L/ },
     { key: 'F1', type: 'help', glyph: /F1/ },

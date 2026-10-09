@@ -97,6 +97,7 @@ import { chromium } from 'playwright'
 import AxeBuilderModule from '@axe-core/playwright'
 import { evaluate, exitCodeFor, render, sectionsNeeded } from './ux-thresholds.mjs'
 import { grantUntilVictory } from './lib/ux-victory.mjs'
+import { DISPATCH, RAIL_ITEM, SHEET_ITEM, SIDE, STANDINGS_TOP } from './ux-sel.mjs'
 
 const AxeBuilder = AxeBuilderModule.default ?? AxeBuilderModule
 
@@ -228,7 +229,7 @@ async function touchTargets(page) {
       if (r.bottom < 0 || r.right < 0 || r.top > innerHeight || r.left > innerWidth) continue
       const label = (el.getAttribute('aria-label') || el.textContent || el.tagName).trim().replace(/\s+/g, ' ').slice(0, 50)
       // R-UX-06/AK3 zaehlt nur Kopfleiste, Seitenleiste und Dialoge; Karte und Fuss sind eigene Bereiche.
-      const region = el.closest('[role=dialog], [role=alertdialog], .dialog') ? 'dialog' : el.closest('header') ? 'header' : el.closest('.side') ? 'side' : el.closest('.foot') ? 'foot' : 'other'
+      const region = el.closest('[role=dialog], [role=alertdialog], .dialog') ? 'dialog' : el.closest('header') ? 'header' : el.closest('.side') ? 'side' : el.closest('nav.rail') ? 'rail' : 'other'
       rows.push({ label, region, w: Math.round(r.width), h: Math.round(r.height) })
     }
     const small = rows.filter((r) => r.w < 44 || r.h < 44)
@@ -253,7 +254,7 @@ async function layout(page) {
       const visH = Math.max(0, Math.min(r.bottom, innerHeight) - Math.max(r.top, 0))
       return { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height), visibleArea: Math.round(visW * visH) }
     }
-    const overflowing = [...document.querySelectorAll('.header__top, .speeds, .modes, .resources, .side, .foot, .dialog, .slots')]
+    const overflowing = [...document.querySelectorAll('.header__top, .speeds, .modes, .resources, .side, nav.rail, .dialog, .slots')]
       .filter((el) => el.scrollWidth > el.clientWidth + 1)
       .map((el) => `${el.className.split(' ')[0]} ${el.scrollWidth}>${el.clientWidth}`)
     const map = box('.map-layer--overlay')
@@ -295,7 +296,7 @@ async function layout(page) {
       map,
       mapShareOfViewport: map ? +(map.visibleArea / (innerWidth * innerHeight)).toFixed(3) : 0,
       side: box('.side'),
-      foot: box('.foot'),
+      foot: box('nav.rail'), // seit E3: die Leiste rechts statt des Fusses
       overflowingRegions: overflowing,
     }
   })
@@ -487,6 +488,15 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
     }
   }
   const btn = (name, exact = true) => page.getByRole('button', { name, exact }).first()
+  // Einen Bereich der Leiste rechts oeffnen (E3, D6); ist er schon offen, bleibt er offen. Im Telefon-Hochformat
+  // tritt die Leiste bei offenem Blatt zurueck (wie vorher der Fuss): dann dieselbe Wahl in der Leiste des Blatts.
+  const area = async (a) => {
+    const item = page.locator(RAIL_ITEM(a)).first()
+    if ((await item.getAttribute('aria-pressed', { timeout: 5000 }).catch(() => null)) === 'true') return
+    if (await item.isVisible().catch(() => false)) await item.click({ timeout: 5000 })
+    else await page.locator(SHEET_ITEM(a)).first().click({ timeout: 5000 })
+    await page.waitForTimeout(300)
+  }
   /**
    * Kartenmodus waehlen. Ab T-M44-04 stehen unter 1400 px (ohne Touch) statt der fuenf Knoepfe eine
    * Auswahl in der Kopfleiste: ist der Knopf nicht gezeichnet, nimmt die Messung die Auswahl —
@@ -711,7 +721,7 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
         mapBottom: map ? Math.round(map.getBoundingClientRect().bottom) : null,
         pause: hit(pause),
         // Erste Protokollzeile; noch ohne Eintrag steht der Protokollkasten selbst an dieser Stelle.
-        logZeile: hit(document.querySelector('.log__row') || document.querySelector('.foot .log')),
+        logZeile: hit(document.querySelector('.log__row') || document.querySelector('.log')),
         toasterZ: getComputedStyle(document.querySelector('[data-sonner-toaster]') || document.body).zIndex,
       }
     })
@@ -827,17 +837,23 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
     await shot('krieg-erklaert-ohne-rueckfrage')
   })
   await step('kampf', async () => {
-    await runUntil(() => /Gefecht (bei|entschieden)|: Gefecht entschieden/.test([...document.querySelectorAll('footer *, .foot *')].map((e) => (e.getAttribute('aria-label') || '') + ' ' + (e.getAttribute('title') || '') + ' ' + (e.children.length ? '' : e.textContent || '')).join(' ') || document.body.innerText), null, 90000)
+    // Seit E3 (D7) steht das Protokoll im Bereich Protokoll der Leiste rechts (vorher immer sichtbar im Fuss).
+    await area('log')
+    await runUntil(() => /Gefecht (bei|entschieden)|: Gefecht entschieden/.test([...document.querySelectorAll('aside.side *, .map-alerts *')].map((e) => (e.getAttribute('aria-label') || '') + ' ' + (e.getAttribute('title') || '') + ' ' + (e.children.length ? '' : e.textContent || '')).join(' ') || document.body.innerText), null, 90000)
     await page.waitForTimeout(300)
-    await page.getByText(/Gefecht (bei|entschieden)|: Gefecht entschieden/).or(page.locator('footer [aria-label*="Gefecht"], footer [title*="Gefecht"], .foot [aria-label*="Gefecht"], .foot [title*="Gefecht"]')).first().click({ timeout: 3000 }).catch(() => {})
+    await page.getByText(/Gefecht (bei|entschieden)|: Gefecht entschieden/).or(page.locator(`${SIDE} [aria-label*="Gefecht"], ${SIDE} [title*="Gefecht"]`)).first().click({ timeout: 3000 }).catch(() => {})
     await page.waitForTimeout(500)
     await shot('kampf-gefecht')
     data.layout.battle = await layout(page)
+    // Seit E3 (D7) liegt das Protokoll im Bereich Protokoll, die Ranglisten-Zeilen im Bereich Rangliste.
+    await area('standings')
+    const standingsFirst = await page.evaluate((sel) => document.querySelector(sel + ' .foot__rows li .foot__rank')?.textContent?.trim() ?? null, STANDINGS_TOP)
+    await area('log')
     await btn('Kämpfe').click({ timeout: 3000 }).catch(() => {})
     await page.waitForTimeout(200)
     await shot('protokoll-kaempfe')
     // R-UX-02/AK4: Zeitangabe einzeilig, Gefechtszeilen zusammengefasst, Platz 1 zuerst.
-    data.probes.log = await page.evaluate(() => {
+    data.probes.log = await page.evaluate((first) => {
       const times = [...document.querySelectorAll('.log li time')]
       const wrapped = times.filter((el) => {
         const style = getComputedStyle(el)
@@ -847,13 +863,13 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
       const texts = [...document.querySelectorAll('.log li .log__entry')].map((el) => (el.textContent ?? '').trim())
       let duplicates = 0
       for (let i = 1; i < texts.length; i++) if (texts[i] === texts[i - 1] && /Gefecht/.test(texts[i])) duplicates += 1
-      const first = document.querySelector('.foot__rows li .foot__rank')?.textContent?.trim()
       return { entries: texts.length, timeWrapped: wrapped, duplicateBattleRuns: duplicates, standingsFirstIsRankOne: first === '1.' }
-    })
+    }, standingsFirst)
     await btn('alles').click({ timeout: 3000 }).catch(() => {})
   })
   await step('meldungen', async () => {
-    await btn('Depesche').click({ timeout: 5000 })
+    await area('log')
+    await page.locator(DISPATCH).first().click({ timeout: 5000 })
     await page.waitForTimeout(300)
     await shot('meldungen-depesche')
     await page.keyboard.press('Escape')
@@ -862,7 +878,7 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
     for (const [label, name] of [
       ['Markt', 'panel-markt'],
       ['Spionage', 'panel-spionage'],
-      ['Rangliste / Sieg', 'panel-rangliste-sieg'],
+      ['Rangliste', 'panel-rangliste-sieg'],
     ]) {
       await page.getByRole('button', { name: label }).first().click({ timeout: 5000 })
       await page.waitForTimeout(300)

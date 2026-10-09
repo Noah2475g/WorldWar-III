@@ -65,9 +65,11 @@ import { GLYPH_BOX, GLYPH_PATHS } from '../ui/glyphs.ts'
 import { labelsFor } from './labels.ts'
 import { OWNERSHIP_FADE_MS, battleFlash, fadeProgress, motionAllowed, ringRadius } from '../ui/motion.ts'
 import { CUE_SPEED_LIMIT } from '../ui/sound.ts'
-import { fillFor, mixColors, strengthByProvince, type MapMode, MAP_MODES, MAP_MODE_NAMES } from './modes.ts'
+import { fillFor, mixColors, strengthByProvince, type MapMode } from './modes.ts'
 import { PING_MS, edgeMarker, freshPings, pingFrame } from './pings.ts'
 import type { MapPing } from '../game/events.ts'
+import { MapTools, ZOOM_TIER_SCALE } from '../ui/MapTools.tsx'
+import type { ReactNode } from 'react'
 
 /**
  * The map (T-M10-03a/b, R-UI-03).
@@ -197,6 +199,8 @@ function buildingStamp(cache: Map<string, HTMLCanvasElement>, icon: IconName, ra
 }
 
 export interface MapCanvasProps {
+  /** Die Legende, unten in der Werkzeug-Spalte (E3, D8). */
+  legend?: ReactNode
   provinces: readonly RenderProvince[]
   centres: Readonly<Record<string, { x: number; y: number }>>
   armies: readonly ArmyMarker[]
@@ -1393,77 +1397,21 @@ export function MapCanvas(props: MapCanvasProps) {
         onContextMenu={(event) => event.preventDefault()}
       />
 
-      {/* Zoom und Heimweg als Knoepfe (T-M30-03, R-UI-15): oben rechts, benannt. */}
-      <div className="map-controls" role="group" aria-label={t('map.zoomIn')}>
-        <button type="button" className="map-control" aria-label={t('map.zoomIn')} title={t('map.zoomIn')} onClick={() => zoomBy(1 / ZOOM_STEP)}>
-          +
-        </button>
-        <button type="button" className="map-control" aria-label={t('map.zoomOut')} title={t('map.zoomOut')} onClick={() => zoomBy(ZOOM_STEP)}>
-          −
-        </button>
-        <button
-          type="button"
-          className="map-control"
-          aria-label={t('map.centreCapital')}
-          title={t('map.centreCapital')}
-          onClick={centreCapital}
-          disabled={!props.capitalProvinceId}
-        >
-          ◎
-        </button>
-        {fullscreenSupported && inputMode === 'touch' && (
-          <button
-            type="button"
-            className="map-control"
-            aria-label={isFullscreen ? t('map.fullscreenExit') : t('map.fullscreenEnter')}
-            title={isFullscreen ? t('map.fullscreenExit') : t('map.fullscreenEnter')}
-            onClick={toggleFullscreen}
-          >
-            ⛶
-          </button>
-        )}
-
-        {/* Kartenmodus (D22): Button-Gruppe + Select (< 1400 px) im Werkzeug-Cluster,
-            unter Zoomstufe, vor Minikarte. Taste M bleibt cycleMode. */}
-        <div className="map-tools">
-          <div className="modes" role="group" aria-label={t('mapModes.title')}>
-            {MAP_MODES.map((mode) => (
-              <button
-                key={mode}
-                type="button"
-                className={props.mode === mode ? 'mode mode--active' : 'mode'}
-                aria-pressed={props.mode === mode}
-                onClick={() => props.onMode(mode)}
-              >
-                {MAP_MODE_NAMES[mode]}
-              </button>
-            ))}
-          </div>
-          <select
-            className="modes-select"
-            aria-label={t('mapModes.title')}
-            value={props.mode}
-            onChange={(event) => props.onMode(event.target.value as MapMode)}
-          >
-            {MAP_MODES.map((mode) => (
-              <option key={mode} value={mode}>
-                {MAP_MODE_NAMES[mode]}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      <canvas
-        ref={overviewRef}
-        width={OVERVIEW.width}
-        height={OVERVIEW.height}
-        className="map-overview"
-        role="button"
-        tabIndex={0}
-        aria-label={t('map.overview')}
-        title={t('map.overview')}
-        onClick={handleOverviewClick}
+      {/* Die Werkzeug-Spalte oben rechts (Seitenleiste v3b E3, D8): Zoom, Stufen, Modus, Uebersicht, Legende. */}
+      <MapTools
+        tier={zoomTier(props.view.scale)}
+        mode={props.mode}
+        capitalDisabled={!props.capitalProvinceId}
+        fullscreen={fullscreenSupported && inputMode === 'touch' ? { active: isFullscreen, onToggle: toggleFullscreen } : null}
+        onZoomIn={() => zoomBy(1 / ZOOM_STEP)}
+        onZoomOut={() => zoomBy(ZOOM_STEP)}
+        onHome={centreCapital}
+        onTier={(tier) => zoomBy(ZOOM_TIER_SCALE[tier] / props.view.scale)}
+        onMode={props.onMode}
+        overviewRef={overviewRef}
+        overviewSize={OVERVIEW}
+        onOverviewClick={handleOverviewClick}
+        legend={props.legend}
       />
     </div>
   )

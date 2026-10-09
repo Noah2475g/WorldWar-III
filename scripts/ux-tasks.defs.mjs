@@ -38,7 +38,9 @@ const isOtherSelect = (f) => f.tag === 'select' && !/Provinz|Kartenmodus/.test(f
 const isInput = (re) => (f) => f.tag === 'input' && re.test(f.name)
 
 /** Die eigene Armee steht als Zeichen auf der Canvas-Karte (kein DOM-Element): Pixel neben dem Stern der Hauptstadt (1280x800). */
-const MARKER = [513, 561]
+const MARKER = [513, 484]
+/** Seit E2/E3 (Kopf 56 px, Karte unter dem Kopf in voller Breite) haengt die Hoehe am oberen Kartenrand: Zeichen relativ zur Karte. */
+const markerY = (page) => page.evaluate((dy) => Math.round(document.querySelector('.map-wrapper').getBoundingClientRect().top) + dy, MARKER[1])
 
 /** Keyboard: Armee in Mittlerer Westen auswaehlen (Provinzliste, dann "Auswaehlen"). */
 async function kbSelectArmy(run, page) {
@@ -68,7 +70,7 @@ export const TASKS = [
     async maus(run, page) {
       await clockOn(page)
       run.start()
-      await run.clickAt(MARKER[0], MARKER[1], 'Armeezeichen auf der Karte')
+      await run.clickAt(MARKER[0], await markerY(page), 'Armeezeichen auf der Karte')
       await run.click(btn(page, 'Marschieren'), 'Marschieren')
       await run.pick(asideSelect(page, 1), 'Südstaaten', 'Marschziel')
       await run.click(btn(page, 'Marsch befehlen'), 'Marsch befehlen')
@@ -126,7 +128,7 @@ export const TASKS = [
     async maus(run, page) {
       await clockOn(page)
       run.start()
-      await run.clickAt(MARKER[0], MARKER[1], 'Armeezeichen auf der Karte')
+      await run.clickAt(MARKER[0], await markerY(page), 'Armeezeichen auf der Karte')
       await run.click(btn(page, 'Teilen'), 'Teilen')
       const geteilt = await until(page, () => [...document.querySelectorAll('aside.side button')].some((b) => (b.getAttribute('aria-label') || b.textContent || '').trim() === 'Zusammenlegen' && !b.disabled), null, 5000)
       if (!geteilt) run.detour('Teilen', 'Zusammenlegen wurde nach 5 s nicht frei')

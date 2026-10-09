@@ -472,7 +472,7 @@ async function extras(browser, base, armies) {
       const sel = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])'
       const all = [...document.querySelectorAll(sel)].filter((el) => el.offsetParent !== null || el.tagName === 'SUMMARY')
       const idx = all.findIndex((el) => el.tagName === 'SELECT' && /Provinz/.test(el.labels?.[0]?.textContent ?? ''))
-      const log = all.filter((el) => el.closest('footer, .foot')).length
+      const log = all.filter((el) => el.closest('nav.rail')).length
       return { stationen: all.length, provinzlisteAlsNummer: idx + 1, davonImProtokollUndFuss: log }
     })
     // Tab bis zur Provinzliste gezaehlt (wie ein Spieler).

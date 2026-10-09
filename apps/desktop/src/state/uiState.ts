@@ -21,6 +21,8 @@ export type Panel =
   | 'espionage'
   | 'armies'
   | 'events'
+  | 'economy'
+  | 'log'
   | 'settings'
   | 'debug'
   | null

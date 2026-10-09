@@ -23,6 +23,7 @@ import { gunzipSync } from 'node:zlib'
 import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright'
 import AxeBuilderModule from '@axe-core/playwright'
+import { RAIL_ITEM } from './ux-sel.mjs'
 
 const AxeBuilder = AxeBuilderModule.default ?? AxeBuilderModule
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -97,7 +98,7 @@ async function layout(page) {
       const r = el.getBoundingClientRect()
       return { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) }
     }
-    const overflowing = [...document.querySelectorAll('.header__top, .speeds, .modes, .resources, .side, .foot, .dialog, .slots, .log')]
+    const overflowing = [...document.querySelectorAll('.header__top, .speeds, .modes, .resources, .side, nav.rail, .dialog, .slots, .log')]
       .filter((el) => el.scrollWidth > el.clientWidth + 1)
       .map((el) => `${String(el.className).split(' ')[0]} ${el.scrollWidth}>${el.clientWidth}`)
     const map = box('.map-layer--overlay')
@@ -115,7 +116,7 @@ async function layout(page) {
       mapShare: share,
       side: box('.side'),
       sideScroll: (() => { const e = document.querySelector('.side'); return e ? { scrollH: e.scrollHeight, clientH: e.clientHeight, top: e.scrollTop } : null })(),
-      foot: box('.foot'),
+      foot: box('nav.rail'), // seit E3: die Leiste rechts statt des Fusses
       overflowingRegions: overflowing,
       alarmChipVisible: Boolean(chip && chip.getBoundingClientRect().width > 0),
       dialog: dialogBox
@@ -276,9 +277,11 @@ async function runProbes(browser) {
     }
   }
   await view('karte', async () => {})
+  // Seit E3 (D7) steht das Protokoll im Bereich Protokoll der Leiste rechts.
+  await page.locator(RAIL_ITEM('log')).first().click({ timeout: 3000 }).catch(() => {})
   for (const f of ['alles', 'Kämpfe', 'Aufbau', 'Verträge', 'Weltgeschehen']) await view(`protokoll-${f}`, async () => btn(f).click({ timeout: 3000 }))
   await btn('alles').click({ timeout: 2000 }).catch(() => {})
-  for (const [k, l] of [['diplomatie', 'Diplomatie'], ['markt', 'Markt'], ['spionage', 'Spionage'], ['rangliste', 'Rangliste / Sieg']]) {
+  for (const [k, l] of [['diplomatie', 'Diplomatie'], ['markt', 'Markt'], ['spionage', 'Spionage'], ['rangliste', 'Rangliste']]) {
     await view(k, async () => btn(l, false).click({ timeout: 5000 }))
     await page.keyboard.press('Escape')
   }
@@ -312,7 +315,7 @@ async function runProbes(browser) {
     if (target) {
       await page.locator('aside select').nth(1).selectOption(target.value, { timeout: 4000 }).catch((e) => (out.noRoute.selectError = String(e).split('\n')[0].slice(0, 160)))
       await page.waitForTimeout(300)
-      out.noRoute.panelAfter = await page.evaluate(() => (document.querySelector('aside')?.innerText ?? '').replace(/\s+/g, ' ').slice(0, 700))
+      out.noRoute.panelAfter = await page.evaluate(() => (document.querySelector('aside.side')?.innerText ?? '').replace(/\s+/g, ' ').slice(0, 700))
       out.noRoute.mentionsNoRoute = /kein Weg/.test(out.noRoute.panelAfter)
       out.noRoute.mentionsEnemyTerritory = /feindliches Gebiet/.test(out.noRoute.panelAfter)
     }
@@ -705,7 +708,7 @@ async function runState(browser, name, vp, measureOnly) {
     ['diplomatie', 'Diplomatie'],
     ['markt', 'Markt'],
     ['spionage', 'Spionage'],
-    ['rangliste', 'Rangliste / Sieg'],
+    ['rangliste', 'Rangliste'],
   ]) {
     await scene(
       key,
@@ -713,7 +716,7 @@ async function runState(browser, name, vp, measureOnly) {
         await btn(label, false).click({ timeout: 6000 })
         await page.waitForTimeout(400)
         return page.evaluate(() => {
-          const d = document.querySelector('[role=dialog]') ?? document.querySelector('aside')
+          const d = document.querySelector('[role=dialog]') ?? document.querySelector('aside.side')
           return { text: (d?.innerText ?? '').replace(/\s+/g, ' ').slice(0, 300) }
         })
       },

@@ -334,7 +334,7 @@ describe('Nachbesserung U: Kollisionstest ueber alle Tasten und Abgleich mit der
     expect(clashes, 'Tasten mit gleicher Bedeutung').toEqual([])
     // Gezaehlt: belegte Buchstaben und Bedeutungen insgesamt.
     const boundLetters = letters.filter((l) => meaningOf(l) !== null)
-    expect(boundLetters.join('')).toBe('abdefhlmps')
+    expect(boundLetters.join('')).toBe('abdefhlmpsw')
   })
 
   it('die Tastenhilfe nennt jeden belegten Buchstaben genau einmal, und jede genannte Taste ist belegt', () => {
@@ -352,5 +352,19 @@ describe('Nachbesserung U: Kollisionstest ueber alle Tasten und Abgleich mit der
     expect(meaningOf('F1')).not.toBeNull()
     expect(resolveKey({ key: 's', ctrlKey: true }, context())).toEqual({ type: 'save' })
     expect(resolveKey({ key: 'l', ctrlKey: true }, context())).toEqual({ type: 'load' })
+  })
+})
+
+/** Seitenleiste v3b E3 (D6): W klappt die Seitenleiste auf und zu, wie `button.rail__toggle`. */
+describe('E3 Taste W', () => {
+  it('W und w schalten die Seitenleiste, auch waehrend des Vorspulens und zu zweit', () => {
+    expect(resolveKey({ key: 'w' }, context())).toEqual({ type: 'toggleSidebar' })
+    expect(resolveKey({ key: 'W' }, context())).toEqual({ type: 'toggleSidebar' })
+    expect(resolveKey({ key: 'w' }, context({ fastForwarding: true }))).toEqual({ type: 'toggleSidebar' })
+    expect(resolveKey({ key: 'w' }, context({ multiplayer: true }))).toEqual({ type: 'toggleSidebar' })
+  })
+
+  it('gehoert beim Tippen dem Textfeld', () => {
+    expect(resolveKey({ key: 'w' }, context({ typing: true }))).toBeNull()
   })
 })

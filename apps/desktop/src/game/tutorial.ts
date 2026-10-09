@@ -98,8 +98,8 @@ export const TUTORIAL_TARGETS: Readonly<Record<string, string | null>> = {
   dayPassed: null,
   buildCompleted: '.side .panel',
   unitRecruited: '.side .panel',
-  fastForward: '.foot__buttons',
-  events: '.foot .log',
+  fastForward: '.clock .speed--fast',
+  events: '.rail__item[data-area="log"]',
   expansion: null,
 }
 

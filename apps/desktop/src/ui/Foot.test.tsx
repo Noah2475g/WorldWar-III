@@ -2,9 +2,10 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
-import { Foot, footRows, footRowsWithLeader, isDayReport, latestReport, unreadCount } from './Foot.tsx'
+import { LogArea, StandingsTop, footRows, footRowsWithLeader, isDayReport, latestReport, unreadCount } from './Foot.tsx'
 import type { EventEntry } from './Panels.tsx'
 import type { StandingsRow } from './Standings.tsx'
+import { Rail } from './Rail.tsx'
 
 /**
  * Der Fuss (T-M31-03, D27.6): die Neu-Marke zaehlt, was seit dem letzten Oeffnen
@@ -60,20 +61,19 @@ describe('T-M31-03 Der Fuss', () => {
     for (const r of [rows, [row('a', 900, true), ...rows.slice(1)]]) expect(footRows(r).some((x) => x.own)).toBe(true)
   })
 
-  it('rendert Protokoll, Rangliste (eigene in eigener Klasse) und vier Knoepfe mit Neu-Marke', () => {
-    const onPanel = vi.fn()
+
+  // Seit E3 (D7) ist der Fuss in die Bereiche der Leiste rechts umgezogen: dieselben Zusicherungen,
+  // jetzt an LogArea (Protokoll + Depesche), StandingsTop (Ranglisten-Zeilen) und Rail (Knoepfe + Neu-Marke).
+  it('rendert Protokoll, Rangliste (eigene in eigener Klasse) und die Bereichsknoepfe mit Neu-Marke', () => {
+    const onArea = vi.fn()
     const onDispatch = vi.fn()
     const entries = [entry('a', 10), entry('r', 24, { body: ['Tagesbericht'] }), entry('b', 30)]
     render(
-      <Foot
-        entries={entries}
-        ticksPerDay={24}
-        rows={[row('a', 900), row('b', 800, true), row('c', 700)]}
-        seenTick={10}
-        onJump={() => undefined}
-        onDispatch={onDispatch}
-        onPanel={onPanel}
-      />,
+      <>
+        <LogArea entries={entries} ticksPerDay={24} onJump={() => undefined} onDispatch={onDispatch} />
+        <StandingsTop rows={[row('a', 900), row('b', 800, true), row('c', 700)]} />
+        <Rail active={null} open={false} unread={unreadCount(entries, 10)} onArea={onArea} onToggle={() => undefined} />
+      </>,
     )
 
     expect(screen.getByRole('region', { name: 'Ereignisse' })).toBeTruthy()
@@ -81,27 +81,28 @@ describe('T-M31-03 Der Fuss', () => {
     expect(within(standings).getAllByRole('listitem').length).toBe(3)
     expect(standings.querySelector('.foot__row--own')?.textContent).toContain('Macht b')
 
-    // Zwei Zeilen nach Tick 10: die Marke sagt 2.
-    const lage = screen.getByRole('button', { name: /Rangliste/ })
-    expect(lage.textContent).toContain('2')
+    // Zwei Zeilen nach Tick 10: die Marke sagt 2 — an der Rangliste der Leiste (D28).
+    const lage = document.querySelector<HTMLButtonElement>('.rail__item[data-area="standings"]')!
+    expect(lage.querySelector('.badge')?.textContent).toBe('2')
     fireEvent.click(lage)
-    expect(onPanel).toHaveBeenCalledWith('standings')
+    expect(onArea).toHaveBeenCalledWith('standings', lage)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Depesche' }))
+    // Die Depesche ist die erste Zeile im Bereich Protokoll (D27).
+    const dispatch = document.querySelector<HTMLButtonElement>('.log-area > .dispatch-card')!
+    expect(dispatch.textContent).toContain('Depesche')
+    fireEvent.click(dispatch)
     expect(onDispatch).toHaveBeenCalled()
-    fireEvent.click(screen.getByRole('button', { name: 'Diplomatie' }))
-    expect(onPanel).toHaveBeenCalledWith('diplomacy')
+    fireEvent.click(document.querySelector('.rail__item[data-area="diplomacy"]')!)
+    expect(onArea).toHaveBeenLastCalledWith('diplomacy', expect.anything())
 
-    fireEvent.click(screen.getByRole('button', { name: 'Spionage' }))
-    expect(onPanel).toHaveBeenCalledWith('espionage')
+    fireEvent.click(document.querySelector('.rail__item[data-area="espionage"]')!)
+    expect(onArea).toHaveBeenLastCalledWith('espionage', expect.anything())
     // Zeitlimit wegen Last, nicht Verhalten: allein 681 ms, unter verify+Last max 11874 ms (gemessen 2026-10-05, t_3cad0a35).
   }, 60_000)
 
   it('sperrt die Depesche, solange es keinen Tagesbericht gibt', () => {
-    render(
-      <Foot entries={[entry('a', 10)]} ticksPerDay={24} rows={[]} seenTick={0} onJump={() => undefined} onDispatch={() => undefined} onPanel={() => undefined} />,
-    )
-    expect((screen.getByRole('button', { name: 'Depesche' }) as HTMLButtonElement).disabled).toBe(true)
+    render(<LogArea entries={[entry('a', 10)]} ticksPerDay={24} onJump={() => undefined} onDispatch={() => undefined} />)
+    expect(document.querySelector<HTMLButtonElement>('.dispatch-card')!.disabled).toBe(true)
   })
 })
 
@@ -131,10 +132,9 @@ describe('R-UX-02/AK4 Die Rangliste im Fuss beginnt mit Platz 1', () => {
     expect(footRowsWithLeader(rows).some((r) => r.own)).toBe(true)
   })
 
+
   it('zeichnet Platz 1 als erste Zeile mit seiner Rangzahl, und die Raenge stimmen', () => {
-    render(
-      <Foot entries={[]} ticksPerDay={24} rows={rows} seenTick={0} onJump={() => undefined} onDispatch={() => undefined} onPanel={() => undefined} />,
-    )
+    render(<StandingsTop rows={rows} />)
     const items = within(screen.getByRole('region', { name: 'Rangliste' })).getAllByRole('listitem')
 
     expect(items).toHaveLength(5)
@@ -153,17 +153,16 @@ describe('R-UX-02/AK4 Die Rangliste im Fuss beginnt mit Platz 1', () => {
   })
 })
 
-describe('T-M46-10 Das Protokoll klappt auf dem Telefon als Blatt auf', () => {
-  it('schaltet data-log und die Beschriftung des Knopfes um', () => {
-    const { container } = render(
-      <Foot entries={[]} ticksPerDay={24} rows={[]} seenTick={0} onJump={() => undefined} onDispatch={() => undefined} onPanel={() => undefined} />,
-    )
-    const footer = container.querySelector('footer')!
-    expect(footer.getAttribute('data-log')).toBe('closed')
-    fireEvent.click(screen.getByRole('button', { name: 'Protokoll öffnen' }))
-    expect(footer.getAttribute('data-log')).toBe('open')
-    const close = screen.getByRole('button', { name: 'Protokoll schließen' })
-    expect(close.getAttribute('aria-expanded')).toBe('true')
-    // Zeitlimit wegen Last, nicht Verhalten: allein 90 ms, unter verify+Last max 4997 ms (gemessen 2026-10-05, t_3cad0a35).
+/**
+ * T-M46-10 klappte das Protokoll auf dem Telefon aus einer Zeile im Fuss als Blatt auf. Seit E3 (D7)
+ * ist das Protokoll ein eigener Bereich der Seitenleiste (im Telefon-Hochformat: das Blatt) — es steht
+ * dort ganz, mit Filtern, ohne eigenen Aufklappknopf.
+ */
+describe('T-M46-10 Das Protokoll steht als eigener Bereich ganz, mit Filtern', () => {
+  it('zeigt Protokoll und Filter ohne Aufklappknopf', () => {
+    const { container } = render(<LogArea entries={[entry('a', 10)]} ticksPerDay={24} onJump={() => undefined} onDispatch={() => undefined} />)
+    expect(screen.getByRole('region', { name: 'Ereignisse' })).toBeTruthy()
+    expect(container.querySelector('.log__filters')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Protokoll öffnen' })).toBeNull()
   }, 20_000)
 })

@@ -914,6 +914,7 @@ export function KeyboardHelp({ onClose }: { onClose: () => void }) {
     'provinces',
     'build',
     'recruit',
+    'sidebar',
     'standings',
     'pan',
     'escape',
