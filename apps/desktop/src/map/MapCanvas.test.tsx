@@ -129,7 +129,6 @@ const zeichne = (extra: Partial<Parameters<typeof MapCanvas>[0]> = {}) => {
       selectedProvince={null}
       onSelect={() => undefined}
       onViewChange={() => undefined}
-      onMode={() => undefined}
       labelFor={(id) => id}
       {...extra}
     />,
@@ -509,7 +508,6 @@ describe('T-M45-04 Die Flaechenebene zeichnet nur, wenn sich ein Pixel aendern k
     speed: 100,
     onSelect: () => undefined,
     onViewChange: () => undefined,
-    onMode: () => undefined,
     labelFor,
   })
 
@@ -681,7 +679,6 @@ describe('T-M49-02 Sammelmarke', () => {
           selectedProvince={null}
           onSelect={() => undefined}
           onViewChange={() => undefined}
-          onMode={() => undefined}
           labelFor={(id) => id}
           speed={100}
           tick={12}

@@ -6,12 +6,14 @@ import { RESOURCE_ICONS } from './icons.tsx'
 import { Icon } from './Icon.tsx'
 import { Meter } from './Meter.tsx'
 import { useScrollableTab } from './useScrollableTab.ts'
+import { MAP_MODES, MAP_MODE_NAMES, type MapMode } from '../map/modes.ts'
 
 /**
  * The header (T-M10-04, T-M29-02, R-UI-03/R-TIME-02/R-TIME-04).
  *
  * Two rows since the Kriegsrat (D27.6): the top row carries the clock in amber, the
- * speed as a button group with exactly one pressed detent, the panel buttons and — empty until T-M28-06 fills it — the alarm chip. The
+ * speed as a button group with exactly one pressed detent, the map mode as a button
+ * group, the panel buttons and — empty until T-M28-06 fills it — the alarm chip. The
  * second row is the resource bar: glyph, stock and the day's balance with its sign in
  * the text and its direction in the colour, the reach in the tooltip.
  *
@@ -32,9 +34,19 @@ export interface HeaderProps {
    */
   stalled?: boolean
   fastForwarding: boolean
+  /**
+   * Warum das Vorspulen anhielt, und wie weit es kam (T-M12-10, R-TIME-03).
+   *
+   * Der Kern fuehrt beides seit M15, App hielt beides im Zustand — gelesen hat es
+   * niemand. R-TIME-03/AK1 verlangt ausdruecklich "stoppen und melden"; ohne diese
+   * Zeile war die Haelfte davon nicht gebaut.
+   */
+  fastForwardNotice: string | null
+  mode: MapMode
   onSpeed: (hoursPerSecond: number) => void
   onFastForward: () => void
   onAbort: () => void
+  onMode: (mode: MapMode) => void
   onMenu: () => void
   /** Die Spielstaende brauchen einen Knopf: eine Funktion nur auf der Tastatur ist keine (T-M12-07). */
   onSaves: () => void
@@ -191,8 +203,10 @@ export function Header(props: HeaderProps) {
   return (
     <header className="header">
       <div className="header__top">
+        <span className="header__title">WorldWar</span>
+
         <div className="clock">
-          {/* Die Uhr bleibt ein Satz: Abnahmelauf, Messwerkzeuge und Tests lesen "Tag N · hh:00" von hier.
+          {/* Die Uhr bleibt ein Satz: Abnahmelauf, Messwerkzeuge und Tests lesen „Tag N · hh:00“ von hier.
               Das Zeichen davor ist gross (T-M46-17), der Text klein. */}
           <span className="clock__time">
             <Icon name="clock" size={22} />
@@ -257,7 +271,7 @@ export function Header(props: HeaderProps) {
 
             `role="alert"` und nicht `status`: nach zehn Sekunden ist das keine
             Randbemerkung mehr, sondern eine Lage, in der jemand etwas entscheiden soll.
-            Die Zeile "warte auf Mitspieler" daneben bleibt stehen — sie sagt, WORAUF
+            Die Zeile „warte auf Mitspieler" daneben bleibt stehen — sie sagt, WORAUF
             gewartet wird, und dieser Hinweis sagt, was man dagegen tun kann.
           */}
           {props.peerLost && (
@@ -341,14 +355,20 @@ export function Header(props: HeaderProps) {
           </div>
           )}
 
+          {!props.fastForwarding && props.fastForwardNotice !== null && (
+            <span className="header__notice" role="status">
+              {props.fastForwardNotice}
+            </span>
+          )}
+
           {/* Wie weit ist der Sieg? Der Punkteanteil als Balken — eine Zahl, die man
               gegen das Ziel vergleichen kann, ohne sie auszurechnen (R-UI-13). Seit T-M44-04
               steht er in der Uhrzeile neben der Uhr (R-UX-02/AK1) und nicht mehr als eigenes
               Kind der oberen Zeile: so bricht die Zeile mit Siegziel nicht mehr um. */}
           {victory && (
-                      /* LOESCHVERMERK (Review): bis T-M46-13 stand das Wort "Siegziel" als Beschriftung vor dem Balken
-                         (Meter ohne labelHidden); jetzt das Pokalzeichen mit Tooltip. */
-                      <span className="stat stat--victory" title={t('meter.victoryGoal')}>
+            /* LOESCHVERMERK (Review): bis T-M46-13 stand das Wort „Siegziel“ als Beschriftung vor dem Balken
+               (Meter ohne labelHidden); jetzt das Pokalzeichen mit Tooltip. */
+            <span className="stat stat--victory" title={t('meter.victoryGoal')}>
               <Icon name="trophy" size={16} />
               <Meter
                 label={t('meter.victoryGoal')}
@@ -363,31 +383,42 @@ export function Header(props: HeaderProps) {
           )}
         </div>
 
-        {/* Der Einmarsch-Alarm (T-M28-06, D27.6). Der Platz sitzt seit T-M29-02 dort,
-            wo er hingehoert, damit die Zeile beim ersten Alarm nicht umbricht. */}
-        <div className="header__alarm" hidden={!props.alarm}>
-          {props.alarm && (
+        <div className="modes" role="group" aria-label={t('mapModes.title')}>
+          {MAP_MODES.map((mode) => (
             <button
+              key={mode}
               type="button"
-              className="alarm-chip"
-              aria-label={t('header.alarmAria', {
-                province: props.alarm.provinceName,
-                intruder: props.alarm.intruder,
-              })}
-              title={t('header.alarm', { province: props.alarm.provinceName })}
-              data-msg={`intrusion:${props.alarm.provinceId}`}
-              onClick={() => props.onAlarm?.(props.alarm!.provinceId)}
+              className={props.mode === mode ? 'mode mode--active' : 'mode'}
+              aria-pressed={props.mode === mode}
+              onClick={() => props.onMode(mode)}
             >
-              {/* Zeichen plus Ortsname (T-M46-17); "Einmarsch:" steht im Namen fuers Ohr und im Tooltip.
-                  LOESCHVERMERK (Review): bis T-M46-17 stand der ganze Satz {t('header.alarm', { province })} sichtbar im Chip. */}
-              <Icon name="battle" size={22} />
-              {props.alarm.provinceName}
+              {MAP_MODE_NAMES[mode]}
             </button>
-          )}
+          ))}
         </div>
 
-        {/* Spielstaende und Menue — nur Icons mit Tooltip/aria-label. */}
+        {/* Dieselben Modi als Auswahl (T-M44-04, Kompaktregel): unter 1400 px stehen fuenf Knoepfe
+            (382 px) nicht mehr neben Uhr, Siegziel und Alarmchip. Welche der beiden Fassungen
+            gezeichnet wird, entscheidet allein app.css — die andere ist `display: none` und damit
+            auch fuers Ohr fort. */}
+        <select
+          className="modes-select"
+          aria-label={t('mapModes.title')}
+          value={props.mode}
+          onChange={(event) => props.onMode(event.target.value as MapMode)}
+        >
+          {MAP_MODES.map((mode) => (
+            <option key={mode} value={mode}>
+              {MAP_MODE_NAMES[mode]}
+            </option>
+          ))}
+        </select>
+
+        {/* Diplomatie, Markt und Lage wohnen seit T-M31-03 im Fuss (D27.6); hier
+            bleiben nur Spielstaende und Menue. `onPanel` bleibt fuer die Tastatur. */}
         <div className="header__panels">
+          {/* LOESCHVERMERK (Review): bis T-M46-13 Textknoepfe — {t('saves.title')} und {t('header.menu')}
+              als sichtbarer Text; jetzt Zeichen mit Tooltip und aria-label. */}
           <button
             type="button"
             className="button button--icon"
@@ -406,6 +437,28 @@ export function Header(props: HeaderProps) {
           >
             <Icon name="menu" size={18} />
           </button>
+        </div>
+
+        {/* Der Einmarsch-Alarm (T-M28-06, D27.6). Der Platz sitzt seit T-M29-02 dort,
+            wo er hingehoert, damit die Zeile beim ersten Alarm nicht umbricht. */}
+        <div className="header__alarm" hidden={!props.alarm}>
+          {props.alarm && (
+            <button
+              type="button"
+              className="alarm-chip"
+              aria-label={t('header.alarmAria', {
+                province: props.alarm.provinceName,
+                intruder: props.alarm.intruder,
+              })}
+              title={t('header.alarm', { province: props.alarm.provinceName })}
+              onClick={() => props.onAlarm?.(props.alarm!.provinceId)}
+            >
+              {/* Zeichen plus Ortsname (T-M46-17); „Einmarsch:“ steht im Namen fuers Ohr und im Tooltip.
+                  LOESCHVERMERK (Review): bis T-M46-17 stand der ganze Satz {t('header.alarm', { province })} sichtbar im Chip. */}
+              <Icon name="battle" size={22} />
+              {props.alarm.provinceName}
+            </button>
+          )}
         </div>
       </div>
 
@@ -435,7 +488,7 @@ export function Header(props: HeaderProps) {
               {/* Das Symbol traegt die Bedeutung fuers Auge und - als Name - fuers Ohr (T-M46-17): kein
                   versteckter Wortknoten mehr daneben.
                   LOESCHVERMERK (Review): bis T-M46-17 folgten ein <span className="visually-hidden"> mit dem Rohstoffnamen,
-                  der Richtungspfeil als Textzeichen (▲ ▼ –) samt verstecktem Bilanzsatz und die Reichweite als "6 T"-Text. */}
+                  der Richtungspfeil als Textzeichen (▲ ▼ –) samt verstecktem Bilanzsatz und die Reichweite als „6 T“-Text. */}
               <Icon name={RESOURCE_ICONS[key] ?? 'warning'} size={28} title={t(`resources.${key}`)} />
               <b>{resources ? amount(resources[key] ?? 0) : '—'}</b>
               {flow && (
