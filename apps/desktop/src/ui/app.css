@@ -194,19 +194,22 @@ body {
 
 /* ---------------------------------------------------------------- header */
 
-/* Zwei Zeilen seit dem Kriegsrat (T-M29-02, D27.6): oben Uhr, Tempo, Modus, Knoepfe
-   und der Alarmchip; darunter die Rohstoffleiste mit Tagesbilanz. */
+/* E2 (v3b): EINE Zeile 56 px — Pause · Tempo-Stepper · Tag/Uhr · 7 Rohstoffe (in 2. Zeile) · Alarmchip · Speichern · Menue.
+   Kartenmodus verschoben in .map-tools (Werkzeug-Cluster oben rechts an Karte). Siegziel in .clock .stat--victory neben Tag/Uhr.
+   fastForwardNotice als sonner Toast (ausserhalb Header). Titel "WorldWar" entfällt. */
 .header {
   background: var(--paper);
   border-bottom: 1px solid var(--line);
+  height: 56px;
 }
 
 .header__top {
   display: flex;
   align-items: center;
-  gap: var(--sp-lg);
-  padding: var(--sp-sm) var(--sp-lg);
-  flex-wrap: wrap;
+  gap: var(--sp-md);
+  padding: 0 var(--sp-lg);
+  height: 56px;
+  flex-wrap: nowrap;
   font-family: var(--font-map);
   font-weight: 600;
   font-size: 13px;
@@ -214,9 +217,7 @@ body {
   text-transform: uppercase;
 }
 
-.header__title {
-  color: var(--ink);
-}
+/* .header__title entfernt (D25) */
 
 .header__panels {
   display: flex;
@@ -234,6 +235,51 @@ body {
   border: 1px solid var(--accent);
   color: var(--accent);
   font-size: 11px;
+}
+
+/* Kartenmodus im Werkzeug-Cluster (D22): unter Zoomstufe, vor Minikarte. */
+.map-tools {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  margin-top: var(--sp-xs);
+}
+
+.map-tools .modes {
+  display: flex;
+  gap: var(--sp-xs);
+  padding: 2px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.map-tools .mode {
+  background: none;
+  border: 0;
+  color: var(--ink-soft);
+  font: 600 10.5px var(--font-map);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.map-tools .mode--active {
+  background: var(--warn);
+  color: var(--on-warn);
+}
+
+.map-tools .modes-select {
+  display: none;
+  font: 600 10.5px var(--font-map);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+  min-width: 140px;
 }
 
 .resources {
@@ -2598,16 +2644,9 @@ body {
  * Umbruch wie bisher — dort entscheidet das Paket Layout (R-UX-01).
  */
 
-/* Der Titel ist Beiwerk: unter 1500 px steht an seinem Platz die Uhr. */
-@media (max-width: 1499px) {
-  .header__title {
-    display: none;
-  }
-}
-
-/* Die Auswahl der Kartenmodi: Grundregel verborgen, unter 1400 px an Stelle der fünf Knöpfe.
+/* Kartenmodus im Werkzeug-Cluster (D22): Auswahl Grundregel verborgen, unter 1400 px an Stelle der fünf Knöpfe.
    Im Touch-Betrieb bleiben die Knöpfe (die Zeile wischt dort, touch.css). */
-.modes-select {
+.map-tools .modes-select {
   display: none;
   font: 600 10.5px var(--font-map);
   text-transform: uppercase;
@@ -2619,14 +2658,15 @@ body {
   background: var(--paper-sunk);
   color: var(--ink);
   cursor: pointer;
+  min-width: 140px;
 }
 
 @media (max-width: 1399px) {
-  :root:not([data-input='touch']) .modes {
+  :root:not([data-input='touch']) .map-tools .modes {
     display: none;
   }
 
-  :root:not([data-input='touch']) .modes-select {
+  :root:not([data-input='touch']) .map-tools .modes-select {
     display: inline-block;
   }
 }
@@ -2686,9 +2726,7 @@ body {
   }
 
   .header__panels,
-  .header__alarm,
-  .modes,
-  .modes-select {
+  .header__alarm {
     flex: none;
   }
 

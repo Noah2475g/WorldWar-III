@@ -2347,14 +2347,15 @@ describe('R-TIME-03 Das Vorspulen begruendet seinen Halt', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
 
-    const meldung = await screen.findByRole('status')
+    const meldung = await screen.findByRole('status', { name: /Angehalten|Abgebrochen/ })
     expect(meldung.textContent).toMatch(/Angehalten|Abgebrochen/)
   })
 
   it('sagt vorher nichts — eine Meldung ohne Lauf waere eine Meldung ueber nichts', () => {
     startGame({ storage: new MemoryStorage() })
 
-    expect(screen.queryByRole('status')).toBeNull()
+    // Die Quittung ('ack') ist die einzige role="status" Quelle; ohne Lauf gibt es keine.
+    expect(screen.queryByRole('status', { name: /Angehalten|Abgebrochen/ })).toBeNull()
   })
 })
 
@@ -2502,7 +2503,7 @@ describe('T-M41-15 Das Vorspulziel wird nicht je Haeppchen gezaehlt', () => {
     vi.useRealTimers()
   })
 
-  it('haelt ein Vorspulen um einen Tag in Haeppchen zu 4 Ticks nach genau einem Tag am Ziel', () => {
+  it('haelt ein Vorspulen um einen Tag in Haeppchen zu 4 Ticks nach genau einem Tag am Ziel', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout'] })
     startGame({ storage: new MemoryStorage() })
     expect(uhr()).toMatch(/Tag 1 · 00:00/)
@@ -2520,7 +2521,7 @@ describe('T-M41-15 Das Vorspulziel wird nicht je Haeppchen gezaehlt', () => {
 
     expect(abbrechen(), 'das Vorspulen endet nicht').toBeNull()
     expect(uhr()).toMatch(/Tag 2 · 00:00/)
-    expect(screen.getByRole('status').textContent).toMatch(/ein Spieltag ist vorbei/)
+    expect(await screen.findByRole('status', { name: /Spieltag ist vorbei/ })).toBeTruthy()
   }, 120_000)
 })
 

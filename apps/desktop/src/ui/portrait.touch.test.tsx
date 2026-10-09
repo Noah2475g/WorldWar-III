@@ -116,10 +116,10 @@ describe('R-UX-01/AK2: Kopfleiste ganz im Bild (T-M46-10), Fuss kompakt', () => 
     expect(header).not.toMatch(/overflow-x:\s*auto/)
   })
 
-  it('zeigt alle neun Tempostufen in gleich breiten Feldern und die Modi als Auswahl', () => {
+  it('zeigt alle neun Tempostufen in gleich breiten Feldern und die Modi als Auswahl im Werkzeug-Cluster', () => {
     expect(declarationsOf(portrait, ':root:root .speeds .speed')).toMatch(/flex:\s*1 1 0/)
-    expect(declarationsOf(portrait, ':root:root .modes')).toMatch(/display:\s*none/)
-    expect(declarationsOf(portrait, ':root:root .modes-select')).toMatch(/display:\s*inline-block/)
+    expect(declarationsOf(portrait, ':root:root .map-tools .modes')).toMatch(/display:\s*none/)
+    expect(declarationsOf(portrait, ':root:root .map-tools .modes-select')).toMatch(/display:\s*inline-block/)
   })
 
   it('gibt der Seitenleiste in der halben Raste die halbe Fensterhoehe, der Karte den Rest (>= 30 %)', () => {

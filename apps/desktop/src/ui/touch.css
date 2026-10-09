@@ -308,18 +308,14 @@ select,
     max-width: min(230px, 60%);
   }
 
-  /* Kopfleiste: eine Zeile, seitlich wischbar; Titel und Siegbalken stehen in der Lage. */
+  /* Kopfleiste: eine Zeile 56px, seitlich wischbar; Titel entfällt, Siegziel in .clock. */
   :root[data-input='touch'] .header__top {
     flex-wrap: nowrap;
     overflow-x: auto;
     gap: var(--sp-md);
     padding: 0 var(--sp-md);
     scrollbar-width: none;
-  }
-
-  :root[data-input='touch'] .header__title,
-  :root[data-input='touch'] .header__top .meter {
-    display: none;
+    height: 56px;
   }
 
   :root[data-input='touch'] .header__top > *,
@@ -327,7 +323,7 @@ select,
     flex: none;
   }
 
-  :root[data-input='touch'] .modes {
+  :root[data-input='touch'] .map-tools .modes {
     padding: 0;
   }
 
@@ -669,11 +665,11 @@ select,
   }
 
   /* Die fuenf Kartenmodi als Auswahl (~150 px gegen 382 px Knoepfe). */
-  :root:root .modes {
+  :root:root .map-tools .modes {
     display: none;
   }
 
-  :root:root .modes-select {
+  :root:root .map-tools .modes-select {
     display: inline-block;
     order: 3;
     flex: 1 1 0;
