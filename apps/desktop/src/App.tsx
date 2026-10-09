@@ -2263,6 +2263,13 @@ export function App(props: AppProps) {
     return t('header.stoppedAlert', { time, event: beschrieben.text })
   }, [fastForwardState, speed, ticksPerDay, state, viewerId, activeMap, nameOf])
 
+  /** Zeigt den FastForward-Hinweis als sonner Toast (D24). */
+  useEffect(() => {
+    if (fastForwardNotice) {
+      showNotice('ack', fastForwardNotice)
+    }
+  }, [fastForwardNotice, showNotice])
+
   /** Build, recruit and capital — for an own province; nothing for anyone else's. */
   const provinceGroups: ActionGroupSpec[] = useMemo(() => {
     if (!ctx || !selected) return []
@@ -2565,8 +2572,6 @@ export function App(props: AppProps) {
         speed={speed}
         stalled={stalled}
         fastForwarding={fastForwardState.running}
-        fastForwardNotice={fastForwardNotice}
-        mode={ui.mode}
         // Zu zweit zeigt die Kopfleiste die feste Rate als Text statt einer Tempogruppe
         // (T-M37-04, R-MP-02/AK3); im Einzelspieler bleibt alles, wie es war.
         fixedSpeed={party.fixedSpeed}
@@ -2597,7 +2602,6 @@ export function App(props: AppProps) {
           abortFastForward.current = true
           setSpeed(0)
         }}
-        onMode={(mode) => dispatch({ type: 'setMode', mode })}
         alarm={alarm}
         onAlarm={(provinceId) => {
           // Quittieren heisst hinsehen: die Provinz kommt in die Mitte, der Chip geht.
@@ -2634,6 +2638,7 @@ export function App(props: AppProps) {
             ticksPerDay={ticksPerDay}
             onHover={onMapHover}
             onSelect={selectOnMap}
+            onMode={(mode) => dispatch({ type: 'setMode', mode })}
             // Ein Klick nahe einem eigenen Marker waehlt die Armee (T-M22-06, V2-14) —
             // ausser waehrend der Zielwahl: dort ist jeder Klick eine Ortswahl.
             {...(targeting
