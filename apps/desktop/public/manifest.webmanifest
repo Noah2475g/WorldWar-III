@@ -1,0 +1,18 @@
+{
+  "name": "WorldWar",
+  "short_name": "WorldWar",
+  "description": "Globalstrategie — privat, für Noah und einen Mitspieler",
+  "start_url": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#0a0c10",
+  "theme_color": "#0a0c10",
+  "lang": "de",
+  "icons": [
+    {
+      "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAn0lEQVR42mPgFRT/P5CYYUg74MEiBTAeOQ6AWUgIU90BxFpMjkMYaGU5sY5gINVyQmmAVEcwEGs5uQmUkH4GWlhOijkEHUBpQUOyA6jle2LNY6Cl74kxk2wHvIiwR8F0dQC65YQcQZQDSClISHEAIXMHjwMGPAqGVCKkWzYckIJowIviQVEZDXh1PCgaJIOiSTYoGqWDolk+2jMa1r1jAFXBRGObaZwJAAAAAElFTkSuQmCC",
+      "sizes": "32x32",
+      "type": "image/png"
+    }
+  ]
+}
