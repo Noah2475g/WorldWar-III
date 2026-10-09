@@ -624,6 +624,8 @@ select,
     flex: 1 1 0;
     min-width: 0;
     padding: 0;
+    min-height: 44px;
+    min-width: 44px;
   }
 
   :root:root .clock__time {
