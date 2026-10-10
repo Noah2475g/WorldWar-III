@@ -1,4 +1,5 @@
 /* global document, HTMLElement */
+import { PICKER } from './ux-sel.mjs'
 /**
  * Die acht Handlungen (PLAN-V3 P0-B2). Jede hat `maus` und `tastatur`; `minimum` ist die kuerzeste
  * Folge der Oberflaeche, von Hand gezaehlt. Bei der Tastatur steht als Mass die Zahl der Absichten
@@ -26,6 +27,9 @@ async function until(page, fn, arg, ms = 6000) {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- Hilfe fuer weitere Aufgabenlaeufe (V3 M46), bewusst behalten (Regel 1)
 const aside = (page) => page.locator('aside.side')
 const asideSelect = (page, n) => page.locator('aside select').nth(n)
+// D16: die Provinzwahl lebt seit E5 in `section.dock .picker select` (PICKER), nicht mehr in
+// `aside select` -- der Marschziel-Select (asideSelect(page, 1)) bleibt im `aside.side`-Panel.
+const provincePicker = (page) => page.locator(PICKER)
 const btn = (page, name, exact = true) => page.getByRole('button', { name, exact }).first()
 const asideHas = (src) => new RegExp(src).test(document.querySelector('aside.side')?.innerText ?? '')
 const MOVING = '(Marsch\\s+Ankunft Tag \\d+|\\d+ · \\d\\d:00)' // Symbol-Durchgang T-M46-17: Ankunft steht als "380 · 03:00"
@@ -414,7 +418,7 @@ export const TASKS = [
       await run.click(btn(page, 'Spionage'), 'Spionage (Übersicht)')
       const leer = await page.evaluate(() => /keine Spione/.test(document.body.innerText))
       if (leer) run.detour('Spionage (Übersicht)', 'Übersicht ist leer; sie sagt "Anwerben können Sie in der Provinzleiste"')
-      await run.pick(asideSelect(page, 0), 'Nordostmexiko', 'Provinz')
+      await run.pick(provincePicker(page), 'Nordostmexiko', 'Provinz')
       await run.click(page.getByRole('button', { name: 'Spion für Aufklärung anwerben' }), 'Aufklärung anwerben')
       run.stop()
       const ok = await accepted(run, page, 'Aufgeklärt')

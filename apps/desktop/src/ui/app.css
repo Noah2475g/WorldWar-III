@@ -3987,3 +3987,278 @@ body {
   overflow-x: auto;
   max-width: 100%;
 }
+
+/* E5a (D9/D10): die schwebende Leiste unten + das Ausheben-Raster. Hoehen fest je
+   Zustandsklasse (K1: scrollH/clientH = 1,00, nicht aus dem Inhalt), Designer-Korrektur
+   t_8f0a95ce (110/116 statt 132/urspruenglich, Raster 8 px ueber der Leiste statt
+   ueberlappend). Das Raster schwebt rechts ueber der Leiste innerhalb von .dock-area. */
+.dock-area {
+  position: relative;
+}
+
+.dock {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  border-radius: 20px;
+  background: var(--glass);
+  box-shadow: var(--sh-2), var(--bezel);
+  overflow: hidden;
+}
+
+.dock--empty {
+  height: 56px;
+}
+
+.dock--province {
+  height: 110px;
+}
+
+.dock--foreign {
+  height: 56px;
+}
+
+.dock--army {
+  height: 116px;
+}
+
+.dock__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-sm);
+  padding: var(--sp-md) var(--sp-lg);
+}
+
+.dock__picker select {
+  font: 500 20px var(--font-map);
+  border: 0;
+  background: none;
+  color: var(--ink);
+  padding: 0;
+}
+
+.dock__placeholder {
+  color: var(--ink-soft);
+  font-size: var(--fs-s);
+}
+
+.dock__recruit-action {
+  height: 62px;
+}
+
+.dock__body {
+  padding: 0 var(--sp-lg) var(--sp-md);
+}
+
+/* Der Provinz-Inhalt im Dock (D19a, E5/D9): dieselben Teile wie die Seitenleiste
+   (Moral, Vorkommen, Bauplaetze), aber in einer Reihe statt gestapelt — die feste
+   Hoehe von .dock--province (110 px, D9) laesst keinen gestapelten Platz, kein
+   Scrollen (K1: scrollH/clientH <= 1,02). Die Ueberschrift-Zeichen bleiben weg
+   (die Woerter "Vorkommen"/"Bauplaetze" standen nie sichtbar da, nur als Symbol —
+   hier fehlt auch das Symbol, denn die Reihenfolge Moral/Vorkommen/Raster sagt
+   selbst, was was ist). */
+.dock-province {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-md);
+  height: 100%;
+  overflow: hidden;
+}
+
+.dock-province .panel__icon-title {
+  display: none;
+}
+
+.dock-province .stat {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  flex: none;
+}
+
+.dock-province .meter {
+  min-width: 96px;
+}
+
+.dock-province .icon-row {
+  flex-wrap: nowrap;
+  gap: var(--sp-sm);
+  flex: none;
+}
+
+.dock-province .preview-area {
+  flex: 1;
+  min-width: 0;
+}
+
+.dock-province .slots {
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--sp-xs);
+  margin: 0;
+}
+
+.dock-province .slot {
+  min-height: 22px;
+  padding: 2px;
+}
+
+.dock-province .slot__level {
+  position: absolute;
+  bottom: 1px;
+  right: 2px;
+}
+
+.dock-province .cost-preview {
+  flex: none;
+  max-width: 160px;
+}
+
+/* Der Armee-Inhalt im Dock (D19b, Bild final-v3b-11-armee.png): Kopf, Zurueck/Marsch-Zeile,
+   Haltung, Befehle in EINER Spalte (anders als .dock-province, das in einer Reihe liegt) — die
+   Armee-Bedienungen (4 Haltungsknoepfe + 4 Befehle) passen nicht in eine einzige Zeile neben Namen
+   und Statzeichen, ohne unleserlich zu werden. Hoehe wie .dock--army (116px), kein eigenes Scrollen
+   (K1); .dock-army__commands schiebt "Marschieren" mit margin-left:auto ans rechte Ende, wie im Bild. */
+.dock-army {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--sp-xs);
+  height: 100%;
+  overflow: hidden;
+}
+
+.dock-army__head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+}
+
+.dock-army__name {
+  font: 600 15px var(--font-map);
+}
+
+.dock-army__route {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: var(--fs-s);
+}
+
+.dock-army .stances {
+  margin: 0;
+}
+
+.dock-army__commands {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  margin: 0;
+}
+
+.dock-army__commands .button--primary {
+  margin-left: auto;
+}
+
+.dock-army__targeting {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.dock-army__targeting .picker {
+  font-size: var(--fs-s);
+}
+
+.recruit-sheet {
+  position: absolute;
+  right: 12px;
+  width: 432px;
+  bottom: calc(12px + 110px + 8px);
+  background: var(--glass);
+  border-radius: 12px;
+  box-shadow: var(--sh-2), var(--bezel);
+  overflow: hidden;
+}
+
+.recruit-sheet--open {
+  height: 196px;
+}
+
+.recruit-sheet--collapsed {
+  height: 0;
+}
+
+.recruit-sheet__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-sm) var(--sp-md);
+  font-size: var(--fs-s);
+  color: var(--ink-soft);
+}
+
+.recruit-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 76px);
+  grid-auto-rows: 66px;
+  gap: var(--sp-sm);
+  list-style: none;
+  margin: 0;
+  padding: 0 var(--sp-md) var(--sp-md);
+}
+
+/* E5b (D11/D12): eigenstaendiges Provinz-Popup, unabhaengig vom Dock. Position wird per
+   JS (viewRect.ts: provincePopupRect) gesetzt, hier nur Erscheinungsbild + feste Breite. */
+.province-popup {
+  width: 288px;
+  border-radius: 14px;
+  background: var(--glass);
+  box-shadow: var(--sh-2), var(--bezel);
+  overflow: hidden;
+  z-index: 30;
+}
+
+.province-popup__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-sm) var(--sp-md);
+  font-size: var(--fs-s);
+  color: var(--ink-soft);
+}
+
+.province-popup__title {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.province-popup__close {
+  background: none;
+  border: none;
+  color: var(--ink-soft);
+  font-size: var(--fs-m);
+  line-height: 1;
+  cursor: pointer;
+  padding: var(--sp-xs);
+}
+
+.province-popup__body {
+  padding: 0 var(--sp-md) var(--sp-md);
+}
+
+/* D11 Review-Runde 2: Macht+Status des Besitzers, oberhalb der Aktionen (K-UI-16/R-DIP-04,
+   nur gesehene Staerke). Reiht sich mit umbruchfaehigem Flex statt fester Breite. */
+.province-popup__owner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-sm);
+  margin-bottom: var(--sp-sm);
+  font-size: var(--fs-s);
+  color: var(--ink-soft);
+}
+
+.province-popup__more-head {
+  margin-bottom: var(--sp-xs);
+}

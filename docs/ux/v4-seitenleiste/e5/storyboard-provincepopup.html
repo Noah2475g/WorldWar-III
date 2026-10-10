@@ -1,0 +1,76 @@
+<!doctype html>
+<!--
+  Storyboard-Entwurf ProvincePopup + Dock (E5b, D11/D12): statische Vorschau der
+  3 Zustaende default/compact/filtered, mit Annotation zur Layout-Verifikation
+  (sichtbares Rechteck, Popup-Klemmung). Kein Build-Schritt, kein JS-Framework —
+  direkt im Browser oeffnen zum visuellen Vergleich gegen final-v3b-3-fremd-popup.png.
+-->
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<title>ProvincePopup + Dock Storyboard (E5b)</title>
+<style>
+  body { background: #0D1117; color: #ECE6DA; font-family: 'IBM Plex Sans', system-ui, sans-serif; padding: 40px; display: flex; gap: 40px; flex-wrap: wrap; }
+  figure { margin: 0; }
+  figcaption { font-size: 12px; color: #A4ABB6; margin-top: 8px; max-width: 460px; }
+  .stage { position: relative; width: 460px; height: 280px; background: #121821; border-radius: 8px; overflow: hidden; }
+  /* Annotation: sichtbares Kartenrechteck (visibleRect, D12) — links Hinweisspalte,
+     rechts Werkzeuge, unten Dock, oben 12px. Gestrichelt, nur zur Pruefung. */
+  .visible-rect { position: absolute; left: 60px; right: 20px; top: 12px; bottom: 54px; border: 1px dashed #657382; border-radius: 4px; }
+  .hint-column { position: absolute; left: 0; top: 0; bottom: 0; width: 60px; background: #0A0F15; }
+  .tools { position: absolute; right: 0; top: 0; bottom: 0; width: 20px; background: #0A0F15; }
+  .province-popup { position: absolute; width: 180px; background: color-mix(in srgb, #121821 98%, transparent); border-radius: 14px; box-shadow: 0 8px 24px rgb(3 6 10 / 0.55); overflow: hidden; }
+  .province-popup__head { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; font-size: 12px; color: #A4ABB6; }
+  .province-popup__title { font-weight: 600; color: #ECE6DA; }
+  .province-popup__body { padding: 0 10px 10px; font-size: 11px; color: #ECE6DA; }
+  .dock { position: absolute; left: 12px; right: 12px; bottom: 12px; height: 42px; border-radius: 20px; background: #1C2531; }
+  .anchor { position: absolute; width: 6px; height: 6px; border-radius: 50%; background: #E0A458; transform: translate(-3px, -3px); }
+</style>
+</head>
+<body>
+  <figure>
+    <div class="stage">
+      <div class="hint-column"></div>
+      <div class="tools"></div>
+      <div class="visible-rect"></div>
+      <div class="anchor" style="left: 230px; top: 140px;"></div>
+      <div class="province-popup" style="left: 140px; top: 60px;">
+        <div class="province-popup__head"><span class="province-popup__title">Bayern</span><span>×</span></div>
+        <div class="province-popup__body">Fremde Provinz · Einwohner 1,2 Mio</div>
+      </div>
+      <div class="dock"></div>
+    </div>
+    <figcaption>1) default — Popup 16px ueber dem Provinz-Mittelpunkt (Ankerpunkt), Mitte zentriert innerhalb visibleRect.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="stage">
+      <div class="hint-column"></div>
+      <div class="tools"></div>
+      <div class="visible-rect"></div>
+      <div class="anchor" style="left: 70px; top: 30px;"></div>
+      <div class="province-popup" style="left: 60px; top: 12px;">
+        <div class="province-popup__head"><span class="province-popup__title">Sachsen</span><span>×</span></div>
+        <div class="province-popup__body">Fremde Provinz · Einwohner 640 Tsd.</div>
+      </div>
+      <div class="dock"></div>
+    </div>
+    <figcaption>2) compact — Provinz nahe der linken/oberen Kante: Popup an visibleRect-Kante geklemmt (x=60, y=12), ragt nicht unter die Hinweisspalte oder ueber den oberen Rand.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="stage">
+      <div class="hint-column"></div>
+      <div class="tools"></div>
+      <div class="visible-rect"></div>
+      <div class="anchor" style="left: 410px; top: 220px;"></div>
+      <div class="province-popup" style="left: 260px; top: 158px;">
+        <div class="province-popup__head"><span class="province-popup__title">Thueringen</span><span>×</span></div>
+        <div class="province-popup__body">Fremde Provinz · keine Daten (verdeckt)</div>
+      </div>
+      <div class="dock"></div>
+    </div>
+    <figcaption>3) filtered — Provinz nahe der rechten/unteren Kante (Werkzeuge/Dock): Popup an die rechte/untere visibleRect-Kante geklemmt statt unter die Werkzeuge oder hinter den Dock zu ragen.</figcaption>
+  </figure>
+</body>
+</html>

@@ -1,0 +1,154 @@
+[
+  {
+    "viewport": "320x640",
+    "file": "recruitsheet",
+    "screenshot": "/home/pi/WorldWar-III/.claude/worktrees/seitenleiste-e5/docs/ux/v4-seitenleiste/e5/e5c-recruitsheet-320x640.png",
+    "stageBoxes": [
+      {
+        "w": 460,
+        "h": 240
+      },
+      {
+        "w": 460,
+        "h": 240
+      },
+      {
+        "w": 460,
+        "h": 240
+      }
+    ]
+  },
+  {
+    "viewport": "320x640",
+    "file": "provincepopup",
+    "screenshot": "/home/pi/WorldWar-III/.claude/worktrees/seitenleiste-e5/docs/ux/v4-seitenleiste/e5/e5c-provincepopup-320x640.png",
+    "stageBoxes": [
+      {
+        "w": 460,
+        "h": 280
+      },
+      {
+        "w": 460,
+        "h": 280
+      },
+      {
+        "w": 460,
+        "h": 280
+      }
+    ]
+  },
+  {
+    "viewport": "768x1024",
+    "file": "recruitsheet",
+    "screenshot": "/home/pi/WorldWar-III/.claude/worktrees/seitenleiste-e5/docs/ux/v4-seitenleiste/e5/e5c-recruitsheet-768x1024.png",
+    "stageBoxes": [
+      {
+        "w": 460,
+        "h": 240
+      },
+      {
+        "w": 460,
+        "h": 240
+      },
+      {
+        "w": 460,
+        "h": 240
+      }
+    ]
+  },
+  {
+    "viewport": "768x1024",
+    "file": "provincepopup",
+    "screenshot": "/home/pi/WorldWar-III/.claude/worktrees/seitenleiste-e5/docs/ux/v4-seitenleiste/e5/e5c-provincepopup-768x1024.png",
+    "stageBoxes": [
+      {
+        "w": 460,
+        "h": 280
+      },
+      {
+        "w": 460,
+        "h": 280
+      },
+      {
+        "w": 460,
+        "h": 280
+      }
+    ]
+  },
+  {
+    "viewport": "1024x768",
+    "file": "recruitsheet",
+    "screenshot": "/home/pi/WorldWar-III/.claude/worktrees/seitenleiste-e5/docs/ux/v4-seitenleiste/e5/e5c-recruitsheet-1024x768.png",
+    "stageBoxes": [
+      {
+        "w": 460,
+        "h": 240
+      },
+      {
+        "w": 460,
+        "h": 240
+      },
+      {
+        "w": 460,
+        "h": 240
+      }
+    ]
+  },
+  {
+    "viewport": "1024x768",
+    "file": "provincepopup",
+    "screenshot": "/home/pi/WorldWar-III/.claude/worktrees/seitenleiste-e5/docs/ux/v4-seitenleiste/e5/e5c-provincepopup-1024x768.png",
+    "stageBoxes": [
+      {
+        "w": 460,
+        "h": 280
+      },
+      {
+        "w": 460,
+        "h": 280
+      },
+      {
+        "w": 460,
+        "h": 280
+      }
+    ]
+  },
+  {
+    "viewport": "1920x1080",
+    "file": "recruitsheet",
+    "screenshot": "/home/pi/WorldWar-III/.claude/worktrees/seitenleiste-e5/docs/ux/v4-seitenleiste/e5/e5c-recruitsheet-1920x1080.png",
+    "stageBoxes": [
+      {
+        "w": 460,
+        "h": 240
+      },
+      {
+        "w": 460,
+        "h": 240
+      },
+      {
+        "w": 460,
+        "h": 240
+      }
+    ]
+  },
+  {
+    "viewport": "1920x1080",
+    "file": "provincepopup",
+    "screenshot": "/home/pi/WorldWar-III/.claude/worktrees/seitenleiste-e5/docs/ux/v4-seitenleiste/e5/e5c-provincepopup-1920x1080.png",
+    "stageBoxes": [
+      {
+        "w": 460,
+        "h": 280
+      },
+      {
+        "w": 460,
+        "h": 280
+      },
+      {
+        "w": 460,
+        "h": 280
+      }
+    ]
+  }
+]

@@ -249,6 +249,9 @@ export const de = {
     revealedUntil: 'Aufgeklärt: Gebäude sichtbar bis Tag {{day}}',
     pick: 'Provinz',
     pickNone: '— keine —',
+    // A1 (Review t_cc59e67e): eigener Schluessel fuer den Picker-Platzhalter der Leiste unten (D9);
+    // pickNone bleibt unveraendert fuer die Marschziel-Liste (Panels.tsx), die den alten Text behaelt.
+    dockPickNone: 'Land anklicken',
     pickOwn: 'Eigene Provinzen',
     pickOthers: 'Aufgeklärte Provinzen',
     level: 'Stufe {{level}}',
@@ -1516,6 +1519,24 @@ export const de = {
   /** Die Sammelzeile der Sperrgründe im Diplomatiepanel (T-M44-18, R-UX-03/AK1): „Knopf, Knopf: Grund“. */
   collected: {
     line: '{{labels}}: {{reason}}',
+  },
+
+  /** Die schwebende Leiste unten (E5, D9): Provinz/Armee statt in der Seitenleiste. */
+  dock: {
+    empty: 'Land anklicken, um Bauplätze und Ausheben zu sehen.',
+    recruitAction: 'Ausheben',
+    recruitActionAria: 'Ausheben-Raster öffnen oder schließen',
+    pickerAria: 'Provinz (Leiste unten)',
+  },
+
+  /** Das Ausheben-Raster (E5, D10): 5×2 Felder über der Leiste unten. */
+  recruitSheet: {
+    title: 'Ausheben',
+    free: '{{count}} frei',
+    collapse: 'Raster einklappen',
+    expand: 'Raster ausklappen',
+    recruitAria: '{{unit}} ausheben',
+    running: 'läuft × {{count}}',
   },
 } as const
 

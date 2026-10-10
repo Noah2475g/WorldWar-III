@@ -7,14 +7,19 @@ import { defenceMultiplier, type Province, type PublicView, type Terrain, type V
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { TOKENS } from './tokens.ts'
 import { t } from '../i18n/text.ts'
+import { resolveKey } from '../keyboard.ts'
 import {
   ActionGroup,
+  ArmyDockContent,
   ArmyPanel,
   DiplomacyPanel,
   EconomyPanel,
   EspionagePanel,
   EventLog,
   MarketPanel,
+  ProvinceBuildSlots,
+  ProvinceDockContent,
+  ProvinceMoraleStat,
   ProvincePanel,
   TERRAIN_DEFENCE_PERMILLE,
   TradeOfferForm,
@@ -2173,6 +2178,134 @@ describe('T-M31-02 Das Armeepanel traegt Marker, Zustand und Haltungsgruppe', ()
 })
 
 /**
+ * D19b: Der Armee-Inhalt im Dock (`ArmyDockContent`) — Haltung, Befehle (sichtbar + "Weitere"),
+ * Zielwahl, Taste E. Dieselben Aktionen wie `ArmyPanel`, aber als eigene, platzsparende Fassung
+ * fuer die Leiste unten (`dockState==='army'`).
+ */
+describe('D19b: ArmyDockContent — Haltung, Befehle, Weitere, Zielwahl im Dock', () => {
+  const dockArmy = { id: 'a1', owner: 'p1', provinceId: 'USA-MW', strength: 12_400, stance: 'defensive' } as VisibleArmy
+  const act = (id: string, label: string, aria?: string): Action => ({
+    id,
+    label,
+    ...(aria ? { aria } : {}),
+    disabledReason: null,
+    onRun: () => undefined,
+  })
+  const dockActions = [
+    act('march', 'Marschieren'),
+    act('stop', 'Anhalten'),
+    act('stance-aggressive', 'Angriff', 'Haltung Angriff einnehmen'),
+    { ...act('stance-defensive', 'Verteidigung', 'Haltung Verteidigung einnehmen'), disabledReason: 'Die Armee hat diese Haltung schon.' },
+    act('stance-retreat', 'Rückzug', 'Haltung Rückzug einnehmen'),
+    act('stance-garrison', 'Garnison', 'Haltung Garnison einnehmen'),
+    act('merge', 'Zusammenlegen'),
+    act('split', 'Teilen'),
+    act('bombard', 'Beschießen'),
+    act('holdFire', 'Feuer halten'),
+  ]
+
+  const dock = () =>
+    render(
+      <ArmyDockContent
+        army={dockArmy}
+        name="3. Armee"
+        routeText="‹ Mittlerer Westen"
+        condition={0.86}
+        actions={dockActions}
+        ticksPerDay={24}
+        currentTick={0}
+      />,
+    )
+
+  it('zeigt die vier Haltung-Knoepfe (eine Gruppe, genau ein gedrueckter)', () => {
+    dock()
+    const group = screen.getByRole('group', { name: 'Haltung' })
+    const buttons = within(group).getAllByRole('button')
+    expect(buttons.length).toBe(4)
+    expect(buttons.filter((b) => b.getAttribute('aria-pressed') === 'true').map((b) => b.getAttribute('aria-label'))).toEqual([
+      'Haltung Verteidigung einnehmen',
+    ])
+  })
+
+  it('zeigt Anhalten/Teilen/Zusammenlegen sichtbar und Marschieren primaer', () => {
+    const { container } = dock()
+    const grid = container.querySelector('.dock-army__commands') as HTMLElement
+    expect(within(grid).getByRole('button', { name: 'Anhalten' })).toBeTruthy()
+    expect(within(grid).getByRole('button', { name: 'Teilen' })).toBeTruthy()
+    expect(within(grid).getByRole('button', { name: 'Zusammenlegen' })).toBeTruthy()
+    const march = within(grid).getByRole('button', { name: 'Marschieren' })
+    expect(march.className).toContain('button--primary')
+    // Beschiessen/Feuer halten stehen NICHT direkt sichtbar, sondern hinter "Weitere".
+    expect(within(grid).queryByRole('button', { name: 'Beschießen' })).toBeNull()
+    expect(within(grid).queryByRole('button', { name: 'Feuer halten' })).toBeNull()
+  })
+
+  it('"Weitere" klappt Beschiessen + Feuer halten auf, Escape schliesst und gibt den Fokus zurueck', () => {
+    const { container } = dock()
+    const toggle = within(container.querySelector('.dock-army__commands') as HTMLElement).getByRole('button', { name: /^Weitere/ })
+    expect(toggle.getAttribute('aria-expanded')).toBe('false')
+    fireEvent.click(toggle)
+    expect(toggle.getAttribute('aria-expanded')).toBe('true')
+    expect(screen.getByRole('button', { name: 'Beschießen' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Feuer halten' })).toBeTruthy()
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(toggle.getAttribute('aria-expanded')).toBe('false')
+    expect(document.activeElement).toBe(toggle)
+  })
+
+  it('MoreMenu wird nur EINMAL implementiert — Diplomacy und Army teilen sich dieselbe Klasse', () => {
+    const { container } = dock()
+    // Dieselbe CSS-Klasse wie DiplomacyActions (app.css .diplomacy__more-panel): kein zweiter
+    // Aufklapp-Code, nur eine zweite CSS-Klasse fuer den Platz im Dock.
+    expect(container.querySelector('.diplomacy__more')).toBeTruthy()
+  })
+
+  it('zeigt die Zurueck/Marsch-Zeile aus `routeText`', () => {
+    dock()
+    expect(screen.getByText('‹ Mittlerer Westen')).toBeTruthy()
+  })
+
+  it('Taste E (Zone recruit) trifft im Dock-Zustand army den Marschieren-Knopf', () => {
+    const { container } = dock()
+    const shortcut = resolveKey({ key: 'e' }, { speed: 1, mode: 'political', typing: false, dialogOpen: false, fastForwarding: false })
+    expect(shortcut).toEqual({ type: 'focusZone', zone: 'recruit' })
+    const march = container.querySelector('.dock-army [data-action-id="march"] button:not(:disabled)')
+    expect(march).toBeTruthy()
+  })
+
+  it('Zielwahl: Zielliste erreichbar, DepartStepper funktioniert, Bestaetigen/Abbrechen vorhanden', () => {
+    const onChoose = vi.fn()
+    const onDelay = vi.fn()
+    const onCancel = vi.fn()
+    const targeting: Targeting = {
+      kind: 'move',
+      target: null,
+      options: [{ id: 'USA-NE', name: 'Nordosten', arrivalDay: 3 }],
+      unreachable: [],
+      confirm: null,
+      onChoose,
+      onCancel,
+      delayDays: 0,
+      onDelay,
+    }
+    render(<ArmyDockContent army={dockArmy} actions={dockActions} targeting={targeting} ticksPerDay={24} currentTick={0} />)
+    expect(document.activeElement?.tagName).toBe('SELECT')
+    fireEvent.change(screen.getByRole('combobox', { name: 'Ziel' }), { target: { value: 'USA-NE' } })
+    expect(onChoose).toHaveBeenCalledWith('USA-NE')
+    fireEvent.click(screen.getByRole('button', { name: 'Abbrechen' }))
+    expect(onCancel).toHaveBeenCalledTimes(1)
+    expect(screen.getByRole('group', { name: 'Abmarsch' })).toBeTruthy()
+    // Im Zielwahl-Zustand stehen die Haltung-Knoepfe und das Befehlsraster nicht (Platzgrund, D19b).
+    expect(screen.queryByRole('group', { name: 'Haltung' })).toBeNull()
+  })
+
+  it('liefert null ohne Armee', () => {
+    const { container } = render(<ArmyDockContent army={null} actions={[]} ticksPerDay={24} currentTick={0} />)
+    expect(container.textContent).toBe('')
+  })
+})
+
+/**
  * T-M32-01 · Der Abmarsch lässt sich verzögern.
  *
  * Der Kern kennt seit T-M32-01 `MOVE_ARMY.departInTicks`; hier wird nur geprüft, dass
@@ -2967,5 +3100,93 @@ describe('Bauvorschau B2: Zustandsmarken und Vorschauzeile (K4)', () => {
     fireEvent.pointerOver(queued)
     expect(container.querySelector('.cost-preview .cost-chip')).toBeNull()
     expect(queued.querySelector('.slot__mark')).toBeNull()
+  })
+})
+
+describe('D19a: Dock-Inhalt der eigenen Provinz (Moral, Vorkommen, 7 Bauplaetze)', () => {
+  const groups: ActionGroupSpec[] = [
+    { id: 'build', title: 'Bauen', actions: BUILDING_ORDER.map((key) => action(`build-${key}`, BUILDING_ICONS[key], key)) },
+  ]
+
+  it('ProvinceMoraleStat zeigt die Moral als Balken (wie die Seitenleiste)', () => {
+    render(<ProvinceMoraleStat province={{ ...province, morale: 98_000 }} />)
+    const meter = screen.getByRole('meter', { name: 'Moral' })
+    expect(meter.getAttribute('aria-valuenow')).toBe('98000')
+  })
+
+  it('ProvinceBuildSlots zeigt alle 7 Bauplaetze; showHeading/showQueueMeter steuerbar', () => {
+    const { container } = render(
+      <ProvinceBuildSlots
+        province={{ ...province, buildQueue: [] }}
+        buildActions={groups[0]!.actions}
+        currentTick={0}
+        ticksPerDay={24}
+        showHeading={false}
+        showQueueMeter={false}
+      />,
+    )
+    expect(container.querySelectorAll('.slot')).toHaveLength(BUILDING_ORDER.length)
+    expect(container.querySelector('h3.panel__icon-title')).toBeNull()
+  })
+
+  it('ProvinceDockContent zeigt Moral + Vorkommen-Icons + 7 Bauplaetze, ohne Name/Besitzer/Armeeliste', () => {
+    const { container } = render(
+      <ProvinceDockContent
+        province={{ ...province, morale: 55_000, buildQueue: [] }}
+        groups={groups}
+        ticksPerDay={24}
+        currentTick={0}
+      />,
+    )
+    expect(screen.getByRole('meter', { name: 'Moral' })).toBeTruthy()
+    expect(container.querySelector('.icon-row')).toBeTruthy()
+    expect(container.querySelectorAll('.slot')).toHaveLength(BUILDING_ORDER.length)
+    // Kein Name/Titel, kein Besitzer-Fakt, keine Armeeliste, kein Recruit-Queue-Meter (D19a-Scope).
+    expect(container.textContent).not.toContain(province.name)
+    expect(container.querySelector('.facts')).toBeNull()
+  })
+
+  it('ProvinceDockContent liefert null ohne Provinz', () => {
+    const { container } = render(<ProvinceDockContent province={null} ticksPerDay={24} currentTick={0} />)
+    expect(container.textContent).toBe('')
+  })
+
+  it('Review R1: nicht-interaktives Feld (Dock) traegt data-action-id selbst und fuellt die Vorschauzeile per Hover', () => {
+    const buildGroups: ActionGroupSpec[] = [
+      {
+        id: 'build',
+        title: 'Bauen',
+        actions: BUILDING_ORDER.map((key) =>
+          key === 'airfield'
+            ? ({
+                id: `build-${key}`,
+                label: key,
+                disabledReason: 'fehlt',
+                blockCode: 'INSUFFICIENT_RESOURCES',
+                onRun: () => undefined,
+                costLines: [{ resource: 'oil', need: 120_000, short: 120_000 }],
+              } as Action)
+            : action(`build-${key}`, BUILDING_ICONS[key], key),
+        ),
+      },
+    ]
+    const { container } = render(
+      <ProvinceBuildSlots
+        province={{ ...province, buildQueue: [] }}
+        buildActions={buildGroups[0]!.actions}
+        currentTick={0}
+        ticksPerDay={24}
+        interactive={false}
+      />,
+    )
+    // Nicht-interaktiv: kein ActionButton/button im freien Feld, nur das Zeichen.
+    const slot = [...container.querySelectorAll('.slot')].find((s) => s.getAttribute('data-action-id') === 'build-airfield')!
+    expect(slot).toBeTruthy()
+    expect(slot.querySelector('button')).toBeNull()
+    expect(container.querySelector('.cost-preview .cost-chip')).toBeNull()
+    fireEvent.pointerOver(slot)
+    expect(container.querySelector('.cost-preview .cost-chip--short')!.textContent).toContain('\u2212120')
+    fireEvent.pointerLeave(container.querySelector('.preview-area')!)
+    expect(container.querySelector('.cost-preview .cost-chip')).toBeNull()
   })
 })

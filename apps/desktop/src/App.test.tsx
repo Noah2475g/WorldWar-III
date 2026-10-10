@@ -11,6 +11,7 @@ import { colorForPlayer } from './map/modes.ts'
 import { createLockstep, createLoopback } from '@worldwar/netplay'
 import { manualSlotName } from './game/saves.ts'
 import { parseNetLink } from './net/link.ts'
+import { centreOn } from './map/picking.ts'
 import { placeArmy, TEST_RULES } from '@worldwar/testkit'
 import { t } from './i18n/text.ts'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -121,7 +122,9 @@ const ereignisse = (): HTMLElement => {
  */
 const protokollText = (): string => {
   const before = document.querySelector('.rail__item[aria-pressed="true"]')?.getAttribute('data-area') ?? null
-  const open = document.querySelector('aside.side')?.getAttribute('data-open') === 'true'
+  // D19c: Provinz/Armee oeffnen `aside.side` auf Desktop nicht mehr (Dock uebernimmt) — der
+  // Picker-Wert alleine zeigt zuverlaessig, ob eine eigene Provinz gewaehlt war, unabhaengig
+  // vom (jetzt immer geschlossenen) `aside.side`.
   const picker = document.querySelector<HTMLSelectElement>('.picker select')
   const province = picker?.value ?? ''
   const armyName = screen.queryByRole('region', { name: 'Armee' })?.querySelector('h2, h3')?.textContent?.trim() ?? null
@@ -134,7 +137,7 @@ const protokollText = (): string => {
       .getAllByRole('button')
       .find((b) => (b.getAttribute('aria-label') ?? '').startsWith(`${armyName} auswählen`))
     if (pick) act(() => fireEvent.click(pick))
-  } else if (open && picker && province) {
+  } else if (picker && province) {
     act(() => fireEvent.change(picker, { target: { value: '' } }))
     act(() => fireEvent.change(picker, { target: { value: province } }))
   } else {
@@ -255,9 +258,9 @@ describe('R-UX-01 T-M44-03b Das Blatt oeffnet auf halb', () => {
     startGame()
     const app = document.querySelector('.app')!
     expect(app.getAttribute('data-sheet')).toBeNull()
-    const select = document.querySelector('.picker select') as HTMLSelectElement
-    const own = [...select.querySelectorAll('optgroup')[0]!.querySelectorAll('option')][0]!
-    fireEvent.change(select, { target: { value: own.value } })
+    // D19c: Provinz oeffnet die Seitenleiste auf Desktop nicht mehr (Dock uebernimmt die Anzeige),
+    // darum testet dieser Fall jetzt mit einem der sechs Rail-Panels, die unveraendert bleiben.
+    fireEvent.click(screen.getByRole('button', { name: 'Diplomatie' }))
     expect(app.getAttribute('data-sheet')).toBe('half')
 
     fireEvent.click(screen.getByRole('button', { name: new RegExp(t('sheet.handle')) }))
@@ -267,6 +270,90 @@ describe('R-UX-01 T-M44-03b Das Blatt oeffnet auf halb', () => {
     expect(app.getAttribute('data-panel')).toBe('closed')
     // Zeitlimit wegen Last, nicht Verhalten: allein 895 ms, unter verify+Last max 18142 ms (gemessen 2026-10-05, t_3cad0a35).
   }, 60_000)
+})
+
+describe('D19a: Dock zeigt Provinz-Inhalt (Moral, Vorkommen, Bauplaetze)', () => {
+  it('zeigt im Dock-Koerper Moral, Vorkommen und 7 Bauplaetze bei eigener Provinz', () => {
+    startGame()
+    const select = document.querySelector('.picker select') as HTMLSelectElement
+    const own = [...select.querySelectorAll('optgroup')[0]!.querySelectorAll('option')][0]!
+    fireEvent.change(select, { target: { value: own.value } })
+
+    const dock = document.querySelector('.dock')!
+    expect(dock.getAttribute('data-state')).toBe('province')
+    const body = dock.querySelector('.dock__body')!
+    const content = body.querySelector('.dock-province')
+    expect(content).not.toBeNull()
+    expect(within(body as HTMLElement).getByRole('meter', { name: 'Moral' })).toBeTruthy()
+    expect(content!.querySelectorAll('.slot').length).toBeGreaterThan(0)
+    // D19c: `aside.side` zeigt ProvincePanel fuer die eigene Provinz nicht mehr (Dock
+    // uebernimmt) — der Dock-Koerper traegt seither selbst eine Region mit dem Provinznamen.
+    expect(screen.getByRole('region', { name: own.textContent ?? '' })).toBeTruthy()
+    // Zeitlimit wegen Last, nicht Verhalten: Messwert folgt im Kommentar.
+  }, 30_000)
+})
+
+/**
+ * D19c Schritt 5 (E5d-Luecke, t_03728871): App.tsx ~1614 behandelt den Klick auf eine
+ * fremde Provinz bei geschlossener Seitenleiste (`isForeign && ui.panel === null ->
+ * setForeignPreviewId`) — bisher nur am Reducer, nie am App-Level getestet. Die Auswahl
+ * laeuft (hier wie im echten Spiel, R-UI-05) ueber `selectOnMap`, egal ob der Auftraggeber
+ * die Karte (Pixel) oder der Provinz-Picker (Tastatur/Test, selber Code-Pfad) war — jsdom hat
+ * keine Layout-Engine fuer echte Pixelkoordinaten, der Picker uebt denselben Zustandspfad aus.
+ */
+describe('D19c: Fremde Provinz oeffnet das Popup bei geschlossener Seitenleiste (E5d-Luecke)', () => {
+  const stand = () => neueGameState({ ...DEFAULT_NEW_GAME, nation: world.startPositions[0]!.nation }, world, TEST_RULES)
+
+  it('zeigt das Popup mit dem Namen der fremden Provinz, wenn die Seitenleiste zu ist', () => {
+    const anfang = stand()
+    const hauptstadtVonP2 = anfang.players['p2']!.capitalProvinceId!
+    const p2Name = anfang.provinces[hauptstadtVonP2]!.name
+    const eigeneHauptstadt = anfang.players['p1']!.capitalProvinceId!
+    const centre = world.provinces.find((p) => p.id === hauptstadtVonP2)!.center
+    // D19c/E5d: beim Partiestart zentriert App.tsx (~1947) erst mit VIEWPORT (960x600), dann
+    // meldet MapCanvas (jsdom: clientWidth/Height 0 -> Mindestmass 320x240) seine gemessene
+    // Groesse per `onViewportChange`, und App.tsx zentriert NOCH EINMAL (~2869) mit der neuen
+    // Groesse — das ist der View, der tatsaechlich steht, wenn der Test danach klickt.
+    const view = centreOn(
+      world.provinces.find((p) => p.id === eigeneHauptstadt)!.center,
+      { x: 0, y: 0, scale: 1.6 },
+      { width: world.width, height: world.height, viewportWidth: 320, viewportHeight: 240, minScale: 0.2, maxScale: 8 },
+    )
+
+    startGame()
+    const canvas = document.querySelector<HTMLCanvasElement>('canvas.map-layer--overlay')!
+    // Seitenleiste/Dock sind zu Spielbeginn geschlossen (ui.panel === null). Ein echter Klick auf
+    // die Karte (statt des Provinz-Picker-Selects, der immer das volle Panel oeffnet) testet den
+    // tatsaechlichen Pfad aus App.tsx ~1614. jsdom hat keine Layout-Engine, aber `getBoundingClientRect`
+    // liefert dort ueberall 0, also ist der Umrechnungsfaktor in `toCanvasPoint` 1 — `clientX/Y`
+    // treffen den Puffer direkt, und `toMap`/`pickProvince` (map/picking.ts) sind reine
+    // Koordinatenrechnung ohne Rasterung, die auch ohne Canvas-Engine exakt stimmt.
+    fireEvent.click(canvas, { clientX: (centre.x - view.x) / view.scale, clientY: (centre.y - view.y) / view.scale })
+
+    const popup = document.querySelector('.province-popup')
+    expect(popup, 'das Popup fehlt — die fremde Provinz oeffnete stattdessen ein Panel').not.toBeNull()
+    expect(popup!.textContent).toContain(p2Name)
+    // Weder Dock noch Seitenleiste zeigen die fremde Provinz als eigenes Panel (K11, E5d: das
+    // Popup geht vor, es gibt nur EINEN Weg, eine fremde Provinz ohne Befehle zu sehen).
+    expect(document.querySelector('.dock')!.getAttribute('data-state')).not.toBe('province')
+    expect(screen.queryByRole('region', { name: p2Name })).toBeNull()
+  })
+
+  it('zeigt KEIN Popup, wenn die Seitenleiste/das Dock schon offen ist (Gegenprobe)', () => {
+    const eigenerStand = stand()
+    const hauptstadtVonP2 = eigenerStand.players['p2']!.capitalProvinceId!
+    const eigeneHauptstadt = eigenerStand.players['p1']!.capitalProvinceId!
+
+    startGame()
+    const picker = screen.getByRole('combobox', { name: 'Provinz' })
+    // Erst die eigene Provinz waehlen: ui.panel !== null, das Dock zeigt sie.
+    fireEvent.change(picker, { target: { value: eigeneHauptstadt } })
+    expect(document.querySelector('.dock')!.getAttribute('data-state')).toBe('province')
+
+    fireEvent.change(picker, { target: { value: hauptstadtVonP2 } })
+
+    expect(document.querySelector('.province-popup')).toBeNull()
+  })
 })
 
 describe('R-UI-06 Bedienung ohne Maus', () => {
@@ -734,6 +821,39 @@ describe('R-UI-05 Befehle aus der Oberflaeche', () => {
     // Auslastung der Maschine, nicht das Verhalten des Codes. Ein zu knappes Limit macht
     // aus einer langsamen Maschine einen roten Test und aus einem roten Test Rauschen.
     // Zeitlimit wegen Last, nicht Verhalten: allein 3929 ms, unter verify+Last max 43380 ms (gemessen 2026-10-05, t_3cad0a35).
+  }, 60_000)
+
+  /**
+   * D19b: dieselbe Kette bis zur Armeewahl, aber geprueft wird der Dock-Koerper (`.dock-army`)
+   * statt nur die Seitenleiste — die zeigt ArmyPanel weiterhin zusaetzlich (D19b-Scope,
+   * Entfernung erst D19c).
+   */
+  it('D19b: zeigt Haltung, Befehle+Weitere und Marschieren primaer im Dock, Taste E fokussiert Marschieren', () => {
+    startGame()
+    pickCapital()
+    fireEvent.click(screen.getByRole('button', { name: 'Kaserne bauen' }))
+    fastForward(1)
+    fastForward(2)
+    const infantry = within(screen.getByRole('region', { name: 'Ausheben' })).getByRole('button', { name: 'Infanterie ausheben' })
+    fireEvent.click(infantry)
+    fastForward(2)
+    fireEvent.click(screen.getByRole('button', { name: /^Auswählen/ }))
+
+    const dock = document.querySelector('.dock')!
+    expect(dock.getAttribute('data-state')).toBe('army')
+    const body = dock.querySelector('.dock__body')!
+    const content = body.querySelector('.dock-army')
+    expect(content).not.toBeNull()
+    expect(within(content as HTMLElement).getByRole('group', { name: 'Haltung' })).toBeTruthy()
+    const march = within(content as HTMLElement).getByRole('button', { name: 'Marschieren' })
+    expect(march.className).toContain('button--primary')
+    expect(within(content as HTMLElement).getByRole('button', { name: /^Weitere/ })).toBeTruthy()
+    // Sidebar zeigt ArmyPanel weiterhin zusaetzlich (D19b bewusst, Entfernung erst D19c).
+    expect(screen.getByRole('region', { name: 'Armee' })).toBeTruthy()
+
+    fireEvent.keyDown(window, { key: 'e' })
+    expect(document.activeElement).toBe(march)
+    // Zeitlimit wegen Last, nicht Verhalten: wie der verwandte Test oben (bauen/vorspulen/ausheben/waehlen).
   }, 60_000)
 
   it('erklaert den Krieg aus der Diplomatie und nennt den Wirkungstag', () => {

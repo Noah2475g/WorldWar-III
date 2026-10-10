@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { MAX_DEPART_DELAY_DAYS } from '@worldwar/core'
-import type { CommandError, PublicView, ResourceKey, Terrain, VisibleArmy, VisibleProvince } from '@worldwar/core'
+import type { CommandError, DiplomaticState, PublicView, ResourceKey, Terrain, VisibleArmy, VisibleProvince } from '@worldwar/core'
 // Nur der Typ: zur Laufzeit importiert weiterhin events.ts aus Panels.tsx, nicht umgekehrt.
 import type { BattleReportData, PricePoint } from '../game/events.ts'
 import type { TimelineEntry } from '../game/saves.ts'
@@ -511,10 +511,12 @@ export function ProvincePicker({
           // Eingabe bestaetigt die Wahl und fuehrt den Fokus zu den Handlungen der Provinz (T-M46-05): in einer
           // Auswahlliste gehoeren die Buchstaben dem Tippen, also kommt man mit B oder E erst von hier weg.
           if (event.key !== 'Enter') return
-          const first = event.currentTarget
-            // Seit E3 schwebt die Provinzwahl ausserhalb der Seitenleiste: die Handlungen stehen in aside.side.
-            .ownerDocument.querySelector('aside.side')
-            ?.querySelector<HTMLElement>('.panel :is(.slots, [data-group]) button:not(:disabled)')
+          const doc = event.currentTarget.ownerDocument
+          // D19c: die eigene Provinz baut jetzt im Dock (D19a/c); fremde Provinzen (kein
+          // eigener Dock-Inhalt) stehen weiterhin in der Seitenleiste (aside.side).
+          const first =
+            doc.querySelector<HTMLElement>('.dock-province :is(.slots, [data-group]) button:not(:disabled)') ??
+            doc.querySelector('aside.side')?.querySelector<HTMLElement>('.panel :is(.slots, [data-group]) button:not(:disabled)')
           if (first) {
             event.preventDefault()
             first.focus()
@@ -565,6 +567,273 @@ export interface ProvincePanelProps {
   isCapital?: boolean
   ticksPerDay: number
   currentTick: number
+}
+
+/**
+ * Die Moral als Balken (R-UI-09), faktorisiert aus `ProvincePanel` (D19a): dieselbe
+ * Zeile wird auch im Dock unten (DockWithRecruit, Zustand 'province') gebraucht, ohne
+ * sie ein zweites Mal zu schreiben.
+ */
+export function ProvinceMoraleStat({ province, iconSize = 24 }: { province: VisibleProvince; iconSize?: number }) {
+  if (province.morale === undefined) return null
+  return (
+    <span className="stat" title={t('province.morale')}>
+      <Icon name="morale" size={iconSize} />
+      <Meter
+        label={t('province.morale')}
+        labelHidden
+        value={province.morale}
+        max={MORALE_SCALE}
+        text={percent(unfix(province.morale))}
+        tone={toneForShare(province.morale / MORALE_SCALE)}
+        trend={trendOf(province.morale, province.moraleTarget, MORALE_SCALE)}
+        segments={10}
+      />
+    </span>
+  )
+}
+
+/**
+ * Das Bauplatz-Raster (T-M29-03, D27.6), faktorisiert aus `ProvincePanel` (D19a):
+ * dieselbe Logik traegt auch den Dock-Inhalt unten, ohne sie zu verdoppeln
+ * (UMFANG-Vorgabe aus t_ffb48c20).
+ */
+export function ProvinceBuildSlots({
+  province,
+  buildActions,
+  currentTick,
+  ticksPerDay,
+  slotIconSize = SLOT_ICON_SIZE,
+  showHeading = true,
+  showQueueMeter = true,
+  interactive = true,
+}: {
+  province: VisibleProvince
+  buildActions: readonly Action[]
+  currentTick: number
+  ticksPerDay: number
+  /** Kleineres Zeichen je Feld (D19a-Dock, knapp 110 px) — Sidebar bleibt bei SLOT_ICON_SIZE. */
+  slotIconSize?: number
+  /** Die Ueberschrift ueber dem Raster (Zeichen "Bauplaetze") — im Dock weg (Platzgrund, D19a). */
+  showHeading?: boolean
+  /** Der Fortschrittsbalken je laufendem Auftrag — im Dock weg (Platzgrund, D19a); die rote
+      Marke (slot--short) bleibt die einzige Auskunft ueber ein laufendes Feld. */
+  showQueueMeter?: boolean
+  /**
+   * Ob freie/gebaute Felder als Knopf mit Bauaktion erscheinen (Sidebar: ja). Im Dock (D19a)
+   * steht `ProvincePanel` zugleich in der Seitenleiste mit denselben Aktionen — ZWEI Knoepfe
+   * mit demselben Namen ("Kaserne bauen") waeren fuer ein Vorleseprogramm nicht zu
+   * unterscheiden (und machten `getByRole('button', {name})` in Tests zweideutig). Der Dock
+   * bleibt darum reine Anzeige; gebaut wird bis D19c ueber die Seitenleiste.
+   */
+  interactive?: boolean
+}) {
+  if (province.buildings === undefined) return null
+  return (
+    <>
+      {showHeading && (
+        <>
+          {/* LOESCHVERMERK (Review): bis T-M46-17 <h3>{t('province.buildSlots')}</h3> als sichtbares Wort. */}
+          <h3 className="panel__icon-title">
+            <Icon name="slots" size={26} title={t('province.buildSlots')} />
+          </h3>
+        </>
+      )}
+      <PreviewArea
+        actions={buildActions.map((entry) => {
+          const key = BUILDING_ORDER.find((k) => entry.id === `build-${k}`)
+          return key ? { ...entry, icon: BUILDING_ICONS[key] ?? 'warning' } : entry
+        })}
+      >
+        <div className="slots" data-group="build">
+          {BUILDING_ORDER.map((key) => {
+            const level = province.buildings?.[key] ?? 0
+            // ALLE Auftraege dieser Art, nicht nur der erste (T-M28-16): der Kern erlaubt
+            // mehrere gleichzeitig (buildSlots), jeder mit eigenem completesAtTick. Mit
+            // `find` hatte der zweite bezahlte Auftrag weder Fortschritt noch Restzeit,
+            // und nach Abschluss des ersten sprang der Balken ohne Erklaerung zurueck.
+            const orders = (province.buildQueue ?? []).filter((entry) => entry.building === key)
+            const order = orders[0]
+            const build = buildActions.find((entry) => entry.id === `build-${key}`)
+            const name = t(`buildings.${key}`)
+
+            if (order) {
+              return (
+                <div key={key} className="slot slot--queued">
+                  {/* LOESCHVERMERK (Review): bis T-M46-13 <UnitArt name={BUILDING_ART[key]} width={SLOT_ART_WIDTH} tone="building" label={name} /> —
+                      der gezeichnete Schattenriss; ersetzt durch das Zeichen von game-icons.net (an drei Stellen im Raster). */}
+                  <Icon name={BUILDING_ICONS[key] ?? 'warning'} size={slotIconSize} title={name} />
+                  {/* LOESCHVERMERK (Review): bis T-M46-17 stand der Name als sichtbares Wort unter dem Zeichen. */}
+                  {level > 0 && <sup className="slot__level">{level + 1}</sup>}
+                  {showQueueMeter &&
+                    orders.map((entry, index) => (
+                      <Meter
+                        key={`${entry.startedTick}-${entry.completesAtTick}-${index}`}
+                        label={orders.length > 1 ? `${name} ${index + 1}` : name}
+                        labelHidden
+                        value={currentTick - entry.startedTick}
+                        max={Math.max(1, entry.completesAtTick - entry.startedTick)}
+                        text={remaining(currentTick, entry.completesAtTick, ticksPerDay)}
+                        tone="warn"
+                      />
+                    ))}
+                </div>
+              )
+            }
+
+            if (level > 0) {
+              return (
+                <div
+                  key={key}
+                  className={`slot slot--built${stateClass(build)}`}
+                  // Nicht-interaktiv (Dock, D19a): kein ActionButton im DOM, also kein
+                  // [data-action-id] zum Hovern -> PreviewArea.pick() faende nie einen
+                  // Treffer und die Vorschauzeile bliebe immer leer. Das Attribut traegt
+                  // darum das Feld selbst (Review Runde 1), ohne das Feld klickbar zu
+                  // machen -- PreviewArea.pick()'s Slot-Fallback (CostPreview.tsx) findet
+                  // es per querySelector.
+                  {...(!interactive && build ? { 'data-action-id': build.id } : {})}
+                >
+                  {/* Die Textfassung wie in der alten Symbolzeile: "2 Fabrik" fuers Ohr. */}
+                  <Icon name={BUILDING_ICONS[key] ?? 'warning'} size={slotIconSize} title={level > 1 ? `${level} ${name}` : name} />
+                  {level > 1 && <sup className="slot__level">{level}</sup>}
+                  {/* Die Ausbau-Aktion bleibt erreichbar — als Knopf im gebauten Feld. */}
+                  {interactive && build && <ActionButton action={build} showReason={false} compact />}
+                  {build && <SlotMark state={slotState(build)} />}
+                </div>
+              )
+            }
+
+            return (
+              <div
+                key={key}
+                className={`slot slot--free${stateClass(build)}`}
+                {...(!interactive && build ? { 'data-action-id': build.id } : {})}
+              >
+                {/* Dasselbe Bild wie im gebauten und im laufenden Feld (T-M33-03) — es
+                    steht IM Knopf, damit das Feld genau ein Klickziel hat und nicht ein
+                    Bild neben einem. */}
+                {interactive && build ? (
+                  <ActionButton
+                    action={{ ...build, icon: BUILDING_ICONS[key] ?? 'warning' }}
+                    iconSize={slotIconSize}
+                    iconOnly
+                    showReason={false}
+                  />
+                ) : (
+                  <Icon name={BUILDING_ICONS[key] ?? 'warning'} size={slotIconSize} title={name} />
+                )}
+                {build && <SlotMark state={slotState(build)} />}
+              </div>
+            )
+          })}
+        </div>
+      </PreviewArea>
+    </>
+  )
+}
+
+/**
+ * Der Dock-Inhalt im Zustand 'province' (D19a, E5/D9): Moral + Vorkommen + Bauplaetze,
+ * aus `ProvinceMoraleStat`/`ProvinceBuildSlots` (dieselbe Logik wie die Sidebar, kein
+ * zweiter Code). OHNE Name/Titel (der Dock-Picker traegt ihn bereits), OHNE Besitzer-
+ * Fakt (der Dock-Zustand 'province' ist immer die eigene Provinz), OHNE Armeeliste und
+ * OHNE Recruit-Queue-Meter (das Ausheben-Raster ist als RecruitSheet separat verdrahtet).
+ */
+export interface ProvinceDockContentProps {
+  province: VisibleProvince | null
+  groups?: readonly ActionGroupSpec[]
+  /**
+   * Die naechste Freischaltung, fuer den Kopf der Aushebeliste (D19c, analog ProvincePanel).
+   * `null` heisst: alles frei — dann steht die Zeile gar nicht da.
+   */
+  nextUnlock?: NextUnlock | null
+  /** The player's own armies standing here (D19c, analog ProvincePanel). */
+  armies?: readonly { id: string; name: string; strength: number; icon?: IconName | undefined }[]
+  selectedArmy?: string | null
+  onSelectArmy?: (id: string) => void
+  ticksPerDay: number
+  currentTick: number
+}
+
+export function ProvinceDockContent(props: ProvinceDockContentProps) {
+  const province = props.province
+  if (!province) return null
+  const buildGroup = props.groups?.find((group) => group.id === 'build')
+  const buildActions = buildGroup?.actions ?? []
+  // Wie ProvincePanel: Bau-Reste (kein Bauplatz) + alle anderen Gruppen (u.a. 'recruit').
+  const leftoverBuild = buildActions.filter((entry) => !BUILDING_ORDER.some((key) => entry.id === `build-${key}`))
+  const otherGroups = [
+    ...(buildGroup && leftoverBuild.length > 0 ? [{ ...buildGroup, actions: leftoverBuild }] : []),
+    ...(props.groups?.filter((group) => group.id !== 'build') ?? []),
+  ]
+
+  return (
+    <div className="dock-province">
+      <ProvinceMoraleStat province={province} iconSize={16} />
+
+      {province.deposits && Object.keys(province.deposits).length > 0 && (
+        <IconRow items={depositItems(province.deposits)} size={16} />
+      )}
+
+      {province.buildings !== undefined && (
+        <ProvinceBuildSlots
+          province={province}
+          buildActions={buildActions}
+          currentTick={props.currentTick}
+          ticksPerDay={props.ticksPerDay}
+          slotIconSize={18}
+          showHeading={false}
+          showQueueMeter={false}
+          // D19c: ProvincePanel steht fuer Provinz/Armee nicht mehr gleichzeitig in der
+          // Seitenleiste (Desktop) — die Namens-Mehrdeutigkeit aus D19a entfaellt, der Dock
+          // darf jetzt selbst bauen lassen.
+          interactive={true}
+        />
+      )}
+
+      {props.armies && props.armies.length > 0 && (
+        <>
+          <h3 className="panel__icon-title">
+            <Icon name="infantry" size={26} title={t('army.here')} />
+          </h3>
+          <ul className="army-list">
+            {props.armies.map((army) => (
+              <li key={army.id} className={army.id === props.selectedArmy ? 'is-selected' : undefined}>
+                <span className="army-list__row">
+                  {army.icon && <Icon name={army.icon} size={26} />}
+                  {army.name}
+                  <span title={t('army.strength')} className="army-list__power">
+                    <Icon name="battle" size={18} title={t('army.strength')} />
+                    {amount(army.strength)}
+                  </span>
+                </span>
+                <button
+                  type="button"
+                  className="button button--icon"
+                  aria-label={`${t('army.select')}: ${army.name}`}
+                  title={t('army.select')}
+                  onClick={() => props.onSelectArmy?.(army.id)}
+                >
+                  <Icon name="select" size={22} />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+
+      {otherGroups.map((group) => (
+        <ActionGroup
+          key={group.id}
+          group={group}
+          next={group.id === 'recruit' ? props.nextUnlock : undefined}
+          iconOnly={group.id === 'espionage'}
+          preview={group.id === 'recruit'}
+        />
+      ))}
+    </div>
+  )
 }
 
 export function ProvincePanel(props: ProvincePanelProps) {
@@ -654,21 +923,7 @@ export function ProvincePanel(props: ProvincePanelProps) {
       {/* Moral als Balken statt als Prozentzahl, mit dem Pfeil dorthin, wo sie hinlaeuft
           (R-UI-09). Der Wert allein sagt nicht, ob eine Provinz sich beruhigt oder
           auseinanderfaellt — und genau das ist die Frage. */}
-      {province.morale !== undefined && (
-        <span className="stat" title={t('province.morale')}>
-          <Icon name="morale" size={24} />
-          <Meter
-            label={t('province.morale')}
-            labelHidden
-            value={province.morale}
-            max={MORALE_SCALE}
-            text={percent(unfix(province.morale))}
-            tone={toneForShare(province.morale / MORALE_SCALE)}
-            trend={trendOf(province.morale, province.moraleTarget, MORALE_SCALE)}
-            segments={10}
-          />
-        </span>
-      )}
+      <ProvinceMoraleStat province={province} />
 
       {province.deposits && Object.keys(province.deposits).length > 0 && (
         <>
@@ -690,87 +945,12 @@ export function ProvincePanel(props: ProvincePanelProps) {
           und sieben freie Felder behaupteten dort „hier steht nichts" — eine Auskunft,
           die der Spieler gar nicht hat. Dann steht hier nichts, wie vor dem Umbau. */}
       {province.buildings !== undefined && (
-      <>
-      {/* LOESCHVERMERK (Review): bis T-M46-17 <h3>{t('province.buildSlots')}</h3> als sichtbares Wort. */}
-      <h3 className="panel__icon-title">
-        <Icon name="slots" size={26} title={t('province.buildSlots')} />
-      </h3>
-      <PreviewArea
-        actions={buildActions.map((entry) => {
-          const key = BUILDING_ORDER.find((k) => entry.id === `build-${k}`)
-          return key ? { ...entry, icon: BUILDING_ICONS[key] ?? 'warning' } : entry
-        })}
-      >
-      <div className="slots" data-group="build">
-        {BUILDING_ORDER.map((key) => {
-          const level = province.buildings?.[key] ?? 0
-          // ALLE Auftraege dieser Art, nicht nur der erste (T-M28-16): der Kern erlaubt
-          // mehrere gleichzeitig (buildSlots), jeder mit eigenem completesAtTick. Mit
-          // `find` hatte der zweite bezahlte Auftrag weder Fortschritt noch Restzeit,
-          // und nach Abschluss des ersten sprang der Balken ohne Erklaerung zurueck.
-          const orders = (province.buildQueue ?? []).filter((entry) => entry.building === key)
-          const order = orders[0]
-          const build = buildActions.find((entry) => entry.id === `build-${key}`)
-          const name = t(`buildings.${key}`)
-
-          if (order) {
-            return (
-              <div key={key} className="slot slot--queued">
-                {/* LOESCHVERMERK (Review): bis T-M46-13 <UnitArt name={BUILDING_ART[key]} width={SLOT_ART_WIDTH} tone="building" label={name} /> —
-                    der gezeichnete Schattenriss; ersetzt durch das Zeichen von game-icons.net (an drei Stellen im Raster). */}
-                <Icon name={BUILDING_ICONS[key] ?? 'warning'} size={SLOT_ICON_SIZE} title={name} />
-                {/* LOESCHVERMERK (Review): bis T-M46-17 stand der Name als sichtbares Wort unter dem Zeichen. */}
-                {level > 0 && <sup className="slot__level">{level + 1}</sup>}
-                {orders.map((entry, index) => (
-                  <Meter
-                    key={`${entry.startedTick}-${entry.completesAtTick}-${index}`}
-                    label={orders.length > 1 ? `${name} ${index + 1}` : name}
-                    labelHidden
-                    value={props.currentTick - entry.startedTick}
-                    max={Math.max(1, entry.completesAtTick - entry.startedTick)}
-                    text={remaining(props.currentTick, entry.completesAtTick, props.ticksPerDay)}
-                    tone="warn"
-                  />
-                ))}
-              </div>
-            )
-          }
-
-          if (level > 0) {
-            return (
-              <div key={key} className={`slot slot--built${stateClass(build)}`}>
-                {/* Die Textfassung wie in der alten Symbolzeile: "2 Fabrik" fuers Ohr. */}
-                <Icon name={BUILDING_ICONS[key] ?? 'warning'} size={SLOT_ICON_SIZE} title={level > 1 ? `${level} ${name}` : name} />
-                {level > 1 && <sup className="slot__level">{level}</sup>}
-                {/* Die Ausbau-Aktion bleibt erreichbar — als Knopf im gebauten Feld. */}
-                {build && <ActionButton action={build} showReason={false} compact />}
-                {build && <SlotMark state={slotState(build)} />}
-              </div>
-            )
-          }
-
-          return (
-            <div key={key} className={`slot slot--free${stateClass(build)}`}>
-              {/* Dasselbe Bild wie im gebauten und im laufenden Feld (T-M33-03) — es
-                  steht IM Knopf, damit das Feld genau ein Klickziel hat und nicht ein
-                  Bild neben einem. */}
-              {build ? (
-                <ActionButton
-                  action={{ ...build, icon: BUILDING_ICONS[key] ?? 'warning' }}
-                  iconSize={SLOT_ICON_SIZE}
-                  iconOnly
-                  showReason={false}
-                />
-              ) : (
-                <Icon name={BUILDING_ICONS[key] ?? 'warning'} size={SLOT_ICON_SIZE} title={name} />
-              )}
-              {build && <SlotMark state={slotState(build)} />}
-            </div>
-          )
-        })}
-      </div>
-      </PreviewArea>
-      </>
+        <ProvinceBuildSlots
+          province={province}
+          buildActions={buildActions}
+          currentTick={props.currentTick}
+          ticksPerDay={props.ticksPerDay}
+        />
       )}
 
       {(province.recruitQueue ?? []).map((order) => (
@@ -937,7 +1117,7 @@ const ARMY_COMMAND_PICTURES: Record<string, PictureName> = {
 }
 
 /** Die Ankunft in Zahlen (T-M46-17): „5 h“ oder „587 · 20:00“ - der Satz steht im Tooltip. */
-function arrivalShort(nowTick: number, arrivalTick: number, ticksPerDay: number): string {
+export function arrivalShort(nowTick: number, arrivalTick: number, ticksPerDay: number): string {
   const inHours = arrivalTick - nowTick
   if (inHours <= 0) return '0'
   if (inHours < ticksPerDay) return `${Math.round(inHours)} h`
@@ -953,6 +1133,28 @@ const STANCE_PICTURES: Record<(typeof STANCES)[number], PictureName> = {
   defensive: 'stanceDefensive',
   retreat: 'stanceRetreat',
   garrison: 'stanceGarrison',
+}
+
+/**
+ * Die vier Haltung-Knoepfe, faktorisiert aus `ArmyPanel` (D19b): von der Seitenleiste
+ * UND vom neuen `ArmyDockContent` genutzt, keine zweite Fassung.
+ */
+function ArmyStanceButtons({ stanceActions, stance }: { stanceActions: readonly Action[]; stance?: string | undefined }) {
+  return (
+    <div className="stances stances--icons" role="group" aria-label={t('army.stance')}>
+      {stanceActions.map((action) => (
+        <ActionButton
+          key={action.id}
+          action={action}
+          iconOnly
+          iconSize={24}
+          picture={STANCE_PICTURES[action.id.slice('stance-'.length) as (typeof STANCES)[number]]}
+          showReason={false}
+          pressed={stance !== undefined && action.id === `stance-${stance}`}
+        />
+      ))}
+    </div>
+  )
 }
 
 export function ArmyPanel(props: ArmyPanelProps) {
@@ -1074,21 +1276,7 @@ export function ArmyPanel(props: ArmyPanelProps) {
         </>
       )}
 
-      {stanceActions.length > 0 && !targeting && (
-        <div className="stances stances--icons" role="group" aria-label={t('army.stance')}>
-          {stanceActions.map((action) => (
-            <ActionButton
-              key={action.id}
-              action={action}
-              iconOnly
-              iconSize={24}
-              picture={STANCE_PICTURES[action.id.slice('stance-'.length) as (typeof STANCES)[number]]}
-              showReason={false}
-              pressed={army.stance !== undefined && action.id === `stance-${army.stance}`}
-            />
-          ))}
-        </div>
-      )}
+      {stanceActions.length > 0 && !targeting && <ArmyStanceButtons stanceActions={stanceActions} stance={army.stance} />}
 
       {targeting ? (
         <section className="group" aria-label={t('army.targetLabel')}>
@@ -1175,6 +1363,212 @@ export function ArmyPanel(props: ArmyPanelProps) {
         )
       )}
     </section>
+  )
+}
+
+/**
+ * Der Dock-Inhalt im Zustand 'army' (D19b, E5/D9): Kopf (Name + Kampfkraft/Zustand), Zurueck/
+ * Marsch-Zeile, Haltung (`ArmyStanceButtons`, D19b Schritt 3), Befehle (stop/split/merge sichtbar
+ * + march primaer, bombard/holdFire hinter `MoreMenu`), Zielwahl kompakt. ArmyPanel bleibt
+ * ZUSAETZLICH in der Seitenleiste bestehen (Entfernung erst D19c, kein zweiter Code hier — beide
+ * nutzen `ArmyStanceButtons`/`MoreMenu`/`DepartStepper`).
+ *
+ * `routeText` baut der Aufrufer (App.tsx): dort stehen die Provinznamen (`nameOfProvince`), hier
+ * nicht — sonst muesste diese Datei die Karten-Provinzliste kennen, die sie bisher nicht braucht.
+ */
+export interface ArmyDockContentProps {
+  /** Zurueck zur Provinz der Armee (T-M44-12, wie `ArmyPanel.onBack`). */
+  onBack?: (() => void) | undefined
+  army: VisibleArmy | null
+  name?: string | undefined
+  /** "‹ Ostindien" (steht) bzw. "‹ Ostindien → Katar · 581 · 18:00" (marschiert). */
+  routeText?: string | undefined
+  actions: readonly Action[]
+  targeting?: Targeting | null | undefined
+  pendingNotice?: string | null | undefined
+  condition?: number | undefined
+  /** The stacks of an own army, as symbols with counts (D19c, analog ArmyPanel). */
+  units?: readonly IconItem[] | undefined
+  ticksPerDay: number
+  currentTick: number
+}
+
+export function ArmyDockContent(props: ArmyDockContentProps) {
+  const army = props.army
+  const targeting = props.targeting ?? null
+  // Wie ArmyPanel (Zeile ~1083-1087): der Fokus auf die Zielliste, sobald die Zielwahl beginnt —
+  // der Knopf, der sie oeffnete ("Marschieren"), ist verschwunden.
+  const targetList = useRef<HTMLSelectElement>(null)
+  const choosing = targeting !== null
+  useEffect(() => {
+    if (choosing) targetList.current?.focus()
+  }, [choosing])
+  if (!army) return null
+
+  const stanceActions = STANCES.map((value) => props.actions.find((action) => action.id === `stance-${value}`)).filter(
+    (action): action is Action => action !== undefined,
+  )
+  const commands = props.actions
+    .filter((action) => !action.id.startsWith('stance-'))
+    .map((action) => (action.icon || !ARMY_ACTION_ICONS[action.id] ? action : { ...action, icon: ARMY_ACTION_ICONS[action.id]! }))
+  const march = commands.find((action) => action.id === 'march')
+  // Sichtbar: Anhalten/Teilen/Zusammenlegen + Marschieren primaer (Bild final-v3b-11-armee.png).
+  // Hinter "Weitere": Beschiessen + Feuer halten (A2 im Ticket).
+  const VISIBLE_IDS = new Set(['stop', 'split', 'merge'])
+  const visibleCommands = commands.filter((action) => VISIBLE_IDS.has(action.id))
+  const hiddenCommands = commands.filter((action) => action.id !== 'march' && !VISIBLE_IDS.has(action.id))
+
+  return (
+    <div className="dock-army">
+      <div className="dock-army__head">
+        {props.onBack && (
+          <button
+            type="button"
+            className="button button--icon dock-army__back"
+            aria-label={t('panel.back')}
+            title={t('panel.back')}
+            onClick={props.onBack}
+          >
+            <Icon name="back" size={18} />
+          </button>
+        )}
+        <h3 className="dock-army__name">{props.name ?? t('army.title')}</h3>
+        <span className="stat" title={t('army.power')}>
+          <Icon name="battle" size={16} title={t('army.power')} /> {amount(army.strength)}
+        </span>
+        {props.condition !== undefined && (
+          <span className="stat" title={t('army.condition')}>
+            <Icon name="morale" size={16} />
+            <Meter
+              label={t('army.condition')}
+              labelHidden
+              value={Math.round(props.condition * 100)}
+              max={100}
+              text={percent(Math.round(props.condition * 100))}
+              tone={toneForShare(props.condition)}
+            />
+          </span>
+        )}
+      </div>
+
+      {props.routeText && <p className="dock-army__route">{props.routeText}</p>}
+
+      {props.pendingNotice && (
+        <p className="action__pending" role="status">
+          {props.pendingNotice}
+        </p>
+      )}
+
+      {targeting ? (
+        <section className="group dock-army__targeting" aria-label={t('army.targetLabel')}>
+          <label className="picker">
+            <span>{t('army.targetLabel')}</span>
+            <select
+              ref={targetList}
+              value={targeting.target?.id ?? ''}
+              onChange={(event) => targeting.onChoose(event.target.value || null)}
+            >
+              <option value="">{t('province.pickNone')}</option>
+              {targeting.unreachable === undefined ? (
+                targeting.options.map((province) => (
+                  <option key={province.id} value={province.id}>
+                    {province.name}
+                  </option>
+                ))
+              ) : (
+                <>
+                  {targeting.options.length > 0 && (
+                    <optgroup label={t('march.reachable')}>
+                      {targeting.options.map((province) => (
+                        <option key={province.id} value={province.id}>
+                          {province.arrivalDay === undefined
+                            ? province.name
+                            : t('march.optionArrival', { name: province.name, day: province.arrivalDay })}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {targeting.unreachable.length > 0 && (
+                    <optgroup label={t('march.unreachable')}>
+                      {targeting.unreachable.map((province) => (
+                        <option key={province.id} value={province.id} disabled>
+                          {province.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                </>
+              )}
+            </select>
+          </label>
+          {targeting.kind === 'move' && targeting.onDelay && (
+            <DepartStepper days={targeting.delayDays ?? 0} onDelay={targeting.onDelay} />
+          )}
+          <div className="actions">
+            {targeting.confirm && <ActionButton action={targeting.confirm} showReason />}
+            <button type="button" className="button" onClick={targeting.onCancel}>
+              {t('army.cancel')}
+            </button>
+          </div>
+        </section>
+      ) : (
+        <>
+      {stanceActions.length > 0 && <ArmyStanceButtons stanceActions={stanceActions} stance={army.stance} />}
+      {props.units && props.units.length > 0 && (
+        <>
+          <h3 className="panel__icon-title">
+            <Icon name="infantry" size={26} title={t('army.units')} />
+          </h3>
+          <ul className="units" aria-label={t('army.units')}>
+            {props.units.map((item) => (
+              <li key={`${item.icon}-${item.label}`}>
+                <UnitMarker icon={item.icon} label={item.label} count={item.count ?? 1} />
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+          <div className="actions actions--grid actions--icons dock-army__commands" role="group" aria-label={t('army.commands')}>
+            {visibleCommands.map((action) => (
+              <ActionButton
+                key={action.id}
+                action={action}
+                iconOnly
+                iconSize={24}
+                {...(ARMY_COMMAND_PICTURES[action.id] ? { picture: ARMY_COMMAND_PICTURES[action.id]! } : {})}
+                showReason={false}
+              />
+            ))}
+            {hiddenCommands.length > 0 && (
+              <MoreMenu label={t('diplomacy.more', { count: hiddenCommands.length })} className="diplomacy__more dock-army__more">
+                <div className="actions actions--grid actions--icons">
+                  {hiddenCommands.map((action) => (
+                    <ActionButton
+                      key={action.id}
+                      action={action}
+                      iconOnly
+                      iconSize={24}
+                      {...(ARMY_COMMAND_PICTURES[action.id] ? { picture: ARMY_COMMAND_PICTURES[action.id]! } : {})}
+                      showReason={false}
+                    />
+                  ))}
+                </div>
+              </MoreMenu>
+            )}
+            {march && (
+              <ActionButton
+                action={march}
+                iconOnly
+                iconSize={28}
+                picture={ARMY_COMMAND_PICTURES.march!}
+                showReason={false}
+                primary
+              />
+            )}
+          </div>
+        </>
+      )}
+    </div>
   )
 }
 
@@ -2105,6 +2499,85 @@ export function DiplomacyPanel({
   )
 }
 
+/** Macht+Status einer fremden Macht, fuer das Provinz-Popup (D11). */
+export interface ProvincePopupOwner {
+  name: string
+  color: string
+  relationState: DiplomaticState | undefined
+  /** Sichtbare Staerke (R-DIP-04: nur gesehene, nie die wahre). */
+  seenStrength: number
+}
+
+/**
+ * Der Inhalt des Provinz-Popups fuer eine fremde Provinz (E5d, D11, Spec §12.9 "Krieg ueber
+ * Popup = 3 Klicks"): Macht+Status der/des Besitzers, eine klare Hauptaktion (Handel) und der
+ * "Krieg erklaeren"-Knopf gleich daneben — sonst war der im Plan vorgesehene Klickweg (Popup ->
+ * Krieg erklaeren -> bestaetigen) unerreichbar, weil nur ein Handel-Knopf dastand. Die uebrigen
+ * Vertragsaktionen wandern ins generische "Weitere"-Aufklappmuster (D19b, `MoreMenu` unten),
+ * nicht neu gebaut: dieselbe Komponente wie bei `DiplomacyActions`/`ArmyDockContent`. Bild+Name
+ * des Besitzers (`NationName`: Farbfeld + Text, R-UI-16) steht oben UND noch einmal im Kopf der
+ * Aufklappe, damit auch dort klar ist, wessen Vertraege das sind.
+ */
+export function ProvincePopupSummary({
+  owner,
+  actions,
+  onTrade,
+}: {
+  owner: ProvincePopupOwner | null
+  /** `diplomacyActions(ctx, owner).map(toAction)` des Aufrufers (App.tsx) — nichts Neues erfinden. */
+  actions: readonly Action[]
+  onTrade: () => void
+}) {
+  if (!owner) {
+    return <p className="panel__empty">{t('province.neutral')}</p>
+  }
+  const warLabel = t('actions.declareWar')
+  const warAction = actions.find((a) => a.label === warLabel)
+  const restTreaties = actions.filter((a) => a !== warAction)
+  const confirms: Record<string, string> = {}
+  if (warAction) confirms[warAction.id] = t('diplomacy.declareWarConfirm', { nation: owner.name })
+
+  return (
+    <div className="province-popup__summary">
+      <div className="province-popup__owner">
+        <NationName color={owner.color}>{owner.name}</NationName>
+        <span className={relationState(owner.relationState)} title={t(`diplomacy.${owner.relationState ?? 'peace'}`)}>
+          <Icon name={RELATION_ICONS[owner.relationState ?? 'peace']} size={13} />{' '}
+          {t(`diplomacy.${owner.relationState ?? 'peace'}`)}
+        </span>
+        <span className="stat" title={t('standings.seenStrength')}>
+          <Icon name="battle" size={14} title={t('standings.seenStrength')} />{' '}
+          {owner.seenStrength > 0 ? amount(owner.seenStrength) : '—'}
+        </span>
+      </div>
+      <div className="diplomacy__primary province-popup__actions">
+        <button type="button" className="button button--primary" onClick={onTrade}>
+          {t('actions.trade')}
+        </button>
+        {warAction && (
+          <ActionButton action={warAction} showReason className="button--danger-outline" confirm={confirms[warAction.id]} />
+        )}
+        {restTreaties.length > 0 && (
+          <MoreMenu label={t('diplomacy.more', { count: restTreaties.length })}>
+            <div className="province-popup__more-head">
+              <NationName color={owner.color}>{owner.name}</NationName>
+            </div>
+            <ActionGroup
+              group={{ id: 'treaties', title: t('diplomacy.treaties', { nation: owner.name }), actions: restTreaties }}
+              collectReasons
+              confirms={confirms}
+            />
+          </MoreMenu>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function relationState(state: DiplomaticState | undefined): string {
+  return state === 'war' ? 'state state--war' : 'state'
+}
+
 /**
  * Die Zeile der gewaehlten Macht (E4.3, T-M17-14): "Krieg erklaeren" ist nie eine Hauptaktion,
  * aber immer sichtbar — ausser schon im Krieg, dann steht der Sperrgrund daran (bestehende
@@ -2150,7 +2623,7 @@ function DiplomacyActions({
       )}
       {peaceAction && <ActionButton action={peaceAction} showReason primary />}
       {moreCount > 0 && (
-        <DiplomacyMore count={moreCount}>
+        <MoreMenu label={t('diplomacy.more', { count: moreCount })}>
           {restTreaties.length > 0 && (
             <ActionGroup
               group={{ id: 'treaties', title: t('diplomacy.treaties', { nation }), actions: restTreaties }}
@@ -2161,18 +2634,21 @@ function DiplomacyActions({
           {passageActions.length > 0 && (
             <ActionGroup group={{ id: 'passage', title: t('diplomacy.passageGroup'), actions: passageActions }} collectReasons />
           )}
-        </DiplomacyMore>
+        </MoreMenu>
       )}
     </div>
   )
 }
 
 /**
- * Das "Weitere"-Aufklappmuster (E4.3, Vorbild `Explain.tsx`): aria-expanded/aria-controls am
- * Knopf, Escape schliesst und gibt den Fokus zurueck, ein Druck ausserhalb schliesst auch. Die
- * Liste ueberlagert (`position: absolute`, app.css) statt das Layout zu verschieben.
+ * Das generische "Weitere"-Aufklappmuster (E4.3, verallgemeinert D19b fuer `ArmyDockContent`,
+ * Vorbild `Explain.tsx`): aria-expanded/aria-controls am Knopf, Escape schliesst und gibt den
+ * Fokus zurueck, ein Druck ausserhalb schliesst auch. Die Liste ueberlagert
+ * (`position: absolute`, app.css Klasse `.diplomacy__more`/`-panel`, bewusst wiederverwendet statt
+ * verdoppelt) statt das Layout zu verschieben. `label` traegt den vollstaendigen Knopftext
+ * (Aufrufer entscheidet den Wortlaut, z.B. `t('diplomacy.more', { count })`).
  */
-function DiplomacyMore({ count, children }: { count: number; children: ReactNode }) {
+function MoreMenu({ label, children, className = 'diplomacy__more' }: { label: string; children: ReactNode; className?: string }) {
   const [open, setOpen] = useState(false)
   const id = useId()
   const root = useRef<HTMLDivElement>(null)
@@ -2199,7 +2675,7 @@ function DiplomacyMore({ count, children }: { count: number; children: ReactNode
   }, [open])
 
   return (
-    <div className="diplomacy__more" ref={root}>
+    <div className={className} ref={root}>
       <button
         type="button"
         className="button diplomacy__more-toggle"
@@ -2208,7 +2684,7 @@ function DiplomacyMore({ count, children }: { count: number; children: ReactNode
         aria-controls={id}
         onClick={() => setOpen((current) => !current)}
       >
-        {t('diplomacy.more', { count })}
+        {label}
       </button>
       {open && (
         <div className="diplomacy__more-panel" id={id}>

@@ -55,10 +55,12 @@ import { dominantIcon, stackSummary } from './map/markers.ts'
 import { armyHome, knownBuildings } from './map/stellung.ts'
 import { anchorsFor } from './map/anchors.ts'
 import { relationKindFor, strengthByProvince } from './map/modes.ts'
-import { boundsOf, centreOn, clampView, zoomAt, type View } from './map/picking.ts'
+import { boundsOf, centreOn, clampView, zoomAt, toScreen, type View } from './map/picking.ts'
 import { Tooltip } from './ui/Tooltip.tsx'
 import { useMapTooltip } from './ui/useMapTooltip.ts'
 import { Sidebar } from './ui/Sidebar.tsx'
+import { DockWithRecruit, useRecruitOpen, type DockState, type DockPickerOption, type RecruitUnit } from './ui/RecruitSheet.tsx'
+import { ProvincePopup } from './ui/ProvincePopup.tsx'
 import { OrientationHint } from './ui/OrientationHint.tsx'
 import { MENU_ENTRIES } from './ui/menuEntries.ts'
 import { CreditsDialog } from './ui/Credits.tsx'
@@ -75,16 +77,21 @@ import { Header } from './ui/Header.tsx'
 import {
   ArmiesPanel,
   ArmyPanel,
+  ArmyDockContent,
+  arrivalShort,
   DiplomacyPanel,
   EconomyPanel,
   EspionagePanel,
   MarketPanel,
+  ProvinceDockContent,
   ProvincePanel,
   ProvincePicker,
+  ProvincePopupSummary,
   type Action,
   type ActionGroupSpec,
   type DayReportDelta,
   type EventEntry,
+  type ProvincePopupOwner,
   type SpyRowView,
   type Targeting,
 } from './ui/Panels.tsx'
@@ -1588,6 +1595,16 @@ export function App(props: AppProps) {
     [jumpTo],
   )
 
+  /**
+   * Das Provinz-Popup (E5d, D11): Klick auf eine fremde Provinz bei geschlossener
+   * Seitenleiste zeigt dieses leichte Popup statt das volle Panel zu oeffnen. Ist die
+   * Seitenleiste schon offen, bleibt es beim bisherigen Verhalten (volles Panel).
+   */
+  const [foreignPreviewId, setForeignPreviewId] = useState<string | null>(null)
+  /** Ausheben-Raster (E5a/D10): Offen/Zu-Zustand steht an localStorage, hier geteilt
+   * zwischen Dock-Verdrahtung und Escape-Kaskade (K11: Popup -> Raster -> Seitenleiste). */
+  const [recruitOpen, setRecruitOpen] = useRecruitOpen()
+
   /** A click on the map: a target while an order waits for one, a selection otherwise. */
   const selectOnMap = useCallback(
     (id: string | null) => {
@@ -1596,10 +1613,19 @@ export function App(props: AppProps) {
         return
       }
       setTargeting(null)
+      if (id) {
+        const province = view?.provinces.find((p) => p.id === id)
+        const isForeign = Boolean(province) && province!.owner !== viewerId
+        if (isForeign && ui.panel === null) {
+          setForeignPreviewId(id)
+          return
+        }
+      }
+      setForeignPreviewId(null)
       if (id) tutor('selectProvince')
       dispatch({ type: 'selectProvince', id })
     },
-    [targeting, tutor],
+    [targeting, tutor, view, viewerId, ui.panel],
   )
 
   // Keyboard. One handler, one pure resolver, so every shortcut is testable.
@@ -1660,7 +1686,10 @@ export function App(props: AppProps) {
           // schliesst wieder jeden Dialog — eine Taste mit einer Ausnahme ist eine
           // Taste, die man zweimal erklaeren muss.
           if (dialog) setDialog(null)
-          else if (targeting) {
+          else if (foreignPreviewId) {
+            // K11: das Popup geht vor der Seitenleiste (D11, E5d).
+            setForeignPreviewId(null)
+          } else if (targeting) {
             setTargeting(null)
             dispatch({ type: 'clearNotice' })
           } else if (movingSpy) {
@@ -1688,12 +1717,25 @@ export function App(props: AppProps) {
           // Der Fokus springt in die Seitenleiste (T-M46-05). Bau- und Aushebeknoepfe gibt es nur bei offenem
           // Provinzpanel; fehlt es, ist die Provinzliste der naechste sinnvolle Halt.
           const side = document.querySelector('aside.side')
+          // E5d: das Ausheben-Raster schwebt jetzt im Dock (`.recruit-grid`), nicht mehr in
+          // der Seitenleiste; die Taste E findet dort zuerst ein freies Feld (Review-Auflage A2).
+          // D19b (Review-Auflage A2, t_cc59e67e): im Dock-Zustand 'army' ist E keine Zone, sondern
+          // die Hauptaktion "Marschieren" — derselbe Buchstabe, aber ein anderer Treffer zuerst.
+          const armyMarch =
+            shortcut.zone === 'recruit' && ui.panel === 'army'
+              ? document.querySelector<HTMLElement>('.dock-army [data-action-id="march"] button:not(:disabled)')
+              : null
+          const recruitGrid = document.querySelector<HTMLElement>('.recruit-grid button:not(:disabled)')
           const target =
             shortcut.zone === 'provinces'
               ? null
-              : side?.querySelector<HTMLElement>(
-                  `section[data-group="${shortcut.zone}"] button:not(:disabled)`,
-                ) ?? null
+              : shortcut.zone === 'recruit'
+                ? armyMarch ?? recruitGrid ?? side?.querySelector<HTMLElement>(`section[data-group="recruit"] button:not(:disabled)`) ?? null
+                : // D19c: die eigene Provinz baut jetzt im Dock (D19a/c); fremde Provinzen (kein
+                  // eigener Dock-Inhalt) stehen weiterhin in der Seitenleiste (aside.side).
+                  document.querySelector<HTMLElement>(`.dock-province [data-group="${shortcut.zone}"] button:not(:disabled)`) ??
+                  side?.querySelector<HTMLElement>(`section[data-group="${shortcut.zone}"] button:not(:disabled)`) ??
+                  null
           // Seit E3 schwebt die Provinzwahl auf der Karte (aside.map-picker), im Telefon-Hochformat steht sie im Blatt.
           const picker = document.querySelector<HTMLElement>('.picker select')
           ;(target ?? picker)?.focus()
@@ -1760,6 +1802,7 @@ export function App(props: AppProps) {
     ui.panel,
     toggleSide,
     openFootPanel,
+    foreignPreviewId,
   ])
 
   useEffect(() => {
@@ -2483,6 +2526,80 @@ export function App(props: AppProps) {
   )
 
   /**
+   * Die schwebende Leiste unten (E5d, D9): Zustand aus `ui.panel`/Auswahl abgeleitet.
+   * `attack` folgt erst in E6 (D9) — hier nur die 4 anderen Zustaende.
+   */
+  const dockState: DockState = useMemo(() => {
+    if (ui.panel === 'army') return 'army'
+    if (ui.panel === 'province') return selected && viewerId && selected.owner === viewerId ? 'province' : 'foreign'
+    return foreignPreviewId ? 'foreign' : 'empty'
+  }, [ui.panel, selected, viewerId, foreignPreviewId])
+
+  /**
+   * D19c: Provinz/Armee rendern jetzt im Dock (D19a/b), nicht mehr in der Seitenleiste
+   * (nur Desktop — im Telefon-Hochformat bleibt es wie bisher im Blatt, siehe `phonePortrait`).
+   * Nur die EIGENE Provinz/Armee (`dockState` 'province'/'army') nullt die Seitenleiste — eine
+   * FREMDE Provinz bleibt `ui.panel === 'province'`, zeigt aber `dockState === 'foreign'` (kein
+   * eigener Dock-Inhalt) und braucht darum weiterhin die Seitenleiste (ProvincePanel, Aufklaerung).
+   * `sidebarPanel` ist der fuer die Seitenleiste massgebliche Wert; `ui.panel` bleibt unveraendert
+   * fuer alles andere (Dock-Zustand, Rail, Tastenkuerzel, Telefon-Layout via data-panel/data-sheet).
+   */
+  const sidebarPanel = (dockState === 'province' || dockState === 'army') && !phonePortrait ? null : ui.panel
+
+  /** Eigene Provinzen fuer den Dock-Picker (D9) — dieselbe Liste wie die Kartenwahl. */
+  const dockPickerOptions: DockPickerOption[] = useMemo(() => {
+    if (!view || !viewerId) return []
+    return view.provinces
+      .filter((p) => p.owner === viewerId)
+      .map((p) => ({ id: p.id, label: nameOfProvince(p.id) }))
+  }, [view, viewerId, nameOfProvince])
+
+  /**
+   * Das Ausheben-Raster (D10/D9) wiederverwendet die schon berechnete `recruit`-Gruppe
+   * aus `provinceGroups` (kein doppelter Zugriff auf `recruitActions`, UMFANG-Vorgabe).
+   */
+  const recruitGroup = useMemo(() => provinceGroups.find((group) => group.id === 'recruit') ?? null, [provinceGroups])
+  const recruitUnits: RecruitUnit[] = useMemo(
+    () =>
+      (recruitGroup?.actions ?? []).map((action) => ({
+        id: action.id,
+        name: action.label,
+        disabled: action.disabledReason !== null,
+        running: (selected?.recruitQueue ?? []).filter((order) => order.unitKey === action.id).reduce((sum, order) => sum + order.count, 0),
+      })),
+    [recruitGroup, selected],
+  )
+  const recruitFreeSlots = Math.max(0, 10 - (selected?.recruitQueue?.length ?? 0))
+  const onRecruitUnit = useCallback(
+    (unitId: string) => recruitGroup?.actions.find((action) => action.id === unitId)?.onRun(),
+    [recruitGroup],
+  )
+
+  /** Das Provinz-Popup (D11/D12): Bildschirmpunkt der Mitte, geklemmt in den sichtbaren Kartenbereich. */
+  const foreignPreview = view?.provinces.find((p) => p.id === foreignPreviewId) ?? null
+  const foreignPreviewAnchor = useMemo(() => {
+    if (!foreignPreviewId) return null
+    const centre = centres[foreignPreviewId]
+    return centre ? toScreen(centre, ui.view) : null
+  }, [foreignPreviewId, centres, ui.view])
+  /**
+   * Besitzer der Vorschau-Provinz, mit Macht+Status (D11, Review-Runde 2): dieselben Zeilen wie
+   * in der Standings-Tabelle (`standingsRows`), nur herausgegriffen — nichts Neues gemessen, nur
+   * wiederverwendet. `null` bei herrenloser Provinz (R-DIP-04, kein Besitzer -> kein Diplomatiewort).
+   */
+  const foreignPreviewOwner: ProvincePopupOwner | null = useMemo(() => {
+    if (!foreignPreview?.owner) return null
+    const row = standingsRows(view, nameOf).find((r) => r.id === foreignPreview.owner)
+    if (!row) return null
+    return { name: row.nation, color: row.color, relationState: row.state, seenStrength: row.seenStrength }
+  }, [view, nameOf, foreignPreview?.owner])
+  /** Diplomatieaktionen desselben Besitzers (D11): dieselbe Funktion wie die Diplomatieansicht, nur anderer Einstiegspunkt (E4.3-Vorbild). */
+  const foreignPreviewActions = useMemo(
+    () => (ctx && foreignPreview?.owner ? diplomacyActions(ctx, foreignPreview.owner).map((spec) => toAction(spec)) : []),
+    [ctx, foreignPreview?.owner, toAction],
+  )
+
+  /**
    * Die Zielwahl-Quittung der gewählten Armee (T-M28-02, D26.2, Befund vom
    * Debugging 2026-09-08): der Bestätigungsknopf der Zielwahl verschwindet mit
    * `setTargeting(null)` im selben Klick — seine `actionId`-Quittung (T-M22-05) hat
@@ -2500,6 +2617,20 @@ export function App(props: AppProps) {
     if (!waiting) return ackHeld.has(armyAckKey(ui.selectedArmy)) ? t('actions.orderedDone') : null
     return speed === 0 ? t('actions.orderedPaused') : t('actions.ordered')
   }, [pendingCommands, ui.selectedArmy, speed, ackHeld])
+
+  /**
+   * Die Zurueck/Marsch-Zeile im Dock (D19b, Bild final-v3b-11-armee.png): "‹ <Herkunft>" steht die
+   * Armee, "‹ <Herkunft> → <Ziel> · <arrivalShort>" marschiert sie — dieselbe Ankunftsformel wie im
+   * Marsch-Meter der Seitenleiste (T-M46-17), hier nur als Satz statt als Balken (Platzgrund, 116 px).
+   */
+  const armyRouteText = useMemo(() => {
+    if (!selectedArmy || !state) return undefined
+    const from = nameOfProvince(selectedArmy.provinceId)
+    const destinationId = selectedArmy.path?.[selectedArmy.path.length - 1]
+    if (selectedArmy.arrivalTick == null || !destinationId) return from
+    const to = nameOfProvince(destinationId)
+    return `${from} → ${to} · ${arrivalShort(state.tick, selectedArmy.arrivalTick, ticksPerDay)}`
+  }, [selectedArmy, nameOfProvince, state, ticksPerDay])
 
   /** Die Heeruebersicht (T-M46-01): alle eigenen Armeen der Sicht, nur gerechnet, solange das Panel offen ist. */
   const heerZeilen = useMemo(
@@ -2655,7 +2786,7 @@ export function App(props: AppProps) {
       data-panel={ui.panel ? 'open' : 'closed'}
       data-sheet={ui.panel ? sheetSnap : undefined}
       // Die Seitenleiste offen oder zu (E3, D6): die Werkzeug-Spalte rutscht mit (app.css).
-      data-side-open={ui.panel ? 'true' : 'false'}
+      data-side-open={sidebarPanel ? 'true' : 'false'}
     >
       {/* Ein Toaster (D2): Desktop unten links, Telefon-Hochformat oben mittig; hoechstens einer sichtbar. */}
       <Toaster
@@ -2775,6 +2906,82 @@ export function App(props: AppProps) {
           {tooltip && tooltipAt && <Tooltip data={tooltip} x={tooltipAt.x} y={tooltipAt.y} selected={tooltipSelected} />}
           {/* Nur im Hochformat sichtbar (touch.css); ein Hinweis, keine Sperre (T-M44-03a). */}
           <OrientationHint />
+          {/* Die Leiste unten (E5d, D9): Dock + Ausheben-Raster schweben ueber der Karte. */}
+          {!phonePortrait && (
+            <DockWithRecruit
+              state={dockState}
+              pickerOptions={dockPickerOptions}
+              pickerValue={dockState === 'province' ? ui.selectedProvince : null}
+              onPickerChange={(id) => selectOnMap(id)}
+              bodyLabel={dockState === 'province' ? selected?.name : dockState === 'army' ? t('army.title') : undefined}
+              recruit={{
+                units: recruitUnits,
+                open: recruitOpen,
+                onOpenChange: setRecruitOpen,
+                onRecruit: onRecruitUnit,
+                freeSlots: recruitFreeSlots,
+              }}
+            >
+              {/* Provinz-Inhalt im Dock (D19a): Moral/Vorkommen/Bauplaetze, ohne den Namen
+                  (der Picker traegt ihn bereits). ProvincePanel in der Seitenleiste bleibt
+                  bewusst noch zusaetzlich bestehen (Entfernung erst in D19c). */}
+              {dockState === 'province' ? (
+                <ProvinceDockContent
+                  province={selected}
+                  groups={provinceGroups}
+                  nextUnlock={naechsteFreischaltung}
+                  armies={armiesHere}
+                  selectedArmy={ui.selectedArmy}
+                  onSelectArmy={(id) => {
+                    setTargeting(null)
+                    dispatch({ type: 'selectArmy', id })
+                  }}
+                  ticksPerDay={ticksPerDay}
+                  currentTick={state.tick}
+                />
+              ) : dockState === 'army' ? (
+                <ArmyDockContent
+                  onBack={
+                    selectedArmy
+                      ? () => {
+                          setTargeting(null)
+                          dispatch({ type: 'selectProvince', id: selectedArmy.provinceId })
+                        }
+                      : undefined
+                  }
+                  army={selectedArmy}
+                  name={ui.selectedArmy ? state.armies[ui.selectedArmy]?.name : undefined}
+                  routeText={armyRouteText}
+                  actions={armyActionList}
+                  targeting={armyTargeting}
+                  pendingNotice={armyPendingNotice}
+                  condition={selectedArmy?.units ? stackSummary(selectedArmy.units, props.rules).condition : undefined}
+                  units={armyUnitItems}
+                  ticksPerDay={ticksPerDay}
+                  currentTick={state.tick}
+                />
+              ) : null}
+            </DockWithRecruit>
+          )}
+          {/* Das Provinz-Popup (E5d, D11): nur bei fremder Provinz und geschlossener Seitenleiste. */}
+          {!phonePortrait && foreignPreview && foreignPreviewAnchor && (
+            <ProvincePopup
+              anchor={foreignPreviewAnchor}
+              viewport={{ width: viewportRef.current.viewportWidth, height: viewportRef.current.viewportHeight }}
+              insets={{ bottomBarHeight: 72 }}
+              title={nameOfProvince(foreignPreview.id)}
+              onClose={() => setForeignPreviewId(null)}
+            >
+              <ProvincePopupSummary
+                owner={foreignPreviewOwner}
+                actions={foreignPreviewActions}
+                onTrade={() => {
+                  dispatch({ type: 'focusDiplomacy', playerId: foreignPreview.owner ?? null })
+                  setForeignPreviewId(null)
+                }}
+              />
+            </ProvincePopup>
+          )}
         </div>
 
         {/* Die Leiste rechts (Seitenleiste v3b E3, D6): sieben Bereiche, oben W. */}
@@ -2789,13 +2996,13 @@ export function App(props: AppProps) {
         {/* LOESCHVERMERK (Review): bis T-M44-02b stand hier `<aside className="side">` mit denselben sechs Kindern direkt in dieser Datei. */}
         <Sidebar
           // Im Telefon-Hochformat bleibt das Blatt wie bisher stehen (Provinzwahl darin); E8 baut es um.
-          open={ui.panel !== null || phonePortrait}
+          open={sidebarPanel !== null || phonePortrait}
           title={sideTitle ?? ''}
           shortcut={sideShortcut}
           onClose={() => dispatch({ type: 'closePanel' })}
-          scrollKey={`${ui.panel}:${ui.selectedProvince}:${ui.selectedArmy}`}
+          scrollKey={`${sidebarPanel}:${ui.selectedProvince}:${ui.selectedArmy}`}
           handle={
-            ui.panel ? (
+            sidebarPanel ? (
               // Griff und Panelwahl in einer Leiste (T-M46-10): das Blatt deckt den Fuss, die Wahl bleibt erreichbar.
               <div className="sheet__bar">
                 <SheetHandle snap={sheetSnap} onSnap={setSheetSnap} onClose={() => dispatch({ type: 'closePanel' })} />
@@ -2810,7 +3017,7 @@ export function App(props: AppProps) {
           notice={null}
           panel={
             <>
-              {ui.panel === 'province' && (
+              {sidebarPanel === 'province' && (
                 <ProvincePanel
                   onClose={() => dispatch({ type: 'closePanel' })}
                   province={selected}
@@ -2830,7 +3037,7 @@ export function App(props: AppProps) {
                   currentTick={state.tick}
                 />
               )}
-              {ui.panel === 'army' && (
+              {sidebarPanel === 'army' && (
                 <ArmyPanel
                   // Zurueck fuehrt zur Provinz der Armee (T-M44-12); die Armee-Auswahl endet damit.
                   onBack={
