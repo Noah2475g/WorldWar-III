@@ -1,0 +1,73 @@
+<!doctype html>
+<!--
+  Storyboard-Entwurf RecruitSheet (E5a, D10): statische Vorschau der 3 Zustaende
+  collapsed / expanded / filter (Raster ohne verfuegbare Felder, Spec-Fall "nichts frei").
+  Kein Build-Schritt, kein JS-Framework — direkt im Browser oeffnen zum visuellen Vergleich
+  gegen final-v3-2-provinz.png / final-v3b-3-fremd-popup.png.
+-->
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<title>RecruitSheet Storyboard (E5a)</title>
+<style>
+  body { background: #0D1117; color: #ECE6DA; font-family: 'IBM Plex Sans', system-ui, sans-serif; padding: 40px; display: flex; gap: 40px; flex-wrap: wrap; }
+  figure { margin: 0; }
+  figcaption { font-size: 12px; color: #A4ABB6; margin-top: 8px; }
+  .stage { position: relative; width: 460px; height: 240px; background: #121821; border-radius: 8px; }
+  .recruit-sheet { position: absolute; right: 12px; bottom: 126px; width: 432px; background: color-mix(in srgb, #121821 98%, transparent); border-radius: 12px; box-shadow: 0 8px 24px rgb(3 6 10 / 0.55); overflow: hidden; }
+  .recruit-sheet--open { height: 196px; }
+  .recruit-sheet--collapsed { height: 32px; }
+  .recruit-sheet__head { display: flex; align-items: center; justify-content: space-between; padding: 4px 8px; font-size: 12px; color: #A4ABB6; }
+  .recruit-grid { display: grid; grid-template-columns: repeat(5, 76px); grid-auto-rows: 66px; gap: 4px; list-style: none; margin: 0; padding: 0 8px 8px; }
+  .slot { border: 1px solid #657382; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 11px; text-align: center; }
+  .slot--free { border-style: dashed; }
+  .slot--locked { opacity: 0.4; }
+  .dock { position: absolute; left: 12px; right: 12px; bottom: 12px; height: 110px; border-radius: 20px; background: #1C2531; }
+</style>
+</head>
+<body>
+  <figure>
+    <div class="stage">
+      <div class="recruit-sheet recruit-sheet--collapsed">
+        <div class="recruit-sheet__head"><span>Ausheben · 7 frei</span><span>▸</span></div>
+      </div>
+      <div class="dock"></div>
+    </div>
+    <figcaption>1) collapsed — localStorage worldwar.recruit.open = '0'</figcaption>
+  </figure>
+
+  <figure>
+    <div class="stage">
+      <div class="recruit-sheet recruit-sheet--open">
+        <div class="recruit-sheet__head"><span>Ausheben · 5 frei</span><span>▾</span></div>
+        <ul class="recruit-grid">
+          <li class="slot slot--free">Infanterie</li>
+          <li class="slot slot--free">Panzer</li>
+          <li class="slot slot--free">Artillerie</li>
+          <li class="slot slot--free">Flak</li>
+          <li class="slot slot--free">Pioniere</li>
+        </ul>
+      </div>
+      <div class="dock"></div>
+    </div>
+    <figcaption>2) expanded — Standard offen, fehlt der Schluessel</figcaption>
+  </figure>
+
+  <figure>
+    <div class="stage">
+      <div class="recruit-sheet recruit-sheet--open">
+        <div class="recruit-sheet__head"><span>Ausheben · 0 frei</span><span>▾</span></div>
+        <ul class="recruit-grid">
+          <li class="slot slot--locked">Infanterie</li>
+          <li class="slot slot--locked">Panzer</li>
+          <li class="slot slot--locked">Artillerie</li>
+          <li class="slot slot--locked">Flak</li>
+          <li class="slot slot--locked">Pioniere</li>
+        </ul>
+      </div>
+      <div class="dock"></div>
+    </div>
+    <figcaption>3) filter — keine Einheit verfuegbar (Bauplaetze erschoepft)</figcaption>
+  </figure>
+</body>
+</html>

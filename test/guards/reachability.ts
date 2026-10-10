@@ -119,6 +119,10 @@ export const REACHABILITY_EXCEPTIONS: Readonly<Record<string, string>> = {
   // Transport ueber einen dynamischen Import hinter der Bauflagge `__MULTIPLAYER__`. Die
   // Zusage "kein WebSocket im ausgelieferten Buendel" ist damit nicht gestrichen, sondern
   // haengt jetzt an der Flagge und wird am Erzeugnis gemessen (T-M38-05).
+  'apps/desktop/src/ui/Dock.tsx':
+    'E5a (Scope A, t_6f6ad631): absichtlich erst Basis-Layout + Tests, App.tsx/Panels.tsx-Verdrahtung folgt in E5b (t_20351f24) im selben Branch — Ausnahme gehoert mit Commit B wieder heraus.',
+  'apps/desktop/src/ui/RecruitSheet.tsx':
+    'E5a (Scope A, t_6f6ad631): absichtlich erst Basis-Layout + Tests, App.tsx/Panels.tsx-Verdrahtung folgt in E5b (t_20351f24) im selben Branch — Ausnahme gehoert mit Commit B wieder heraus.',
 }
 
 export function unreachableModules(entryFiles: readonly string[], directory: string): string[] {

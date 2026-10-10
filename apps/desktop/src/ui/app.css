@@ -3987,3 +3987,105 @@ body {
   overflow-x: auto;
   max-width: 100%;
 }
+
+/* E5a (D9/D10): die schwebende Leiste unten + das Ausheben-Raster. Hoehen fest je
+   Zustandsklasse (K1: scrollH/clientH = 1,00, nicht aus dem Inhalt), Designer-Korrektur
+   t_8f0a95ce (110/116 statt 132/urspruenglich, Raster 8 px ueber der Leiste statt
+   ueberlappend). Das Raster schwebt rechts ueber der Leiste innerhalb von .dock-area. */
+.dock-area {
+  position: relative;
+}
+
+.dock {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  border-radius: 20px;
+  background: var(--glass);
+  box-shadow: var(--sh-2), var(--bezel);
+  overflow: hidden;
+}
+
+.dock--empty {
+  height: 56px;
+}
+
+.dock--province {
+  height: 110px;
+}
+
+.dock--foreign {
+  height: 56px;
+}
+
+.dock--army {
+  height: 116px;
+}
+
+.dock__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-sm);
+  padding: var(--sp-md) var(--sp-lg);
+}
+
+.dock__picker select {
+  font: 500 20px var(--font-map);
+  border: 0;
+  background: none;
+  color: var(--ink);
+  padding: 0;
+}
+
+.dock__placeholder {
+  color: var(--ink-soft);
+  font-size: var(--fs-s);
+}
+
+.dock__recruit-action {
+  height: 62px;
+}
+
+.dock__body {
+  padding: 0 var(--sp-lg) var(--sp-md);
+}
+
+.recruit-sheet {
+  position: absolute;
+  right: 12px;
+  width: 432px;
+  bottom: calc(12px + 110px + 8px);
+  background: var(--glass);
+  border-radius: 12px;
+  box-shadow: var(--sh-2), var(--bezel);
+  overflow: hidden;
+}
+
+.recruit-sheet--open {
+  height: 196px;
+}
+
+.recruit-sheet--collapsed {
+  height: 0;
+}
+
+.recruit-sheet__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-sm) var(--sp-md);
+  font-size: var(--fs-s);
+  color: var(--ink-soft);
+}
+
+.recruit-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 76px);
+  grid-auto-rows: 66px;
+  gap: var(--sp-sm);
+  list-style: none;
+  margin: 0;
+  padding: 0 var(--sp-md) var(--sp-md);
+}
