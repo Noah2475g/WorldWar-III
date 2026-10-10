@@ -1377,6 +1377,30 @@ describe('VM-06 Die Uhr haelt bei einem eigenen Alarm von selbst an', () => {
     expect(screen.getByText(/Tag \d+ · \d{2}:\d{2}/).textContent).toMatch(/Tag 1 · 03:00/)
   })
 
+  /**
+   * E6 (D9, Spec §12.14.4): die Leiste unten zeigt die Auto-Pause jetzt selbst — bei
+   * WAR_DECLARED gibt es keine eigene Provinz, darum "Macht ansehen" statt "Angriff ansehen".
+   * K1: das Ereignis steht genau 1x (kein doppelter Hinweis neben dem Dock).
+   */
+  it('zeigt die Leiste unten im Zustand attack mit "Macht ansehen" bei WAR_DECLARED', () => {
+    startGame({ storage: new MemoryStorage() })
+    tempo100()
+    alarm.beiAufruf = 3
+
+    bilder(10, 100)
+    act(() => vi.advanceTimersByTime(100))
+
+    const dock = document.querySelector('section.dock')
+    expect(dock?.getAttribute('data-state')).toBe('attack')
+    expect(within(dock as HTMLElement).getByRole('button', { name: 'Macht ansehen' })).toBeTruthy()
+    // Kein Alarmchip zusaetzlich zum Dock-Ereignis (ENTSCHEIDUNG §12.14.4): der Kopf hat keinen Alarm,
+    // weil WAR_DECLARED keine eigene Provinz hat und so nie mit `openIntrusion` kollidiert.
+    expect(document.querySelector('.header__alarm[hidden]')).not.toBeNull()
+
+    fireEvent.click(within(dock as HTMLElement).getByRole('button', { name: 'Macht ansehen' }))
+    expect(screen.getByRole('region', { name: 'Diplomatie' })).toBeTruthy()
+  })
+
   it('zeigt die alte Meldung nicht wieder, wenn man spaeter von Hand pausiert', () => {
     startGame({ storage: new MemoryStorage() })
     tempo100()

@@ -16,11 +16,20 @@ import { t } from '../i18n/text.ts'
  * ArmyPanel wiederverwenden statt doppeln) und ProvincePopup-Anbindung folgen in E5b.
  */
 
-export type DockState = 'empty' | 'province' | 'foreign' | 'army'
+export type DockState = 'empty' | 'province' | 'foreign' | 'army' | 'attack'
 
 export interface DockPickerOption {
   id: string
   label: string
+}
+
+export interface AttackDockInfo {
+  title: string
+  chipText: string
+  actionLabel: string
+  onAction: () => void
+  /** data-msg der Kennung (K19): `pause:<provinceId-oder-Macht>` — dieselbe Route wie der Toast. */
+  msgId: string
 }
 
 export interface DockProps {
@@ -42,6 +51,13 @@ export interface DockProps {
    * jetzt im Dock statt in `aside.side` steht.
    */
   bodyLabel?: string | undefined
+  /**
+   * E6 (D9, Spec §12.4/§12.14.4): Zustand 'attack' zeigt die Auto-Pause (VM-06) in v3b-Art —
+   * Provinzname als Titel (kein Picker-Select, es gibt nichts zu waehlen), ein Chip mit dem
+   * Ereignissatz und EINE Hauptaktion (Taste E), die zur Provinz springt und sie waehlt. Bei
+   * WAR_DECLARED gibt es keine eigene Provinz — Titel/Aktion gelten dann der Macht.
+   */
+  attack?: AttackDockInfo | undefined
 }
 
 /** Die CSS-Klasse der Leiste fuer den Zustand (K1: feste Hoehe je Klasse, nicht aus dem Inhalt). */
@@ -59,12 +75,15 @@ export function Dock({
   recruitOpen = false,
   recruitDisabled = false,
   bodyLabel,
+  attack,
 }: DockProps) {
-  const showPicker = state !== 'empty'
+  const showPicker = state !== 'empty' && state !== 'attack'
   return (
     <section className={dockStateClass(state)} data-state={state}>
       <div className="dock__head">
-        {showPicker ? (
+        {state === 'attack' && attack ? (
+          <span className="dock__placeholder dock__attack-title">{attack.title}</span>
+        ) : showPicker ? (
           <div className="picker dock__picker">
             <select
               aria-label={t('dock.pickerAria')}
@@ -87,6 +106,22 @@ export function Dock({
           </div>
         ) : (
           <span className="dock__placeholder">{t('dock.empty')}</span>
+        )}
+        {state === 'attack' && attack && (
+          <span className="chip chip--danger dock__attack-chip" data-msg={attack.msgId}>
+            {attack.chipText}
+          </span>
+        )}
+        {state === 'attack' && attack && (
+          <button
+            type="button"
+            className="button dock__attack-action"
+            onClick={attack.onAction}
+            accessKey="e"
+            title={attack.actionLabel}
+          >
+            {attack.actionLabel}
+          </button>
         )}
         {state === 'province' && (
           <button

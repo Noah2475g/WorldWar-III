@@ -159,7 +159,7 @@ import {
 import { cueForOwnEvents, play } from './ui/sound.ts'
 import { Toaster } from 'sonner'
 import { useToastInsets } from './ui/useToastInsets.ts'
-import { dismissNotice, showNotice } from './ui/notice.ts'
+import { dismissNotice, messageId, showNotice } from './ui/notice.ts'
 import {
   TUTORIAL_OFF,
   TUTORIAL_STORAGE_KEY,
@@ -2526,14 +2526,45 @@ export function App(props: AppProps) {
   )
 
   /**
+   * E6 (D9, Spec §12.4/§12.14.4): die Auto-Pause (VM-06) zeigt sich jetzt in der Leiste
+   * unten statt nur im Kopf-Satz — `fastForwardState.trigger` ist dasselbe Ereignis, das
+   * `fastForwardNotice` oben in Worte fasst (`isAutoPauseTrigger` kennt nur WAR_DECLARED
+   * und CAPITAL_LOST, siehe events.ts). Bei WAR_DECLARED gibt es keine eigene Provinz —
+   * dort zeigt die Leiste die Macht statt eines Orts (ENTSCHEIDUNG, Plan §12.14.4).
+   */
+  const attackInfo = useMemo(() => {
+    const trigger = fastForwardState.trigger
+    if (fastForwardState.running || !trigger || !state || !viewerId) return null
+    if (fastForwardState.reason !== 'autopause') return null
+    if (trigger.type === 'WAR_DECLARED') {
+      const otherId = viewerId === trigger.playerId ? trigger.targetPlayerId : trigger.playerId
+      return { isWar: true as const, provinceId: null as string | null, powerId: otherId, powerName: nameOf(otherId) }
+    }
+    if (trigger.type === 'CAPITAL_LOST' && trigger.playerId === viewerId) {
+      const provinceId = trigger.provinceId
+      const ownerId = view?.provinces.find((p) => p.id === provinceId)?.owner ?? null
+      return {
+        isWar: false as const,
+        provinceId,
+        powerId: ownerId,
+        powerName: ownerId ? nameOf(ownerId) : '',
+      }
+    }
+    return null
+  }, [fastForwardState, state, viewerId, view, nameOf])
+
+  /**
    * Die schwebende Leiste unten (E5d, D9): Zustand aus `ui.panel`/Auswahl abgeleitet.
-   * `attack` folgt erst in E6 (D9) — hier nur die 4 anderen Zustaende.
+   * E6 (D9): `attack` geht vor allem anderen, solange kein Panel offen ist (Spec §12.14.4,
+   * "Alarmchip nur, wenn die Leiste unten das Ereignis NICHT zeigt" — also zeigt die
+   * Leiste es, wann immer sie frei ist).
    */
   const dockState: DockState = useMemo(() => {
+    if (ui.panel === null && attackInfo) return 'attack'
     if (ui.panel === 'army') return 'army'
     if (ui.panel === 'province') return selected && viewerId && selected.owner === viewerId ? 'province' : 'foreign'
     return foreignPreviewId ? 'foreign' : 'empty'
-  }, [ui.panel, selected, viewerId, foreignPreviewId])
+  }, [ui.panel, selected, viewerId, foreignPreviewId, attackInfo])
 
   /**
    * D19c: Provinz/Armee rendern jetzt im Dock (D19a/b), nicht mehr in der Seitenleiste
@@ -2832,7 +2863,7 @@ export function App(props: AppProps) {
           abortFastForward.current = true
           setSpeed(0)
         }}
-        alarm={alarm}
+        alarm={dockState === 'attack' && attackInfo?.provinceId === alarm?.provinceId ? null : alarm}
         onAlarm={(provinceId) => {
           // Quittieren heisst hinsehen: die Provinz kommt in die Mitte, der Chip geht.
           jumpTo(provinceId)
@@ -2914,6 +2945,25 @@ export function App(props: AppProps) {
               pickerValue={dockState === 'province' ? ui.selectedProvince : null}
               onPickerChange={(id) => selectOnMap(id)}
               bodyLabel={dockState === 'province' ? selected?.name : dockState === 'army' ? t('army.title') : undefined}
+              attack={
+                dockState === 'attack' && attackInfo
+                  ? {
+                      title: attackInfo.isWar ? attackInfo.powerName : nameOfProvince(attackInfo.provinceId!),
+                      chipText: attackInfo.isWar
+                        ? t('dock.warChip', { power: attackInfo.powerName })
+                        : t('dock.attackChip', { power: attackInfo.powerName }),
+                      actionLabel: attackInfo.isWar ? t('dock.powerAction') : t('dock.attackAction'),
+                      onAction: () => {
+                        if (attackInfo.isWar) {
+                          if (attackInfo.powerId) dispatch({ type: 'focusDiplomacy', playerId: attackInfo.powerId })
+                        } else if (attackInfo.provinceId) {
+                          jumpTo(attackInfo.provinceId)
+                        }
+                      },
+                      msgId: messageId('pause', attackInfo.isWar ? attackInfo.powerId ?? 'x' : attackInfo.provinceId ?? 'x'),
+                    }
+                  : undefined
+              }
               recruit={{
                 units: recruitUnits,
                 open: recruitOpen,

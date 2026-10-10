@@ -4023,6 +4023,31 @@ body {
   height: 116px;
 }
 
+/* E6 (D9, Spec §12.4): Zustand attack, 72 px fest (K1) — Titel, Chip, Hauptaktion in einer Zeile. */
+.dock--attack {
+  height: 72px;
+}
+
+.dock__attack-title {
+  font: 500 20px var(--font-map);
+  color: var(--ink);
+}
+
+.dock__attack-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: var(--fs-s);
+  font-weight: 600;
+}
+
+.dock__attack-action {
+  margin-left: auto;
+}
+
 .dock__head {
   display: flex;
   align-items: center;
