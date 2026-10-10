@@ -2563,6 +2563,11 @@ export function MarketPanel({
     setGive(key)
     amountInputRef.current?.focus()
   }
+  // Dieselbe Idee fuer die "verlangt"-Seite (Spec §9.1, zweite Leiste, E4.4).
+  const selectWantChip = (key: ResourceKey): void => {
+    setWant(key)
+    amountInputRef.current?.focus()
+  }
   // Eine Linie aus einem Wert ist keine (Sparkline gibt dafuer ohnehin nichts zurueck).
   const trends = resources
     .map((key) => [key, prices[key] ?? []] as const)
@@ -2580,6 +2585,22 @@ export function MarketPanel({
                 className="market__chip"
                 aria-pressed={key === give}
                 onClick={() => selectGiveChip(key)}
+              >
+                <Icon name={RESOURCE_ICONS[key] ?? 'money'} size={14} title={t(`resources.${key}`)} />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {resources.length > 0 && (
+        <ul className="market__chips market__chips--want" aria-label={t('market.want')}>
+          {resources.map((key) => (
+            <li key={key}>
+              <button
+                type="button"
+                className="market__chip"
+                aria-pressed={key === want}
+                onClick={() => selectWantChip(key)}
               >
                 <Icon name={RESOURCE_ICONS[key] ?? 'money'} size={14} title={t(`resources.${key}`)} />
               </button>

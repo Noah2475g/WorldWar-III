@@ -1754,6 +1754,45 @@ describe('R-UI-05 Der Markt zeigt das Zeichen des gewaehlten Rohstoffs', () => {
 })
 
 /**
+ * Die Rohstoff-Chip-Leisten (E4.4, Spec §9.1): je Seite (gibt/verlangt) ein Chip je
+ * Rohstoff, Klick setzt den Wert und holt den Fokus direkt ins Mengenfeld.
+ */
+describe('E4.4 Die Markt-Chip-Leisten ersetzen den Select-Umweg', () => {
+  const handel = () => ({ text: 'Ergibt etwas.', action: action('trade', undefined, 'Handeln') })
+  const resources = ['food', 'wood', 'iron', 'coal', 'oil', 'rare', 'money'] as never
+
+  it('zeigt sieben Chips je Seite', () => {
+    const { container } = render(<MarketPanel resources={resources} stock={{}} preview={handel} />)
+    const chipLists = container.querySelectorAll('ul.market__chips')
+    expect(chipLists).toHaveLength(2)
+    expect(chipLists[0]!.querySelectorAll('button.market__chip')).toHaveLength(7)
+    expect(chipLists[1]!.querySelectorAll('button.market__chip')).toHaveLength(7)
+  })
+
+  it('Klick auf einen Geben-Chip setzt die Auswahl und fokussiert das Mengenfeld', () => {
+    const { container } = render(
+      <MarketPanel resources={['wood', 'iron', 'oil'] as never} stock={{}} preview={handel} />,
+    )
+    const giveChips = container.querySelectorAll('ul.market__chips button.market__chip')
+    fireEvent.click(giveChips[2]!) // oil
+
+    expect((container.querySelector('#market-give') as HTMLSelectElement).value).toBe('oil')
+    expect(document.activeElement).toBe(container.querySelector('#market-amount'))
+  })
+
+  it('Klick auf einen Verlangen-Chip setzt die Auswahl und fokussiert das Mengenfeld', () => {
+    const { container } = render(
+      <MarketPanel resources={['wood', 'iron', 'oil'] as never} stock={{}} preview={handel} />,
+    )
+    const wantChips = container.querySelectorAll('ul.market__chips--want button.market__chip')
+    fireEvent.click(wantChips[2]!) // oil
+
+    expect((container.querySelector('#market-want') as HTMLSelectElement).value).toBe('oil')
+    expect(document.activeElement).toBe(container.querySelector('#market-amount'))
+  })
+})
+
+/**
  * Das Bauplatz-Raster (T-M29-03, D27.6, R-UI-09/R-UI-10/R-UI-11).
  *
  * Eine Liste der gebauten Gebaeude sagt nicht, was frei ist und was wann fertig wird.
