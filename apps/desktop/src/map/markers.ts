@@ -3,6 +3,7 @@ import { BUILDING_ICONS, UNIT_ICONS, type IconName } from '../ui/icons.tsx'
 import { placeBuildings, type Anchor } from './anchors.ts'
 import { dominantUnitKey } from './stellung.ts'
 import { groupArmies, toneFor } from './sammel.ts'
+import { layoutMarks, type MapBounds, type MarkInput, type LayoutResult } from './layoutMarks.ts'
 
 /**
  * What sits on top of the map (R-MAP-05, T-M10-03b).
@@ -92,6 +93,12 @@ export interface Marker {
   armyIds?: readonly string[]
   /** Sammelmarke: die Beschriftung, Summe der Stueckzahl oder `×n` (T-M49-01, D6). */
   label?: string
+  /**
+   * E7 (Plan D14): in `collideMarks` mit einer anderen Marke zusammengelegt (Schritt 5 der
+   * Kollisionsregel) — steht an deren Stelle, aber ohne eigene gezeichnete Pille (das ist E7b).
+   * Fehlt ausserhalb von `collideMarks`.
+   */
+  merged?: boolean
 }
 
 /**
@@ -661,4 +668,65 @@ export function markersFor(
   }
 
   return markers
+}
+
+/**
+ * Markenkollision (E7, Plan D14) — Positionierung, Schritt 2 (Verdrahtung). Nur die Lage der
+ * Armee-/Gebaeudemarker weicht aus (Ring-Versatz, Notfall, Gebaeude-Ruecktritt); gezeichnet wird
+ * weiterhin mit dem bisherigen Pfad je `kind`. Die "gemischte Pille" (Schritt 2 der Spec, eigen+feind
+ * zu einer Marke zusammenlegen) und die Anker-Linie (Schritt 4) sind eine neue Zeichnung und bewusst
+ * NICHT Teil dieser Karte (Mentor-Befund t_9778f304: Phase "Verdrahtung" != Phase "Zeichnung") —
+ * Folge-Ticket E7b. Zusammengelegte Marken (`merged`) bleiben darum unveraendert an ihrer alten Stelle
+ * stehen, damit nichts verschwindet, ohne dass eine neue Pille dafuer gezeichnet wird.
+ *
+ * `pow` (fuer das Zusammenlegen, Schritt 5) ist hier die Provinz, nicht die Macht — Marker tragen
+ * keine Machtkennung (nur `tone`); das ist eine bewusste Naeherung fuer diese Karte, siehe Bericht.
+ * `near` wird nie aufgerufen (Plan K16, bitgleich).
+ */
+export function collideMarks(markers: readonly Marker[], bounds: MapBounds, selectedArmyId?: string | null): { markers: Marker[]; layout: LayoutResult } {
+  const movable: { index: number; marker: Marker }[] = []
+  markers.forEach((marker, index) => {
+    if (marker.kind === 'army' || marker.kind === 'armyGroup' || marker.kind === 'building') movable.push({ index, marker })
+  })
+
+  const inputs: MarkInput[] = movable.map(({ index, marker }) => {
+    const isBuilding = marker.kind === 'building'
+    const tone = marker.tone ?? (marker.own ? 'own' : 'other')
+    const isFoe = tone === 'enemy'
+    const isSelected = marker.kind === 'army' && selectedArmyId != null && marker.armyId === selectedArmyId
+    const pri = isBuilding ? 1 : isFoe ? 4 : isSelected ? 3 : 2
+    const side = isBuilding ? ('bm' as const) : isFoe ? ('foe' as const) : ('me' as const)
+    const { width: w, height: h } = isBuilding ? { width: BUILDING_BOX, height: BUILDING_BOX } : ARMY_BOX
+    return {
+      id: String(index),
+      pri,
+      kind: isBuilding ? 'building' : 'army',
+      side,
+      pow: marker.provinceId,
+      ax: marker.x,
+      ay: marker.y,
+      w,
+      h,
+      n: marker.kind === 'army' ? (marker.count ?? 1) : (marker.level ?? 1),
+      foe: isFoe,
+    }
+  })
+
+  const layout = layoutMarks(inputs, bounds)
+  const byId = new Map(layout.marks.map((m) => [m.id, m]))
+  const retreated = new Set(
+    movable.filter(({ index }) => !byId.has(String(index))).map(({ index }) => index),
+  )
+
+  const result: Marker[] = []
+  markers.forEach((marker, index) => {
+    if (retreated.has(index)) return // Schritt 7: zurueckgetretenes Gebaeude, nicht gezeichnet.
+    const placed = byId.get(String(index))
+    if (!placed || placed.merged) {
+      result.push(placed?.merged ? { ...marker, merged: true } : marker) // unveraendert: kein Treffer (Marker-Art nicht Teil der Kollision) oder zusammengelegt (E7b).
+      return
+    }
+    result.push({ ...marker, x: placed.rect.x + placed.rect.w / 2, y: placed.rect.y + placed.rect.h / 2 })
+  })
+  return { markers: result, layout }
 }

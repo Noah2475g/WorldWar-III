@@ -2847,6 +2847,7 @@ export function App(props: AppProps) {
       <main className="main">
         <div className="map-area">
           <MapCanvas
+            insets={phonePortrait ? {} : { bottomBarHeight: 72 }}
             provinces={provinces}
             centres={centres}
             armies={armies}
