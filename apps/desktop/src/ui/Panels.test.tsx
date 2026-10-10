@@ -3020,4 +3020,43 @@ describe('D19a: Dock-Inhalt der eigenen Provinz (Moral, Vorkommen, 7 Bauplaetze)
     const { container } = render(<ProvinceDockContent province={null} ticksPerDay={24} currentTick={0} />)
     expect(container.textContent).toBe('')
   })
+
+  it('Review R1: nicht-interaktives Feld (Dock) traegt data-action-id selbst und fuellt die Vorschauzeile per Hover', () => {
+    const buildGroups: ActionGroupSpec[] = [
+      {
+        id: 'build',
+        title: 'Bauen',
+        actions: BUILDING_ORDER.map((key) =>
+          key === 'airfield'
+            ? ({
+                id: `build-${key}`,
+                label: key,
+                disabledReason: 'fehlt',
+                blockCode: 'INSUFFICIENT_RESOURCES',
+                onRun: () => undefined,
+                costLines: [{ resource: 'oil', need: 120_000, short: 120_000 }],
+              } as Action)
+            : action(`build-${key}`, BUILDING_ICONS[key], key),
+        ),
+      },
+    ]
+    const { container } = render(
+      <ProvinceBuildSlots
+        province={{ ...province, buildQueue: [] }}
+        buildActions={buildGroups[0]!.actions}
+        currentTick={0}
+        ticksPerDay={24}
+        interactive={false}
+      />,
+    )
+    // Nicht-interaktiv: kein ActionButton/button im freien Feld, nur das Zeichen.
+    const slot = [...container.querySelectorAll('.slot')].find((s) => s.getAttribute('data-action-id') === 'build-airfield')!
+    expect(slot).toBeTruthy()
+    expect(slot.querySelector('button')).toBeNull()
+    expect(container.querySelector('.cost-preview .cost-chip')).toBeNull()
+    fireEvent.pointerOver(slot)
+    expect(container.querySelector('.cost-preview .cost-chip--short')!.textContent).toContain('\u2212120')
+    fireEvent.pointerLeave(container.querySelector('.preview-area')!)
+    expect(container.querySelector('.cost-preview .cost-chip')).toBeNull()
+  })
 })

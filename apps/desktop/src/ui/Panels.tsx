@@ -681,7 +681,17 @@ export function ProvinceBuildSlots({
 
             if (level > 0) {
               return (
-                <div key={key} className={`slot slot--built${stateClass(build)}`}>
+                <div
+                  key={key}
+                  className={`slot slot--built${stateClass(build)}`}
+                  // Nicht-interaktiv (Dock, D19a): kein ActionButton im DOM, also kein
+                  // [data-action-id] zum Hovern -> PreviewArea.pick() faende nie einen
+                  // Treffer und die Vorschauzeile bliebe immer leer. Das Attribut traegt
+                  // darum das Feld selbst (Review Runde 1), ohne das Feld klickbar zu
+                  // machen -- PreviewArea.pick()'s Slot-Fallback (CostPreview.tsx) findet
+                  // es per querySelector.
+                  {...(!interactive && build ? { 'data-action-id': build.id } : {})}
+                >
                   {/* Die Textfassung wie in der alten Symbolzeile: "2 Fabrik" fuers Ohr. */}
                   <Icon name={BUILDING_ICONS[key] ?? 'warning'} size={slotIconSize} title={level > 1 ? `${level} ${name}` : name} />
                   {level > 1 && <sup className="slot__level">{level}</sup>}
@@ -693,7 +703,11 @@ export function ProvinceBuildSlots({
             }
 
             return (
-              <div key={key} className={`slot slot--free${stateClass(build)}`}>
+              <div
+                key={key}
+                className={`slot slot--free${stateClass(build)}`}
+                {...(!interactive && build ? { 'data-action-id': build.id } : {})}
+              >
                 {/* Dasselbe Bild wie im gebauten und im laufenden Feld (T-M33-03) — es
                     steht IM Knopf, damit das Feld genau ein Klickziel hat und nicht ein
                     Bild neben einem. */}
