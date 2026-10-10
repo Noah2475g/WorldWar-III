@@ -917,6 +917,23 @@ Kein Fremdinhalt — Bildschirmfotos des eigenen Spiels, erzeugt mit `node scrip
 | `docs/ux/v4-seitenleiste/e4/S575G-e4-touch-quer-panel-1280x800.png` | `scripts/ux-layout.mjs --tag e4-touch-quer` | Seitenleiste v3b E4.7: Panel-Szene, Touch quer, S575G-e4-touch-quer-panel-1280x800.png |
 | `docs/ux/v4-seitenleiste/e4/S575G-e4-touch-quer-puls-1280x800.png` | `scripts/ux-layout.mjs --tag e4-touch-quer` | Seitenleiste v3b E4.7: Puls-Szene, Touch quer, S575G-e4-touch-quer-puls-1280x800.png |
 
+## Bildschirmfotos der Seitenleiste E5c (Seitenleiste v3b E5c, 2026-10-10)
+
+Kein Fremdinhalt — Screenshots der eigenen Storyboard-HTML-Dateien (RecruitSheet, ProvincePopup,
+E5a/E5b), erzeugt mit `node scripts/ux-e5c-measure.mjs` ueber 4 Geraete-Aufloesungen. Siehe
+`docs/e5-dock-report.md` fuer die Messung.
+
+| Datei | Erzeugt von | Zeigt |
+|---|---|---|
+| `docs/ux/v4-seitenleiste/e5/e5c-recruitsheet-320x640.png` | `scripts/ux-e5c-measure.mjs` | RecruitSheet-Storyboard, 320x640 |
+| `docs/ux/v4-seitenleiste/e5/e5c-recruitsheet-768x1024.png` | `scripts/ux-e5c-measure.mjs` | RecruitSheet-Storyboard, 768x1024 |
+| `docs/ux/v4-seitenleiste/e5/e5c-recruitsheet-1024x768.png` | `scripts/ux-e5c-measure.mjs` | RecruitSheet-Storyboard, 1024x768 |
+| `docs/ux/v4-seitenleiste/e5/e5c-recruitsheet-1920x1080.png` | `scripts/ux-e5c-measure.mjs` | RecruitSheet-Storyboard, 1920x1080 |
+| `docs/ux/v4-seitenleiste/e5/e5c-provincepopup-320x640.png` | `scripts/ux-e5c-measure.mjs` | ProvincePopup-Storyboard, 320x640 |
+| `docs/ux/v4-seitenleiste/e5/e5c-provincepopup-768x1024.png` | `scripts/ux-e5c-measure.mjs` | ProvincePopup-Storyboard, 768x1024 |
+| `docs/ux/v4-seitenleiste/e5/e5c-provincepopup-1024x768.png` | `scripts/ux-e5c-measure.mjs` | ProvincePopup-Storyboard, 1024x768 |
+| `docs/ux/v4-seitenleiste/e5/e5c-provincepopup-1920x1080.png` | `scripts/ux-e5c-measure.mjs` | ProvincePopup-Storyboard, 1920x1080 |
+
 
 ## Bildschirmfotos der Seitenleiste E2 (Seitenleiste v3b E2, 2026-10-10)
 
