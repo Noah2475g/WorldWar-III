@@ -2043,7 +2043,9 @@ describe('R-UI-14 Die Meldungen erreichen den Spieler', () => {
       fireEvent.click(within(zeile).getAllByRole('button')[0]!)
 
       // "Durchmarsch-Antrag annehmen" steht zweimal (Gruppe UND Liste, E6) — die Gruppe
-      // "Durchmarsch und Karte" hat verlaessliche eigene Kennungen.
+      // "Durchmarsch und Karte" hat verlaessliche eigene Kennungen. Seit E4.3 steckt sie
+      // hinter dem "Weitere"-Aufklappmuster und muss erst geoeffnet werden.
+      fireEvent.click(screen.getByRole('button', { name: /^Weitere/ }))
       const gruppe = screen.getByRole('region', { name: 'Durchmarsch und Karte' })
       const beantragen = within(gruppe).getByRole('button', { name: 'Durchmarsch beantragen' })
       const annehmen = within(gruppe).getByRole('button', { name: 'Durchmarsch-Antrag annehmen' })
@@ -2228,17 +2230,17 @@ describe('R-UI-14 Die Meldungen erreichen den Spieler', () => {
       }
 
       wähle(nationOf(p2))
-      const gruppeP2 = screen.getByRole('region', { name: `Verträge mit ${nationOf(p2)}` })
-      klickeKrieg(within(gruppeP2))
-      expect(within(gruppeP2).getByText(/befohlen/)).toBeTruthy()
+      // "Krieg erklären" ist seit E4.3 ein eigener Rahmenknopf direkt in der Diplomatie,
+      // nicht mehr in einer "Verträge mit X"-Gruppe gebündelt.
+      klickeKrieg(within(diplomatie))
+      expect(within(diplomatie).getByText(/befohlen/)).toBeTruthy()
 
       // Bei stehender Uhr (T-M22-05) zur dritten Macht wechseln: deren eigener Knopf
       // "Krieg erklären" darf NICHT "befohlen" sagen — ihr wurde nichts befohlen.
       wähle(nationOf(p3))
-      const gruppeP3 = screen.getByRole('region', { name: `Verträge mit ${nationOf(p3)}` })
-      const krieg = within(gruppeP3).getByRole('button', { name: 'Krieg erklären' })
+      const krieg = within(diplomatie).getByRole('button', { name: 'Krieg erklären' })
       expect((krieg as HTMLButtonElement).disabled).toBe(false)
-      expect(within(gruppeP3).queryByText(/befohlen/)).toBeNull()
+      expect(within(diplomatie).queryByText(/befohlen/)).toBeNull()
       // Zeitlimit wegen Last, nicht Verhalten: allein 186 ms, unter verify+Last max 3013 ms (gemessen 2026-10-05, t_3cad0a35).
     }, 20_000)
   })

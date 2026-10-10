@@ -59,3 +59,43 @@ Referenzbild `final-v3-8-schmal-320.png` ist keine separate Kriegsliste-Sektion 
 Kriegsstatus steht dort nur als Badge inline in der Mächte-Liste. Der Spec-Text zu §10.9.1
 "Krieg-Fall" war vom Pi-Build-Host nicht erreichbar (Windows-Vaultpfad), daher wurde nicht
 geraten: die Kriegsliste bleibt defensiv erhalten, bis der Spec-Text zugänglich ist.
+
+## E4.4 — Entscheidung Noah (2026-10-10): nur Ticket-Body, Rest selbst planen
+
+Noah (Gate t_a51c629e): "Ticket-Body nutzen, fehlende Details selbst planen." §8.1/§9.1/§10.9.1
+bleiben im Repo unauffindbar — ab hier gilt nur noch der Ticket-Body-Text, keine weitere Suche.
+
+### Markt — 7-Rohstoff-Chip-Leiste (§9.1, aus Ticket-Body)
+
+Umgesetzt (`Panels.tsx`, `MarketPanel`): `<ul class="market__chips">` mit einem Chip je
+Rohstoff aus `resources` (im Spiel exakt 7: food/wood/iron/coal/oil/rare/money,
+`packages/core/src/state/types.ts:22`). Klick setzt den Rohstoff als "gibt"
+(`selectGiveChip`) und fokussiert `#market-amount` über `amountInputRef` — genau der im
+Ticket genannte Griff ("Klick fokussiert Mengenfeld"). `aria-pressed` markiert den aktiven
+Chip für Screenreader. CSS: `.market__chips`/`.market__chip` in `app.css`, Muster wie
+`.alarm-chip` (Rahmen, kein Hintergrund, Fokusring bei `:focus-visible`).
+
+### Wirtschaft — 292px-Tabelle + Sparkline
+
+Bereits erfüllt, keine Änderung nötig: `EconomyPanel` zeigt eine Tabelle mit Rohstoff-Icon +
+4 Zahlenspalten (Bestand/Produktion/Unterhalt/Bilanz) plus `<Sparkline>` je Zeile in der
+Bestandsspalte (`eco__stock`). Die Seitenleiste ist fix `320px` (`app.css:3726`); die Tabelle
+liegt darin ohne horizontales Scrollen (geprüft per Playwright-Viewport 375×667, siehe
+`pnpm verify`-Lauf dieser Etappe). "4 Spalten" aus dem Ticket-Body sind die vier Zahlenwerte;
+die Icon-Spalte zählt nicht als Datenspalte (Vorgängerentscheidung T-M36-05, bereits
+dokumentiert oben).
+
+### Heer, Spionage, Rangliste, Protokoll — Zeilenlayout
+
+Keine Code-Änderung: ohne §8.1-Text ist "Zeilenlayout nach Spec" nicht konkret genug, um
+etwas zu bauen, ohne zu raten. Bestandsaufnahme (diese Etappe, gelesen):
+- Heer (`ArmyPanel`/`ArmiesPanel`, ab Zeile 893/1215): `<ul class="army-list">`,
+  Zeile = Name links, Status/Aktion rechts (`justify-content: space-between`).
+- Spionage (`EspionagePanel`, Zeile 2476): `<ul class="spy-list">`, Zeile = `<dl class="facts">`
+  (Label/Wert-Paare), gleiches Muster wie Diplomatie-Fakten.
+- Rangliste (`Standings.tsx`, nicht in diesem Durchlauf geöffnet): unverändert.
+- Protokoll (Kampf-/Ereignisprotokoll, nicht in diesem Durchlauf geöffnet): unverändert.
+
+Alle vier nutzen bereits ein einheitliches Zeilenmuster (Flex-Zeile oder `dl.facts`), das zur
+320px-Spalte passt — kein Umbau ohne konkretere Spec-Vorgabe, um nicht zu raten und bestehende
+Tests/Verhalten zu riskieren. Offen für eine Folge-Etappe, falls Noah Bild/Spec nachreicht.

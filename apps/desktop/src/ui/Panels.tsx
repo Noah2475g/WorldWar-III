@@ -2549,9 +2549,20 @@ export function MarketPanel({
   const [give, setGive] = useState<ResourceKey>(resources[0] ?? 'wood')
   const [want, setWant] = useState<ResourceKey>(resources[1] ?? 'iron')
   const [units, setUnits] = useState(100)
+  const amountInputRef = useRef<HTMLInputElement>(null)
   // The interface counts whole units; the core counts thousandths.
   const giveAmount = Math.max(0, Math.round(units)) * 1000
   const result = preview(give, giveAmount, want)
+
+  /**
+   * Die Rohstoff-Chip-Leiste (Spec §9.1): ein Chip je Rohstoff (alle sieben, wenn
+   * vorhanden), Klick setzt ihn als "gibt" und holt den Fokus ins Mengenfeld — der
+   * Umweg ueber das <select> entfaellt fuer den haeufigsten Griff.
+   */
+  const selectGiveChip = (key: ResourceKey): void => {
+    setGive(key)
+    amountInputRef.current?.focus()
+  }
   // Eine Linie aus einem Wert ist keine (Sparkline gibt dafuer ohnehin nichts zurueck).
   const trends = resources
     .map((key) => [key, prices[key] ?? []] as const)
@@ -2560,6 +2571,22 @@ export function MarketPanel({
   return (
     <section className="panel" aria-label={t('market.title')}>
       <PanelHead title={t('market.title')} onClose={onClose} />
+      {resources.length > 0 && (
+        <ul className="market__chips" aria-label={t('market.give')}>
+          {resources.map((key) => (
+            <li key={key}>
+              <button
+                type="button"
+                className="market__chip"
+                aria-pressed={key === give}
+                onClick={() => selectGiveChip(key)}
+              >
+                <Icon name={RESOURCE_ICONS[key] ?? 'money'} size={14} title={t(`resources.${key}`)} />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
       <div className="market">
         <label htmlFor="market-give">{t('market.give')}</label>
         {/* Das Zeichen des jeweils GEWAEHLTEN Rohstoffs neben der Liste (T-M23-03,
@@ -2578,6 +2605,7 @@ export function MarketPanel({
         <label htmlFor="market-amount">{t('market.amount')}</label>
         <input
           id="market-amount"
+          ref={amountInputRef}
           type="number"
           min={1}
           step={1}

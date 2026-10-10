@@ -1558,6 +1558,40 @@ body {
   font-size: 12px;
 }
 
+/* Die Rohstoff-Chip-Leiste im Marktpanel (Spec §9.1): sieben Chips, einer je
+   Rohstoff, Klick setzt "gibt" und holt den Fokus ins Mengenfeld. */
+.market__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-sm);
+  margin: 0 0 var(--sp-sm);
+  padding: 0;
+  list-style: none;
+}
+
+.market__chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  min-height: 24px;
+  padding: 2px 6px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.market__chip:hover,
+.market__chip:focus-visible {
+  border-color: var(--accent);
+}
+
+.market__chip[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--paper-sunk);
+}
+
 /* Das Zeichen des gewaehlten Rohstoffs neben der Liste (T-M23-03). */
 .market__choice {
   display: flex;
@@ -2595,7 +2629,7 @@ body {
   background: var(--paper);
   border: 1px solid var(--line);
   border-radius: 2px;
-  box-shadow: 0 4px 16px rgb(0 0 0 / 0.4);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--ground) 40%, transparent);
   display: flex;
   flex-direction: column;
   gap: var(--sp-sm);
