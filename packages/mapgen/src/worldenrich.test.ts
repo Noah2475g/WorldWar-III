@@ -90,6 +90,54 @@ describe('R-MAP-03 Verteilungen liegen im Zielkorridor', () => {
   })
 })
 
+describe('R-MAP-03 Oel kommt aus der kuratierten Tabelle', () => {
+  const oilCsvText = readFileSync(`${ROOT}/data/mapgen/oil-regions.csv`, 'utf8')
+  const oilRows = oilCsvText
+    .trim()
+    .split('\n')
+    .slice(1)
+    .map((line: string) => {
+      const [id, tier, source] = line.split(',')
+      return { id: id!, tier: Number(tier), source: source! }
+    })
+
+  it('hat genau 31 Zeilen mit gueltigem tier, Quelle und bekannter id', () => {
+    expect(oilRows.length).toBe(31)
+    const provinceIds = new Set(world.provinces.map((p) => p.id))
+    for (const row of oilRows) {
+      expect(provinceIds.has(row.id), `${row.id} unbekannt`).toBe(true)
+      expect([1, 2, 3], row.id).toContain(row.tier)
+      expect(row.source.length, row.id).toBeGreaterThan(0)
+    }
+  })
+
+  it('hat in world.json genau und nur die CSV-Provinzen mit Oel > 0', () => {
+    const oilIds = new Set(
+      world.provinces.filter((p) => (p.deposits.oil ?? 0) > 0).map((p) => p.id),
+    )
+    expect(oilIds.size).toBe(oilRows.length)
+    for (const row of oilRows) expect(oilIds.has(row.id), row.id).toBe(true)
+  })
+
+  it('gibt Oel-Foerderern Oel, Importeuren keins', () => {
+    const oilSumByNation = new Map<string, number>()
+    for (const start of world.startPositions) {
+      const sum = start.provinces.reduce((s, id) => {
+        const province = world.provinces.find((p) => p.id === id)
+        return s + (province?.deposits.oil ?? 0)
+      }, 0)
+      oilSumByNation.set(start.nation, sum)
+    }
+
+    for (const nation of ['Vereinigte Staaten', 'Russland', 'Kanada', 'Iran']) {
+      expect(oilSumByNation.get(nation) ?? 0, nation).toBeGreaterThan(0)
+    }
+    for (const nation of ['Japan', 'Deutschland']) {
+      expect(oilSumByNation.get(nation) ?? 0, nation).toBe(0)
+    }
+  })
+})
+
 describe('R-GAME-01 Keine Nation beginnt geschlagen', () => {
   it('haelt jeden Startwert innerhalb der erlaubten Abweichung vom Median', () => {
     const byId = new Map(

@@ -202,9 +202,9 @@ export function enrich(
  * What can be dug out of a province.
  *
  * Terrain decides what is plausible — grain on plains, timber in forests, ore in
- * mountains, oil in deserts — and the generator decides how much. Every province
- * carries at least food, because a province that cannot feed anybody is a province
- * nobody would ever take.
+ * mountains — and the generator decides how much. Every province carries at least
+ * food, because a province that cannot feed anybody is a province nobody would ever
+ * take. Öl kommt aus der Tabelle, nicht aus dem Gelände — siehe applyOilRegions.
  */
 export function depositsFor(
   province: RawProvince,
@@ -231,7 +231,7 @@ export function depositsFor(
       if (random() < 0.35) deposits.rare = amount(500)
       break
     case 'desert':
-      deposits.oil = amount(1800)
+      random() // früherer Öl-Wurf: bleibt, damit Seltene Erden und Küsten-Nahrung gleich würfeln
       if (random() < 0.3) deposits.rare = amount(600)
       break
     case 'urban':
@@ -243,6 +243,52 @@ export function depositsFor(
   if (province.coastal && random() < 0.35) deposits.food = (deposits.food ?? 0) + amount(700)
 
   return deposits
+}
+
+/**
+ * Oil typical to a tier-2 region, halved: the curated producers get oil without it
+ * drowning the nations that have none, which is what the full real-world spread would
+ * do — Saudi Arabia alone exceeds what the balancing pass could ever claw back.
+ */
+export const OIL_TYPICAL = 1690
+export const OIL_FACTOR = 0.5
+
+export function oilAmount(tier: number): number {
+  return Math.round(OIL_TYPICAL * tier * OIL_FACTOR)
+}
+
+/**
+ * Replaces random desert oil with the curated table (P3, P4).
+ *
+ * Oil is the one deposit the map does not want to invent: a handful of regions hold
+ * almost all of it in the real world, and a strategy map that spreads it evenly across
+ * every desert province turns a defining resource into background noise. So the table
+ * is authoritative — every listed province gets exactly the amount its tier implies,
+ * and nothing else is touched.
+ */
+export function applyOilRegions(
+  provinces: readonly EnrichedProvince[],
+  regions: readonly { id: string; tier: number }[],
+): EnrichedProvince[] {
+  if (regions.length === 0) throw new Error('applyOilRegions: keine Regionen angegeben')
+
+  const seen = new Set<string>()
+  for (const region of regions) {
+    if (seen.has(region.id)) throw new Error(`applyOilRegions: doppelte id ${region.id}`)
+    seen.add(region.id)
+    if (![1, 2, 3].includes(region.tier)) {
+      throw new Error(`applyOilRegions: ungültiger tier ${region.tier} bei ${region.id}`)
+    }
+  }
+
+  const byId = new Map(provinces.map((p) => [p.id, { ...p, deposits: { ...p.deposits } }]))
+  for (const region of regions) {
+    const province = byId.get(region.id)
+    if (!province) throw new Error(`applyOilRegions: unbekannte id ${region.id}`)
+    province.deposits.oil = oilAmount(region.tier)
+  }
+
+  return [...byId.values()].sort((a, b) => a.id.localeCompare(b.id, 'en'))
 }
 
 /** The ground every playable power needs to build and arm at all. */
