@@ -536,6 +536,18 @@ body {
   border-color: var(--accent);
 }
 
+/* "Krieg erklaeren" (E4.3): die einzige rote Ausnahme — nur Rahmen, kein Fuellton, damit er
+   neben der Hauptaktion (Buendnis, Bernstein) nicht wie eine zweite Hauptaktion wirkt. */
+.button--danger-outline {
+  border-color: var(--danger);
+  color: var(--danger);
+  background: transparent;
+}
+
+.button--danger-outline:hover:not(:disabled) {
+  background: var(--danger-soft);
+}
+
 /* ---------------------------------------------------------------- main */
 
 .main {
@@ -2549,6 +2561,44 @@ body {
   color: var(--ink);
   background: var(--paper-sunk);
   border-left: 2px solid var(--line);
+}
+
+/* "Weitere" bei der Diplomatie (E4.3, Vorbild .explain__text): Krieg bleibt eigenstaendig
+   sichtbar, die uebrigen Vertrags-/Durchmarschaktionen liegen ueber der Leiste statt sie zu
+   schieben. Reihe 1: Hauptaktion + Krieg + Weitere-Knopf, nebeneinander, bricht schmal um. */
+.diplomacy__primary {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--sp-sm);
+  margin-bottom: var(--sp-sm);
+}
+
+.diplomacy__more {
+  position: relative;
+}
+
+.diplomacy__more-toggle[aria-expanded='true'] {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+}
+
+.diplomacy__more-panel {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + var(--sp-xs, 4px));
+  left: 0;
+  min-width: 220px;
+  max-width: 320px;
+  padding: var(--sp-sm);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-sm);
 }
 
 /* ---------------------------------------------------------------- meldungen */

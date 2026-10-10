@@ -588,6 +588,7 @@ export const de = {
     },
     treaties: 'Verträge mit {{nation}}',
     passageGroup: 'Durchmarsch und Karte',
+    more: 'Weitere ({{count}})',
     wars: 'Kriege',
     warPair: '{{a}} gegen {{b}}',
     noWars: 'Derzeit führt niemand Krieg.',

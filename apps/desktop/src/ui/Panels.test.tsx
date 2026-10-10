@@ -815,21 +815,27 @@ describe('R-UX-03/AK1 Sperrgründe der Verträge gebündelt, Leerzustände als F
 
   it('zeigt die Gründe einmal als Sammelzeile statt als Absatz unter jedem Knopf', () => {
     const { container } = open()
-    const group = container.querySelector('section.group[aria-label^="Verträge"]') ?? container.querySelectorAll('section.group')[1]!
+    // Bündnis anbieten ist jetzt die Hauptaktion (E4.3) und steht nicht mehr in der Sammelzeile;
+    // sein Sperrgrund steht direkt am Knopf. Die uebrigen stehen hinter „Weitere“.
+    fireEvent.click(screen.getByRole('button', { name: /^Weitere/ }))
+    const group = container.querySelector('.diplomacy__more-panel section.group[aria-label^="Verträge"]')!
 
     expect(group.querySelectorAll('.action__reason').length, 'kein Absatz je Knopf').toBe(0)
     const lines = group.querySelectorAll('.group__reasons')
     expect(lines.length, 'genau eine Sammelzeile').toBe(1)
     expect(lines[0]!.textContent).toContain('Das geht nur im Krieg.')
-    expect(lines[0]!.textContent).toContain('Ein Bündnis setzt Frieden voraus.')
     expect(lines[0]!.textContent).toContain('Mit Ostmark besteht kein Bündnis.')
     // Derselbe Grund steht einmal, mit beiden Knöpfen davor.
     expect((lines[0]!.textContent!.match(/hat Ihnen nichts angeboten/g) ?? []).length).toBe(1)
     expect(lines[0]!.textContent).toContain('Frieden annehmen, Bündnis annehmen')
+    // Der Sperrgrund der Hauptaktion steht eigenstaendig unter ihr, nicht in dieser Sammelzeile.
+    expect(lines[0]!.textContent).not.toContain('Ein Bündnis setzt Frieden voraus.')
+    expect(container.querySelector('.diplomacy__primary .action__reason')?.textContent).toBe('Ein Bündnis setzt Frieden voraus.')
   })
 
   it('jeder gesperrte Knopf trägt seinen Grund über aria-describedby', () => {
     open()
+    fireEvent.click(screen.getByRole('button', { name: /^Weitere/ }))
     for (const action of treaties.filter((a) => a.disabledReason)) {
       const button = screen.getByRole('button', { name: action.label })
       const id = button.getAttribute('aria-describedby')
@@ -2788,6 +2794,8 @@ describe('R-UX-04/AK1 Krieg und Bündnisbruch fragen nach', () => {
 
   it('fragt auch beim Aufkündigen des Bündnisses nach (heute rot)', () => {
     const { brk } = make()
+    // Bündnis aufkündigen steht hinter „Weitere“ (E4.3): erst aufklappen.
+    fireEvent.click(screen.getByRole('button', { name: /^Weitere/ }))
     fireEvent.click(screen.getByRole('button', { name: 'Bündnis aufkündigen' }))
     expect(brk).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('button', { name: /Ostmark.*noch einmal klicken/ }))
@@ -2796,6 +2804,7 @@ describe('R-UX-04/AK1 Krieg und Bündnisbruch fragen nach', () => {
 
   it('fragt bei Frieden nicht nach: dort geht nichts verloren', () => {
     const { peace } = make()
+    fireEvent.click(screen.getByRole('button', { name: /^Weitere/ }))
     fireEvent.click(screen.getByRole('button', { name: 'Frieden anbieten' }))
     expect(peace).toHaveBeenCalledTimes(1)
   })
