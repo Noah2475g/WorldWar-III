@@ -457,13 +457,13 @@ async function ackText(page) {
   })
 }
 
-/** Zeigt die Diplomatie-Tabelle den Krieg mit Mexiko? (Zeile "Mexiko ... Krieg") */
+/** Zeigt die Diplomatie-Tabelle den Krieg mit Mexiko? (Zeile mit data-power, Status war; E4: .power-row) */
 async function warInEffect(page, ms = 8000) {
   return until(
     page,
     () => {
-      const rows = [...document.querySelectorAll('tr')].filter((r) => /^\s*Mexiko/.test(r.innerText))
-      return rows.some((r) => /Krieg/.test(r.innerText.replace('Krieg erklären', '')))
+      const rows = [...document.querySelectorAll('.power-row')].filter((r) => /^\s*Mexiko/.test(r.innerText))
+      return rows.some((r) => r.dataset.status === 'war')
     },
     null,
     ms,

@@ -1989,7 +1989,11 @@ export function DiplomacyPanel({
             const contractRows = (contracts ?? []).filter((row) => row.partner === other.id)
             return (
               <Fragment key={other.id}>
-              <tr className={other.id === chosen ? 'is-selected' : undefined}>
+              <tr
+                className={`power-row${other.id === chosen ? ' is-selected' : ''}`}
+                data-power={other.id}
+                data-status={relation?.state ?? 'peace'}
+              >
                 <td>
                   {canChoose ? (
                     <button
