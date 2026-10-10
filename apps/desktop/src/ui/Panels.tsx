@@ -2123,9 +2123,18 @@ function DiplomacyActions({
 }) {
   const warLabel = t('actions.declareWar')
   const mainLabel = t('actions.offerAlliance')
+  const peaceLabel = t('actions.offerPeace')
   const warAction = actions.find((a) => a.label === warLabel)
   const mainAction = actions.find((a) => a.label === mainLabel)
-  const restTreaties = actions.filter((a) => a !== warAction && a !== mainAction)
+  // Regression E4.3 (Review-Runde 1, K4): "Frieden anbieten" landete in restTreaties und damit
+  // im eingeklappten "Weitere"-Aufklappmuster -- im Krieg ist es keine Nebenhandlung, sondern
+  // die einzige sinnvolle Haupthandlung, muss also wie warAction sichtbar bleiben. Ausserhalb
+  // des Kriegs ist der Knopf gesperrt ("Das geht nur im Krieg.") -- dann bleibt er in
+  // restTreaties, damit sein Sperrgrund wie zuvor in der Sammelzeile des "Weitere"-Musters
+  // auftaucht (R-UX-03/AK1), statt als eigener gesperrter Knopf daneben zu stehen.
+  const peaceCandidate = actions.find((a) => a.label === peaceLabel)
+  const peaceAction = peaceCandidate && peaceCandidate.disabledReason === null ? peaceCandidate : undefined
+  const restTreaties = actions.filter((a) => a !== warAction && a !== mainAction && a !== peaceAction)
   const confirms: Record<string, string> = {}
   if (warAction) confirms[warAction.id] = t('diplomacy.declareWarConfirm', { nation })
   for (const a of restTreaties) {
@@ -2139,6 +2148,7 @@ function DiplomacyActions({
       {warAction && (
         <ActionButton action={warAction} showReason className="button--danger-outline" confirm={confirms[warAction.id]} />
       )}
+      {peaceAction && <ActionButton action={peaceAction} showReason primary />}
       {moreCount > 0 && (
         <DiplomacyMore count={moreCount}>
           {restTreaties.length > 0 && (
