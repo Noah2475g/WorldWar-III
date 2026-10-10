@@ -2839,10 +2839,20 @@ describe('Liefervertrag B3 (D8)', () => {
     const onRun = vi.fn()
     const view = diplomacyView({ others: [{ id: 'p2', nation: 'Ostmark' }] })
     const contracts = [
-      { id: 'c1', partner: 'p2', text: 'Liefervertrag: gibt 1 Eisen', actions: [{ id: 'contract-c1-cancel', label: 'Kündigen', disabledReason: null, onRun }] },
+      {
+        id: 'c1',
+        partner: 'p2',
+        text: 'Liefervertrag: gibt 1 Eisen',
+        give: '500 Eisen',
+        want: '1.800 Geld',
+        remaining: 3,
+        actions: [{ id: 'contract-c1-cancel', label: 'Kündigen', disabledReason: null, onRun }],
+      },
     ]
     render(<DiplomacyPanel view={view} nameOf={() => 'Ostmark'} contracts={contracts} />)
-    expect(screen.getByText('Liefervertrag: gibt 1 Eisen')).toBeTruthy()
+    expect(screen.getByText(/500 Eisen/)).toBeTruthy()
+    expect(screen.getByText(/1\.800 Geld/)).toBeTruthy()
+    expect(screen.getByText('noch 3')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Kündigen' }))
     expect(onRun).toHaveBeenCalledTimes(1)
   })

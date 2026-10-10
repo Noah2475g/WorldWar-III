@@ -1168,6 +1168,10 @@ export interface ContractRowSpec {
   /** Die andere Partei des Vertrags. */
   partner: string
   text: string
+  /** Strukturiert fuer die kompakte Zeile (E4.2) — kein Text-Parsing in der UI. */
+  give: string
+  want: string
+  remaining: number
   actions: ActionSpec[]
 }
 
@@ -1183,16 +1187,21 @@ export function contractRowActions(ctx: ActionContext, view: PublicView, naming:
     const other = mine ? contract.want : contract.give
     const { day, hour } = gameTime(contract.nextDueTick, ctx.ticksPerDay)
     const command: Command = { type: 'CANCEL_CONTRACT', playerId: ctx.playerId, contractId: contract.id }
+    const giveText = bundleText({ resources: own, provinces: [] }, naming.nameOfProvince)
+    const wantText = bundleText({ resources: other, provinces: [] }, naming.nameOfProvince)
     return {
       id: contract.id,
       partner,
       text: t('trade.contract.row', {
-        give: bundleText({ resources: own, provinces: [] }, naming.nameOfProvince),
-        want: bundleText({ resources: other, provinces: [] }, naming.nameOfProvince),
+        give: giveText,
+        want: wantText,
         day,
         hour: String(hour).padStart(2, '0'),
         remaining: contract.remaining,
       }),
+      give: giveText,
+      want: wantText,
+      remaining: contract.remaining,
       actions: [tradeChecked(ctx, command, `contract-${contract.id}-cancel`, t('trade.contract.cancel'), naming.nameOfProvince)],
     }
   })

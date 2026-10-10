@@ -1821,6 +1821,10 @@ export interface ContractRow {
   id: string
   partner: string
   text: string
+  /** Strukturiert fuer die kompakte Zeile (E4.2) — kein Text-Parsing in der UI. */
+  give: string
+  want: string
+  remaining: number
   actions: readonly Action[]
 }
 
@@ -2041,8 +2045,16 @@ export function DiplomacyPanel({
               {contractRows.map((row) => (
                 <tr key={row.id} className="contract-row">
                   <td colSpan={2 + (reputationMax !== undefined ? 1 : 0) + (ticksPerDay !== undefined ? 1 : 0)}>
-                    <p className="offer__text">{row.text}</p>
-                    <ActionRow actions={row.actions} />
+                    <div className="contract-row__line" title={row.text}>
+                      <span className="contract-row__icon" aria-hidden="true">
+                        ⇄
+                      </span>
+                      <span className="contract-row__amounts">
+                        {row.give} <span className="contract-row__arrow">→</span> {row.want}
+                      </span>
+                      <span className="contract-row__remaining">{t('trade.contract.remaining', { remaining: row.remaining })}</span>
+                      <ActionRow actions={row.actions} />
+                    </div>
                   </td>
                 </tr>
               ))}
