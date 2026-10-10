@@ -426,6 +426,8 @@ describe('R-MP-12/AK1 Der Beitrittsbildschirm zeigt, worauf man sich einlaesst',
     expect(screen.queryByRole('dialog', { name: /Einladung/ })).toBeNull()
     const kopf = document.querySelector('.header')?.textContent ?? ''
     expect(kopf, 'die feste Rate steht nicht in der Kopfleiste').toContain('25')
+    // Seit E3 (D7) stehen die Ranglisten-Zeilen im Bereich Rangliste der Leiste rechts, nicht mehr im Fuss.
+    act(() => fireEvent.click(document.querySelector('.rail__item[data-area="standings"]')!))
     expect(document.body.textContent, 'der Gast sieht die Nation seines Gegners').toContain(
       config.players[1]!.nation,
     )

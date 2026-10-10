@@ -65,7 +65,8 @@ import { CreditsDialog } from './ui/Credits.tsx'
 import { armyNamer, createArmyNameMemory, nationNamer, provinceNamer } from './game/names.ts'
 import { armyRows } from './game/armies.ts'
 import { ACK_MIN_MS, ACK_SLACK_MS, armyAckKey } from './game/ack.ts'
-import { Foot, latestReport } from './ui/Foot.tsx'
+import { LogArea, StandingsTop, latestReport, unreadCount } from './ui/Foot.tsx'
+import { Rail, RAIL_ENTRIES, SIDE_LAST_AREA_KEY, isRailArea, readLastSideArea, type RailArea } from './ui/Rail.tsx'
 import { standingsRows } from './ui/Standings.tsx'
 import { Dialog } from './ui/Dialogs.tsx'
 import { DeltaBar } from './ui/charts/DeltaBar.tsx'
@@ -1285,7 +1286,14 @@ export function App(props: AppProps) {
   // Laeuft die Uhr wieder, ist die Auto-Pause-Meldung veraltet (sonst kaeme sie bei der naechsten Pause zurueck).
   useEffect(() => {
     if (speed > 0) {
-      setFastForward((alt) => (alt.reason === 'autopause' ? { ...alt, reason: null, trigger: null } : alt))
+      setFastForward((alt) => {
+        if (alt.reason !== 'autopause') return alt
+        // E3 R1 (VM-06): auch der STEHENDE Toast "Pausiert: ..." ist mit laufender Uhr falsch —
+        // ohne dismiss blieb er bis zu seiner Dauer (1650 ms) im Bild und erschien einer spaeteren
+        // Hand-Pause zugerechnet. dismissNotice ist idempotent (eine id), doppelter Aufruf schadet nicht.
+        dismissNotice()
+        return { ...alt, reason: null, trigger: null }
+      })
     }
   }, [speed])
   useEffect(() => {
@@ -1490,14 +1498,65 @@ export function App(props: AppProps) {
   const appRef = useRef<HTMLDivElement>(null)
   useToastInsets(appRef, Boolean(state && view && ctx && viewerId))
 
-  /** Ein Panel aus Fuss oder Blattleiste oeffnen. Die Lage oeffnen heisst: gesehen, die Neu-Marke faellt auf null. */
+  /** Ein Panel aus Leiste oder Blattleiste oeffnen. Die Lage oeffnen heisst: gesehen, die Neu-Marke faellt auf null. */
   const openFootPanel = useCallback(
-    (panel: 'diplomacy' | 'market' | 'standings' | 'espionage' | 'armies') => {
+    (panel: 'diplomacy' | 'market' | 'standings' | 'espionage' | 'armies' | 'economy' | 'log') => {
       if (panel === 'standings' && state) setSeenTick(state.tick)
       dispatch({ type: 'openPanel', panel })
     },
     [state],
   )
+
+  /*
+   * Die Seitenleiste (Seitenleiste v3b E3, D6). `ui.panel` bleibt EIN Wert; offen ist sie, wenn er
+   * gesetzt ist. Der letzte Bereich der Leiste steht in localStorage, damit W ihn wieder oeffnet;
+   * der Ausloeser (Leisten-Eintrag oder Taste) bekommt beim Schliessen den Fokus zurueck.
+   */
+  const sideTrigger = useRef<HTMLElement | null>(null)
+  useEffect(() => {
+    if (!isRailArea(ui.panel)) return
+    try {
+      window.localStorage?.setItem(SIDE_LAST_AREA_KEY, ui.panel)
+    } catch {
+      // Ohne Speicher (privates Fenster) gilt der Vorgabebereich.
+    }
+  }, [ui.panel])
+  const sideWasOpen = useRef(false)
+  useEffect(() => {
+    const open = ui.panel !== null
+    if (sideWasOpen.current && !open) {
+      const back = sideTrigger.current
+      sideTrigger.current = null
+      if (back && back.isConnected) back.focus()
+    }
+    sideWasOpen.current = open
+  }, [ui.panel])
+  const toggleSide = useCallback(
+    (trigger: HTMLElement | null) => {
+      if (ui.panel) {
+        dispatch({ type: 'closePanel' })
+        return
+      }
+      sideTrigger.current = trigger
+      openFootPanel(readLastSideArea())
+    },
+    [ui.panel, openFootPanel],
+  )
+  const openRailArea = useCallback(
+    (area: RailArea, trigger: HTMLElement) => {
+      if (ui.panel === area) {
+        dispatch({ type: 'closePanel' })
+        return
+      }
+      if (!ui.panel) sideTrigger.current = trigger
+      openFootPanel(area)
+    },
+    [ui.panel, openFootPanel],
+  )
+  /** Kopf der Seitenleiste: Name und Taste des Bereichs (Provinz/Armee tragen ihren eigenen Kopf). */
+  const sideEntry = RAIL_ENTRIES.find((entry) => entry.area === ui.panel) ?? null
+  const sideTitle = sideEntry ? sideEntry.label() : undefined
+  const sideShortcut = sideEntry?.key ?? null
 
   // Auto-Schwenk (T-M44-03b): im Hochformat des Telefons bleibt die gewaehlte Provinz im sichtbaren
   // Kartenteil — bei jeder neuen Auswahl und jedem Rastenwechsel des Blatts wird auf sie zentriert.
@@ -1581,7 +1640,13 @@ export function App(props: AppProps) {
           dispatch({ type: 'setMode', mode: shortcut.mode })
           break
         case 'openPanel':
-          if (state) dispatch({ type: 'openPanel', panel: shortcut.panel })
+          if (state) {
+            if (!ui.panel && document.activeElement instanceof HTMLElement) sideTrigger.current = document.activeElement
+            openFootPanel(shortcut.panel)
+          }
+          break
+        case 'toggleSidebar':
+          if (state) toggleSide(document.activeElement instanceof HTMLElement ? document.activeElement : null)
           break
         case 'help':
           setDialog('keys')
@@ -1629,7 +1694,8 @@ export function App(props: AppProps) {
               : side?.querySelector<HTMLElement>(
                   `section[data-group="${shortcut.zone}"] button:not(:disabled)`,
                 ) ?? null
-          const picker = side?.querySelector<HTMLElement>('.picker select') ?? null
+          // Seit E3 schwebt die Provinzwahl auf der Karte (aside.map-picker), im Telefon-Hochformat steht sie im Blatt.
+          const picker = document.querySelector<HTMLElement>('.picker select')
           ;(target ?? picker)?.focus()
           break
         }
@@ -1690,6 +1756,10 @@ export function App(props: AppProps) {
     // Der Effekt ruft `fastForwardRun` (Taste F). Ohne diese Zeile hinge die Mitschrift der
     // Debug-Ansicht daran, dass zufaellig eine andere Abhaengigkeit den Effekt neu bindet (T-M41-16).
     fastForwardRun,
+    // Taste W und die Bereichstasten (E3, D6): offen/zu haengt an ui.panel.
+    ui.panel,
+    toggleSide,
+    openFootPanel,
   ])
 
   useEffect(() => {
@@ -2562,6 +2632,20 @@ export function App(props: AppProps) {
       .map((p) => ({ id: p.id, name: p.name }))
       .sort((a, b) => a.name.localeCompare(b.name, 'de'))
 
+  /** Die Provinzwahl (E3): bis zur Leiste unten (E5) schwebt sie unten mittig auf der Karte; im Telefon-Hochformat im Blatt. */
+  const pickerElement = (
+    <ProvincePicker
+      own={ownProvinces}
+      others={knownProvinces}
+      value={ui.selectedProvince}
+      onChange={(id) => {
+        setTargeting(null)
+        if (id) tutor('selectProvince')
+        dispatch({ type: 'selectProvince', id })
+      }}
+    />
+  )
+
   return (
     <div
       className="app"
@@ -2570,6 +2654,8 @@ export function App(props: AppProps) {
       // Ein offenes Panel verkleinert im Hochformat die Karte (T-M44-03a, touch.css `--map-h`).
       data-panel={ui.panel ? 'open' : 'closed'}
       data-sheet={ui.panel ? sheetSnap : undefined}
+      // Die Seitenleiste offen oder zu (E3, D6): die Werkzeug-Spalte rutscht mit (app.css).
+      data-side-open={ui.panel ? 'true' : 'false'}
     >
       {/* Ein Toaster (D2): Desktop unten links, Telefon-Hochformat oben mittig; hoechstens einer sichtbar. */}
       <Toaster
@@ -2674,19 +2760,39 @@ export function App(props: AppProps) {
               }
             }}
             labelFor={nameOfProvince}
+            // Die Legende sitzt unten in der Werkzeug-Spalte (E3, D8).
+            legend={<Legend mode={ui.mode} {...(colorOf(viewerId) ? { ownColor: colorOf(viewerId)! } : {})} />}
           />
           {/* Die Hinweisspalte oben links ueber der Karte (v3b E1, D3); im Telefon-Hochformat bleibt sie im Blatt (E8). */}
           {!phonePortrait && alertsElement}
-          {/* Der Schluessel gehoert zu seiner Karte, nicht in die Seitenleiste. */}
-          <Legend mode={ui.mode} {...(colorOf(viewerId) ? { ownColor: colorOf(viewerId)! } : {})} />
+          {/* Die Provinzwahl (E3): unten mittig auf der Karte, bis E5 die Leiste unten bringt. */}
+          {/* Als eigenes <aside> vor der Seitenleiste: `aside select` bleibt fuer die UX-Skripte die Provinzwahl. */}
+          {!phonePortrait && (
+            <aside className="map-picker" aria-label={t('province.pick')}>
+              {pickerElement}
+            </aside>
+          )}
           {tooltip && tooltipAt && <Tooltip data={tooltip} x={tooltipAt.x} y={tooltipAt.y} selected={tooltipSelected} />}
           {/* Nur im Hochformat sichtbar (touch.css); ein Hinweis, keine Sperre (T-M44-03a). */}
           <OrientationHint />
         </div>
 
+        {/* Die Leiste rechts (Seitenleiste v3b E3, D6): sieben Bereiche, oben W. */}
+        <Rail
+          active={ui.panel}
+          open={ui.panel !== null}
+          unread={unreadCount(events, seenTick)}
+          onArea={openRailArea}
+          onToggle={(trigger) => toggleSide(trigger)}
+        />
         {/* Die Hülle und ihre sechs Plätze: `ui/Sidebar.tsx` (T-M44-02b). Inhalt und Reihenfolge wie vorher. */}
         {/* LOESCHVERMERK (Review): bis T-M44-02b stand hier `<aside className="side">` mit denselben sechs Kindern direkt in dieser Datei. */}
         <Sidebar
+          // Im Telefon-Hochformat bleibt das Blatt wie bisher stehen (Provinzwahl darin); E8 baut es um.
+          open={ui.panel !== null || phonePortrait}
+          title={sideTitle ?? ''}
+          shortcut={sideShortcut}
+          onClose={() => dispatch({ type: 'closePanel' })}
           scrollKey={`${ui.panel}:${ui.selectedProvince}:${ui.selectedArmy}`}
           handle={
             ui.panel ? (
@@ -2698,16 +2804,7 @@ export function App(props: AppProps) {
             ) : null
           }
           picker={
-              <ProvincePicker
-                own={ownProvinces}
-                others={knownProvinces}
-                value={ui.selectedProvince}
-                onChange={(id) => {
-                  setTargeting(null)
-                  if (id) tutor('selectProvince')
-                  dispatch({ type: 'selectProvince', id })
-                }}
-              />
+            phonePortrait ? pickerElement : null
           }
           alerts={phonePortrait ? alertsElement : null}
           notice={null}
@@ -2814,7 +2911,17 @@ export function App(props: AppProps) {
                   onJump={jumpTo}
                 />
               )}
-              {ui.panel === 'standings' && <StandingsPanel view={view} nameOf={nameOf} timeline={timeline} />}
+              {ui.panel === 'standings' && (
+                <>
+                  {/* Die Ranglisten-Zeilen des alten Fusses (E3, D7): Platz 1 und die eigene Umgebung. */}
+                  <StandingsTop rows={standingsRows(view, nameOf)} />
+                  <StandingsPanel view={view} nameOf={nameOf} timeline={timeline} />
+                </>
+              )}
+              {/* Das Protokoll (E3, D7/D27): erste Zeile die Depesche, darunter das Protokoll mit Filtern. */}
+              {ui.panel === 'log' && (
+                <LogArea entries={events} ticksPerDay={ticksPerDay} onJump={jumpTo} onDispatch={() => setDialog('report')} />
+              )}
               {ui.panel === 'market' && (
                 <MarketPanel
                   onClose={() => dispatch({ type: 'closePanel' })}
@@ -2829,7 +2936,7 @@ export function App(props: AppProps) {
               )}
             </>
           }
-          economy={<EconomyPanel view={view} timeline={timeline} expenses={expenses} />}
+          economy={ui.panel === 'economy' ? <EconomyPanel view={view} timeline={timeline} expenses={expenses} /> : null}
           debug={
               <DebugPanel
                 enabled={ui.settings.debug}
@@ -2840,17 +2947,6 @@ export function App(props: AppProps) {
           }
         />
       </main>
-
-      {/* Der Fuss (T-M31-03, D27.6): Protokoll, Rangliste, vier Knoepfe. */}
-      <Foot
-        entries={events}
-        ticksPerDay={ticksPerDay}
-        rows={standingsRows(view, nameOf)}
-        seenTick={seenTick}
-        onJump={jumpTo}
-        onDispatch={() => setDialog('report')}
-        onPanel={openFootPanel}
-      />
 
       <Tutorial
         state={tutorial}

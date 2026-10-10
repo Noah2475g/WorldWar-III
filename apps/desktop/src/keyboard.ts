@@ -19,6 +19,8 @@ export type Shortcut =
   | { type: 'help' }
   | { type: 'openPanel'; panel: 'diplomacy' | 'market' | 'standings' | 'espionage' | 'armies' }
   | { type: 'close' }
+  /** Die Seitenleiste auf- oder zuklappen (Seitenleiste v3b E3, D6): Taste W, wie `button.rail__toggle`. */
+  | { type: 'toggleSidebar' }
   /**
    * Der Fokus springt in eine Zone der Seitenleiste (T-M46-05, R-UX-06): die Provinzliste, die Bauknoepfe, die
    * Aushebeknoepfe. Per Tab kostete jede Handlung 19 bis 60 Tasten, fast nur Tab; die Provinzliste ist Station 14
@@ -154,6 +156,10 @@ export function resolveKey(
     case 'e':
     case 'E':
       return { type: 'focusZone', zone: 'recruit' }
+    // Die Seitenleiste (E3, D6): offen -> zu, zu -> der zuletzt offene Bereich.
+    case 'w':
+    case 'W':
+      return { type: 'toggleSidebar' }
     case 'F1':
     case '?':
       return { type: 'help' }

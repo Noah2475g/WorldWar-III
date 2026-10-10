@@ -1040,6 +1040,23 @@ export const de = {
     logClose: 'Protokoll schließen',
   },
 
+  // Die Leiste rechts und die Seitenleiste (Seitenleiste v3b E3, D6).
+  rail: {
+    label: 'Bereiche',
+    open: 'Seitenleiste öffnen',
+    close: 'Seitenleiste schließen',
+    diplomacy: 'Diplomatie',
+    market: 'Markt',
+    armies: 'Heer',
+    espionage: 'Spionage',
+    standings: 'Rangliste',
+    economy: 'Wirtschaft',
+    log: 'Protokoll',
+  },
+  side: {
+    close: 'Schließen',
+  },
+
   map: {
     zoomIn: 'Hineinzoomen',
     zoomOut: 'Herauszoomen',
@@ -1048,6 +1065,12 @@ export const de = {
     tooltipHintTouch: 'Tippen: auswählen · Lange drücken: Details',
     fullscreenEnter: 'Vollbild',
     fullscreenExit: 'Vollbild beenden',
+    // Werkzeug-Spalte (E3, D8): drei Zoomstufen als Knoepfe.
+    tools: 'Kartenwerkzeuge',
+    tiers: 'Zoomstufe',
+    tierFar: 'Welt',
+    tierMid: 'Region',
+    tierNear: 'Nah',
   },
 
   keys: {
@@ -1074,6 +1097,8 @@ export const de = {
     provinces: 'P — zur Provinzliste',
     build: 'B — zu den Bauknöpfen der Provinz',
     recruit: 'E — zu den Aushebeknöpfen der Provinz',
+    // Die Seitenleiste (Seitenleiste v3b E3, D6).
+    sidebar: 'W — Seitenleiste auf/zu',
   },
 
   tutorial: {

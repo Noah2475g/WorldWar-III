@@ -18,6 +18,7 @@ import { dirname, join, resolve } from 'node:path'
 import { gunzipSync } from 'node:zlib'
 import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright'
+import { RAIL_ITEM } from './ux-sel.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const arg = (name, fallback) => {
@@ -164,7 +165,7 @@ function measureArea(page, selector) {
  */
 const buttonCensus = (page) =>
   page.evaluate(() => {
-    const buttons = [...document.querySelectorAll('aside button')].filter((b) => b.getBoundingClientRect().width > 0)
+    const buttons = [...document.querySelectorAll('aside.side button')].filter((b) => b.getBoundingClientRect().width > 0)
     const iconOnly = buttons.filter((b) => !b.textContent.replace(/\s+/g, '').trim() && b.querySelector('svg, canvas, img'))
     return {
       total: buttons.length,
@@ -178,7 +179,7 @@ const buttonCensus = (page) =>
   })
 
 // T-M46-17: Alarmliste (.alerts) und Protokoll (.log) kommen dazu; fehlt der Bereich (keine Meldung), steht null.
-const AREAS = { kopf: 'header', panel: 'aside', alarme: '.alerts', protokoll: '.log' }
+const AREAS = { kopf: 'header', panel: 'aside.side', alarme: '.alerts', protokoll: '.log' }
 async function measureViews(page, vp, name, stackProvince) {
   const out = {}
   const btn = (n, exact = true) => page.getByRole('button', { name: n, exact }).first()
@@ -197,7 +198,7 @@ async function measureViews(page, vp, name, stackProvince) {
   await snap('karte')
   // Nachbesserung U: auf dem Telefon auch das aufgeklappte Protokoll-Blatt messen (Knopf rechts am Fuss).
   if (vp.width < 600) {
-    const toggle = page.locator('.foot__logtoggle').first()
+    const toggle = page.locator(RAIL_ITEM('log')).first()
     if (await toggle.isVisible().catch(() => false)) {
       await toggle.click({ timeout: 4000 }).catch(() => {})
       await page.waitForTimeout(300)
