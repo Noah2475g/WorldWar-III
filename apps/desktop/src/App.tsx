@@ -1286,7 +1286,14 @@ export function App(props: AppProps) {
   // Laeuft die Uhr wieder, ist die Auto-Pause-Meldung veraltet (sonst kaeme sie bei der naechsten Pause zurueck).
   useEffect(() => {
     if (speed > 0) {
-      setFastForward((alt) => (alt.reason === 'autopause' ? { ...alt, reason: null, trigger: null } : alt))
+      setFastForward((alt) => {
+        if (alt.reason !== 'autopause') return alt
+        // E3 R1 (VM-06): auch der STEHENDE Toast "Pausiert: ..." ist mit laufender Uhr falsch —
+        // ohne dismiss blieb er bis zu seiner Dauer (1650 ms) im Bild und erschien einer spaeteren
+        // Hand-Pause zugerechnet. dismissNotice ist idempotent (eine id), doppelter Aufruf schadet nicht.
+        dismissNotice()
+        return { ...alt, reason: null, trigger: null }
+      })
     }
   }, [speed])
   useEffect(() => {

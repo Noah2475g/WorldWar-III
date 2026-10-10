@@ -363,11 +363,9 @@ export function Header(props: HeaderProps) {
           )}
         </div>
 
-        {/*
-          E2 (v3b, D4): die Rohstoffleiste sitzt in DERSELBEN 56-px-Zeile wie Uhr und Tempo —
-          kein eigenes Zeilenpaar mehr (vorher: zweite Zeile unter dem Kopf). Name 10,5 px
-          unter Zahl/Zeichen sichtbar (D4), nicht mehr nur im Tooltip.
-        */}
+        {/* D4 (v3b E3): die 7 Rohstoffe stehen IN der 56-px-Kopfzeile — Bild 20 + Zahl, Name darunter.
+            Bis Review-Runde 1 war die Liste eine ZWEITE Zeile unter .header__top und lag unter der Karte
+            (elementFromPoint traf 0 von 7). Auf dem Telefon bricht sie per CSS als eigene Zeile um (E8 unberuehrt). */}
         <ul className="resources" aria-label="Rohstoffe" ref={resourcesScroll.ref} tabIndex={resourcesScroll.tabIndex}>
           {RESOURCE_KEYS.map((key) => {
             const flow = props.view?.self.economy?.[key]
@@ -386,10 +384,18 @@ export function Header(props: HeaderProps) {
             // die Gruppe zeigt sich als Strich an ihrem letzten Rohstoff.
             const groupClass = GROUP_ENDS.has(key) ? ' resource--groupEnd' : ''
             return (
-              <li key={key} className={`resource resource--${key}${toneClass}${groupClass}`}>
+              <li
+                key={key}
+                className={`resource resource--${key}${toneClass}${groupClass}`}
+                title={t(`resources.${key}`)}
+              >
+                {/* Das Symbol traegt die Bedeutung fuers Auge und - als Name - fuers Ohr (T-M46-17): kein
+                    versteckter Wortknoten mehr daneben.
+                    LOESCHVERMERK (Review): bis T-M46-17 folgten ein <span className="visually-hidden"> mit dem Rohstoffnamen,
+                    der Richtungspfeil als Textzeichen (▲ ▼ –) samt verstecktem Bilanzsatz und die Reichweite als "6 T"-Text. */}
                 <Icon name={RESOURCE_ICONS[key] ?? 'warning'} size={20} title={t(`resources.${key}`)} />
-                <span className="resource__figures">
-                  <span className="resource__row">
+                <span className="resource__data">
+                  <span className="resource__line">
                     <b>{resources ? amount(resources[key] ?? 0) : '—'}</b>
                     {flow && (
                       // Sichtbar ist nur die RICHTUNG (T-M36-02, D36.2): ein Pfeil auf, ab oder ein Strich. Die Bilanzzahl
@@ -419,8 +425,11 @@ export function Header(props: HeaderProps) {
                       </span>
                     )}
                   </span>
-                  {/* Der Name sichtbar unter Zahl/Zeichen (D4), 10,5 px — nicht mehr nur Tooltip. */}
-                  <span className="resource__name">{t(`resources.${key}`)}</span>
+                  {/* Der Name sichtbar unter der Zahl (D4); fuers Ohr traegt ihn schon das Symbol — aria-hidden
+                      verhindert, dass ein Vorleseprogramm ihn doppelt spricht. */}
+                  <span className="resource__name" aria-hidden="true">
+                    {t(`resources.${key}`)}
+                  </span>
                 </span>
               </li>
             )

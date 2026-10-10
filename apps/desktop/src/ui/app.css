@@ -3778,3 +3778,73 @@ body {
     scrollbar-width: none;
   }
 }
+
+/* ---------------------------------------------------------------- Seitenleiste E3, Review-Runde 1 (D4)
+   Die 7 Rohstoffe stehen IN der 56-px-Kopfzeile (Bild 20 + Zahl, Name darunter): bis R1 war
+   `.resources` eine zweite Zeile bei y 56–95 UNTER der Karte, elementFromPoint traf 0 von 7.
+   Unter 600 px (Telefon hochkant, E8 unberuehrt) bleibt die Liste die eigene umbrechende Zeile:
+   dort gilt `display: contents` fuer die Huelle, und der Name bleibt verborgen (touch.css). */
+.resource__data {
+  display: contents;
+}
+
+.resource__name {
+  display: none;
+}
+
+@media (min-width: 600px) {
+  .header__top > .resources {
+    flex: 0 1 auto;
+    min-width: 0;
+    align-self: stretch;
+    align-items: center;
+    background: none;
+    border-top: 0;
+    padding: 0;
+  }
+
+  .header__top .resource {
+    padding: 0 7px;
+  }
+
+  .header__top .resource--groupEnd {
+    padding-right: 10px;
+  }
+
+  .header__top .resource--groupEnd + .resource {
+    padding-left: 10px;
+  }
+
+  .header__top .resource__data {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
+    line-height: 1.1;
+  }
+
+  .resource__line {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* Der Name sichtbar unter der Zahl (D4); fuers Ohr traegt ihn schon das Symbol (aria-hidden). */
+  .resource__name {
+    display: block;
+    font: 500 9px var(--font-map);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+}
+
+/* E3 R1 (P4, D19): die Diplomatietabelle (395 px) rollt in der 320er Seitenleiste in sich,
+   statt die Spalte „Durchmarsch" hinter overflow: hidden zu verlieren. Den Tabstopp setzt
+   useScrollableTab in Panels.tsx nur, wenn sie wirklich rollt. Inhalte ordnet erst E4. */
+.side .diplomacy-table {
+  display: block;
+  overflow-x: auto;
+  max-width: 100%;
+}

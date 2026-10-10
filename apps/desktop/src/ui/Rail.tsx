@@ -23,7 +23,9 @@ export interface RailEntry {
 export const RAIL_ENTRIES: readonly RailEntry[] = [
   { area: 'diplomacy', key: 'D', icon: 'alliance', label: () => t('rail.diplomacy') },
   { area: 'market', key: 'H', icon: 'market', label: () => t('rail.market') },
-  { area: 'armies', key: 'A', icon: 'infantry', label: () => t('rail.armies') },
+  // E3 R1 (P3): gekreuzte Schwerter (v3b-Bild) — das NATO-Rechteck mit Kreuz (infantry) wirkte
+  // bei 20 px wie ein Briefumschlag und war vom Protokoll-Zeichen nicht zu unterscheiden.
+  { area: 'armies', key: 'A', icon: 'battle', label: () => t('rail.armies') },
   { area: 'espionage', key: 'S', icon: 'espionage', label: () => t('rail.espionage') },
   { area: 'standings', key: 'L', icon: 'trophy', label: () => t('rail.standings') },
   { area: 'economy', key: null, icon: 'economy', label: () => t('rail.economy') },

@@ -462,6 +462,14 @@ Kein Fremdinhalt — Bildschirmfotos des eigenen Spiels, erzeugt mit `node scrip
 | `docs/ux/before/x-meldungen-nicht-erreichbar-375x667.png` | `scripts/ux-capture.mjs` | meldungen nicht erreichbar, 375x667 |
 | `docs/ux/before/x-tempo-laeuft-nicht-erreichbar-320x568.png` | `scripts/ux-capture.mjs` | tempo läuft nicht erreichbar, 320x568 |
 | `docs/ux/before/x-tempo-laeuft-nicht-erreichbar-375x667.png` | `scripts/ux-capture.mjs` | tempo läuft nicht erreichbar, 375x667 |
+| `docs/ux/before/x-fehler-spielstand-kaputt-nicht-erreichbar-375x667.png` | `scripts/ux-capture.mjs` | fehler spielstand kaputt nicht erreichbar, 375x667 (Neuaufnahme E2, 2026-10-09) |
+| `docs/ux/before/x-kartenmodus-rohstoffe-nicht-erreichbar-667x375.png` | `scripts/ux-capture.mjs` | kartenmodus rohstoffe nicht erreichbar, 667x375 (Neuaufnahme E2, 2026-10-09) |
+| `docs/ux/before/x-krieg-fragt-nach-1024x768.png` | `scripts/ux-capture.mjs` | krieg fragt nach, 1024x768 (Neuaufnahme E2, 2026-10-09) |
+| `docs/ux/before/x-krieg-fragt-nach-1920x1080.png` | `scripts/ux-capture.mjs` | krieg fragt nach, 1920x1080 (Neuaufnahme E2, 2026-10-09) |
+| `docs/ux/before/x-laden-niederlage-nicht-erreichbar-375x667.png` | `scripts/ux-capture.mjs` | laden niederlage nicht erreichbar, 375x667 (Neuaufnahme E2, 2026-10-09) |
+| `docs/ux/before/x-laden-sieg-nicht-erreichbar-375x667.png` | `scripts/ux-capture.mjs` | laden sieg nicht erreichbar, 375x667 (Neuaufnahme E2, 2026-10-09) |
+| `docs/ux/before/x-menue-nicht-erreichbar-375x667.png` | `scripts/ux-capture.mjs` | menü nicht erreichbar, 375x667 (Neuaufnahme E2, 2026-10-09) |
+| `docs/ux/before/x-speichern-nicht-erreichbar-375x667.png` | `scripts/ux-capture.mjs` | speichern nicht erreichbar, 375x667 (Neuaufnahme E2, 2026-10-09) |
 
 ### Nachher-Aufnahme (T-M44-21, 2026-10-03)
 

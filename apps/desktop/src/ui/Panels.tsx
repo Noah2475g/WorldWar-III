@@ -30,6 +30,7 @@ import { ConfirmButton } from './ConfirmButton.tsx'
 import { useInputMode } from './inputMode.ts'
 import { PreviewArea, slotState } from './CostPreview.tsx'
 import { scrollWithin } from './scrollWithin.ts'
+import { useScrollableTab } from './useScrollableTab.ts'
 // Die Richtung einer Bilanz als Klassenzusatz - dieselbe Funktion wie in der
 // Kopfleiste (T-M36-05). Zwei Tabellen, die dieselbe Zahl verschieden einfaerben,
 // waeren zwei Aussagen ueber denselben Vorrat.
@@ -1922,6 +1923,10 @@ export function DiplomacyPanel({
   // Mit schon gewaehlter Macht geoeffnet = der Sprung aus einer Meldung (Angebot): die Angebote stehen offen.
   const openedWithPartner = useRef(Boolean(chosen))
   const [chosenAt, setChosenAt] = useState(0)
+  // E3 R1 (P4, D19): in der 320er Seitenleiste ist die Tabelle 395 px breit — sie rollt in sich
+  // (overflow-x) statt die Spalte „Durchmarsch" hinter overflow: hidden zu verlieren; rollt sie
+  // wirklich, bekommt sie einen Tabstopp (Tastatur, WCAG 2.1.1). Inhalte ordnet erst E4 (v3b).
+  const tableScroll = useScrollableTab<HTMLTableElement>()
   useEffect(() => {
     if (chosenAt === 0) return
     const block = chosenBlock.current
@@ -1968,7 +1973,7 @@ export function DiplomacyPanel({
         lag zu 99,6% ausserhalb, mit der Maus unerreichbar. Hoechstens vier Spalten: der
         Name der Macht ist seither selbst der Auswahlknopf (Panels.test.tsx zaehlt sie nach).
       */}
-      <table className="table diplomacy-table">
+      <table className="table diplomacy-table" ref={tableScroll.ref} tabIndex={tableScroll.tabIndex} aria-label={t('diplomacy.title')}>
         <thead>
           <tr>
             <th>{t('newGame.nation')}</th>

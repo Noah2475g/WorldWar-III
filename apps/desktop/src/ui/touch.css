@@ -736,6 +736,26 @@ select,
     margin: 0;
   }
 
+  /* E3 R1: die Liste steht im DOM jetzt in .header__top (D4, Desktop-Kopfzeile); auf dem Telefon
+     bleibt sie die eigene umbrechende Zeile UNTER allen Kopf-Elementen (order nach .meter), ueber
+     die volle Kopfbreite (negative Raender gegen das Eltern-Padding). Bild 28 wie vor E3 R1. */
+  :root:root .header__top > .resources {
+    order: 7;
+    flex: 1 1 100%;
+    margin: 0 calc(-1 * var(--sp-md));
+  }
+
+  :root:root .resource > svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  :root:root .resource__dir svg,
+  :root:root .resource__reach svg {
+    width: 16px;
+    height: 16px;
+  }
+
   /* Die Mitte: oben die Karte, darunter die Seitenleiste. */
   :root:root .main {
     grid-template-columns: minmax(0, 1fr);

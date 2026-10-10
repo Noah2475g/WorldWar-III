@@ -1192,6 +1192,12 @@ describe('VM-06 Die Uhr haelt bei einem eigenen Alarm von selbst an', () => {
     localStorage.clear()
     wartend = []
     jetzt = 1000
+    // Sonner-Toasts brauchen setTimeout als Fake-Timer (advanceTimersByTime unten); die Spielschleife
+    // treiben hier die rAF-Warteschlange und performance.now, NICHT die Timer — deshalb nur 'setTimeout'.
+    // KEIN stehendeUhr() in den Tests: das wuerde die rAF-Warteschlange durch () => 0 ersetzen,
+    // bilder() liefe leer, und die Fake-Timer fuer setInterval/Date blieben ohne useRealTimers haengen
+    // (die Kaskade der 29 Timeouts nach VM-06, Review E3 R1).
+    vi.useFakeTimers({ toFake: ['setTimeout'] })
     vi.stubGlobal('requestAnimationFrame', (rueckruf: FrameRequestCallback) => {
       wartend.push(rueckruf)
       return wartend.length
@@ -1240,14 +1246,14 @@ describe('VM-06 Die Uhr haelt bei einem eigenen Alarm von selbst an', () => {
 
     bilder(10, 100)
     // sonner toast braucht setTimeout; fake timers vorlaufen lassen
-    vi.advanceTimersByTime(100)
+    act(() => vi.advanceTimersByTime(100))
 
     expect(within(document.body).getByText(/Pausiert: /)).toBeTruthy()
     // Gestoppt nach dem 3. Tick: 03:00 Uhr, nicht die fuenf Ticks, die das Bild schuldete.
     expect(screen.getByText(/Tag \d+ · \d{2}:\d{2}/).textContent).toMatch(/Tag 1 · 03:00/)
     bilder(5, 100)
     // sonner toast braucht setTimeout; fake timers vorlaufen lassen
-    vi.advanceTimersByTime(100)
+    act(() => vi.advanceTimersByTime(100))
     expect(screen.getByText(/Tag \d+ · \d{2}:\d{2}/).textContent).toMatch(/Tag 1 · 03:00/)
   })
 
@@ -1257,7 +1263,7 @@ describe('VM-06 Die Uhr haelt bei einem eigenen Alarm von selbst an', () => {
     alarm.beiAufruf = 3
     bilder(10, 100)
     // sonner toast braucht setTimeout; fake timers vorlaufen lassen
-    vi.advanceTimersByTime(100)
+    act(() => vi.advanceTimersByTime(100))
 
     expect(within(document.body).getByText(/Pausiert: /)).toBeTruthy()
     const gedrueckt = () =>
@@ -1274,8 +1280,9 @@ describe('VM-06 Die Uhr haelt bei einem eigenen Alarm von selbst an', () => {
     // TIME_BEFORE_UNMOUNT): erst die rAF-Bilder, DANACH die Zeit vorlaufen lassen.
     vi.advanceTimersByTime(300)
     fireEvent.click(within(screen.getByRole('group', { name: 'Geschwindigkeit' })).getByRole('button', { name: 'Pause' }))
-    bilder(1, 0)
-    vi.advanceTimersByTime(300)
+    // Die Quittung wechselt erst nach ihrer Mindeststandzeit (ACK_MIN_MS, ack.ts): unter Fake-Timern
+    // bliebe sonst die ALTE Auto-Pause-Quittung stehen und der Text "Pausiert: ..." mit ihr.
+    act(() => vi.advanceTimersByTime(ACK_MIN_MS + ACK_SLACK_MS))
 
     expect(within(document.body).queryByText(/Pausiert: /)).toBeNull()
   })
@@ -1288,7 +1295,7 @@ describe('VM-06 Die Uhr haelt bei einem eigenen Alarm von selbst an', () => {
 
     bilder(10, 100)
     // sonner toast braucht setTimeout; fake timers vorlaufen lassen
-    vi.advanceTimersByTime(100)
+    act(() => vi.advanceTimersByTime(100))
 
     expect(within(document.body).queryByText(/Pausiert: /)).toBeNull()
     expect(screen.getByText(/Tag \d+ · \d{2}:\d{2}/).textContent).not.toMatch(/Tag 1 · 03:00/)
