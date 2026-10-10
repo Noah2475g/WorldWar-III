@@ -511,10 +511,12 @@ export function ProvincePicker({
           // Eingabe bestaetigt die Wahl und fuehrt den Fokus zu den Handlungen der Provinz (T-M46-05): in einer
           // Auswahlliste gehoeren die Buchstaben dem Tippen, also kommt man mit B oder E erst von hier weg.
           if (event.key !== 'Enter') return
-          const first = event.currentTarget
-            // Seit E3 schwebt die Provinzwahl ausserhalb der Seitenleiste: die Handlungen stehen in aside.side.
-            .ownerDocument.querySelector('aside.side')
-            ?.querySelector<HTMLElement>('.panel :is(.slots, [data-group]) button:not(:disabled)')
+          const doc = event.currentTarget.ownerDocument
+          // D19c: die eigene Provinz baut jetzt im Dock (D19a/c); fremde Provinzen (kein
+          // eigener Dock-Inhalt) stehen weiterhin in der Seitenleiste (aside.side).
+          const first =
+            doc.querySelector<HTMLElement>('.dock-province :is(.slots, [data-group]) button:not(:disabled)') ??
+            doc.querySelector('aside.side')?.querySelector<HTMLElement>('.panel :is(.slots, [data-group]) button:not(:disabled)')
           if (first) {
             event.preventDefault()
             first.focus()
@@ -741,6 +743,15 @@ export function ProvinceBuildSlots({
 export interface ProvinceDockContentProps {
   province: VisibleProvince | null
   groups?: readonly ActionGroupSpec[]
+  /**
+   * Die naechste Freischaltung, fuer den Kopf der Aushebeliste (D19c, analog ProvincePanel).
+   * `null` heisst: alles frei — dann steht die Zeile gar nicht da.
+   */
+  nextUnlock?: NextUnlock | null
+  /** The player's own armies standing here (D19c, analog ProvincePanel). */
+  armies?: readonly { id: string; name: string; strength: number; icon?: IconName | undefined }[]
+  selectedArmy?: string | null
+  onSelectArmy?: (id: string) => void
   ticksPerDay: number
   currentTick: number
 }
@@ -750,6 +761,12 @@ export function ProvinceDockContent(props: ProvinceDockContentProps) {
   if (!province) return null
   const buildGroup = props.groups?.find((group) => group.id === 'build')
   const buildActions = buildGroup?.actions ?? []
+  // Wie ProvincePanel: Bau-Reste (kein Bauplatz) + alle anderen Gruppen (u.a. 'recruit').
+  const leftoverBuild = buildActions.filter((entry) => !BUILDING_ORDER.some((key) => entry.id === `build-${key}`))
+  const otherGroups = [
+    ...(buildGroup && leftoverBuild.length > 0 ? [{ ...buildGroup, actions: leftoverBuild }] : []),
+    ...(props.groups?.filter((group) => group.id !== 'build') ?? []),
+  ]
 
   return (
     <div className="dock-province">
@@ -768,9 +785,53 @@ export function ProvinceDockContent(props: ProvinceDockContentProps) {
           slotIconSize={18}
           showHeading={false}
           showQueueMeter={false}
-          interactive={false}
+          // D19c: ProvincePanel steht fuer Provinz/Armee nicht mehr gleichzeitig in der
+          // Seitenleiste (Desktop) — die Namens-Mehrdeutigkeit aus D19a entfaellt, der Dock
+          // darf jetzt selbst bauen lassen.
+          interactive={true}
         />
       )}
+
+      {props.armies && props.armies.length > 0 && (
+        <>
+          <h3 className="panel__icon-title">
+            <Icon name="infantry" size={26} title={t('army.here')} />
+          </h3>
+          <ul className="army-list">
+            {props.armies.map((army) => (
+              <li key={army.id} className={army.id === props.selectedArmy ? 'is-selected' : undefined}>
+                <span className="army-list__row">
+                  {army.icon && <Icon name={army.icon} size={26} />}
+                  {army.name}
+                  <span title={t('army.strength')} className="army-list__power">
+                    <Icon name="battle" size={18} title={t('army.strength')} />
+                    {amount(army.strength)}
+                  </span>
+                </span>
+                <button
+                  type="button"
+                  className="button button--icon"
+                  aria-label={`${t('army.select')}: ${army.name}`}
+                  title={t('army.select')}
+                  onClick={() => props.onSelectArmy?.(army.id)}
+                >
+                  <Icon name="select" size={22} />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+
+      {otherGroups.map((group) => (
+        <ActionGroup
+          key={group.id}
+          group={group}
+          next={group.id === 'recruit' ? props.nextUnlock : undefined}
+          iconOnly={group.id === 'espionage'}
+          preview={group.id === 'recruit'}
+        />
+      ))}
     </div>
   )
 }
@@ -1326,6 +1387,8 @@ export interface ArmyDockContentProps {
   targeting?: Targeting | null | undefined
   pendingNotice?: string | null | undefined
   condition?: number | undefined
+  /** The stacks of an own army, as symbols with counts (D19c, analog ArmyPanel). */
+  units?: readonly IconItem[] | undefined
   ticksPerDay: number
   currentTick: number
 }
@@ -1369,7 +1432,7 @@ export function ArmyDockContent(props: ArmyDockContentProps) {
             <Icon name="back" size={18} />
           </button>
         )}
-        <b className="dock-army__name">{props.name ?? t('army.title')}</b>
+        <h3 className="dock-army__name">{props.name ?? t('army.title')}</h3>
         <span className="stat" title={t('army.power')}>
           <Icon name="battle" size={16} title={t('army.power')} /> {amount(army.strength)}
         </span>
@@ -1450,7 +1513,21 @@ export function ArmyDockContent(props: ArmyDockContentProps) {
         </section>
       ) : (
         <>
-          {stanceActions.length > 0 && <ArmyStanceButtons stanceActions={stanceActions} stance={army.stance} />}
+      {stanceActions.length > 0 && <ArmyStanceButtons stanceActions={stanceActions} stance={army.stance} />}
+      {props.units && props.units.length > 0 && (
+        <>
+          <h3 className="panel__icon-title">
+            <Icon name="infantry" size={26} title={t('army.units')} />
+          </h3>
+          <ul className="units" aria-label={t('army.units')}>
+            {props.units.map((item) => (
+              <li key={`${item.icon}-${item.label}`}>
+                <UnitMarker icon={item.icon} label={item.label} count={item.count ?? 1} />
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
           <div className="actions actions--grid actions--icons dock-army__commands" role="group" aria-label={t('army.commands')}>
             {visibleCommands.map((action) => (
               <ActionButton

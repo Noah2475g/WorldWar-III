@@ -98,7 +98,7 @@ export interface DockWithRecruitProps extends Omit<DockProps, 'onToggleRecruit' 
  * ueber der Leiste (CSS: `.recruit-sheet` ist relativ zu `.dock-area` positioniert,
  * siehe app.css), die Leiste traegt die Hauptaktion "Ausheben", die beide verbindet.
  */
-export function DockWithRecruit({ recruit, state, pickerOptions, pickerValue, onPickerChange, children }: DockWithRecruitProps) {
+export function DockWithRecruit({ recruit, state, pickerOptions, pickerValue, onPickerChange, bodyLabel, children }: DockWithRecruitProps) {
   return (
     <div className="dock-area">
       <Dock
@@ -106,6 +106,7 @@ export function DockWithRecruit({ recruit, state, pickerOptions, pickerValue, on
         {...(pickerOptions !== undefined ? { pickerOptions } : {})}
         {...(pickerValue !== undefined ? { pickerValue } : {})}
         {...(onPickerChange !== undefined ? { onPickerChange } : {})}
+        {...(bodyLabel !== undefined ? { bodyLabel } : {})}
         onToggleRecruit={() => recruit.onOpenChange(!recruit.open)}
         recruitOpen={recruit.open}
       >

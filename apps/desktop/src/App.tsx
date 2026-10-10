@@ -1729,9 +1729,11 @@ export function App(props: AppProps) {
               ? null
               : shortcut.zone === 'recruit'
                 ? armyMarch ?? recruitGrid ?? side?.querySelector<HTMLElement>(`section[data-group="recruit"] button:not(:disabled)`) ?? null
-                : side?.querySelector<HTMLElement>(
-                    `section[data-group="${shortcut.zone}"] button:not(:disabled)`,
-                  ) ?? null
+                : // D19c: die eigene Provinz baut jetzt im Dock (D19a/c); fremde Provinzen (kein
+                  // eigener Dock-Inhalt) stehen weiterhin in der Seitenleiste (aside.side).
+                  document.querySelector<HTMLElement>(`.dock-province [data-group="${shortcut.zone}"] button:not(:disabled)`) ??
+                  side?.querySelector<HTMLElement>(`section[data-group="${shortcut.zone}"] button:not(:disabled)`) ??
+                  null
           // Seit E3 schwebt die Provinzwahl auf der Karte (aside.map-picker), im Telefon-Hochformat steht sie im Blatt.
           const picker = document.querySelector<HTMLElement>('.picker select')
           ;(target ?? picker)?.focus()
@@ -2531,6 +2533,17 @@ export function App(props: AppProps) {
     return foreignPreviewId ? 'foreign' : 'empty'
   }, [ui.panel, selected, viewerId, foreignPreviewId])
 
+  /**
+   * D19c: Provinz/Armee rendern jetzt im Dock (D19a/b), nicht mehr in der Seitenleiste
+   * (nur Desktop — im Telefon-Hochformat bleibt es wie bisher im Blatt, siehe `phonePortrait`).
+   * Nur die EIGENE Provinz/Armee (`dockState` 'province'/'army') nullt die Seitenleiste — eine
+   * FREMDE Provinz bleibt `ui.panel === 'province'`, zeigt aber `dockState === 'foreign'` (kein
+   * eigener Dock-Inhalt) und braucht darum weiterhin die Seitenleiste (ProvincePanel, Aufklaerung).
+   * `sidebarPanel` ist der fuer die Seitenleiste massgebliche Wert; `ui.panel` bleibt unveraendert
+   * fuer alles andere (Dock-Zustand, Rail, Tastenkuerzel, Telefon-Layout via data-panel/data-sheet).
+   */
+  const sidebarPanel = (dockState === 'province' || dockState === 'army') && !phonePortrait ? null : ui.panel
+
   /** Eigene Provinzen fuer den Dock-Picker (D9) — dieselbe Liste wie die Kartenwahl. */
   const dockPickerOptions: DockPickerOption[] = useMemo(() => {
     if (!view || !viewerId) return []
@@ -2755,7 +2768,7 @@ export function App(props: AppProps) {
       data-panel={ui.panel ? 'open' : 'closed'}
       data-sheet={ui.panel ? sheetSnap : undefined}
       // Die Seitenleiste offen oder zu (E3, D6): die Werkzeug-Spalte rutscht mit (app.css).
-      data-side-open={ui.panel ? 'true' : 'false'}
+      data-side-open={sidebarPanel ? 'true' : 'false'}
     >
       {/* Ein Toaster (D2): Desktop unten links, Telefon-Hochformat oben mittig; hoechstens einer sichtbar. */}
       <Toaster
@@ -2882,6 +2895,7 @@ export function App(props: AppProps) {
               pickerOptions={dockPickerOptions}
               pickerValue={dockState === 'province' ? ui.selectedProvince : null}
               onPickerChange={(id) => selectOnMap(id)}
+              bodyLabel={dockState === 'province' ? selected?.name : dockState === 'army' ? t('army.title') : undefined}
               recruit={{
                 units: recruitUnits,
                 open: recruitOpen,
@@ -2897,6 +2911,13 @@ export function App(props: AppProps) {
                 <ProvinceDockContent
                   province={selected}
                   groups={provinceGroups}
+                  nextUnlock={naechsteFreischaltung}
+                  armies={armiesHere}
+                  selectedArmy={ui.selectedArmy}
+                  onSelectArmy={(id) => {
+                    setTargeting(null)
+                    dispatch({ type: 'selectArmy', id })
+                  }}
                   ticksPerDay={ticksPerDay}
                   currentTick={state.tick}
                 />
@@ -2917,6 +2938,7 @@ export function App(props: AppProps) {
                   targeting={armyTargeting}
                   pendingNotice={armyPendingNotice}
                   condition={selectedArmy?.units ? stackSummary(selectedArmy.units, props.rules).condition : undefined}
+                  units={armyUnitItems}
                   ticksPerDay={ticksPerDay}
                   currentTick={state.tick}
                 />
@@ -2958,13 +2980,13 @@ export function App(props: AppProps) {
         {/* LOESCHVERMERK (Review): bis T-M44-02b stand hier `<aside className="side">` mit denselben sechs Kindern direkt in dieser Datei. */}
         <Sidebar
           // Im Telefon-Hochformat bleibt das Blatt wie bisher stehen (Provinzwahl darin); E8 baut es um.
-          open={ui.panel !== null || phonePortrait}
+          open={sidebarPanel !== null || phonePortrait}
           title={sideTitle ?? ''}
           shortcut={sideShortcut}
           onClose={() => dispatch({ type: 'closePanel' })}
-          scrollKey={`${ui.panel}:${ui.selectedProvince}:${ui.selectedArmy}`}
+          scrollKey={`${sidebarPanel}:${ui.selectedProvince}:${ui.selectedArmy}`}
           handle={
-            ui.panel ? (
+            sidebarPanel ? (
               // Griff und Panelwahl in einer Leiste (T-M46-10): das Blatt deckt den Fuss, die Wahl bleibt erreichbar.
               <div className="sheet__bar">
                 <SheetHandle snap={sheetSnap} onSnap={setSheetSnap} onClose={() => dispatch({ type: 'closePanel' })} />
@@ -2979,7 +3001,7 @@ export function App(props: AppProps) {
           notice={null}
           panel={
             <>
-              {ui.panel === 'province' && (
+              {sidebarPanel === 'province' && (
                 <ProvincePanel
                   onClose={() => dispatch({ type: 'closePanel' })}
                   province={selected}
@@ -2999,7 +3021,7 @@ export function App(props: AppProps) {
                   currentTick={state.tick}
                 />
               )}
-              {ui.panel === 'army' && (
+              {sidebarPanel === 'army' && (
                 <ArmyPanel
                   // Zurueck fuehrt zur Provinz der Armee (T-M44-12); die Armee-Auswahl endet damit.
                   onBack={

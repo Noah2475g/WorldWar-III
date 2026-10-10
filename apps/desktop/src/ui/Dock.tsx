@@ -35,6 +35,13 @@ export interface DockProps {
   onToggleRecruit?: () => void
   recruitOpen?: boolean
   recruitDisabled?: boolean
+  /**
+   * D19c: der Name der Region (`.dock__body`), analog der frueheren Seitenleiste
+   * (ProvincePanel trug `aria-label={province.name}`, ArmyPanel `aria-label={t('army.title')}`) —
+   * so bleiben bestehende `getByRole('region', {name})`-Zugriffe gueltig, auch wenn der Inhalt
+   * jetzt im Dock statt in `aside.side` steht.
+   */
+  bodyLabel?: string | undefined
 }
 
 /** Die CSS-Klasse der Leiste fuer den Zustand (K1: feste Hoehe je Klasse, nicht aus dem Inhalt). */
@@ -51,6 +58,7 @@ export function Dock({
   onToggleRecruit,
   recruitOpen = false,
   recruitDisabled = false,
+  bodyLabel,
 }: DockProps) {
   const showPicker = state !== 'empty'
   return (
@@ -93,7 +101,9 @@ export function Dock({
           </button>
         )}
       </div>
-      <div className="dock__body">{children}</div>
+      <div className="dock__body" role={bodyLabel ? 'region' : undefined} aria-label={bodyLabel}>
+        {children}
+      </div>
     </section>
   )
 }

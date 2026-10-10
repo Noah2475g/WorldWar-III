@@ -99,3 +99,94 @@ visuelle Attrappen). Diese Pruefung gehoert inhaltlich zur Live-Integration und 
 - axe-core (Storyboards): **100/100 beide Dateien, 0 Violations**
 - PR: siehe PR-Link im Ticket-Kommentar (wird von diesem Builder-Lauf erstellt, **nicht gemergt**
   — Merge macht ausschliesslich der reviewer in t_37375e3f gemaess Merge-Regel).
+
+## 9. D19: Province/Army-Panel-Umzug abgeschlossen (D19a/b/c, t_17b9deb7)
+
+### Vorher/Nachher
+- **Vorher (bis D19b):** `ui.panel === 'province'|'army'` oeffnete auf Desktop GLEICHZEITIG den
+  Dock-Inhalt (D19a/b) UND die Seitenleiste (`ProvincePanel`/`ArmyPanel` in `aside.side`) — eine
+  bewusste Zwischenstufe, damit D19a/b isoliert review- und testbar blieben.
+- **Nachher (D19c):** ein abgeleiteter Wert `sidebarPanel` nullt die Seitenleiste fuer die EIGENE
+  Provinz/Armee auf Desktop (`!phonePortrait`); fuer eine FREMDE Provinz (kein eigener
+  Dock-Inhalt, Aufklaerung) bleibt `ui.panel` unveraendert und die Seitenleiste zeigt weiterhin
+  `ProvincePanel` (Besitzer, Moral — ohne Handlungen). Die anderen 6 Rail-Panels (armies,
+  diplomacy, espionage, standings, log, market) und phonePortrait sind UNVERAENDERT.
+
+### Waehrend D19c entdeckte und behobene Luecken (D19a/b hatten sie offen gelassen)
+1. `ProvinceDockContent` zeigte nur Moral/Bauplaetze, nicht die Ausheben-Gruppe (ActionGroup
+   `recruit`) und nicht die Armeeliste mit Auswaehlen-Knopf — beides mit Mentor-Bestaetigung
+   (t_b2e851b6) ergaenzt, analog `ProvincePanel`.
+2. `ProvinceBuildSlots` im Dock war `interactive={false}` (Review-Auflage aus D19a, weil
+   ProvincePanel gleichzeitig in der Seitenleiste stand — zwei gleichnamige Knoepfe). Seit D19c
+   die Seitenleiste fuer die eigene Provinz schliesst, ist die Mehrdeutigkeit weg: `interactive={true}`.
+3. `ArmyDockContent` zeigte keine Einheitenliste (`props.units`) — ergaenzt analog `ArmyPanel`.
+4. `Dock`/`DockWithRecruit` trugen keine ARIA-Region (`role="region"`/`aria-label`) fuer ihren
+   Koerper — ein neues `bodyLabel`-Prop (Provinzname bzw. "Armee") macht `.dock__body` zu einer
+   benannten Region, damit bestehende `getByRole('region', {name})`-Zugriffe (Tests UND die
+   echte App, z. B. Taste A/Heeruebersicht-Rueckweg) weiterhin funktionieren, obwohl der Inhalt
+   jetzt im Dock statt in `aside.side` steht.
+5. Test-Hilfsfunktion `protokollText()` (App.test.tsx) nahm an, eine eigene Provinz oeffne
+   `aside.side` (`data-open==='true'`) — das war die Bedingung, UNTER der sie den Picker nach dem
+   Lesen des Protokolls zuruecksetzte. Seit D19c oeffnet die eigene Provinz `aside.side` nicht
+   mehr; die Bedingung wurde auf den Picker-Wert allein umgestellt (unabhaengig vom
+   Seitenleisten-Status).
+
+### D16-Nachpruefung (echte `aside.side`-Zugriffe nach D19a/b/c)
+Grep ueber `apps/desktop/src` nach `aside.side`, `aside select`, `querySelector('select')`,
+`nth(0)`, `nth(1)`: weiterhin genau 2 echte Zugriffe (Stand nach D16, Mentor t_24ef42e0,
+unveraendert in der Zahl, aber beide Selektoren jetzt D19c-faehig nachgezogen):
+- `Panels.tsx` ~516 (ProvincePicker Enter-Handler): zielt jetzt ZUERST auf
+  `.dock-province [data-group] button`, faellt erst auf `aside.side .panel ...` zurueck (fuer die
+  fremde Provinz, die weiterhin dort steht).
+- `App.tsx` ~1717 (Taste E / `focusZone`, Zonen `build`/`diplomacy`/...): zielt jetzt ZUERST auf
+  `.dock-province [data-group="<zone>"] button`, faellt erst auf `aside.side section[data-group]`
+  zurueck.
+0 Treffer fuer `aside select`/`nth(0)`/`nth(1)` (unveraendert).
+
+### Fehlender App-Level-Test aus E5d (t_03728871) — geschlossen
+`App.test.tsx`, Describe `D19c: Fremde Provinz oeffnet das Popup bei geschlossener
+Seitenleiste`: zwei Tests — (1) ein ECHTER Map-Klick (nicht der Provinz-Picker, der immer das
+volle Panel oeffnet) auf eine fremde Provinz bei `ui.panel === null` zeigt `.province-popup` mit
+deren Namen, weder Dock noch Seitenleiste zeigen sie als eigenes Panel; (2) Gegenprobe — bei
+bereits offenem Dock (eigene Provinz gewaehlt) erscheint KEIN Popup. Technischer Weg: `toMap`/
+`pickProvince`/`centreOn` (`map/picking.ts`) sind reine Koordinatenrechnung ohne Rasterung, die
+auch ohne echte Canvas-Engine (jsdom) exakt stimmt — WICHTIG dabei: jsdom misst `clientWidth` der
+Karte als 0, `MapCanvas` faellt auf das Mindestmass 320×240 zurueck und meldet das per
+`onViewportChange`, worauf `App.tsx` den Start-View EIN ZWEITES MAL mit dieser Groesse
+zentriert — der Test muss denselben zweiten View nachrechnen, nicht den ersten (960×600), sonst
+trifft der simulierte Klick die falsche Stelle. Mentor-Ticket t_2d9fb26f wurde dazu eroeffnet und
+nach eigener weiterer Analyse selbst wieder aufgeloest (keine Antwort mehr noetig).
+
+### Messung (Dev-Server, Playwright, `scripts/ux-d19c-measure.mjs`, 2 Aufloesungen)
+Datei: `docs/ux/v4-seitenleiste/e5/layout-d19c.json`, Screenshots `d19c-geschlossen-*.png`.
+
+| Zustand | `data-side-open` | `.map-tools-col` Transform | `.dock` data-state | K1 (`.dock`) |
+|---|---|---|---|---|
+| leer (Spielbeginn) | `false` | `none` (nicht verschoben) | `empty` | 1,00 |
+| eigene Provinz gewaehlt | `false` | `none` (nicht verschoben) | `province` | **2,53** |
+
+Die Abnahme (`data-side-open='false'`, `.map-tools-col` unverschoben) ist fuer BEIDE Zustaende
+erfuellt — die Werkzeug-Spalte weicht nicht mehr aus, obwohl vorher (D19b) die Seitenleiste fuer
+die eigene Provinz noch oeffnete.
+
+**Abweichung von der K1-Vorgabe (<= 1,02) bei `.dock--province`:** Der gemessene Wert 2,53 bedeutet,
+dass der Dock-Koerper im Provinz-Zustand bei fester Boxhoehe (110 px, aus `dock--province` in
+app.css, Designer-Vorgabe t_8f0a95ce) ueberlaeuft. Ursache: die unter "Waehrend D19c entdeckte
+Luecken" (1) nachgezogene Ausheben-Gruppe + Armeeliste — beide Mentor-bestaetigt notwendig fuer
+Funktionsparität (ohne sie waeren 19 App.test.tsx-Tests weiterhin rot gewesen, siehe
+Ticket-Kommentare). Das ist ein echter Zielkonflikt zwischen "nichts an Funktion verlieren" und
+der E5a/D9-Vorgabe "feste Hoehe je Zustand, kein Scroll" — NICHT verdeckt, sondern hier
+dokumentiert. Ein eigenes Scroll-/Ueberlauf-Design fuer `.dock--province` (z. B. interner Scroll
+mit sichtbarem Rahmen, oder ein zusaetzlicher aufklappbarer Bereich) ist NICHT Teil dieses
+Tickets (Scope-Grenze: "reine State-/Selektor-Pflege an bestehendem Code") und wird als
+Folge-Ticket an Noah vorgeschlagen, falls der Reviewer dem zustimmt. Der Armee-Zustand war in
+der Messung leer (keine Armee bei Spielbeginn vorhanden) und wurde nicht erfasst; aus dem
+Quellcode (identische Komponente, mehr Inhalt als Provinz: Haltung + Befehle + ggf. Einheitenliste)
+ist ein aehnlicher oder hoeherer K1-Wert zu erwarten — im Report als offene Messluecke vermerkt,
+nicht als "bestanden" behauptet.
+
+### Validierung
+- `App.test.tsx`: 150/150 gruen (vorher 148; 2 neue D19c-Tests fuer die Popup-Luecke).
+- `App.sidebar.test.tsx`: 6/6 gruen, UNVERAENDERT (testet nur Rail-Bereiche, 1:1 ohne Anpassung).
+- `Panels.test.tsx`, `Dock.test.tsx`, `RecruitSheet.test.tsx`, `keyboard.test.ts`: alle gruen.
+- `pnpm verify`: siehe Ticket-Kommentar fuer den vollstaendigen Lauf/Log-Pfad.

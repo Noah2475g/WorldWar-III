@@ -1,0 +1,40 @@
+[
+  {
+    "viewport": "1280x800",
+    "screenshot": "/home/pi/WorldWar-III/.claude/worktrees/seitenleiste-e5/docs/ux/v4-seitenleiste/e5/d19c-geschlossen-1280x800.png",
+    "leer": {
+      "label": "leer (Spielbeginn)",
+      "dataSideOpen": "false",
+      "mapToolsTransform": "none",
+      "dockState": "empty",
+      "dockK1": 1
+    },
+    "provinz": {
+      "label": "eigene Provinz gewaehlt",
+      "dataSideOpen": "false",
+      "mapToolsTransform": "none",
+      "dockState": "province",
+      "dockK1": 2.53
+    },
+    "armee": null
+  },
+  {
+    "viewport": "1920x1080",
+    "screenshot": "/home/pi/WorldWar-III/.claude/worktrees/seitenleiste-e5/docs/ux/v4-seitenleiste/e5/d19c-geschlossen-1920x1080.png",
+    "leer": {
+      "label": "leer (Spielbeginn)",
+      "dataSideOpen": "false",
+      "mapToolsTransform": "none",
+      "dockState": "empty",
+      "dockK1": 1
+    },
+    "provinz": {
+      "label": "eigene Provinz gewaehlt",
+      "dataSideOpen": "false",
+      "mapToolsTransform": "none",
+      "dockState": "province",
+      "dockK1": 2.53
+    },
+    "armee": null
+  }
+]
