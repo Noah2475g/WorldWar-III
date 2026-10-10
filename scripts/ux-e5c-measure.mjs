@@ -32,6 +32,7 @@ for (const vp of VIEWPORTS) {
     const shotPath = resolve(OUT, `e5c-${f.tag}-${vp.tag}.png`)
     await page.screenshot({ path: shotPath, fullPage: true })
     const boxes = await page.evaluate(() => {
+      // eslint-disable-next-line no-undef -- laeuft im Browser-Kontext der Seite (Playwright `page.evaluate`), nicht in Node.
       const els = Array.from(document.querySelectorAll('.stage'))
       return els.map((el) => {
         const r = el.getBoundingClientRect()

@@ -119,14 +119,6 @@ export const REACHABILITY_EXCEPTIONS: Readonly<Record<string, string>> = {
   // Transport ueber einen dynamischen Import hinter der Bauflagge `__MULTIPLAYER__`. Die
   // Zusage "kein WebSocket im ausgelieferten Buendel" ist damit nicht gestrichen, sondern
   // haengt jetzt an der Flagge und wird am Erzeugnis gemessen (T-M38-05).
-  'apps/desktop/src/ui/Dock.tsx':
-    'E5a/E5b (t_6f6ad631/t_20351f24): Basis-Layout + Tests gebaut; App.tsx/Panels.tsx-Verdrahtung ist laut E5-Zerlegung (t_ffb48c20) kein Teil von E5a/b/c, folgt in einem eigenen Folge-Ticket.',
-  'apps/desktop/src/ui/RecruitSheet.tsx':
-    'E5a/E5b (t_6f6ad631/t_20351f24): Basis-Layout + Tests gebaut; App.tsx/Panels.tsx-Verdrahtung ist laut E5-Zerlegung (t_ffb48c20) kein Teil von E5a/b/c, folgt in einem eigenen Folge-Ticket.',
-  'apps/desktop/src/ui/ProvincePopup.tsx':
-    'E5b (t_20351f24, D11, Mentor-Korrektur t_e31e9df4): eigenstaendiges Popup gebaut + getestet; App.tsx-Verdrahtung (Fremd-Provinz-Klick) folgt im selben Folge-Ticket wie Dock/RecruitSheet.',
-  'apps/desktop/src/ui/viewRect.ts':
-    'E5b (t_20351f24, D12, Mentor-Korrektur t_e31e9df4): Map-Utility (visibleRect/centreOnVisible) gebaut + unit-getestet; Nutzung durch Hint-/Toast-Sprung und App.tsx-Popup-Lage folgt in E6/E7 bzw. dem Dock-Verdrahtungs-Folgeticket.',
 }
 
 export function unreachableModules(entryFiles: readonly string[], directory: string): string[] {
