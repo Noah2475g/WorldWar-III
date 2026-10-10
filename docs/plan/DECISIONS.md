@@ -5,6 +5,62 @@ Entscheidung, Begründung, Auswirkung.
 
 ---
 
+## 2026-10-10 · Öl-Verteilung: kuratierte Öl-Regionen (V2-half)
+
+**Datenregel alt → neu:** Öl entstand bisher zufällig im `desert`-Zweig von `depositsFor()`
+(ein `random()`-Wurf, `amount(1800)`); 35 Öl-Provinzen, Gesamtöl 70.041, 17/24 Startmächte ohne
+Öl (u. a. USA/Russland/Kanada/Iran = 0, Südafrika Öl-Nr. 1 — kontraintuitiv). Neu: Öl entsteht
+**nur noch** aus 31 kuratierten Förderregionen in `data/mapgen/oil-regions.csv` (Tier 1–3,
+Quelle EIA International Energy Statistics, siehe ASSETS.md); der Wüsten-Wurf bleibt als
+verworfener `random()`-Aufruf erhalten, damit Seltene Erden und Küsten-Nahrung gleich würfeln
+(P2). Menge = `OIL_TYPICAL (1690) × Tier × OIL_FACTOR`.
+
+**Faktor:** `OIL_FACTOR = 0,5` (Plan-Default, keine Reduktion nötig). Versuchstabelle (O2,
+`$MESS/faktor/`):
+
+| Faktor | A1 Startwert-Band (Grenze 15 %) | A2 Nicht-Öl-Verlust max. (Grenze 30 %) |
+|---|---|---|
+| 0,5 (gewählt) | 9–14 % OK | bis 35 % (USA) — siehe Levelling-Nebenwirkung unten |
+| 0,4 | 8 % OK | bis 34 % (USA) |
+| 0,3 | 8 % OK | bis 34 % (USA) |
+
+Faktor-Reduktion ändert A2 kaum (34–35 % in allen drei Fällen) → keine Faktor-Ursache, siehe
+nächster Absatz. Faktor bleibt beim Plan-Default 0,5.
+
+**Levelling-Nebenwirkung (Mentor-Befund t_460e9b11, Noahs Entscheidung Gate t_d6e4e9b7,
+Option 1):** `balanceStartingValues()` skaliert Öl UND Nicht-Öl einer Nation gleichmäßig. Der
+Wegfall des diffusen Wüsten-Öls ändert die Vorkommensbasis vor dem Levelling; die nachfolgende
+Rebalance verschiebt dadurch das Nicht-Öl/Gesamt-Verhältnis unabhängig vom `OIL_FACTOR` — eine
+Nebenwirkung der bestehenden, bereits getesteten Balance-Logik, kein Fehler der Öl-Verteilung.
+Gemessener Netto-Nicht-Öl-Verlust nach Levelling (Faktor 0,5, `oil-compare-*.out.txt`):
+Vereinigte Staaten/Russland bis **35 %**, Vereinigtes Königreich ~31 %, China ~27 %, übrige
+Ölmächte 22–23 %, Indien **+15 %** (Gewinn statt Verlust).
+Noah hat entschieden (Option 1): **A2 bezieht sich nur auf den reinen Öl-Tabelleneffekt**
+(`applyOilRegions()` ändert ausschließlich `deposits.oil`, 0 % Fremdeinfluss auf andere
+Vorkommen, code- und unit-test-belegt), nicht auf diese Levelling-Nebenwirkung. Damit ist A2
+erfüllt (0 % Grenze 30 %); die 35 %-Nebenwirkung bleibt dokumentiert, aber nicht A2-relevant.
+
+**Importeure (11, bewusst ohne Öl):** Deutschland, Frankreich, Italien, Spanien, Polen,
+Ukraine, Türkei, Pakistan, Japan, Südafrika, Australien.
+
+**Gesamtöl vorher/nachher:** 35 Öl-Provinzen / 70.041 (vorher, Zufallsverteilung) →
+31 Öl-Provinzen / 33.404 (nachher, kuratierte Tabelle) — A3 erfüllt (Anzahl = CSV-Zeilen,
+ohne-Öl-Liste = genau die 11 Importeure).
+
+**Messkette (O3, `messkette.md`):** oelmangelTage bleibt 0 vorher/nachher (19 Treffer, alle 0);
+Kriegserklärungen 7→8, Friedensschlüsse 2→3 (leicht höher, keine Verschlechterung); alle vier
+gemessenen Vollpartien (Standard + Seeds 1815/1945/2015) haben nachher je einen Sieger (p8);
+Haltungs-Kennzahlen (`stance.json`) bitgleich; `pnpm acceptance` nachher 9/12 statt vorher 8/12
+(nicht schlechter); `pnpm verify` grün (4141/4141 Tests). Bekannter Befund (nicht O3-Verantwortung):
+die drei vorher-Seed-Dateien aus O1 sind untereinander byte-identisch (O1-Messfehler bei
+`WORLDWAR_FULLGAME_SEED`), betrifft die Aussagekraft der nachher-Messung nicht.
+
+**Bezug Befund M42-07-a (KI-Artillerieband):** Diese Änderung macht **keine Zusage** zum
+Artillerieband — Deutschland, Frankreich und Italien bleiben als Importeure ohne eigenes Öl.
+
+**Spielstände (P7):** Vorkommen werden nur beim Spielstart in den Zustand kopiert; alte
+Spielstände behalten die alte, zufällige Öl-Verteilung unverändert, keine Migration.
+
 ## 2026-09-02 · T-M0-02 · Lang laufende Prüfungen heißen `*.slow.test.ts`
 
 **Entscheidung:** Das Design spricht von einem Vitest-Tag `@slow`. Umgesetzt ist es als

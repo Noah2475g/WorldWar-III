@@ -7,6 +7,23 @@ Urheber, Lizenz und Quelle je Datei hier und im Spiel unter „Mitwirkende“.
 wird von `packages/mapgen/src/sources.test.ts` gegen das Quellenregister im Code geprüft —
 eine Quelle, die hier fehlt, lässt den Testlauf scheitern.
 
+## Öl-Regionen — EIA International Energy Statistics
+
+**Lizenz:** Public Domain (US-Regierungswerk). Geprüft am 2026-10-05 gegen
+`eia.gov/about/copyrights_reuse.php`: „EIA's products … are not copyrighted and may be
+reproduced without permission.“ Namensnennung freiwillig.
+
+**Bezug:** Nur die **Rangfolge** (Tier 1–3) der 31 größten Rohöl-Förderregionen wird verwendet,
+keine Rohdaten/Mengen/Zeitreihen der EIA übernommen — die Fördermenge im Spiel ist eine eigene
+Konstante (`OIL_TYPICAL × Tier × OIL_FACTOR`, siehe `docs/plan/DECISIONS.md` 2026-10-10).
+
+| Datei | Zweck | Quelle |
+|---|---|---|
+| `data/mapgen/oil-regions.csv` | 31 kuratierte Öl-Förderregionen (id, tier, source) | EIA International Energy Statistics (Rangfolge Rohöl-Förderung, Public Domain) |
+
+Verworfen: Global Energy Monitor Tracker (CC BY 4.0) — unnötig, da eine Public-Domain-Quelle
+für die reine Rangfolge ausreicht.
+
 ## Geodaten — Natural Earth
 
 **Lizenz:** gemeinfrei (Public Domain). Natural Earth verzichtet ausdrücklich auf jede
