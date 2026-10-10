@@ -620,9 +620,10 @@ describe('T-M49-02 Sammelmarke', () => {
     expect(ansichten.length).toBe(1)
     expect(ansichten[0]!.scale).toBe(1)
     const punkt = toMap({ x: marke.x, y: marke.y }, ansicht(1.6))
-    // Ausschnitt der Leinwand (jsdom: 320x240): die Mitte liegt bei x + 160.
+    // Ausschnitt der Leinwand (jsdom: 320x240): die Mitte liegt bei x + 160, y + 126
+    // (D8-Folge-Fix M49: centreOnVisible statt centreOn — Default-Abstand oben 12px, D12).
     expect(ansichten[0]!.x + 160).toBeCloseTo(punkt.x, 0)
-    expect(ansichten[0]!.y + 120).toBeCloseTo(punkt.y, 0)
+    expect(ansichten[0]!.y + 126).toBeCloseTo(punkt.y, 0)
     expect(onSelectArmy).not.toHaveBeenCalled()
     expect(onSelect).not.toHaveBeenCalled()
   })

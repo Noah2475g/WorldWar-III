@@ -1,0 +1,23 @@
+{
+  "commit": "c2daf8c",
+  "viewer": "p6",
+  "region": {
+    "gezeichnet": 368,
+    "overlapPairs25": 0,
+    "paareGebaeude25": 0,
+    "feindGezeichnet": 0,
+    "feindSichtbar": 0,
+    "retreatedBuildings": 171,
+    "layoutMs": 11.707569999999805
+  },
+  "welt": {
+    "gezeichnet": 237,
+    "overlapPairs25": 0,
+    "paareGebaeude25": 0,
+    "feindGezeichnet": 0,
+    "feindSichtbar": 0,
+    "retreatedBuildings": 0,
+    "layoutMs": 1.9132410000001983
+  },
+  "b0GebaeudePaare": 72
+}
