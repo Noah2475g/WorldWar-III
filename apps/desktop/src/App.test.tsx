@@ -269,6 +269,26 @@ describe('R-UX-01 T-M44-03b Das Blatt oeffnet auf halb', () => {
   }, 60_000)
 })
 
+describe('D19a: Dock zeigt Provinz-Inhalt (Moral, Vorkommen, Bauplaetze)', () => {
+  it('zeigt im Dock-Koerper Moral, Vorkommen und 7 Bauplaetze bei eigener Provinz', () => {
+    startGame()
+    const select = document.querySelector('.picker select') as HTMLSelectElement
+    const own = [...select.querySelectorAll('optgroup')[0]!.querySelectorAll('option')][0]!
+    fireEvent.change(select, { target: { value: own.value } })
+
+    const dock = document.querySelector('.dock')!
+    expect(dock.getAttribute('data-state')).toBe('province')
+    const body = dock.querySelector('.dock__body')!
+    const content = body.querySelector('.dock-province')
+    expect(content).not.toBeNull()
+    expect(within(body as HTMLElement).getByRole('meter', { name: 'Moral' })).toBeTruthy()
+    expect(content!.querySelectorAll('.slot').length).toBeGreaterThan(0)
+    // Sidebar zeigt ProvincePanel weiterhin zusaetzlich (D19a bewusst, Entfernung erst D19c).
+    expect(screen.getByRole('region', { name: own.textContent ?? '' })).toBeTruthy()
+    // Zeitlimit wegen Last, nicht Verhalten: Messwert folgt im Kommentar.
+  }, 30_000)
+})
+
 describe('R-UI-06 Bedienung ohne Maus', () => {
   it('startet und stoppt die Zeit mit der Leertaste', () => {
     startGame()

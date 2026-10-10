@@ -81,6 +81,7 @@ import {
   EconomyPanel,
   EspionagePanel,
   MarketPanel,
+  ProvinceDockContent,
   ProvincePanel,
   ProvincePicker,
   type Action,
@@ -2866,7 +2867,19 @@ export function App(props: AppProps) {
                 onRecruit: onRecruitUnit,
                 freeSlots: recruitFreeSlots,
               }}
-            />
+            >
+              {/* Provinz-Inhalt im Dock (D19a): Moral/Vorkommen/Bauplaetze, ohne den Namen
+                  (der Picker traegt ihn bereits). ProvincePanel in der Seitenleiste bleibt
+                  bewusst noch zusaetzlich bestehen (Entfernung erst in D19c). */}
+              {dockState === 'province' ? (
+                <ProvinceDockContent
+                  province={selected}
+                  groups={provinceGroups}
+                  ticksPerDay={ticksPerDay}
+                  currentTick={state.tick}
+                />
+              ) : null}
+            </DockWithRecruit>
           )}
           {/* Das Provinz-Popup (E5d, D11): nur bei fremder Provinz und geschlossener Seitenleiste. */}
           {!phonePortrait && foreignPreview && foreignPreviewAnchor && (

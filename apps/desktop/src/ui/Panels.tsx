@@ -567,6 +567,200 @@ export interface ProvincePanelProps {
   currentTick: number
 }
 
+/**
+ * Die Moral als Balken (R-UI-09), faktorisiert aus `ProvincePanel` (D19a): dieselbe
+ * Zeile wird auch im Dock unten (DockWithRecruit, Zustand 'province') gebraucht, ohne
+ * sie ein zweites Mal zu schreiben.
+ */
+export function ProvinceMoraleStat({ province, iconSize = 24 }: { province: VisibleProvince; iconSize?: number }) {
+  if (province.morale === undefined) return null
+  return (
+    <span className="stat" title={t('province.morale')}>
+      <Icon name="morale" size={iconSize} />
+      <Meter
+        label={t('province.morale')}
+        labelHidden
+        value={province.morale}
+        max={MORALE_SCALE}
+        text={percent(unfix(province.morale))}
+        tone={toneForShare(province.morale / MORALE_SCALE)}
+        trend={trendOf(province.morale, province.moraleTarget, MORALE_SCALE)}
+        segments={10}
+      />
+    </span>
+  )
+}
+
+/**
+ * Das Bauplatz-Raster (T-M29-03, D27.6), faktorisiert aus `ProvincePanel` (D19a):
+ * dieselbe Logik traegt auch den Dock-Inhalt unten, ohne sie zu verdoppeln
+ * (UMFANG-Vorgabe aus t_ffb48c20).
+ */
+export function ProvinceBuildSlots({
+  province,
+  buildActions,
+  currentTick,
+  ticksPerDay,
+  slotIconSize = SLOT_ICON_SIZE,
+  showHeading = true,
+  showQueueMeter = true,
+  interactive = true,
+}: {
+  province: VisibleProvince
+  buildActions: readonly Action[]
+  currentTick: number
+  ticksPerDay: number
+  /** Kleineres Zeichen je Feld (D19a-Dock, knapp 110 px) — Sidebar bleibt bei SLOT_ICON_SIZE. */
+  slotIconSize?: number
+  /** Die Ueberschrift ueber dem Raster (Zeichen "Bauplaetze") — im Dock weg (Platzgrund, D19a). */
+  showHeading?: boolean
+  /** Der Fortschrittsbalken je laufendem Auftrag — im Dock weg (Platzgrund, D19a); die rote
+      Marke (slot--short) bleibt die einzige Auskunft ueber ein laufendes Feld. */
+  showQueueMeter?: boolean
+  /**
+   * Ob freie/gebaute Felder als Knopf mit Bauaktion erscheinen (Sidebar: ja). Im Dock (D19a)
+   * steht `ProvincePanel` zugleich in der Seitenleiste mit denselben Aktionen — ZWEI Knoepfe
+   * mit demselben Namen ("Kaserne bauen") waeren fuer ein Vorleseprogramm nicht zu
+   * unterscheiden (und machten `getByRole('button', {name})` in Tests zweideutig). Der Dock
+   * bleibt darum reine Anzeige; gebaut wird bis D19c ueber die Seitenleiste.
+   */
+  interactive?: boolean
+}) {
+  if (province.buildings === undefined) return null
+  return (
+    <>
+      {showHeading && (
+        <>
+          {/* LOESCHVERMERK (Review): bis T-M46-17 <h3>{t('province.buildSlots')}</h3> als sichtbares Wort. */}
+          <h3 className="panel__icon-title">
+            <Icon name="slots" size={26} title={t('province.buildSlots')} />
+          </h3>
+        </>
+      )}
+      <PreviewArea
+        actions={buildActions.map((entry) => {
+          const key = BUILDING_ORDER.find((k) => entry.id === `build-${k}`)
+          return key ? { ...entry, icon: BUILDING_ICONS[key] ?? 'warning' } : entry
+        })}
+      >
+        <div className="slots" data-group="build">
+          {BUILDING_ORDER.map((key) => {
+            const level = province.buildings?.[key] ?? 0
+            // ALLE Auftraege dieser Art, nicht nur der erste (T-M28-16): der Kern erlaubt
+            // mehrere gleichzeitig (buildSlots), jeder mit eigenem completesAtTick. Mit
+            // `find` hatte der zweite bezahlte Auftrag weder Fortschritt noch Restzeit,
+            // und nach Abschluss des ersten sprang der Balken ohne Erklaerung zurueck.
+            const orders = (province.buildQueue ?? []).filter((entry) => entry.building === key)
+            const order = orders[0]
+            const build = buildActions.find((entry) => entry.id === `build-${key}`)
+            const name = t(`buildings.${key}`)
+
+            if (order) {
+              return (
+                <div key={key} className="slot slot--queued">
+                  {/* LOESCHVERMERK (Review): bis T-M46-13 <UnitArt name={BUILDING_ART[key]} width={SLOT_ART_WIDTH} tone="building" label={name} /> —
+                      der gezeichnete Schattenriss; ersetzt durch das Zeichen von game-icons.net (an drei Stellen im Raster). */}
+                  <Icon name={BUILDING_ICONS[key] ?? 'warning'} size={slotIconSize} title={name} />
+                  {/* LOESCHVERMERK (Review): bis T-M46-17 stand der Name als sichtbares Wort unter dem Zeichen. */}
+                  {level > 0 && <sup className="slot__level">{level + 1}</sup>}
+                  {showQueueMeter &&
+                    orders.map((entry, index) => (
+                      <Meter
+                        key={`${entry.startedTick}-${entry.completesAtTick}-${index}`}
+                        label={orders.length > 1 ? `${name} ${index + 1}` : name}
+                        labelHidden
+                        value={currentTick - entry.startedTick}
+                        max={Math.max(1, entry.completesAtTick - entry.startedTick)}
+                        text={remaining(currentTick, entry.completesAtTick, ticksPerDay)}
+                        tone="warn"
+                      />
+                    ))}
+                </div>
+              )
+            }
+
+            if (level > 0) {
+              return (
+                <div key={key} className={`slot slot--built${stateClass(build)}`}>
+                  {/* Die Textfassung wie in der alten Symbolzeile: "2 Fabrik" fuers Ohr. */}
+                  <Icon name={BUILDING_ICONS[key] ?? 'warning'} size={slotIconSize} title={level > 1 ? `${level} ${name}` : name} />
+                  {level > 1 && <sup className="slot__level">{level}</sup>}
+                  {/* Die Ausbau-Aktion bleibt erreichbar — als Knopf im gebauten Feld. */}
+                  {interactive && build && <ActionButton action={build} showReason={false} compact />}
+                  {build && <SlotMark state={slotState(build)} />}
+                </div>
+              )
+            }
+
+            return (
+              <div key={key} className={`slot slot--free${stateClass(build)}`}>
+                {/* Dasselbe Bild wie im gebauten und im laufenden Feld (T-M33-03) — es
+                    steht IM Knopf, damit das Feld genau ein Klickziel hat und nicht ein
+                    Bild neben einem. */}
+                {interactive && build ? (
+                  <ActionButton
+                    action={{ ...build, icon: BUILDING_ICONS[key] ?? 'warning' }}
+                    iconSize={slotIconSize}
+                    iconOnly
+                    showReason={false}
+                  />
+                ) : (
+                  <Icon name={BUILDING_ICONS[key] ?? 'warning'} size={slotIconSize} title={name} />
+                )}
+                {build && <SlotMark state={slotState(build)} />}
+              </div>
+            )
+          })}
+        </div>
+      </PreviewArea>
+    </>
+  )
+}
+
+/**
+ * Der Dock-Inhalt im Zustand 'province' (D19a, E5/D9): Moral + Vorkommen + Bauplaetze,
+ * aus `ProvinceMoraleStat`/`ProvinceBuildSlots` (dieselbe Logik wie die Sidebar, kein
+ * zweiter Code). OHNE Name/Titel (der Dock-Picker traegt ihn bereits), OHNE Besitzer-
+ * Fakt (der Dock-Zustand 'province' ist immer die eigene Provinz), OHNE Armeeliste und
+ * OHNE Recruit-Queue-Meter (das Ausheben-Raster ist als RecruitSheet separat verdrahtet).
+ */
+export interface ProvinceDockContentProps {
+  province: VisibleProvince | null
+  groups?: readonly ActionGroupSpec[]
+  ticksPerDay: number
+  currentTick: number
+}
+
+export function ProvinceDockContent(props: ProvinceDockContentProps) {
+  const province = props.province
+  if (!province) return null
+  const buildGroup = props.groups?.find((group) => group.id === 'build')
+  const buildActions = buildGroup?.actions ?? []
+
+  return (
+    <div className="dock-province">
+      <ProvinceMoraleStat province={province} iconSize={16} />
+
+      {province.deposits && Object.keys(province.deposits).length > 0 && (
+        <IconRow items={depositItems(province.deposits)} size={16} />
+      )}
+
+      {province.buildings !== undefined && (
+        <ProvinceBuildSlots
+          province={province}
+          buildActions={buildActions}
+          currentTick={props.currentTick}
+          ticksPerDay={props.ticksPerDay}
+          slotIconSize={18}
+          showHeading={false}
+          showQueueMeter={false}
+          interactive={false}
+        />
+      )}
+    </div>
+  )
+}
+
 export function ProvincePanel(props: ProvincePanelProps) {
   const province = props.province
   if (!province) return null
@@ -654,21 +848,7 @@ export function ProvincePanel(props: ProvincePanelProps) {
       {/* Moral als Balken statt als Prozentzahl, mit dem Pfeil dorthin, wo sie hinlaeuft
           (R-UI-09). Der Wert allein sagt nicht, ob eine Provinz sich beruhigt oder
           auseinanderfaellt — und genau das ist die Frage. */}
-      {province.morale !== undefined && (
-        <span className="stat" title={t('province.morale')}>
-          <Icon name="morale" size={24} />
-          <Meter
-            label={t('province.morale')}
-            labelHidden
-            value={province.morale}
-            max={MORALE_SCALE}
-            text={percent(unfix(province.morale))}
-            tone={toneForShare(province.morale / MORALE_SCALE)}
-            trend={trendOf(province.morale, province.moraleTarget, MORALE_SCALE)}
-            segments={10}
-          />
-        </span>
-      )}
+      <ProvinceMoraleStat province={province} />
 
       {province.deposits && Object.keys(province.deposits).length > 0 && (
         <>
@@ -690,87 +870,12 @@ export function ProvincePanel(props: ProvincePanelProps) {
           und sieben freie Felder behaupteten dort „hier steht nichts" — eine Auskunft,
           die der Spieler gar nicht hat. Dann steht hier nichts, wie vor dem Umbau. */}
       {province.buildings !== undefined && (
-      <>
-      {/* LOESCHVERMERK (Review): bis T-M46-17 <h3>{t('province.buildSlots')}</h3> als sichtbares Wort. */}
-      <h3 className="panel__icon-title">
-        <Icon name="slots" size={26} title={t('province.buildSlots')} />
-      </h3>
-      <PreviewArea
-        actions={buildActions.map((entry) => {
-          const key = BUILDING_ORDER.find((k) => entry.id === `build-${k}`)
-          return key ? { ...entry, icon: BUILDING_ICONS[key] ?? 'warning' } : entry
-        })}
-      >
-      <div className="slots" data-group="build">
-        {BUILDING_ORDER.map((key) => {
-          const level = province.buildings?.[key] ?? 0
-          // ALLE Auftraege dieser Art, nicht nur der erste (T-M28-16): der Kern erlaubt
-          // mehrere gleichzeitig (buildSlots), jeder mit eigenem completesAtTick. Mit
-          // `find` hatte der zweite bezahlte Auftrag weder Fortschritt noch Restzeit,
-          // und nach Abschluss des ersten sprang der Balken ohne Erklaerung zurueck.
-          const orders = (province.buildQueue ?? []).filter((entry) => entry.building === key)
-          const order = orders[0]
-          const build = buildActions.find((entry) => entry.id === `build-${key}`)
-          const name = t(`buildings.${key}`)
-
-          if (order) {
-            return (
-              <div key={key} className="slot slot--queued">
-                {/* LOESCHVERMERK (Review): bis T-M46-13 <UnitArt name={BUILDING_ART[key]} width={SLOT_ART_WIDTH} tone="building" label={name} /> —
-                    der gezeichnete Schattenriss; ersetzt durch das Zeichen von game-icons.net (an drei Stellen im Raster). */}
-                <Icon name={BUILDING_ICONS[key] ?? 'warning'} size={SLOT_ICON_SIZE} title={name} />
-                {/* LOESCHVERMERK (Review): bis T-M46-17 stand der Name als sichtbares Wort unter dem Zeichen. */}
-                {level > 0 && <sup className="slot__level">{level + 1}</sup>}
-                {orders.map((entry, index) => (
-                  <Meter
-                    key={`${entry.startedTick}-${entry.completesAtTick}-${index}`}
-                    label={orders.length > 1 ? `${name} ${index + 1}` : name}
-                    labelHidden
-                    value={props.currentTick - entry.startedTick}
-                    max={Math.max(1, entry.completesAtTick - entry.startedTick)}
-                    text={remaining(props.currentTick, entry.completesAtTick, props.ticksPerDay)}
-                    tone="warn"
-                  />
-                ))}
-              </div>
-            )
-          }
-
-          if (level > 0) {
-            return (
-              <div key={key} className={`slot slot--built${stateClass(build)}`}>
-                {/* Die Textfassung wie in der alten Symbolzeile: "2 Fabrik" fuers Ohr. */}
-                <Icon name={BUILDING_ICONS[key] ?? 'warning'} size={SLOT_ICON_SIZE} title={level > 1 ? `${level} ${name}` : name} />
-                {level > 1 && <sup className="slot__level">{level}</sup>}
-                {/* Die Ausbau-Aktion bleibt erreichbar — als Knopf im gebauten Feld. */}
-                {build && <ActionButton action={build} showReason={false} compact />}
-                {build && <SlotMark state={slotState(build)} />}
-              </div>
-            )
-          }
-
-          return (
-            <div key={key} className={`slot slot--free${stateClass(build)}`}>
-              {/* Dasselbe Bild wie im gebauten und im laufenden Feld (T-M33-03) — es
-                  steht IM Knopf, damit das Feld genau ein Klickziel hat und nicht ein
-                  Bild neben einem. */}
-              {build ? (
-                <ActionButton
-                  action={{ ...build, icon: BUILDING_ICONS[key] ?? 'warning' }}
-                  iconSize={SLOT_ICON_SIZE}
-                  iconOnly
-                  showReason={false}
-                />
-              ) : (
-                <Icon name={BUILDING_ICONS[key] ?? 'warning'} size={SLOT_ICON_SIZE} title={name} />
-              )}
-              {build && <SlotMark state={slotState(build)} />}
-            </div>
-          )
-        })}
-      </div>
-      </PreviewArea>
-      </>
+        <ProvinceBuildSlots
+          province={province}
+          buildActions={buildActions}
+          currentTick={props.currentTick}
+          ticksPerDay={props.ticksPerDay}
+        />
       )}
 
       {(province.recruitQueue ?? []).map((order) => (

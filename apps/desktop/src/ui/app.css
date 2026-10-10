@@ -4052,6 +4052,69 @@ body {
   padding: 0 var(--sp-lg) var(--sp-md);
 }
 
+/* Der Provinz-Inhalt im Dock (D19a, E5/D9): dieselben Teile wie die Seitenleiste
+   (Moral, Vorkommen, Bauplaetze), aber in einer Reihe statt gestapelt — die feste
+   Hoehe von .dock--province (110 px, D9) laesst keinen gestapelten Platz, kein
+   Scrollen (K1: scrollH/clientH <= 1,02). Die Ueberschrift-Zeichen bleiben weg
+   (die Woerter "Vorkommen"/"Bauplaetze" standen nie sichtbar da, nur als Symbol —
+   hier fehlt auch das Symbol, denn die Reihenfolge Moral/Vorkommen/Raster sagt
+   selbst, was was ist). */
+.dock-province {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-md);
+  height: 100%;
+  overflow: hidden;
+}
+
+.dock-province .panel__icon-title {
+  display: none;
+}
+
+.dock-province .stat {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  flex: none;
+}
+
+.dock-province .meter {
+  min-width: 96px;
+}
+
+.dock-province .icon-row {
+  flex-wrap: nowrap;
+  gap: var(--sp-sm);
+  flex: none;
+}
+
+.dock-province .preview-area {
+  flex: 1;
+  min-width: 0;
+}
+
+.dock-province .slots {
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--sp-xs);
+  margin: 0;
+}
+
+.dock-province .slot {
+  min-height: 22px;
+  padding: 2px;
+}
+
+.dock-province .slot__level {
+  position: absolute;
+  bottom: 1px;
+  right: 2px;
+}
+
+.dock-province .cost-preview {
+  flex: none;
+  max-width: 160px;
+}
+
 .recruit-sheet {
   position: absolute;
   right: 12px;

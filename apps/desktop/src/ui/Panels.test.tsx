@@ -15,6 +15,9 @@ import {
   EspionagePanel,
   EventLog,
   MarketPanel,
+  ProvinceBuildSlots,
+  ProvinceDockContent,
+  ProvinceMoraleStat,
   ProvincePanel,
   TERRAIN_DEFENCE_PERMILLE,
   TradeOfferForm,
@@ -2967,5 +2970,54 @@ describe('Bauvorschau B2: Zustandsmarken und Vorschauzeile (K4)', () => {
     fireEvent.pointerOver(queued)
     expect(container.querySelector('.cost-preview .cost-chip')).toBeNull()
     expect(queued.querySelector('.slot__mark')).toBeNull()
+  })
+})
+
+describe('D19a: Dock-Inhalt der eigenen Provinz (Moral, Vorkommen, 7 Bauplaetze)', () => {
+  const groups: ActionGroupSpec[] = [
+    { id: 'build', title: 'Bauen', actions: BUILDING_ORDER.map((key) => action(`build-${key}`, BUILDING_ICONS[key], key)) },
+  ]
+
+  it('ProvinceMoraleStat zeigt die Moral als Balken (wie die Seitenleiste)', () => {
+    render(<ProvinceMoraleStat province={{ ...province, morale: 98_000 }} />)
+    const meter = screen.getByRole('meter', { name: 'Moral' })
+    expect(meter.getAttribute('aria-valuenow')).toBe('98000')
+  })
+
+  it('ProvinceBuildSlots zeigt alle 7 Bauplaetze; showHeading/showQueueMeter steuerbar', () => {
+    const { container } = render(
+      <ProvinceBuildSlots
+        province={{ ...province, buildQueue: [] }}
+        buildActions={groups[0]!.actions}
+        currentTick={0}
+        ticksPerDay={24}
+        showHeading={false}
+        showQueueMeter={false}
+      />,
+    )
+    expect(container.querySelectorAll('.slot')).toHaveLength(BUILDING_ORDER.length)
+    expect(container.querySelector('h3.panel__icon-title')).toBeNull()
+  })
+
+  it('ProvinceDockContent zeigt Moral + Vorkommen-Icons + 7 Bauplaetze, ohne Name/Besitzer/Armeeliste', () => {
+    const { container } = render(
+      <ProvinceDockContent
+        province={{ ...province, morale: 55_000, buildQueue: [] }}
+        groups={groups}
+        ticksPerDay={24}
+        currentTick={0}
+      />,
+    )
+    expect(screen.getByRole('meter', { name: 'Moral' })).toBeTruthy()
+    expect(container.querySelector('.icon-row')).toBeTruthy()
+    expect(container.querySelectorAll('.slot')).toHaveLength(BUILDING_ORDER.length)
+    // Kein Name/Titel, kein Besitzer-Fakt, keine Armeeliste, kein Recruit-Queue-Meter (D19a-Scope).
+    expect(container.textContent).not.toContain(province.name)
+    expect(container.querySelector('.facts')).toBeNull()
+  })
+
+  it('ProvinceDockContent liefert null ohne Provinz', () => {
+    const { container } = render(<ProvinceDockContent province={null} ticksPerDay={24} currentTick={0} />)
+    expect(container.textContent).toBe('')
   })
 })
