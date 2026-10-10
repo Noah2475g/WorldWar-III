@@ -85,8 +85,12 @@
  * (`real: true`), sonst bleibt `stand-5` leer und `data.probes.warFixtureMissing` wird gesetzt,
  * ohne den Lauf abzubrechen. Der Name ist `stand-5`, nicht `stand-krieg`: die Spielstands-UI
  * kennt nur die fuenf festen manuellen Plaetze (`MANUAL_SLOTS`). Schritt `kriegserklaerung-ki`
- * laedt `stand-5` ueber die UI, erhoeht das Tempo und wartet (wie `kampf`) bis zu 90s auf
- * `section.dock[data-state="attack"]`, bevor `dock-attack-krieg.png` entsteht; laeuft das
+ * laedt `stand-5` ueber die UI, erhoeht das Tempo auf `10` (nicht `100` — bei hohem Tempo
+ * ueberholt das CAPITAL_LOST-Folgeereignis sonst den Kriegserklaerungs-Chip, Mentor-Befund
+ * t_0a8d09ee; `1` war in Lauf 4 gemessen zu langsam fuer die KI-Neubewertung) und wartet
+ * (wie `kampf`) bis zu 90s auf den Kriegserklaerungs-Chip-Text selbst
+ * (`.dock__attack-chip` enthaelt "erklärt den Krieg", nicht nur den geteilten
+ * `data-state="attack"`), bevor `dock-attack-krieg.png` entsteht; laeuft das
  * Zeitfenster ohne Treffer ab, wird trotzdem ein Diagnosebild (`dock-attack-krieg-timeout.png`)
  * geschossen statt den Lauf scheitern zu lassen.
  *
@@ -532,8 +536,8 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
     await provincePicker().selectOption({ label: 'Mittlerer Westen' }, { timeout: 5000 })
     await page.waitForTimeout(300)
   }
-  const runUntil = async (predicate, arg, timeout = 60000) => {
-    await speed('100')
+  const runUntil = async (predicate, arg, timeout = 60000, tempo = '100') => {
+    await speed(tempo)
     try {
       await page.waitForFunction(predicate, arg, { timeout })
     } finally {
@@ -1015,9 +1019,28 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
     await page.waitForTimeout(400)
     await page.getByRole('button', { name: 'Laden' }).nth(4).click({ timeout: 5000 })
     await page.waitForTimeout(600)
-    await speed('100')
+    // Mentor-Befund (t_0a8d09ee, Runde 3): speed('100') laesst das CAPITAL_LOST-Folgeereignis
+    // das WAR_DECLARED-Ereignis ueberholen (die KI marschiert im beschleunigten Tempo gleich
+    // weiter und erobert die Hauptstadt, bevor der Screenshot den Kriegserklaerungs-Chip zeigt
+    // — section.dock[data-state="attack"] wird fuer BEIDE Ereignisse gesetzt, also reicht die
+    // reine State-Pruefung nicht). Fix (Option 1+2 aus Mentor-Diagnose): `runUntil` setzt sonst
+    // IMMER selbst speed('100') (siehe Definition oben) — ein eigener speed('1')-Aufruf davor
+    // wurde dadurch sofort wieder ueberschrieben (Ursache des Haengers in Lauf 3). Jetzt nimmt
+    // `runUntil` einen eigenen `tempo`-Parameter. Lauf 4 (Messung, nicht Annahme) zeigte: bei
+    // `tempo='1'` lief in einem Viewport warFixture.real===true, aber das WAR_DECLARED-Ereignis
+    // kam innerhalb der 90s nicht — zu langsam, die KI reevaluiert Kriegserklaerungen offenbar
+    // nicht jeden Tick. `tempo='10'` als Mittelweg: genug Spielzeit pro Realsekunde, um die
+    // Neubewertung zu erreichen, aber (hoffentlich) nicht so schnell wie '100', dass CAPITAL_LOST
+    // das WAR_DECLARED sofort ueberholt. Zusaetzlich prueft die Wartebedingung weiterhin den
+    // Kriegserklaerungs-Chip-Text selbst (Text 'erklärt den Krieg', siehe i18n/de.ts dock.warChip),
+    // statt nur auf den (geteilten) data-state zu warten.
     try {
-      await runUntil(() => document.querySelector('section.dock[data-state="attack"]') !== null, null, 90000)
+      await runUntil(
+        () => document.querySelector('.dock__attack-chip')?.textContent?.includes('erklärt den Krieg') ?? false,
+        null,
+        90000,
+        '10',
+      )
       await shot('dock-attack-krieg')
       data.probes.dockAttack = await page.evaluate(() => {
         const chip = document.querySelector('.dock__attack-chip')
