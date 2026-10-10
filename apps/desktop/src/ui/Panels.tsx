@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react'
+import { Fragment, useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { MAX_DEPART_DELAY_DAYS } from '@worldwar/core'
 import type { CommandError, PublicView, ResourceKey, Terrain, VisibleArmy, VisibleProvince } from '@worldwar/core'
 // Nur der Typ: zur Laufzeit importiert weiterhin events.ts aus Panels.tsx, nicht umgekehrt.
@@ -235,7 +235,7 @@ export function touchHint(
   return reason || cost ? { reason, cost } : null
 }
 
-function ActionButton({
+export function ActionButton({
   action,
   showReason,
   compact = false,
@@ -248,6 +248,7 @@ function ActionButton({
   iconOnly = false,
   iconSize = 13,
   picture,
+  className,
 }: {
   action: Action
   /** Nur das Zeichen (T-M46-13): der Name steht als Tooltip und fuers Ohr, nicht im Bild. */
@@ -270,6 +271,8 @@ function ActionButton({
   primary?: boolean
   /** Fuer Zustandsknoepfe in einer Gruppe: gedrueckt = gilt gerade (T-M31-02). */
   pressed?: boolean
+  /** Zusaetzliche Klasse am Knopf (E4.3): fuer den roten Rahmen von "Krieg erklaeren". */
+  className?: string
 }) {
   const reasonId = `${action.id}-reason`
   const touchInfo = useInputMode() === 'touch' ? touchHint(action, showReason || reasonInGroup) : null
@@ -280,11 +283,16 @@ function ActionButton({
           zu T-M13-17 gefunden). */}
       <span className="action__head">
         {confirm !== undefined && action.disabledReason === null && (action.pendingNotice === undefined || action.ackOnly === true) ? (
-          <ConfirmButton label={action.label} consequence={confirm} onConfirm={action.onRun} />
+          <ConfirmButton
+            label={action.label}
+            consequence={confirm}
+            onConfirm={action.onRun}
+            {...(className ? { className: `button ${className}` } : {})}
+          />
         ) : (
           <button
             type="button"
-            className={primary ? 'button button--primary' : 'button'}
+            className={[primary ? 'button button--primary' : 'button', className].filter(Boolean).join(' ')}
             aria-pressed={pressed}
             disabled={action.disabledReason !== null || (action.pendingNotice !== undefined && action.ackOnly !== true)}
             // Ein Zeichenknopf traegt seinen Namen im Tooltip (Nachbesserung U): sonst stuende dort nur der Sperrgrund
@@ -1821,6 +1829,10 @@ export interface ContractRow {
   id: string
   partner: string
   text: string
+  /** Strukturiert fuer die kompakte Zeile (E4.2) — kein Text-Parsing in der UI. */
+  give: string
+  want: string
+  remaining: number
   actions: readonly Action[]
 }
 
@@ -1989,7 +2001,11 @@ export function DiplomacyPanel({
             const contractRows = (contracts ?? []).filter((row) => row.partner === other.id)
             return (
               <Fragment key={other.id}>
-              <tr className={other.id === chosen ? 'is-selected' : undefined}>
+              <tr
+                className={`power-row${other.id === chosen ? ' is-selected' : ''}`}
+                data-power={other.id}
+                data-status={relation?.state ?? 'peace'}
+              >
                 <td>
                   {canChoose ? (
                     <button
@@ -2037,8 +2053,16 @@ export function DiplomacyPanel({
               {contractRows.map((row) => (
                 <tr key={row.id} className="contract-row">
                   <td colSpan={2 + (reputationMax !== undefined ? 1 : 0) + (ticksPerDay !== undefined ? 1 : 0)}>
-                    <p className="offer__text">{row.text}</p>
-                    <ActionRow actions={row.actions} />
+                    <div className="contract-row__line" title={row.text}>
+                      <span className="contract-row__icon" aria-hidden="true">
+                        ⇄
+                      </span>
+                      <span className="contract-row__amounts">
+                        {row.give} <span className="contract-row__arrow">→</span> {row.want}
+                      </span>
+                      <span className="contract-row__remaining">{t('trade.contract.remaining', { remaining: row.remaining })}</span>
+                      <ActionRow actions={row.actions} />
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -2066,31 +2090,132 @@ export function DiplomacyPanel({
       {chosenAlive && (
         <div className="diplomacy__chosen" ref={chosenBlock}>
           {actionsFor && (
-            <ActionGroup
-              group={{
-                id: 'treaties',
-                title: t('diplomacy.treaties', { nation: nameOf(chosenAlive.id) }),
-                actions: actionsFor(chosenAlive.id),
-              }}
-              collectReasons
-              confirms={{
-                [`diplomacy-declareWar-${chosenAlive.id}`]: t('diplomacy.declareWarConfirm', { nation: nameOf(chosenAlive.id) }),
-                [`diplomacy-breakAlliance-${chosenAlive.id}`]: t('diplomacy.breakAllianceConfirm', { nation: nameOf(chosenAlive.id) }),
-              }}
+            <DiplomacyActions
+              actions={actionsFor(chosenAlive.id)}
+              nation={nameOf(chosenAlive.id)}
+              passageActions={passageFor ? passageFor(chosenAlive.id) : []}
             />
           )}
           {tradeForm && (
             <TradeOfferForm key={chosenAlive.id} partner={chosenAlive.id} partnerName={nameOf(chosenAlive.id)} spec={tradeForm} />
           )}
-          {passageFor && (
-            <ActionGroup
-              group={{ id: 'passage', title: t('diplomacy.passageGroup'), actions: passageFor(chosenAlive.id) }}
-              collectReasons
-            />
-          )}
         </div>
       )}
     </section>
+  )
+}
+
+/**
+ * Die Zeile der gewaehlten Macht (E4.3, T-M17-14): "Krieg erklaeren" ist nie eine Hauptaktion,
+ * aber immer sichtbar — ausser schon im Krieg, dann steht der Sperrgrund daran (bestehende
+ * `disabledReason`-Logik, hier nur anders dargestellt). Die Hauptaktion (`offerAlliance`) bleibt
+ * daneben primaer sichtbar. Die uebrigen Vertrags- und Durchmarschaktionen wandern ins
+ * "Weitere"-Aufklappmuster (Vorbild `Explain.tsx`): ueberlagert statt verschiebt, Escape schliesst.
+ */
+function DiplomacyActions({
+  actions,
+  nation,
+  passageActions,
+}: {
+  actions: readonly Action[]
+  nation: string
+  passageActions: readonly Action[]
+}) {
+  const warLabel = t('actions.declareWar')
+  const mainLabel = t('actions.offerAlliance')
+  const peaceLabel = t('actions.offerPeace')
+  const warAction = actions.find((a) => a.label === warLabel)
+  const mainAction = actions.find((a) => a.label === mainLabel)
+  // Regression E4.3 (Review-Runde 1, K4): "Frieden anbieten" landete in restTreaties und damit
+  // im eingeklappten "Weitere"-Aufklappmuster -- im Krieg ist es keine Nebenhandlung, sondern
+  // die einzige sinnvolle Haupthandlung, muss also wie warAction sichtbar bleiben. Ausserhalb
+  // des Kriegs ist der Knopf gesperrt ("Das geht nur im Krieg.") -- dann bleibt er in
+  // restTreaties, damit sein Sperrgrund wie zuvor in der Sammelzeile des "Weitere"-Musters
+  // auftaucht (R-UX-03/AK1), statt als eigener gesperrter Knopf daneben zu stehen.
+  const peaceCandidate = actions.find((a) => a.label === peaceLabel)
+  const peaceAction = peaceCandidate && peaceCandidate.disabledReason === null ? peaceCandidate : undefined
+  const restTreaties = actions.filter((a) => a !== warAction && a !== mainAction && a !== peaceAction)
+  const confirms: Record<string, string> = {}
+  if (warAction) confirms[warAction.id] = t('diplomacy.declareWarConfirm', { nation })
+  for (const a of restTreaties) {
+    if (a.label === t('actions.breakAlliance')) confirms[a.id] = t('diplomacy.breakAllianceConfirm', { nation })
+  }
+  const moreCount = restTreaties.length + passageActions.length
+
+  return (
+    <div className="diplomacy__primary">
+      {mainAction && <ActionButton action={mainAction} showReason primary />}
+      {warAction && (
+        <ActionButton action={warAction} showReason className="button--danger-outline" confirm={confirms[warAction.id]} />
+      )}
+      {peaceAction && <ActionButton action={peaceAction} showReason primary />}
+      {moreCount > 0 && (
+        <DiplomacyMore count={moreCount}>
+          {restTreaties.length > 0 && (
+            <ActionGroup
+              group={{ id: 'treaties', title: t('diplomacy.treaties', { nation }), actions: restTreaties }}
+              collectReasons
+              confirms={confirms}
+            />
+          )}
+          {passageActions.length > 0 && (
+            <ActionGroup group={{ id: 'passage', title: t('diplomacy.passageGroup'), actions: passageActions }} collectReasons />
+          )}
+        </DiplomacyMore>
+      )}
+    </div>
+  )
+}
+
+/**
+ * Das "Weitere"-Aufklappmuster (E4.3, Vorbild `Explain.tsx`): aria-expanded/aria-controls am
+ * Knopf, Escape schliesst und gibt den Fokus zurueck, ein Druck ausserhalb schliesst auch. Die
+ * Liste ueberlagert (`position: absolute`, app.css) statt das Layout zu verschieben.
+ */
+function DiplomacyMore({ count, children }: { count: number; children: ReactNode }) {
+  const [open, setOpen] = useState(false)
+  const id = useId()
+  const root = useRef<HTMLDivElement>(null)
+  const toggle = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      event.stopPropagation()
+      setOpen(false)
+      toggle.current?.focus()
+    }
+    const onPress = (event: Event) => {
+      if (event.target instanceof Node && root.current?.contains(event.target)) return
+      setOpen(false)
+    }
+    document.addEventListener('keydown', onKey, true)
+    document.addEventListener('pointerdown', onPress, true)
+    return () => {
+      document.removeEventListener('keydown', onKey, true)
+      document.removeEventListener('pointerdown', onPress, true)
+    }
+  }, [open])
+
+  return (
+    <div className="diplomacy__more" ref={root}>
+      <button
+        type="button"
+        className="button diplomacy__more-toggle"
+        ref={toggle}
+        aria-expanded={open}
+        aria-controls={id}
+        onClick={() => setOpen((current) => !current)}
+      >
+        {t('diplomacy.more', { count })}
+      </button>
+      {open && (
+        <div className="diplomacy__more-panel" id={id}>
+          {children}
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -2434,9 +2559,25 @@ export function MarketPanel({
   const [give, setGive] = useState<ResourceKey>(resources[0] ?? 'wood')
   const [want, setWant] = useState<ResourceKey>(resources[1] ?? 'iron')
   const [units, setUnits] = useState(100)
+  const amountInputRef = useRef<HTMLInputElement>(null)
   // The interface counts whole units; the core counts thousandths.
   const giveAmount = Math.max(0, Math.round(units)) * 1000
   const result = preview(give, giveAmount, want)
+
+  /**
+   * Die Rohstoff-Chip-Leiste (Spec §9.1): ein Chip je Rohstoff (alle sieben, wenn
+   * vorhanden), Klick setzt ihn als "gibt" und holt den Fokus ins Mengenfeld — der
+   * Umweg ueber das <select> entfaellt fuer den haeufigsten Griff.
+   */
+  const selectGiveChip = (key: ResourceKey): void => {
+    setGive(key)
+    amountInputRef.current?.focus()
+  }
+  // Dieselbe Idee fuer die "verlangt"-Seite (Spec §9.1, zweite Leiste, E4.4).
+  const selectWantChip = (key: ResourceKey): void => {
+    setWant(key)
+    amountInputRef.current?.focus()
+  }
   // Eine Linie aus einem Wert ist keine (Sparkline gibt dafuer ohnehin nichts zurueck).
   const trends = resources
     .map((key) => [key, prices[key] ?? []] as const)
@@ -2445,6 +2586,38 @@ export function MarketPanel({
   return (
     <section className="panel" aria-label={t('market.title')}>
       <PanelHead title={t('market.title')} onClose={onClose} />
+      {resources.length > 0 && (
+        <ul className="market__chips" aria-label={t('market.give')}>
+          {resources.map((key) => (
+            <li key={key}>
+              <button
+                type="button"
+                className="market__chip"
+                aria-pressed={key === give}
+                onClick={() => selectGiveChip(key)}
+              >
+                <Icon name={RESOURCE_ICONS[key] ?? 'money'} size={14} title={t(`resources.${key}`)} />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {resources.length > 0 && (
+        <ul className="market__chips market__chips--want" aria-label={t('market.want')}>
+          {resources.map((key) => (
+            <li key={key}>
+              <button
+                type="button"
+                className="market__chip"
+                aria-pressed={key === want}
+                onClick={() => selectWantChip(key)}
+              >
+                <Icon name={RESOURCE_ICONS[key] ?? 'money'} size={14} title={t(`resources.${key}`)} />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
       <div className="market">
         <label htmlFor="market-give">{t('market.give')}</label>
         {/* Das Zeichen des jeweils GEWAEHLTEN Rohstoffs neben der Liste (T-M23-03,
@@ -2463,6 +2636,7 @@ export function MarketPanel({
         <label htmlFor="market-amount">{t('market.amount')}</label>
         <input
           id="market-amount"
+          ref={amountInputRef}
           type="number"
           min={1}
           step={1}

@@ -536,6 +536,18 @@ body {
   border-color: var(--accent);
 }
 
+/* "Krieg erklaeren" (E4.3): die einzige rote Ausnahme — nur Rahmen, kein Fuellton, damit er
+   neben der Hauptaktion (Buendnis, Bernstein) nicht wie eine zweite Hauptaktion wirkt. */
+.button--danger-outline {
+  border-color: var(--danger);
+  color: var(--danger);
+  background: transparent;
+}
+
+.button--danger-outline:hover:not(:disabled) {
+  background: var(--danger-soft);
+}
+
 /* ---------------------------------------------------------------- main */
 
 .main {
@@ -830,6 +842,44 @@ body {
 .offer__text {
   margin: 0;
   font-size: 12px;
+}
+
+/* Liefervertragszeile (E4.2): eine kompakte Zeile statt Satz + eigener Knopfzeile —
+   Icon, Mengen, Rest-Lieferungen und Kuendigen nebeneinander (292-320px Breite). */
+.contract-row__line {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs, 4px);
+  font-size: 12px;
+  flex-wrap: nowrap;
+}
+
+.contract-row__icon {
+  flex: 0 0 auto;
+  opacity: 0.7;
+}
+
+.contract-row__amounts {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.contract-row__arrow {
+  opacity: 0.6;
+}
+
+.contract-row__remaining {
+  flex: 0 0 auto;
+  color: var(--ink-muted, inherit);
+  white-space: nowrap;
+}
+
+.contract-row__line .actions {
+  flex: 0 0 auto;
+  margin: 0;
 }
 
 /* Die Kriege der Welt (T-M17-14, R-DIP-06/AK2): eine schlichte Liste, kein Balken. */
@@ -1273,6 +1323,23 @@ body {
   color: var(--ink-soft);
 }
 
+/* E4.5: bei 292px Seitenleistenbreite sprengte die Wirtschaftstabelle den Rahmen
+   um 24px (gemessen: 316px bei 292px verfuegbar). Keine Spalte faellt weg
+   (R-ECON-06) — enger werden Zellenpolsterung und die Nebenwerte (Produktion,
+   Unterhalt, In-Auftrag- und Ausgaben-Zeichen), dieselbe Idee wie bei der
+   Diplomatietabelle: Gewicht bleibt bei Bestand und Bilanz. Gemessen danach:
+   292px bei 292px verfuegbar (kein Ueberlauf mehr, kein Scroll noetig). */
+.panel--economy .table--numbers th,
+.panel--economy .table--numbers td {
+  padding: 3px 3px;
+}
+
+.panel--economy .eco__flow,
+.panel--economy .committed,
+.panel--economy .expense {
+  font-size: 10px;
+}
+
 .eco__balance--plus {
   color: var(--text);
 }
@@ -1506,6 +1573,40 @@ body {
   gap: var(--sp-sm) var(--sp-md);
   align-items: center;
   font-size: 12px;
+}
+
+/* Die Rohstoff-Chip-Leiste im Marktpanel (Spec §9.1): sieben Chips, einer je
+   Rohstoff, Klick setzt "gibt" und holt den Fokus ins Mengenfeld. */
+.market__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-sm);
+  margin: 0 0 var(--sp-sm);
+  padding: 0;
+  list-style: none;
+}
+
+.market__chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  min-height: 24px;
+  padding: 2px 6px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.market__chip:hover,
+.market__chip:focus-visible {
+  border-color: var(--accent);
+}
+
+.market__chip[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--paper-sunk);
 }
 
 /* Das Zeichen des gewaehlten Rohstoffs neben der Liste (T-M23-03). */
@@ -2511,6 +2612,44 @@ body {
   color: var(--ink);
   background: var(--paper-sunk);
   border-left: 2px solid var(--line);
+}
+
+/* "Weitere" bei der Diplomatie (E4.3, Vorbild .explain__text): Krieg bleibt eigenstaendig
+   sichtbar, die uebrigen Vertrags-/Durchmarschaktionen liegen ueber der Leiste statt sie zu
+   schieben. Reihe 1: Hauptaktion + Krieg + Weitere-Knopf, nebeneinander, bricht schmal um. */
+.diplomacy__primary {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--sp-sm);
+  margin-bottom: var(--sp-sm);
+}
+
+.diplomacy__more {
+  position: relative;
+}
+
+.diplomacy__more-toggle[aria-expanded='true'] {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+}
+
+.diplomacy__more-panel {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + var(--sp-xs, 4px));
+  left: 0;
+  min-width: 220px;
+  max-width: 320px;
+  padding: var(--sp-sm);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--ground) 40%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-sm);
 }
 
 /* ---------------------------------------------------------------- meldungen */

@@ -1,0 +1,522 @@
+{
+  "tag": "e4",
+  "state": "S575G",
+  "runs": [
+    {
+      "viewport": "1280x800",
+      "scenes": {
+        "kopf": {
+          "headerHeight": 56,
+          "topScrollWidth": 1476,
+          "topClientWidth": 1476,
+          "controls": 12,
+          "controlsInView": 9,
+          "controlsOutside": [
+            "Einmarsch in Oberägypten",
+            "Spielstände",
+            "Menü"
+          ],
+          "chipInView": false
+        },
+        "protokollKarte": {
+          "present": false
+        },
+        "ohnePanel": {
+          "side": {
+            "y": 68,
+            "h": 720,
+            "w": 320
+          },
+          "sideShareOfViewport": 0.9,
+          "sideScrollH": 720,
+          "map": {
+            "y": 56,
+            "h": 744,
+            "w": 1476
+          },
+          "mapShare": 0.93,
+          "foot": {
+            "y": 68,
+            "h": 446,
+            "w": 64
+          },
+          "sheet": null,
+          "panelOpen": "closed",
+          "freeMap": {
+            "rect": {
+              "x": 0,
+              "y": 56,
+              "w": 1476,
+              "h": 744
+            },
+            "points": 14880,
+            "hits": 14470,
+            "share": 0.972
+          }
+        },
+        "protokollZeilen": {
+          "rows": 0,
+          "days": 0,
+          "rowsPerDay": {},
+          "maxRowsPerDay": 0,
+          "withPlace": 0,
+          "withPlaceShare": null,
+          "collected": 0,
+          "major": 0
+        },
+        "pulse": {
+          "distinctPlaces": 8,
+          "places": [
+            "NGA-NW",
+            "BGD",
+            "SDN",
+            "NER",
+            "MMR",
+            "SLE",
+            "ERI",
+            "TGO"
+          ]
+        },
+        "hinweise": {
+          "height": 156,
+          "rows": 4,
+          "unrestRows": 1,
+          "unrestTexts": [
+            "8"
+          ]
+        },
+        "diplomatieAuswahl": {
+          "sideClientH": 720,
+          "names": 7,
+          "inView": 7,
+          "lastY": 422,
+          "alertsH": 156
+        },
+        "diplomatie": {
+          "sideClientH": 720,
+          "sideScrollH": 720,
+          "probes": [
+            {
+              "label": "Krieg erklaeren",
+              "found": true,
+              "inView": true,
+              "y": 215
+            },
+            {
+              "label": "Frieden anbieten",
+              "found": false
+            },
+            {
+              "label": "Feld Nahrung geben",
+              "found": true,
+              "inView": true,
+              "y": 350
+            },
+            {
+              "label": "Feld Material verlangen",
+              "found": true,
+              "inView": true,
+              "y": 379
+            },
+            {
+              "label": "Handel anbieten",
+              "found": true,
+              "inView": true,
+              "y": 626
+            }
+          ],
+          "belowFold": 0
+        },
+        "markt": {
+          "sideClientH": 720,
+          "sideScrollH": 720
+        },
+        "panel": {
+          "side": {
+            "y": 68,
+            "h": 720,
+            "w": 320
+          },
+          "sideShareOfViewport": 0.9,
+          "sideScrollH": 720,
+          "map": {
+            "y": 56,
+            "h": 744,
+            "w": 1452
+          },
+          "mapShare": 0.93,
+          "foot": {
+            "y": 68,
+            "h": 446,
+            "w": 64
+          },
+          "sheet": "half",
+          "panelOpen": "open",
+          "visible": {
+            "slots": {
+              "present": true,
+              "inView": true,
+              "cells": 7,
+              "firstHit": true,
+              "lastHit": true,
+              "visible": true
+            },
+            "recruit": {
+              "present": true,
+              "inView": false,
+              "cells": 20,
+              "firstHit": true,
+              "lastHit": false,
+              "visible": false
+            }
+          },
+          "freeMap": {
+            "rect": {
+              "x": -172,
+              "y": 56,
+              "w": 1452,
+              "h": 744
+            },
+            "points": 14880,
+            "hits": 9942,
+            "share": 0.668
+          }
+        }
+      },
+      "errors": []
+    },
+    {
+      "viewport": "1920x1080",
+      "scenes": {
+        "kopf": {
+          "headerHeight": 56,
+          "topScrollWidth": 1920,
+          "topClientWidth": 1920,
+          "controls": 12,
+          "controlsInView": 12,
+          "controlsOutside": [],
+          "chipInView": true
+        },
+        "protokollKarte": {
+          "present": false
+        },
+        "ohnePanel": {
+          "side": {
+            "y": 68,
+            "h": 1000,
+            "w": 320
+          },
+          "sideShareOfViewport": 0.926,
+          "sideScrollH": 1000,
+          "map": {
+            "y": 56,
+            "h": 1024,
+            "w": 1920
+          },
+          "mapShare": 0.948,
+          "foot": {
+            "y": 68,
+            "h": 446,
+            "w": 64
+          },
+          "sheet": null,
+          "panelOpen": "closed",
+          "freeMap": {
+            "rect": {
+              "x": 0,
+              "y": 56,
+              "w": 1920,
+              "h": 1024
+            },
+            "points": 30720,
+            "hits": 29261,
+            "share": 0.953
+          }
+        },
+        "protokollZeilen": {
+          "rows": 0,
+          "days": 0,
+          "rowsPerDay": {},
+          "maxRowsPerDay": 0,
+          "withPlace": 0,
+          "withPlaceShare": null,
+          "collected": 0,
+          "major": 0
+        },
+        "pulse": {
+          "distinctPlaces": 7,
+          "places": [
+            "SDN",
+            "TGO",
+            "NER",
+            "MMR",
+            "ERI",
+            "TUN",
+            "ETH"
+          ]
+        },
+        "hinweise": {
+          "height": 156,
+          "rows": 4,
+          "unrestRows": 1,
+          "unrestTexts": [
+            "8"
+          ]
+        },
+        "diplomatieAuswahl": {
+          "sideClientH": 1000,
+          "names": 7,
+          "inView": 7,
+          "lastY": 422,
+          "alertsH": 156
+        },
+        "diplomatie": {
+          "sideClientH": 1000,
+          "sideScrollH": 1000,
+          "probes": [
+            {
+              "label": "Krieg erklaeren",
+              "found": true,
+              "inView": true,
+              "y": 495
+            },
+            {
+              "label": "Frieden anbieten",
+              "found": false
+            },
+            {
+              "label": "Feld Nahrung geben",
+              "found": true,
+              "inView": true,
+              "y": 630
+            },
+            {
+              "label": "Feld Material verlangen",
+              "found": true,
+              "inView": true,
+              "y": 659
+            },
+            {
+              "label": "Handel anbieten",
+              "found": true,
+              "inView": true,
+              "y": 906
+            }
+          ],
+          "belowFold": 0
+        },
+        "markt": {
+          "sideClientH": 1000,
+          "sideScrollH": 1000
+        },
+        "panel": {
+          "side": {
+            "y": 68,
+            "h": 1000,
+            "w": 320
+          },
+          "sideShareOfViewport": 0.926,
+          "sideScrollH": 1000,
+          "map": {
+            "y": 56,
+            "h": 1024,
+            "w": 1920
+          },
+          "mapShare": 0.948,
+          "foot": {
+            "y": 68,
+            "h": 446,
+            "w": 64
+          },
+          "sheet": "half",
+          "panelOpen": "open",
+          "visible": {
+            "slots": {
+              "present": true,
+              "inView": true,
+              "cells": 7,
+              "firstHit": true,
+              "lastHit": true,
+              "visible": true
+            },
+            "recruit": {
+              "present": true,
+              "inView": true,
+              "cells": 20,
+              "firstHit": true,
+              "lastHit": true,
+              "visible": true
+            }
+          },
+          "freeMap": {
+            "rect": {
+              "x": 0,
+              "y": 56,
+              "w": 1920,
+              "h": 1024
+            },
+            "points": 30720,
+            "hits": 23986,
+            "share": 0.781
+          }
+        }
+      },
+      "errors": []
+    },
+    {
+      "viewport": "375x667",
+      "scenes": {
+        "kopf": {
+          "headerHeight": 195,
+          "topScrollWidth": 394,
+          "topClientWidth": 375,
+          "controls": 12,
+          "controlsInView": 11,
+          "controlsOutside": [
+            "Vorspulen"
+          ],
+          "chipInView": true
+        },
+        "protokollKarte": {
+          "present": false
+        },
+        "ohnePanel": {
+          "side": {
+            "y": 495,
+            "h": 124,
+            "w": 375
+          },
+          "sideShareOfViewport": 0.186,
+          "sideScrollH": 123,
+          "map": {
+            "y": 195,
+            "h": 300,
+            "w": 375
+          },
+          "mapShare": 0.45,
+          "foot": {
+            "y": 619,
+            "h": 48,
+            "w": 375
+          },
+          "sheet": null,
+          "panelOpen": "closed",
+          "freeMap": {
+            "rect": {
+              "x": 0,
+              "y": 195,
+              "w": 375,
+              "h": 300
+            },
+            "points": 1786,
+            "hits": 1132,
+            "share": 0.634
+          }
+        },
+        "protokollZeilen": {
+          "rows": 0,
+          "days": 0,
+          "rowsPerDay": {},
+          "maxRowsPerDay": 0,
+          "withPlace": 0,
+          "withPlaceShare": null,
+          "collected": 0,
+          "major": 0
+        },
+        "protokollOffen": {
+          "present": true,
+          "box": {
+            "h": 150,
+            "w": 343
+          },
+          "entriesInDom": 22,
+          "visibleRows": 0,
+          "visibleLogRows": 0,
+          "fullRows": 0,
+          "rowHeight": 44,
+          "footBox": {
+            "h": 0,
+            "w": 0
+          },
+          "filterVisible": true,
+          "filterButtonsInView": 0
+        },
+        "pulse": {
+          "distinctPlaces": 11,
+          "places": [
+            "NER",
+            "NGA-NW",
+            "SLE",
+            "SDN",
+            "BGD",
+            "MMR",
+            "LBR",
+            "TGO",
+            "SEN",
+            "ERI"
+          ]
+        },
+        "hinweise": {
+          "height": 198,
+          "rows": 4,
+          "unrestRows": 1,
+          "unrestTexts": [
+            "8"
+          ]
+        },
+        "panel": {
+          "side": {
+            "y": 334,
+            "h": 334,
+            "w": 375
+          },
+          "sideShareOfViewport": 0.5,
+          "sideScrollH": 333,
+          "map": {
+            "y": 195,
+            "h": 139,
+            "w": 375
+          },
+          "mapShare": 0.208,
+          "foot": {
+            "y": 0,
+            "h": 0,
+            "w": 0
+          },
+          "sheet": "half",
+          "panelOpen": "open",
+          "visible": {
+            "slots": {
+              "present": true,
+              "inView": false,
+              "cells": 7,
+              "firstHit": false,
+              "lastHit": false,
+              "visible": false
+            },
+            "recruit": {
+              "present": true,
+              "inView": false,
+              "cells": 20,
+              "firstHit": false,
+              "lastHit": false,
+              "visible": false
+            }
+          },
+          "freeMap": {
+            "rect": {
+              "x": 0,
+              "y": 195,
+              "w": 375,
+              "h": 139
+            },
+            "points": 799,
+            "hits": 284,
+            "share": 0.355
+          }
+        }
+      },
+      "errors": []
+    }
+  ]
+}

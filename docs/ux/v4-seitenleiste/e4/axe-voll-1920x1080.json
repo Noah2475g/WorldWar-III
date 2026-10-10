@@ -1,0 +1,168 @@
+{
+  "url": "http://localhost:5361/",
+  "viewport": "1920x1080",
+  "tags": [
+    "wcag2a",
+    "wcag2aa",
+    "wcag21a",
+    "wcag21aa",
+    "wcag22aa"
+  ],
+  "scenes": {
+    "zu": {
+      "passes": 25,
+      "violations": 1,
+      "nodes": 3,
+      "byRule": [
+        {
+          "id": "target-size",
+          "impact": "serious",
+          "nodes": 3,
+          "samples": [
+            "button[title=\"1 Stunden je Sekunde\"]",
+            "button[title=\"2 Stunden je Sekunde\"]",
+            "button[title=\"5 Stunden je Sekunde\"]"
+          ]
+        }
+      ]
+    },
+    "diplomacy": {
+      "passes": 29,
+      "violations": 1,
+      "nodes": 3,
+      "byRule": [
+        {
+          "id": "target-size",
+          "impact": "serious",
+          "nodes": 3,
+          "samples": [
+            "button[title=\"1 Stunden je Sekunde\"]",
+            "button[title=\"2 Stunden je Sekunde\"]",
+            "button[title=\"5 Stunden je Sekunde\"]"
+          ]
+        }
+      ]
+    },
+    "market": {
+      "passes": 27,
+      "violations": 1,
+      "nodes": 3,
+      "byRule": [
+        {
+          "id": "target-size",
+          "impact": "serious",
+          "nodes": 3,
+          "samples": [
+            "button[title=\"1 Stunden je Sekunde\"]",
+            "button[title=\"2 Stunden je Sekunde\"]",
+            "button[title=\"5 Stunden je Sekunde\"]"
+          ]
+        }
+      ]
+    },
+    "armies": {
+      "passes": 25,
+      "violations": 1,
+      "nodes": 3,
+      "byRule": [
+        {
+          "id": "target-size",
+          "impact": "serious",
+          "nodes": 3,
+          "samples": [
+            "button[title=\"1 Stunden je Sekunde\"]",
+            "button[title=\"2 Stunden je Sekunde\"]",
+            "button[title=\"5 Stunden je Sekunde\"]"
+          ]
+        }
+      ]
+    },
+    "espionage": {
+      "passes": 25,
+      "violations": 1,
+      "nodes": 3,
+      "byRule": [
+        {
+          "id": "target-size",
+          "impact": "serious",
+          "nodes": 3,
+          "samples": [
+            "button[title=\"1 Stunden je Sekunde\"]",
+            "button[title=\"2 Stunden je Sekunde\"]",
+            "button[title=\"5 Stunden je Sekunde\"]"
+          ]
+        }
+      ]
+    },
+    "standings": {
+      "passes": 28,
+      "violations": 1,
+      "nodes": 3,
+      "byRule": [
+        {
+          "id": "target-size",
+          "impact": "serious",
+          "nodes": 3,
+          "samples": [
+            "button[title=\"1 Stunden je Sekunde\"]",
+            "button[title=\"2 Stunden je Sekunde\"]",
+            "button[title=\"5 Stunden je Sekunde\"]"
+          ]
+        }
+      ]
+    },
+    "economy": {
+      "passes": 26,
+      "violations": 1,
+      "nodes": 3,
+      "byRule": [
+        {
+          "id": "target-size",
+          "impact": "serious",
+          "nodes": 3,
+          "samples": [
+            "button[title=\"1 Stunden je Sekunde\"]",
+            "button[title=\"2 Stunden je Sekunde\"]",
+            "button[title=\"5 Stunden je Sekunde\"]"
+          ]
+        }
+      ]
+    },
+    "log": {
+      "passes": 25,
+      "violations": 1,
+      "nodes": 3,
+      "byRule": [
+        {
+          "id": "target-size",
+          "impact": "serious",
+          "nodes": 3,
+          "samples": [
+            "button[title=\"1 Stunden je Sekunde\"]",
+            "button[title=\"2 Stunden je Sekunde\"]",
+            "button[title=\"5 Stunden je Sekunde\"]"
+          ]
+        }
+      ]
+    },
+    "provinz": {
+      "passes": 31,
+      "violations": 1,
+      "nodes": 3,
+      "byRule": [
+        {
+          "id": "target-size",
+          "impact": "serious",
+          "nodes": 3,
+          "samples": [
+            "button[title=\"1 Stunden je Sekunde\"]",
+            "button[title=\"2 Stunden je Sekunde\"]",
+            "button[title=\"5 Stunden je Sekunde\"]"
+          ]
+        }
+      ]
+    }
+  },
+  "total": 9,
+  "open": "true"
+}

@@ -406,6 +406,17 @@ async function runViewport(browser, vp) {
     await shot('diplomatie')
     await page.keyboard.press('Escape')
     await page.waitForTimeout(200)
+
+    // Markt (E4.7, K2 Markt-Koerper): eigener Bereich ueber die Leiste rechts (RAIL_ITEM).
+    await page.locator(RAIL_ITEM('market')).first().click({ timeout: 4000 }).catch((e) => errors.push(String(e).split('\n')[0]))
+    await page.waitForTimeout(300)
+    out.scenes.markt = await page.evaluate(() => {
+      const side = document.querySelector('aside.side')
+      return { sideClientH: side.clientHeight, sideScrollH: side.scrollHeight }
+    })
+    await shot('markt')
+    await page.keyboard.press('Escape')
+    await page.waitForTimeout(200)
   }
 
   // Tastaturweg zum Bauen (T-M46-05, nur mit --probe-build): P, Provinz tippen, Eingabe, Eingabe - und beobachten.

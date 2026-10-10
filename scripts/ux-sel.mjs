@@ -16,3 +16,5 @@ export const DISPATCH = '.dispatch-card'
 export const STANDINGS_TOP = '.standings-top'
 /** Dieselben Bereiche in der Leiste des Blatts (Telefon hochkant, Blatt halb/voll offen). */
 export const SHEET_ITEM = (a) => `.sheet__navbutton[data-area="${a}"]`
+/** Maechte-Zeile der Diplomatie-Tabelle (E4, D16): data-status (war|peace|alliance) + data-power (id). */
+export const POWER_ROW = '.power-row'

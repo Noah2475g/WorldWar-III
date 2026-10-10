@@ -815,21 +815,27 @@ describe('R-UX-03/AK1 Sperrgründe der Verträge gebündelt, Leerzustände als F
 
   it('zeigt die Gründe einmal als Sammelzeile statt als Absatz unter jedem Knopf', () => {
     const { container } = open()
-    const group = container.querySelector('section.group[aria-label^="Verträge"]') ?? container.querySelectorAll('section.group')[1]!
+    // Bündnis anbieten ist jetzt die Hauptaktion (E4.3) und steht nicht mehr in der Sammelzeile;
+    // sein Sperrgrund steht direkt am Knopf. Die uebrigen stehen hinter „Weitere“.
+    fireEvent.click(screen.getByRole('button', { name: /^Weitere/ }))
+    const group = container.querySelector('.diplomacy__more-panel section.group[aria-label^="Verträge"]')!
 
     expect(group.querySelectorAll('.action__reason').length, 'kein Absatz je Knopf').toBe(0)
     const lines = group.querySelectorAll('.group__reasons')
     expect(lines.length, 'genau eine Sammelzeile').toBe(1)
     expect(lines[0]!.textContent).toContain('Das geht nur im Krieg.')
-    expect(lines[0]!.textContent).toContain('Ein Bündnis setzt Frieden voraus.')
     expect(lines[0]!.textContent).toContain('Mit Ostmark besteht kein Bündnis.')
     // Derselbe Grund steht einmal, mit beiden Knöpfen davor.
     expect((lines[0]!.textContent!.match(/hat Ihnen nichts angeboten/g) ?? []).length).toBe(1)
     expect(lines[0]!.textContent).toContain('Frieden annehmen, Bündnis annehmen')
+    // Der Sperrgrund der Hauptaktion steht eigenstaendig unter ihr, nicht in dieser Sammelzeile.
+    expect(lines[0]!.textContent).not.toContain('Ein Bündnis setzt Frieden voraus.')
+    expect(container.querySelector('.diplomacy__primary .action__reason')?.textContent).toBe('Ein Bündnis setzt Frieden voraus.')
   })
 
   it('jeder gesperrte Knopf trägt seinen Grund über aria-describedby', () => {
     open()
+    fireEvent.click(screen.getByRole('button', { name: /^Weitere/ }))
     for (const action of treaties.filter((a) => a.disabledReason)) {
       const button = screen.getByRole('button', { name: action.label })
       const id = button.getAttribute('aria-describedby')
@@ -1744,6 +1750,45 @@ describe('R-UI-05 Der Markt zeigt das Zeichen des gewaehlten Rohstoffs', () => {
     fireEvent.change(container.querySelector('#market-give')!, { target: { value: 'oil' } })
 
     expect(zeichnung(container, 'give')).toBe(GLYPH_PATHS[RESOURCE_ICONS.oil!]!)
+  })
+})
+
+/**
+ * Die Rohstoff-Chip-Leisten (E4.4, Spec §9.1): je Seite (gibt/verlangt) ein Chip je
+ * Rohstoff, Klick setzt den Wert und holt den Fokus direkt ins Mengenfeld.
+ */
+describe('E4.4 Die Markt-Chip-Leisten ersetzen den Select-Umweg', () => {
+  const handel = () => ({ text: 'Ergibt etwas.', action: action('trade', undefined, 'Handeln') })
+  const resources = ['food', 'wood', 'iron', 'coal', 'oil', 'rare', 'money'] as never
+
+  it('zeigt sieben Chips je Seite', () => {
+    const { container } = render(<MarketPanel resources={resources} stock={{}} preview={handel} />)
+    const chipLists = container.querySelectorAll('ul.market__chips')
+    expect(chipLists).toHaveLength(2)
+    expect(chipLists[0]!.querySelectorAll('button.market__chip')).toHaveLength(7)
+    expect(chipLists[1]!.querySelectorAll('button.market__chip')).toHaveLength(7)
+  })
+
+  it('Klick auf einen Geben-Chip setzt die Auswahl und fokussiert das Mengenfeld', () => {
+    const { container } = render(
+      <MarketPanel resources={['wood', 'iron', 'oil'] as never} stock={{}} preview={handel} />,
+    )
+    const giveChips = container.querySelectorAll('ul.market__chips button.market__chip')
+    fireEvent.click(giveChips[2]!) // oil
+
+    expect((container.querySelector('#market-give') as HTMLSelectElement).value).toBe('oil')
+    expect(document.activeElement).toBe(container.querySelector('#market-amount'))
+  })
+
+  it('Klick auf einen Verlangen-Chip setzt die Auswahl und fokussiert das Mengenfeld', () => {
+    const { container } = render(
+      <MarketPanel resources={['wood', 'iron', 'oil'] as never} stock={{}} preview={handel} />,
+    )
+    const wantChips = container.querySelectorAll('ul.market__chips--want button.market__chip')
+    fireEvent.click(wantChips[2]!) // oil
+
+    expect((container.querySelector('#market-want') as HTMLSelectElement).value).toBe('oil')
+    expect(document.activeElement).toBe(container.querySelector('#market-amount'))
   })
 })
 
@@ -2788,6 +2833,8 @@ describe('R-UX-04/AK1 Krieg und Bündnisbruch fragen nach', () => {
 
   it('fragt auch beim Aufkündigen des Bündnisses nach (heute rot)', () => {
     const { brk } = make()
+    // Bündnis aufkündigen steht hinter „Weitere“ (E4.3): erst aufklappen.
+    fireEvent.click(screen.getByRole('button', { name: /^Weitere/ }))
     fireEvent.click(screen.getByRole('button', { name: 'Bündnis aufkündigen' }))
     expect(brk).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('button', { name: /Ostmark.*noch einmal klicken/ }))
@@ -2796,6 +2843,7 @@ describe('R-UX-04/AK1 Krieg und Bündnisbruch fragen nach', () => {
 
   it('fragt bei Frieden nicht nach: dort geht nichts verloren', () => {
     const { peace } = make()
+    fireEvent.click(screen.getByRole('button', { name: /^Weitere/ }))
     fireEvent.click(screen.getByRole('button', { name: 'Frieden anbieten' }))
     expect(peace).toHaveBeenCalledTimes(1)
   })
@@ -2839,10 +2887,20 @@ describe('Liefervertrag B3 (D8)', () => {
     const onRun = vi.fn()
     const view = diplomacyView({ others: [{ id: 'p2', nation: 'Ostmark' }] })
     const contracts = [
-      { id: 'c1', partner: 'p2', text: 'Liefervertrag: gibt 1 Eisen', actions: [{ id: 'contract-c1-cancel', label: 'Kündigen', disabledReason: null, onRun }] },
+      {
+        id: 'c1',
+        partner: 'p2',
+        text: 'Liefervertrag: gibt 1 Eisen',
+        give: '500 Eisen',
+        want: '1.800 Geld',
+        remaining: 3,
+        actions: [{ id: 'contract-c1-cancel', label: 'Kündigen', disabledReason: null, onRun }],
+      },
     ]
     render(<DiplomacyPanel view={view} nameOf={() => 'Ostmark'} contracts={contracts} />)
-    expect(screen.getByText('Liefervertrag: gibt 1 Eisen')).toBeTruthy()
+    expect(screen.getByText(/500 Eisen/)).toBeTruthy()
+    expect(screen.getByText(/1\.800 Geld/)).toBeTruthy()
+    expect(screen.getByText('noch 3')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Kündigen' }))
     expect(onRun).toHaveBeenCalledTimes(1)
   })

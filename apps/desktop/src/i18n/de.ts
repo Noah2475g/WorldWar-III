@@ -588,6 +588,7 @@ export const de = {
     },
     treaties: 'Verträge mit {{nation}}',
     passageGroup: 'Durchmarsch und Karte',
+    more: 'Weitere ({{count}})',
     wars: 'Kriege',
     warPair: '{{a}} gegen {{b}}',
     noWars: 'Derzeit führt niemand Krieg.',
@@ -754,6 +755,7 @@ export const de = {
     contract: {
       row: 'Liefervertrag: gibt {{give}} / bekommt {{want}}, nächste Lieferung Tag {{day}} · {{hour}}:00, noch {{remaining}}.',
       cancel: 'Kündigen',
+      remaining: 'noch {{remaining}}',
     },
     limits: 'Höchstens {{money}} Geld und {{resource}} je Rohstoff und Seite.',
     // Die Sperrgründe des Kerns als Satz (T-M17-14, E7) — eigene Tabelle statt `errors.*`, weil

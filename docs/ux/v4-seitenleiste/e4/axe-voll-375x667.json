@@ -1,0 +1,69 @@
+{
+  "url": "http://localhost:5361/",
+  "viewport": "375x667",
+  "tags": [
+    "wcag2a",
+    "wcag2aa",
+    "wcag21a",
+    "wcag21aa",
+    "wcag22aa"
+  ],
+  "scenes": {
+    "zu": {
+      "passes": 24,
+      "violations": 0,
+      "nodes": 0,
+      "byRule": []
+    },
+    "diplomacy": {
+      "passes": 28,
+      "violations": 0,
+      "nodes": 0,
+      "byRule": []
+    },
+    "market": {
+      "passes": 27,
+      "violations": 0,
+      "nodes": 0,
+      "byRule": []
+    },
+    "armies": {
+      "passes": 24,
+      "violations": 0,
+      "nodes": 0,
+      "byRule": []
+    },
+    "espionage": {
+      "passes": 25,
+      "violations": 0,
+      "nodes": 0,
+      "byRule": []
+    },
+    "standings": {
+      "passes": 28,
+      "violations": 0,
+      "nodes": 0,
+      "byRule": []
+    },
+    "economy": {
+      "passes": 25,
+      "violations": 0,
+      "nodes": 0,
+      "byRule": []
+    },
+    "log": {
+      "passes": 25,
+      "violations": 0,
+      "nodes": 0,
+      "byRule": []
+    },
+    "provinz": {
+      "passes": 27,
+      "violations": 0,
+      "nodes": 0,
+      "byRule": []
+    }
+  },
+  "total": 0,
+  "open": "true"
+}
