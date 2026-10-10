@@ -2529,9 +2529,15 @@ describe('T-M41-15 Das Vorspulziel wird nicht je Haeppchen gezaehlt', () => {
     vi.useRealTimers()
   })
 
-  it.skip('haelt ein Vorspulen um einen Tag in Haeppchen zu 4 Ticks nach genau einem Tag am Ziel', async () => {
-    stehendeUhr()
-    vi.useFakeTimers()
+  it('haelt ein Vorspulen um einen Tag in Haeppchen zu 4 Ticks nach genau einem Tag am Ziel', async () => {
+    // NUR setTimeout faken (wie T-M41-13 oben, gestellteUhr()), NICHT stehendeUhr()/volles
+    // useFakeTimers(): beides fakt auch setInterval und stubt requestAnimationFrame als
+    // No-Op. Das brachte den `await waitFor(...)`-Aufruf (fruehere Fassung) zum ewigen
+    // Haengen (Timeout nach 120000ms, Review-Runde 2 Befund, t_78fe6384) — testing-librarys
+    // act()-Flush wartet unter Fake-Timern auf einen eigenen Scheduler-Timer, der nie von
+    // selbst weiterlaeuft. Der Toast steht nach dem advanceTimersByTime schon synchron im
+    // DOM (eigene Messung), ein await waitFor() ist dafuer unnoetig und gefaehrlich.
+    vi.useFakeTimers({ toFake: ['setTimeout'] })
     startGame({ storage: new MemoryStorage() })
     expect(uhr()).toMatch(/Tag 1 · 00:00/)
 
@@ -2544,11 +2550,12 @@ describe('T-M41-15 Das Vorspulziel wird nicht je Haeppchen gezaehlt', () => {
 
     expect(abbrechen(), 'das Vorspulen endet nicht').toBeNull()
     expect(uhr()).toMatch(/Tag 2 · 00:00/)
-    // sonner renders toasts in a portal; advance timers for sonner to show the toast
+    // sonner rendert den Toast synchron im Effekt-Flush von act(); advance nur fuer den
+    // Mount-Zeitgeber des Toasts, kein await waitFor() (siehe Kommentar oben).
     act(() => vi.advanceTimersByTime(100))
-    await waitFor(() => expect(toastStatus()).not.toBeNull())
+    expect(toastStatus()).not.toBeNull()
     expect(toastStatus()!.textContent).toMatch(/Spieltag ist vorbei/)
-  }, 120_000)
+  }, 15_000)
 })
 
 /**
