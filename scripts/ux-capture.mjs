@@ -1015,6 +1015,7 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
     await page.waitForTimeout(400)
     await page.getByRole('button', { name: 'Laden' }).nth(4).click({ timeout: 5000 })
     await page.waitForTimeout(600)
+    await speed('100')
     try {
       await runUntil(() => document.querySelector('section.dock[data-state="attack"]') !== null, null, 90000)
       await shot('dock-attack-krieg')
