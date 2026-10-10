@@ -244,4 +244,5 @@ Die **Tastatur**-Laeufe (`tastatur`) derselben vier Aufgaben scheitern weiterhin
 (`armee-bewegen`, `armee-teilen-zusammenlegen`, `bauen`, `ausheben`) -- derselbe Grundkonflikt
 (Tab-Fokuspfade/`isProvinceSelect` gingen bisher ueber `aside select`, das seit E5 nicht mehr
 existiert), aber ausserhalb des DoD dieses Tickets (das nur die vier **Maus**-Laeufe forderte).
-Als Folge-Fix-Ticket ausgelagert.
+Nicht als eigenes Kind-Ticket ausgelagert (Nacht-Modus / Fix-Scope dieses Tickets) --
+hier dokumentiert fuer eine spaetere Aufnahme als eigenes Ticket.
