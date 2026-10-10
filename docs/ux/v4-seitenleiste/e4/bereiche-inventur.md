@@ -44,3 +44,18 @@ also nichts verloren gegangen, aber auch nichts nach v3b migriert.
    §10.9.1 im Detail geprüft (z. B. Weitere-Liste als Überlagerung).
 5. "Krieg erklären" als eigener roter Rahmenknopf getrennt von der Hauptaktion — nicht umgesetzt,
    nur Selektor-Grundlage (`.power-row`) gelegt.
+
+## E4.1 — Reihenfolge-Check (geprüft, bereits korrekt)
+
+Reihenfolge Angebote→Mächte→gewählte Macht laut Code (`Panels.tsx`, grep-verifiziert auf
+Commit `c93be37`, nach Merge von `origin/main`): `OfferList` (eingehend/ausgehend, Zeilen
+1958-1959) → Mächte-Tabelle `.power-row` (ab 1993) → `<section class="group wars">`
+Kriegsliste (2054) → `chosenAlive`-Block mit Aktionen der gewählten Macht (ab 2070). Die
+geforderte Reihenfolge ist damit bereits erfüllt, keine Strukturänderung nötig.
+
+Kriegsliste-Frage: offen. Die separate Kriegsliste-Sektion (`.group.wars`, alle laufenden
+Kriege auch fremder Mächte) liegt zwischen Mächte-Tabelle und gewählter Macht. Im
+Referenzbild `final-v3-8-schmal-320.png` ist keine separate Kriegsliste-Sektion sichtbar —
+Kriegsstatus steht dort nur als Badge inline in der Mächte-Liste. Der Spec-Text zu §10.9.1
+"Krieg-Fall" war vom Pi-Build-Host nicht erreichbar (Windows-Vaultpfad), daher wurde nicht
+geraten: die Kriegsliste bleibt defensiv erhalten, bis der Spec-Text zugänglich ist.
