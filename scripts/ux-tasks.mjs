@@ -46,6 +46,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright'
+import { PICKER } from './ux-sel.mjs'
 
 const arg = (name, fallback) => {
   const i = process.argv.indexOf(`--${name}`)
@@ -430,7 +431,8 @@ class Run {
 
 async function prepareArmies(browser, text) {
   const { page, context } = await openState(browser, text)
-  const sel = page.locator('aside select').first()
+  // D16: Provinzwahl lebt seit E5 im Dock (`section.dock .picker select`), nicht mehr in `aside select`.
+  const sel = page.locator(PICKER)
   await sel.selectOption({ label: 'Mittlerer Westen' })
   await page.waitForTimeout(400)
   await page.getByRole('button', { name: 'Kaserne bauen' }).click()
@@ -486,7 +488,7 @@ async function extras(browser, base, armies) {
   {
     const { page, context } = await openState(browser, armies)
     out.armeeZeichenImDom = await page.evaluate(() => document.querySelectorAll('[aria-label^="Armee"], .unit-marker').length)
-    await page.locator('aside select').first().selectOption({ label: 'Mittlerer Westen' })
+    await page.locator(PICKER).selectOption({ label: 'Mittlerer Westen' })
     await page.waitForTimeout(300)
     out.auswaehlenKnoepfe = await page.evaluate(() =>
       [...document.querySelectorAll('aside.side button')].filter((b) => /^Auswählen/.test((b.getAttribute('aria-label') || b.textContent || '').trim())).map((b) => ({ ariaLabel: b.getAttribute('aria-label'), title: b.getAttribute('title') })),
@@ -512,7 +514,7 @@ async function ackPerSpeed(browser, base) {
   for (const tempo of ['Pause', '1', '10', '100']) {
     const { page, context } = await openState(browser, base)
     if (tempo !== 'Pause') await page.getByRole('button', { name: tempo, exact: true }).first().click()
-    await page.locator('aside select').first().selectOption({ label: 'Mittlerer Westen' })
+    await page.locator(PICKER).selectOption({ label: 'Mittlerer Westen' })
     await page.waitForTimeout(300)
     await page.evaluate(() => { window.__ack = [] })
     await page.getByRole('button', { name: 'Kaserne bauen' }).click()
