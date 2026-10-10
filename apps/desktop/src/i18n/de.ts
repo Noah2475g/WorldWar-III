@@ -1526,6 +1526,7 @@ export const de = {
     empty: 'Land anklicken, um Bauplätze und Ausheben zu sehen.',
     recruitAction: 'Ausheben',
     recruitActionAria: 'Ausheben-Raster öffnen oder schließen',
+    pickerAria: 'Provinz (Leiste unten)',
   },
 
   /** Das Ausheben-Raster (E5, D10): 5×2 Felder über der Leiste unten. */

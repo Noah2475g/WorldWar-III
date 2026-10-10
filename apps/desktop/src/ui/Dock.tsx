@@ -67,6 +67,7 @@ export function Dock({
         {showPicker ? (
           <div className="picker dock__picker">
             <select
+              aria-label={t('dock.pickerAria')}
               value={pickerValue ?? ''}
               onChange={(event) => onPickerChange?.(event.target.value || null)}
               onKeyDown={(event) => {
