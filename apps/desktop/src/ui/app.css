@@ -4089,3 +4089,42 @@ body {
   margin: 0;
   padding: 0 var(--sp-md) var(--sp-md);
 }
+
+/* E5b (D11/D12): eigenstaendiges Provinz-Popup, unabhaengig vom Dock. Position wird per
+   JS (viewRect.ts: provincePopupRect) gesetzt, hier nur Erscheinungsbild + feste Breite. */
+.province-popup {
+  width: 288px;
+  border-radius: 14px;
+  background: var(--glass);
+  box-shadow: var(--sh-2), var(--bezel);
+  overflow: hidden;
+  z-index: 30;
+}
+
+.province-popup__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-sm) var(--sp-md);
+  font-size: var(--fs-s);
+  color: var(--ink-soft);
+}
+
+.province-popup__title {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.province-popup__close {
+  background: none;
+  border: none;
+  color: var(--ink-soft);
+  font-size: var(--fs-m);
+  line-height: 1;
+  cursor: pointer;
+  padding: var(--sp-xs);
+}
+
+.province-popup__body {
+  padding: 0 var(--sp-md) var(--sp-md);
+}
