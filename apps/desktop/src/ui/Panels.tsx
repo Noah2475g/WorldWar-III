@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { MAX_DEPART_DELAY_DAYS } from '@worldwar/core'
-import type { CommandError, PublicView, ResourceKey, Terrain, VisibleArmy, VisibleProvince } from '@worldwar/core'
+import type { CommandError, DiplomaticState, PublicView, ResourceKey, Terrain, VisibleArmy, VisibleProvince } from '@worldwar/core'
 // Nur der Typ: zur Laufzeit importiert weiterhin events.ts aus Panels.tsx, nicht umgekehrt.
 import type { BattleReportData, PricePoint } from '../game/events.ts'
 import type { TimelineEntry } from '../game/saves.ts'
@@ -2497,6 +2497,85 @@ export function DiplomacyPanel({
       )}
     </section>
   )
+}
+
+/** Macht+Status einer fremden Macht, fuer das Provinz-Popup (D11). */
+export interface ProvincePopupOwner {
+  name: string
+  color: string
+  relationState: DiplomaticState | undefined
+  /** Sichtbare Staerke (R-DIP-04: nur gesehene, nie die wahre). */
+  seenStrength: number
+}
+
+/**
+ * Der Inhalt des Provinz-Popups fuer eine fremde Provinz (E5d, D11, Spec §12.9 "Krieg ueber
+ * Popup = 3 Klicks"): Macht+Status der/des Besitzers, eine klare Hauptaktion (Handel) und der
+ * "Krieg erklaeren"-Knopf gleich daneben — sonst war der im Plan vorgesehene Klickweg (Popup ->
+ * Krieg erklaeren -> bestaetigen) unerreichbar, weil nur ein Handel-Knopf dastand. Die uebrigen
+ * Vertragsaktionen wandern ins generische "Weitere"-Aufklappmuster (D19b, `MoreMenu` unten),
+ * nicht neu gebaut: dieselbe Komponente wie bei `DiplomacyActions`/`ArmyDockContent`. Bild+Name
+ * des Besitzers (`NationName`: Farbfeld + Text, R-UI-16) steht oben UND noch einmal im Kopf der
+ * Aufklappe, damit auch dort klar ist, wessen Vertraege das sind.
+ */
+export function ProvincePopupSummary({
+  owner,
+  actions,
+  onTrade,
+}: {
+  owner: ProvincePopupOwner | null
+  /** `diplomacyActions(ctx, owner).map(toAction)` des Aufrufers (App.tsx) — nichts Neues erfinden. */
+  actions: readonly Action[]
+  onTrade: () => void
+}) {
+  if (!owner) {
+    return <p className="panel__empty">{t('province.neutral')}</p>
+  }
+  const warLabel = t('actions.declareWar')
+  const warAction = actions.find((a) => a.label === warLabel)
+  const restTreaties = actions.filter((a) => a !== warAction)
+  const confirms: Record<string, string> = {}
+  if (warAction) confirms[warAction.id] = t('diplomacy.declareWarConfirm', { nation: owner.name })
+
+  return (
+    <div className="province-popup__summary">
+      <div className="province-popup__owner">
+        <NationName color={owner.color}>{owner.name}</NationName>
+        <span className={relationState(owner.relationState)} title={t(`diplomacy.${owner.relationState ?? 'peace'}`)}>
+          <Icon name={RELATION_ICONS[owner.relationState ?? 'peace']} size={13} />{' '}
+          {t(`diplomacy.${owner.relationState ?? 'peace'}`)}
+        </span>
+        <span className="stat" title={t('standings.seenStrength')}>
+          <Icon name="battle" size={14} title={t('standings.seenStrength')} />{' '}
+          {owner.seenStrength > 0 ? amount(owner.seenStrength) : '—'}
+        </span>
+      </div>
+      <div className="diplomacy__primary province-popup__actions">
+        <button type="button" className="button button--primary" onClick={onTrade}>
+          {t('actions.trade')}
+        </button>
+        {warAction && (
+          <ActionButton action={warAction} showReason className="button--danger-outline" confirm={confirms[warAction.id]} />
+        )}
+        {restTreaties.length > 0 && (
+          <MoreMenu label={t('diplomacy.more', { count: restTreaties.length })}>
+            <div className="province-popup__more-head">
+              <NationName color={owner.color}>{owner.name}</NationName>
+            </div>
+            <ActionGroup
+              group={{ id: 'treaties', title: t('diplomacy.treaties', { nation: owner.name }), actions: restTreaties }}
+              collectReasons
+              confirms={confirms}
+            />
+          </MoreMenu>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function relationState(state: DiplomaticState | undefined): string {
+  return state === 'war' ? 'state state--war' : 'state'
 }
 
 /**

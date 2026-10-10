@@ -4246,3 +4246,19 @@ body {
 .province-popup__body {
   padding: 0 var(--sp-md) var(--sp-md);
 }
+
+/* D11 Review-Runde 2: Macht+Status des Besitzers, oberhalb der Aktionen (K-UI-16/R-DIP-04,
+   nur gesehene Staerke). Reiht sich mit umbruchfaehigem Flex statt fester Breite. */
+.province-popup__owner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-sm);
+  margin-bottom: var(--sp-sm);
+  font-size: var(--fs-s);
+  color: var(--ink-soft);
+}
+
+.province-popup__more-head {
+  margin-bottom: var(--sp-xs);
+}

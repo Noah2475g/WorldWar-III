@@ -933,6 +933,8 @@ E5a/E5b), erzeugt mit `node scripts/ux-e5c-measure.mjs` ueber 4 Geraete-Aufloesu
 | `docs/ux/v4-seitenleiste/e5/e5c-provincepopup-768x1024.png` | `scripts/ux-e5c-measure.mjs` | ProvincePopup-Storyboard, 768x1024 |
 | `docs/ux/v4-seitenleiste/e5/e5c-provincepopup-1024x768.png` | `scripts/ux-e5c-measure.mjs` | ProvincePopup-Storyboard, 1024x768 |
 | `docs/ux/v4-seitenleiste/e5/e5c-provincepopup-1920x1080.png` | `scripts/ux-e5c-measure.mjs` | ProvincePopup-Storyboard, 1920x1080 |
+| `docs/ux/v4-seitenleiste/e5/d19c-geschlossen-1280x800.png` | `scripts/ux-d19c-measure.mjs` | Lauf gegen die Anwendung, Sidebar/Dock geschlossen bei fremder Provinz, 1280x800 |
+| `docs/ux/v4-seitenleiste/e5/d19c-geschlossen-1920x1080.png` | `scripts/ux-d19c-measure.mjs` | Lauf gegen die Anwendung, Sidebar/Dock geschlossen bei fremder Provinz, 1920x1080 |
 
 
 ## Bildschirmfotos der Seitenleiste E2 (Seitenleiste v3b E2, 2026-10-10)

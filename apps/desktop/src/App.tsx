@@ -86,10 +86,12 @@ import {
   ProvinceDockContent,
   ProvincePanel,
   ProvincePicker,
+  ProvincePopupSummary,
   type Action,
   type ActionGroupSpec,
   type DayReportDelta,
   type EventEntry,
+  type ProvincePopupOwner,
   type SpyRowView,
   type Targeting,
 } from './ui/Panels.tsx'
@@ -2580,6 +2582,22 @@ export function App(props: AppProps) {
     const centre = centres[foreignPreviewId]
     return centre ? toScreen(centre, ui.view) : null
   }, [foreignPreviewId, centres, ui.view])
+  /**
+   * Besitzer der Vorschau-Provinz, mit Macht+Status (D11, Review-Runde 2): dieselben Zeilen wie
+   * in der Standings-Tabelle (`standingsRows`), nur herausgegriffen — nichts Neues gemessen, nur
+   * wiederverwendet. `null` bei herrenloser Provinz (R-DIP-04, kein Besitzer -> kein Diplomatiewort).
+   */
+  const foreignPreviewOwner: ProvincePopupOwner | null = useMemo(() => {
+    if (!foreignPreview?.owner) return null
+    const row = standingsRows(view, nameOf).find((r) => r.id === foreignPreview.owner)
+    if (!row) return null
+    return { name: row.nation, color: row.color, relationState: row.state, seenStrength: row.seenStrength }
+  }, [view, nameOf, foreignPreview?.owner])
+  /** Diplomatieaktionen desselben Besitzers (D11): dieselbe Funktion wie die Diplomatieansicht, nur anderer Einstiegspunkt (E4.3-Vorbild). */
+  const foreignPreviewActions = useMemo(
+    () => (ctx && foreignPreview?.owner ? diplomacyActions(ctx, foreignPreview.owner).map((spec) => toAction(spec)) : []),
+    [ctx, foreignPreview?.owner, toAction],
+  )
 
   /**
    * Die Zielwahl-Quittung der gewählten Armee (T-M28-02, D26.2, Befund vom
@@ -2954,16 +2972,14 @@ export function App(props: AppProps) {
               title={nameOfProvince(foreignPreview.id)}
               onClose={() => setForeignPreviewId(null)}
             >
-              <button
-                type="button"
-                className="button"
-                onClick={() => {
+              <ProvincePopupSummary
+                owner={foreignPreviewOwner}
+                actions={foreignPreviewActions}
+                onTrade={() => {
                   dispatch({ type: 'focusDiplomacy', playerId: foreignPreview.owner ?? null })
                   setForeignPreviewId(null)
                 }}
-              >
-                {t('actions.trade')}
-              </button>
+              />
             </ProvincePopup>
           )}
         </div>
