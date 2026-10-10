@@ -986,6 +986,46 @@ select,
   }
 }
 
+/* F1 (T-f471b9c6): iPhone 17 Pro Dynamic Island - der Header, nicht .app, bekommt die obere
+   Sicherheitszone, sonst liegt der Kopfinhalt unter der Insel. .app selbst bleibt oben ohne
+   Abstand im Portrait-Kontext, sonst entsteht ein doppelter Abstand. */
+@media (max-width: 599px) and (orientation: portrait) {
+  :root:root .app {
+    padding-top: 0;
+  }
+
+  :root:root .header {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}
+
+/* F2 (T-f471b9c6): Tooltip stoert auf Touch ueber geoeffneten Panels - der Inhalt kommt dort
+   ueber das Panel selbst. */
+@media (max-width: 599px) and (orientation: portrait) {
+  :root:root .tooltip {
+    display: none;
+  }
+}
+
+/* F3 (T-f471b9c6): Marsch-Zielwahl (.picker select) wird bei 393pt sonst abgeschnitten. */
+@media (max-width: 599px) and (orientation: portrait) {
+  :root:root .picker select {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+/* F4 (T-f471b9c6): Bestaetigungs-Knopf braucht ein Touch-Ziel von mindestens 44px. */
+@media (max-width: 599px) and (orientation: portrait) {
+  :root:root .button--confirm {
+    min-height: 44px;
+    width: 100%;
+  }
+}
+
+/* F5 (T-f471b9c6): Dialoge/Tastatur - iOS verschiebt den Viewport per viewport-fit=cover bereits
+   automatisch; kein CSS-Fix notwendig, nur dokumentiert. */
+
 /* ---- T-M44-05 · Dialog-Fußzeile (Paket B) ----
    Im Telefon-quer-Block schrumpft schon der Kopf (`.dialog__head`); die feste Fußzeile folgt ihm,
    damit Körper und Hauptaktion zusammen in die sichtbare Höhe passen. */
