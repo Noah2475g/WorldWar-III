@@ -8242,3 +8242,63 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Dateien:** `packages/core/test/determinism.test.ts`, `apps/headless/test/walkthrough.test.ts`, `packages/core/test/golden/tiny-500.json`, `apps/headless/test/golden/walkthrough.json`
 - **Tests zuerst:** `packages/core/test/determinism.test.ts`, `apps/headless/test/walkthrough.test.ts`
 - **Fertig wenn:** Goldens mit `UPDATE_GOLDEN=1` neu; `asV4`-Parität trifft die Literale von `6ca34a4` unverändert; `ai-integration`-Kennzahlen unverändert.
+
+## Meilenstein M51 — Zoom-Cluster
+
+> **Herkunft.** Noahs Ja (Gate t_42202eaa, 2026-10-06). Ausgestaltung: Plan „WorldWar — Plan Zoom-Cluster.md“ §3 D1-D15,
+> Planer-Karte t_dd5fb492. **Grenze:** nur Hülle (Berechnung, Zeichnung, Klick, Wächter, Übergang) — Welt-Zoom
+> (Gate G3) und Hysterese (D10: nein) sind ausdrücklich nicht Teil dieses Meilensteins.
+
+### T-M51-01 · Gebäude-Gruppierung als reine Funktion
+- **Ziel:** Gebäude einer Provinz werden auf mid als eine Sammelmarke berechnet (reine, getestete Funktion).
+- **Paket und Priorität:** Zoom-Cluster · P1
+- **Anforderungen:** R-MAP-05
+- **Abhängigkeiten:** T-M49-01
+- **Dateien:** `apps/desktop/src/map/sammel.ts`, `apps/desktop/src/map/sammel.test.ts`, `apps/desktop/src/map/markers.ts`
+- **Tests zuerst:** `apps/desktop/src/map/sammel.test.ts`
+- **Fertig wenn:** Unit-Tests (a)-(i) grün; ohne Opt-in bitgleich zu heute; AK2/AK3-Teile belegt.
+
+### T-M51-02 · Zeichnen und Klick in MapCanvas
+- **Ziel:** Die Sammelmarke wird gezeichnet (Aussehen nach v3b `.bm`) und ist anklickbar; Klick zoomt wie die Armee-Sammelmarke.
+- **Paket und Priorität:** Zoom-Cluster · P1
+- **Anforderungen:** R-MAP-05
+- **Abhängigkeiten:** T-M51-01
+- **Dateien:** `apps/desktop/src/map/MapCanvas.tsx`, `apps/desktop/src/map/MapCanvas.test.tsx`, `apps/desktop/src/map/layoutMarks.ts`, `apps/desktop/src/App.tsx`
+- **Tests zuerst:** `apps/desktop/src/map/MapCanvas.test.tsx`
+- **Fertig wenn:** AK4-AK6 belegt (Treffer, Zoom-Ziel, Aussehen).
+
+### T-M51-03 · Wächter S575 und Messung
+- **Ziel:** Wächter-Test an echter Stellung (S575) belegt die Gebäude-Eintraege vor/nach Layout je Bildschirmgröße.
+- **Paket und Priorität:** Zoom-Cluster · P1
+- **Anforderungen:** R-MAP-05
+- **Abhängigkeiten:** T-M51-02
+- **Dateien:** `apps/desktop/src/map/zoomcluster.slow.test.ts`, `docs/reports/v4/zoomcluster.json`
+- **Tests zuerst:** `apps/desktop/src/map/zoomcluster.slow.test.ts`
+- **Fertig wenn:** Slow-Test grün, Messwerte in `zoomcluster.json` (AK1).
+
+### T-M51-04 · Abnahme am laufenden Programm, Bericht, PR
+- **Ziel:** Abnahme der Zoom-Cluster-Hülle mit Bildern, Bericht und PR.
+- **Paket und Priorität:** Zoom-Cluster · P1
+- **Anforderungen:** R-MAP-05
+- **Abhängigkeiten:** T-M51-03
+- **Dateien:** `scripts/v4-zoomcluster-bild.mjs`, `docs/ux/v4-zoomcluster/`, `docs/reports/v4/zoomcluster.md`, `docs/plan/PROGRESS.md`, `docs/ASSETS.md`
+- **Tests zuerst:** `scripts/v4-zoomcluster-bild.mjs`
+- **Fertig wenn:** Bilder angesehen, `pnpm verify` Exit 0, PR offen (Noah2475g), Merge nur durch reviewer.
+
+### T-M51-05 · Übergang (Tween) E2a
+- **Ziel:** Der Wechsel zwischen Einzelmarken und Sammelmarke läuft als reine Tween-Funktion, kein harter Sprung.
+- **Paket und Priorität:** Zoom-Cluster · P2
+- **Anforderungen:** R-MAP-05
+- **Abhängigkeiten:** T-M51-04
+- **Dateien:** `apps/desktop/src/ui/motion.ts`, `apps/desktop/src/map/sammel.ts`
+- **Tests zuerst:** Tween-Unit-Tests
+- **Fertig wenn:** D9-Übergang belegt, Unit-Tests grün.
+
+### T-M51-06 · Übergang verdrahtet, Bericht, PR
+- **Ziel:** Der Tween ist in MapCanvas verdrahtet, gemessen und per PR eingereicht.
+- **Paket und Priorität:** Zoom-Cluster · P2
+- **Anforderungen:** R-MAP-05
+- **Abhängigkeiten:** T-M51-05
+- **Dateien:** `apps/desktop/src/map/MapCanvas.tsx`, `docs/reports/v4/zoomcluster-e2.md`
+- **Tests zuerst:** `apps/desktop/src/map/MapCanvas.test.tsx`
+- **Fertig wenn:** `pnpm verify` Exit 0, PR offen (Noah2475g), Merge nur durch reviewer.

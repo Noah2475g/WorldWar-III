@@ -5973,3 +5973,15 @@ Grundlage: Nachtrag in `docs/plan/V3-G1-DOSSIER.md`, Playtest V3 (`docs/reports/
 - **P1–P7, P10:** Zähler `nextIds.contract` ab 1; `schedule`-Schlüssel fehlt ohne Zeitplan (nie `undefined`, der Hash wirft); fünf Konstanten in `constants.json` und `BALANCING.md`; Ablehnungsgründe `ungültiger Zeitplan`, `Zeitplan nur mit Rohstoffen`, `zu viele Verträge`, `kein Vertrag`; Ereignis `CONTRACT_CLOSED` (kein Alarm, kein Weltgeschehen, keine Ereignisse je Lieferung); Code in `commands/contract.ts`; Parität über `asV4` (JSON-Kopie ohne `contracts`/`nextIds.contract`, `schemaVersion = 4`).
 - **Folge:** `PROTOCOL_VERSION` 3 (jede Formatstufe braucht eine eigene Fassung, `protocol.test.ts`). Das Rezept `save-v4-freeze.slow.test.ts` wird mit Stufe 5 entfernt, `save-v4.json` bleibt als Beleg für den Schritt 4 → 5.
 - **Meilensteinnummer:** M50 (M49 ist für die Armee-Sammelmarke reserviert).
+
+## 2026-10-06 · Zoom-Cluster · Ausgestaltung (Plan t_dd5fb492)
+- **D1 ·** Gruppiert wird nur auf mid (`zoomTier(scale) === 'mid'`); near unverändert, far zeichnet weiter keine Gebäude.
+- **D2 ·** Opt-in: `MarkerExtras.buildingGroups?: { selectedProvinceId: string | null }`; ohne diese Angabe bitgleich zu heute.
+- **D3 ·** Schlüssel = Provinz; `n` = Zahl der Arten mit Stufe ≥ 1; `BUILDING_GROUP_MIN = 2`; `n = 1` bleibt Einzelquadrat.
+- **D4 ·** Symbol nach `BUILDING_SYMBOL_PRIO = [factory, airfield, harbour, shipyard, barracks, railway, fortress]`, erste vorhandene Art; Marke trägt Zahl `n`, keinen Namen, keine Stufe.
+- **D5 ·** Punkt = erster Eintrag von `placeBuildings`, Mitte-Regel wie das Quadrat; Kollisionen löst `layoutMarks` (E7) mit Vorrang „Gebäude (1)“, gewählte Provinz „Auswahl (2,5)“.
+- **D6 ·** `MarkerKind += 'buildingGroup'`; Felder `provinceId, x, y, icon, label=String(n), selected?`; Aussehen nach v3b `.bm`.
+- **D7 ·** Klick-Reihenfolge `pickArmy → pickArmyGroup → pickBuildingGroup → Provinz`; nur mit `onSelectArmy`; Treffer zoomt wie Armee-Sammelmarke (`zoomToGroup`).
+- **D8 ·** Reine Funktion `groupBuildings` in `sammel.ts` (Map-Bucket wie `groupArmies`); `buildingMarkers` als exportierte reine Funktion aus `markers.ts` herausgelöst.
+- **D9 ·** Übergang (Tween) nur in E2.
+- **D10 ·** Hysterese 0,95/1,05: nein; Wiedervorlage nur bei gemeldetem Flackern im Playtest.
