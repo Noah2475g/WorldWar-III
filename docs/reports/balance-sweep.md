@@ -2,7 +2,7 @@
 
 Erzeugt von `apps/headless/test/sweep.slow.test.ts` (`pnpm balance:sweep`).
 6 Mächte, 120 Spieltage, 12 Startzahlen je Variante,
-**Rauschgrenze der Zielgröße: 0.056** (Streuung des Führungsanteils allein durch die Startzahl, ohne jede Regeländerung, gemessen am 2026-09-25). Ein Ausschlag unterhalb dieser Grenze sagt nichts über die Konstante — er sagt etwas über die Startzahl. Aussagekräftig ist ab dem Doppelten, also 0.112.
+**Rauschgrenze der Zielgröße: 0.042** (Streuung des Führungsanteils allein durch die Startzahl, ohne jede Regeländerung, gemessen am 2026-10-10). Ein Ausschlag unterhalb dieser Grenze sagt nichts über die Konstante — er sagt etwas über die Startzahl. Aussagekräftig ist ab dem Doppelten, also 0.085.
 jede Konstante um ±25 % bewegt.
 
 ## Was gemessen wird
@@ -17,9 +17,9 @@ dieser Liste.
 
 | Kennzahl | Wert |
 |---|---|
-| Anteil des Stärksten | 38.4 % |
-| Überlebende Mächte | 5.7 von 6 |
-| Endbestaende gesamt | 46.721 |
+| Anteil des Stärksten | 30.9 % |
+| Überlebende Mächte | 5.1 von 6 |
+| Endbestaende gesamt | 55.801 |
 | Eroberte Provinzen | 241 |
 | Gespielte Tage | 120 |
 
@@ -31,17 +31,17 @@ dieser Liste.
 
 | Konstante | Ausschlag | Überlebende −25 % / +25 % | tragend |
 |---|---|---|---|
-| `baseTargetMorale` | 7.5 % | 4.8 / 4.7 | — |
-| `revoltThreshold` | 5.2 % | 5.6 / 5.4 | — |
-| `expansionPenaltyPerProvince` | 4.3 % | 5.3 / 5.0 | — |
-| `startMorale` | 4.2 % | 4.9 / 5.2 | — |
-| `moraleDriftDivisor` | 3.9 % | 4.8 / 5.2 | — |
-| `productionMoraleFloor` | 3.1 % | 5.2 / 5.5 | — |
-| `marketElasticity` | 2.9 % | 5.1 / 5.3 | — |
-| `minDamage` | 2.7 % | 5.2 / 5.3 | — |
-| `regenPermillePerTick` | 2.5 % | 5.3 / 5.6 | — |
-| `taxPerThousandPopulationPerTick` | 2.3 % | 5.7 / 5.3 | — |
-| `deployDelayTicks` | 1.9 % | 5.7 / 5.8 | — |
-| `battleRate` | 1.6 % | 5.2 / 5.4 | — |
-| `stackFullContribution` | 1.4 % | 5.5 / 5.6 | — |
-| `defenceCap` | 0.0 % | 5.7 / 5.7 | — |
+| `baseTargetMorale` | 8.0 % | 5.1 / 5.3 | — |
+| `battleRate` | 5.1 % | 5.3 / 5.1 | — |
+| `moraleDriftDivisor` | 4.5 % | 5.4 / 5.2 | — |
+| `taxPerThousandPopulationPerTick` | 4.0 % | 5.1 / 5.1 | — |
+| `regenPermillePerTick` | 3.6 % | 5.1 / 5.2 | — |
+| `startMorale` | 3.4 % | 5.3 / 5.2 | — |
+| `revoltThreshold` | 2.5 % | 5.1 / 4.8 | — |
+| `deployDelayTicks` | 2.5 % | 5.1 / 5.1 | — |
+| `expansionPenaltyPerProvince` | 2.4 % | 5.3 / 5.5 | — |
+| `productionMoraleFloor` | 1.2 % | 5.7 / 5.3 | — |
+| `minDamage` | 1.0 % | 5.3 / 5.3 | — |
+| `marketElasticity` | 1.0 % | 5.7 / 5.5 | — |
+| `stackFullContribution` | 0.5 % | 5.1 / 5.2 | — |
+| `defenceCap` | 0.0 % | 5.1 / 5.1 | — |

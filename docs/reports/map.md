@@ -27,31 +27,51 @@ Erzeugt von `scripts/build-map.mjs` aus Natural Earth 1:10 Mio. Nicht von Hand �
 
 ## Startwerte der Nationen
 
-Formel: 10 × Provinzen + 2 × gewichtete Vorkommen + Bevölkerung/1000. Median 41262, größte Abweichung 13 % (Grenze 15 %).
+Formel: 10 × Provinzen + 2 × gewichtete Vorkommen + Bevölkerung/1000. Median 32372, größte Abweichung 9 % (Grenze 15 %).
 
 | Nation | Provinzen | Startwert | Abweichung |
 |---|---|---|---|
-| Russland | 6 | 46.670 | +13 % |
-| China | 6 | 46.641 | +13 % |
-| Indien | 6 | 44.449 | +8 % |
-| Brasilien | 4 | 44.329 | +7 % |
-| Australien | 4 | 43.020 | +4 % |
-| Vereinigte Staaten | 4 | 42.965 | +4 % |
-| Kanada | 3 | 42.899 | +4 % |
-| Mexiko | 4 | 42.559 | +3 % |
-| Südafrika | 3 | 41.744 | +1 % |
-| Indonesien | 5 | 41.559 | +1 % |
-| Iran | 4 | 41.475 | +1 % |
-| Nigeria | 4 | 41.262 | 0 % |
-| Argentinien | 3 | 40.926 | -1 % |
-| Ägypten | 3 | 40.494 | -2 % |
-| Spanien | 4 | 40.383 | -2 % |
-| Ukraine | 4 | 40.362 | -2 % |
-| Pakistan | 3 | 40.254 | -2 % |
-| Frankreich | 4 | 40.176 | -3 % |
-| Deutschland | 4 | 40.156 | -3 % |
-| Türkei | 3 | 40.145 | -3 % |
-| Italien | 3 | 40.105 | -3 % |
-| Japan | 3 | 40.075 | -3 % |
-| Polen | 4 | 39.930 | -3 % |
-| Vereinigtes Königreich | 4 | 39.539 | -4 % |
+| Russland | 6 | 35.127 | +9 % |
+| China | 6 | 34.617 | +7 % |
+| Vereinigte Staaten | 4 | 33.580 | +4 % |
+| Kanada | 3 | 33.434 | +3 % |
+| Australien | 4 | 33.303 | +3 % |
+| Brasilien | 4 | 33.143 | +2 % |
+| Mexiko | 4 | 33.047 | +2 % |
+| Indien | 6 | 32.999 | +2 % |
+| Iran | 4 | 32.867 | +2 % |
+| Indonesien | 5 | 32.837 | +1 % |
+| Nigeria | 4 | 32.720 | +1 % |
+| Argentinien | 3 | 32.372 | 0 % |
+| Spanien | 4 | 32.249 | 0 % |
+| Ukraine | 4 | 32.238 | 0 % |
+| Pakistan | 3 | 32.196 | -1 % |
+| Südafrika | 3 | 32.192 | -1 % |
+| Frankreich | 4 | 32.163 | -1 % |
+| Deutschland | 4 | 32.155 | -1 % |
+| Türkei | 3 | 32.154 | -1 % |
+| Italien | 3 | 32.138 | -1 % |
+| Japan | 3 | 32.124 | -1 % |
+| Polen | 4 | 32.066 | -1 % |
+| Ägypten | 3 | 32.000 | -1 % |
+| Vereinigtes Königreich | 4 | 31.966 | -1 % |
+
+## Öl je Startmacht
+
+| Nation | Öl |
+|---|---|
+| Vereinigtes Königreich | 1.717 |
+| Vereinigte Staaten | 1.688 |
+| Ägypten | 1.580 |
+| Iran | 1.577 |
+| Russland | 1.188 |
+| Nigeria | 1.174 |
+| Kanada | 1.122 |
+| Indonesien | 1.056 |
+| Mexiko | 922 |
+| Brasilien | 863 |
+| Argentinien | 845 |
+| China | 635 |
+| Indien | 447 |
+
+Ohne Öl: Deutschland, Frankreich, Italien, Spanien, Polen, Ukraine, Türkei, Pakistan, Japan, Südafrika, Australien.

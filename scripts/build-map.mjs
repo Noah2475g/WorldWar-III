@@ -9,7 +9,13 @@ import { buildAdjacency, findEnclaves } from '../packages/mapgen/src/adjacency.t
 import { planAbsorptions } from '../packages/mapgen/src/absorb.ts'
 import { deriveSeaLanes } from '../packages/mapgen/src/sealanes.ts'
 import { readCsv } from '../packages/mapgen/src/csv.ts'
-import { balanceStartingValues, enrich, ensureStartingBasics, startingValue } from '../packages/mapgen/src/enrich.ts'
+import {
+  applyOilRegions,
+  balanceStartingValues,
+  enrich,
+  ensureStartingBasics,
+  startingValue,
+} from '../packages/mapgen/src/enrich.ts'
 import { MAP_HEIGHT, MAP_WIDTH, anchorFor, drawableRings, toMapX, toMapY } from '../packages/mapgen/src/project.ts'
 import { shapeAreaKm2, shapeCentre } from '../packages/mapgen/src/area.ts'
 
@@ -352,10 +358,16 @@ const enrichedRaw = enrich(
   })),
   { populationByCountry, resourceWeights: rulesAi.resourceWeights },
 )
+// Oil comes from the curated table, not the terrain — see enrich.ts applyOilRegions.
+const oilRegions = readCsv(readFileSync(join(ROOT, 'data/mapgen/oil-regions.csv'), 'utf8')).map(
+  (row) => ({ id: row.id, tier: Number(row.tier) }),
+)
+const withOil = applyOilRegions(enrichedRaw, oilRegions)
+
 // Every playable power gets the ground a first game needs before the values are
 // levelled — a nation without timber cannot build its first barracks from its own
 // production, and no start position is allowed to be that kind of trap.
-const withBasics = ensureStartingBasics(enrichedRaw, nationProvinces)
+const withBasics = ensureStartingBasics(withOil, nationProvinces)
 const enriched = new Map(
   balanceStartingValues(withBasics, nationProvinces, rulesAi.resourceWeights).map((e) => [e.id, e]),
 )
@@ -496,7 +508,29 @@ const report = [
     (v) => `| ${v.nation} | ${v.provinces} | ${v.value.toLocaleString('de-DE')} | ${deviation(v.value) > 0 ? '+' : ''}${deviation(v.value)} % |`,
   ),
   '',
+  '## Öl je Startmacht',
+  '',
 ]
+
+const oilByNation = nationProvinces.map((nation) => {
+  const own = nation.provinces.map((id) => enriched.get(id)).filter(Boolean)
+  const oil = own.reduce((sum, p) => sum + (p.deposits.oil ?? 0), 0)
+  return { nation: nation.nation, oil }
+})
+oilByNation.sort((a, b) => b.oil - a.oil)
+const withOilNations = oilByNation.filter((n) => n.oil > 0)
+const withoutOilNations = oilByNation.filter((n) => n.oil === 0)
+
+report.push('| Nation | Öl |', '|---|---|')
+for (const n of withOilNations) report.push(`| ${n.nation} | ${n.oil.toLocaleString('de-DE')} |`)
+report.push('')
+report.push(
+  withoutOilNations.length > 0
+    ? `Ohne Öl: ${withoutOilNations.map((n) => n.nation).join(', ')}.`
+    : 'Jede Startmacht hat Öl.',
+)
+report.push('')
+
 writeFileSync(join(ROOT, 'docs/reports/map.md'), report.join('\n'))
 console.log(`Startwerte: Median ${median}, groesste Abweichung ${worst} % (Grenze 15 %).`)
 console.log('docs/reports/map.md geschrieben.')

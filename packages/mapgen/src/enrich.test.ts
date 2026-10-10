@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  applyOilRegions,
   densityFactor,
   depositsFor,
   ensureStartingBasics,
@@ -88,7 +89,7 @@ describe('R-MAP-03 Vorkommen', () => {
 
   it('legt Erz ins Gebirge und Oel in die Wueste', () => {
     expect(depositsFor(province(), 'mountain', roller([0.5])).iron).toBeGreaterThan(0)
-    expect(depositsFor(province(), 'desert', roller([0.5])).oil).toBeGreaterThan(0)
+    expect(depositsFor(province(), 'desert', roller([0.5])).oil).toBeUndefined()
     expect(depositsFor(province(), 'forest', roller([0.5])).wood).toBeGreaterThan(0)
   })
 
@@ -257,5 +258,75 @@ describe('R-GAME-01 Keine Startnation ohne Bauholz und Erz', () => {
     const result = ensureStartingBasics([plains('X1'), forest('N1')], [{ nation: 'Nordland', provinces: ['N1'] }])
 
     expect(result.find((p) => p.id === 'X1')!.deposits.wood).toBeUndefined()
+  })
+})
+
+describe('P2 Wuerfelfolge der Wueste bleibt erhalten', () => {
+  it('verwirft den fruehren Oel-Wurf, Seltene Erden wuerfeln weiter an Position 3', () => {
+    // Wurf1 Nahrung (0.5), Wurf2 fruehers Oel = verworfen (0.5), Wurf3 Seltene-Erden-Pruefung (0.1 < 0.3)
+    const deposits = depositsFor(province(), 'desert', roller([0.5, 0.5, 0.1, 0.5]))
+    expect(deposits.rare).toBeGreaterThan(0)
+    expect(deposits.oil).toBeUndefined()
+  })
+
+  it('legt keine Seltenen Erden an, wenn Wurf3 ueber der Schwelle liegt', () => {
+    const deposits = depositsFor(province(), 'desert', roller([0.5, 0.5, 0.9]))
+    expect(deposits.rare).toBeUndefined()
+  })
+})
+
+describe('P3 applyOilRegions setzt Oel nur nach Tabelle', () => {
+  const base = (id: string): EnrichedProvince => ({
+    id,
+    terrain: 'desert',
+    kind: 'rural',
+    population: 1_000_000,
+    deposits: { food: 1000 },
+  })
+
+  it('setzt die Oelmenge nach Tier', () => {
+    const result = applyOilRegions(
+      [base('T1'), base('T2'), base('T3')],
+      [
+        { id: 'T1', tier: 1 },
+        { id: 'T2', tier: 2 },
+        { id: 'T3', tier: 3 },
+      ],
+    )
+    expect(result.find((p) => p.id === 'T1')!.deposits.oil).toBe(845)
+    expect(result.find((p) => p.id === 'T2')!.deposits.oil).toBe(1690)
+    expect(result.find((p) => p.id === 'T3')!.deposits.oil).toBe(2535)
+  })
+
+  it('laesst eine nicht gelistete Provinz unveraendert', () => {
+    const untouched = base('U1')
+    const result = applyOilRegions([untouched, base('T1')], [{ id: 'T1', tier: 1 }])
+
+    expect(result.find((p) => p.id === 'U1')!.deposits).toEqual(untouched.deposits)
+  })
+
+  it('wirft bei leerer Liste', () => {
+    expect(() => applyOilRegions([base('T1')], [])).toThrow()
+  })
+
+  it('wirft bei unbekannter id', () => {
+    expect(() => applyOilRegions([base('T1')], [{ id: 'UNKNOWN', tier: 1 }])).toThrow()
+  })
+
+  it('wirft bei doppelter id', () => {
+    expect(() =>
+      applyOilRegions(
+        [base('T1')],
+        [
+          { id: 'T1', tier: 1 },
+          { id: 'T1', tier: 2 },
+        ],
+      ),
+    ).toThrow()
+  })
+
+  it('wirft bei ungueltigem tier', () => {
+    expect(() => applyOilRegions([base('T1')], [{ id: 'T1', tier: 0 }])).toThrow()
+    expect(() => applyOilRegions([base('T1')], [{ id: 'T1', tier: 4 }])).toThrow()
   })
 })

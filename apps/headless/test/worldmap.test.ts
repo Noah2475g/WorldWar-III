@@ -34,8 +34,10 @@ describe('R-MAP-01 AUS-SE traegt einen ehrlichen Namen', () => {
 
   it('behaelt Zuschnitt und Werte — nur der Name aendert sich', () => {
     // Die Zahlen der Anreicherung vom Stand vor der Umbenennung (kein Neuwuerfeln).
+    // deposits neu durch Oel-Verteilung (Plan Oel-Verteilung, P5): Australiens
+    // Levelling verschiebt sich durch den Wegfall des diffusen Wuesten-Oels.
     expect(ausSe!.population).toBe(52_097)
-    expect(ausSe!.deposits).toEqual({ food: 623, coal: 223 })
+    expect(ausSe!.deposits).toEqual({ food: 477, coal: 171 })
     expect(ausSe!.polygons).toHaveLength(3)
   })
 
