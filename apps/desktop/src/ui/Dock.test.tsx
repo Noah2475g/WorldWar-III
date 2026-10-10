@@ -66,3 +66,36 @@ describe('Dock', () => {
     expect(getByText('Inhalt')).toBeTruthy()
   })
 })
+
+describe('Dock Zustand attack (E6, D9, Spec §12.14.4)', () => {
+  const attack = {
+    title: 'Bayern',
+    chipText: 'Preußen greift an',
+    actionLabel: 'Angriff ansehen',
+    onAction: vi.fn(),
+    msgId: 'pause:bayern',
+  }
+
+  it('hat die Hoehenklasse dock--attack und zeigt Provinzname + Chip + EINE Hauptaktion', () => {
+    const { container, getByText } = render(<Dock state="attack" attack={attack} />)
+    expect(container.querySelector('.dock')?.getAttribute('data-state')).toBe('attack')
+    expect(dockStateClass('attack')).toBe('dock dock--attack')
+    expect(getByText('Bayern')).toBeTruthy()
+    expect(getByText('Preußen greift an')).toBeTruthy()
+    expect(container.querySelectorAll('.dock__attack-action')).toHaveLength(1)
+    // Kein Picker-Select im Zustand attack: der Titel ist reiner Text, nichts zu waehlen.
+    expect(container.querySelector('.picker select')).toBeNull()
+  })
+
+  it('traegt die Kennung data-msg fuer die Einmarsch-Entdoppelung (K19)', () => {
+    const { container } = render(<Dock state="attack" attack={attack} />)
+    expect(container.querySelector('[data-msg="pause:bayern"]')).not.toBeNull()
+  })
+
+  it('ruft onAction beim Klick auf die Hauptaktion auf', () => {
+    const onAction = vi.fn()
+    const { container } = render(<Dock state="attack" attack={{ ...attack, onAction }} />)
+    fireEvent.click(container.querySelector('.dock__attack-action') as HTMLButtonElement)
+    expect(onAction).toHaveBeenCalledTimes(1)
+  })
+})
