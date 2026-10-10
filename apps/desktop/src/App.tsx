@@ -77,6 +77,8 @@ import { Header } from './ui/Header.tsx'
 import {
   ArmiesPanel,
   ArmyPanel,
+  ArmyDockContent,
+  arrivalShort,
   DiplomacyPanel,
   EconomyPanel,
   EspionagePanel,
@@ -1715,12 +1717,18 @@ export function App(props: AppProps) {
           const side = document.querySelector('aside.side')
           // E5d: das Ausheben-Raster schwebt jetzt im Dock (`.recruit-grid`), nicht mehr in
           // der Seitenleiste; die Taste E findet dort zuerst ein freies Feld (Review-Auflage A2).
+          // D19b (Review-Auflage A2, t_cc59e67e): im Dock-Zustand 'army' ist E keine Zone, sondern
+          // die Hauptaktion "Marschieren" — derselbe Buchstabe, aber ein anderer Treffer zuerst.
+          const armyMarch =
+            shortcut.zone === 'recruit' && ui.panel === 'army'
+              ? document.querySelector<HTMLElement>('.dock-army [data-action-id="march"] button:not(:disabled)')
+              : null
           const recruitGrid = document.querySelector<HTMLElement>('.recruit-grid button:not(:disabled)')
           const target =
             shortcut.zone === 'provinces'
               ? null
               : shortcut.zone === 'recruit'
-                ? recruitGrid ?? side?.querySelector<HTMLElement>(`section[data-group="recruit"] button:not(:disabled)`) ?? null
+                ? armyMarch ?? recruitGrid ?? side?.querySelector<HTMLElement>(`section[data-group="recruit"] button:not(:disabled)`) ?? null
                 : side?.querySelector<HTMLElement>(
                     `section[data-group="${shortcut.zone}"] button:not(:disabled)`,
                   ) ?? null
@@ -2579,6 +2587,20 @@ export function App(props: AppProps) {
     return speed === 0 ? t('actions.orderedPaused') : t('actions.ordered')
   }, [pendingCommands, ui.selectedArmy, speed, ackHeld])
 
+  /**
+   * Die Zurueck/Marsch-Zeile im Dock (D19b, Bild final-v3b-11-armee.png): "‹ <Herkunft>" steht die
+   * Armee, "‹ <Herkunft> → <Ziel> · <arrivalShort>" marschiert sie — dieselbe Ankunftsformel wie im
+   * Marsch-Meter der Seitenleiste (T-M46-17), hier nur als Satz statt als Balken (Platzgrund, 116 px).
+   */
+  const armyRouteText = useMemo(() => {
+    if (!selectedArmy || !state) return undefined
+    const from = nameOfProvince(selectedArmy.provinceId)
+    const destinationId = selectedArmy.path?.[selectedArmy.path.length - 1]
+    if (selectedArmy.arrivalTick == null || !destinationId) return from
+    const to = nameOfProvince(destinationId)
+    return `${from} → ${to} · ${arrivalShort(state.tick, selectedArmy.arrivalTick, ticksPerDay)}`
+  }, [selectedArmy, nameOfProvince, state, ticksPerDay])
+
   /** Die Heeruebersicht (T-M46-01): alle eigenen Armeen der Sicht, nur gerechnet, solange das Panel offen ist. */
   const heerZeilen = useMemo(
     () =>
@@ -2875,6 +2897,26 @@ export function App(props: AppProps) {
                 <ProvinceDockContent
                   province={selected}
                   groups={provinceGroups}
+                  ticksPerDay={ticksPerDay}
+                  currentTick={state.tick}
+                />
+              ) : dockState === 'army' ? (
+                <ArmyDockContent
+                  onBack={
+                    selectedArmy
+                      ? () => {
+                          setTargeting(null)
+                          dispatch({ type: 'selectProvince', id: selectedArmy.provinceId })
+                        }
+                      : undefined
+                  }
+                  army={selectedArmy}
+                  name={ui.selectedArmy ? state.armies[ui.selectedArmy]?.name : undefined}
+                  routeText={armyRouteText}
+                  actions={armyActionList}
+                  targeting={armyTargeting}
+                  pendingNotice={armyPendingNotice}
+                  condition={selectedArmy?.units ? stackSummary(selectedArmy.units, props.rules).condition : undefined}
                   ticksPerDay={ticksPerDay}
                   currentTick={state.tick}
                 />

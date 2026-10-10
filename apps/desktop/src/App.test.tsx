@@ -756,6 +756,39 @@ describe('R-UI-05 Befehle aus der Oberflaeche', () => {
     // Zeitlimit wegen Last, nicht Verhalten: allein 3929 ms, unter verify+Last max 43380 ms (gemessen 2026-10-05, t_3cad0a35).
   }, 60_000)
 
+  /**
+   * D19b: dieselbe Kette bis zur Armeewahl, aber geprueft wird der Dock-Koerper (`.dock-army`)
+   * statt nur die Seitenleiste — die zeigt ArmyPanel weiterhin zusaetzlich (D19b-Scope,
+   * Entfernung erst D19c).
+   */
+  it('D19b: zeigt Haltung, Befehle+Weitere und Marschieren primaer im Dock, Taste E fokussiert Marschieren', () => {
+    startGame()
+    pickCapital()
+    fireEvent.click(screen.getByRole('button', { name: 'Kaserne bauen' }))
+    fastForward(1)
+    fastForward(2)
+    const infantry = within(screen.getByRole('region', { name: 'Ausheben' })).getByRole('button', { name: 'Infanterie ausheben' })
+    fireEvent.click(infantry)
+    fastForward(2)
+    fireEvent.click(screen.getByRole('button', { name: /^Auswählen/ }))
+
+    const dock = document.querySelector('.dock')!
+    expect(dock.getAttribute('data-state')).toBe('army')
+    const body = dock.querySelector('.dock__body')!
+    const content = body.querySelector('.dock-army')
+    expect(content).not.toBeNull()
+    expect(within(content as HTMLElement).getByRole('group', { name: 'Haltung' })).toBeTruthy()
+    const march = within(content as HTMLElement).getByRole('button', { name: 'Marschieren' })
+    expect(march.className).toContain('button--primary')
+    expect(within(content as HTMLElement).getByRole('button', { name: /^Weitere/ })).toBeTruthy()
+    // Sidebar zeigt ArmyPanel weiterhin zusaetzlich (D19b bewusst, Entfernung erst D19c).
+    expect(screen.getByRole('region', { name: 'Armee' })).toBeTruthy()
+
+    fireEvent.keyDown(window, { key: 'e' })
+    expect(document.activeElement).toBe(march)
+    // Zeitlimit wegen Last, nicht Verhalten: wie der verwandte Test oben (bauen/vorspulen/ausheben/waehlen).
+  }, 60_000)
+
   it('erklaert den Krieg aus der Diplomatie und nennt den Wirkungstag', () => {
     startGame()
     fireEvent.keyDown(window, { key: 'd' })

@@ -4115,6 +4115,61 @@ body {
   max-width: 160px;
 }
 
+/* Der Armee-Inhalt im Dock (D19b, Bild final-v3b-11-armee.png): Kopf, Zurueck/Marsch-Zeile,
+   Haltung, Befehle in EINER Spalte (anders als .dock-province, das in einer Reihe liegt) — die
+   Armee-Bedienungen (4 Haltungsknoepfe + 4 Befehle) passen nicht in eine einzige Zeile neben Namen
+   und Statzeichen, ohne unleserlich zu werden. Hoehe wie .dock--army (116px), kein eigenes Scrollen
+   (K1); .dock-army__commands schiebt "Marschieren" mit margin-left:auto ans rechte Ende, wie im Bild. */
+.dock-army {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--sp-xs);
+  height: 100%;
+  overflow: hidden;
+}
+
+.dock-army__head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+}
+
+.dock-army__name {
+  font: 600 15px var(--font-map);
+}
+
+.dock-army__route {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: var(--fs-s);
+}
+
+.dock-army .stances {
+  margin: 0;
+}
+
+.dock-army__commands {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  margin: 0;
+}
+
+.dock-army__commands .button--primary {
+  margin-left: auto;
+}
+
+.dock-army__targeting {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.dock-army__targeting .picker {
+  font-size: var(--fs-s);
+}
+
 .recruit-sheet {
   position: absolute;
   right: 12px;

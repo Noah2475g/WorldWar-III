@@ -1056,7 +1056,7 @@ const ARMY_COMMAND_PICTURES: Record<string, PictureName> = {
 }
 
 /** Die Ankunft in Zahlen (T-M46-17): „5 h“ oder „587 · 20:00“ - der Satz steht im Tooltip. */
-function arrivalShort(nowTick: number, arrivalTick: number, ticksPerDay: number): string {
+export function arrivalShort(nowTick: number, arrivalTick: number, ticksPerDay: number): string {
   const inHours = arrivalTick - nowTick
   if (inHours <= 0) return '0'
   if (inHours < ticksPerDay) return `${Math.round(inHours)} h`
@@ -1072,6 +1072,28 @@ const STANCE_PICTURES: Record<(typeof STANCES)[number], PictureName> = {
   defensive: 'stanceDefensive',
   retreat: 'stanceRetreat',
   garrison: 'stanceGarrison',
+}
+
+/**
+ * Die vier Haltung-Knoepfe, faktorisiert aus `ArmyPanel` (D19b): von der Seitenleiste
+ * UND vom neuen `ArmyDockContent` genutzt, keine zweite Fassung.
+ */
+function ArmyStanceButtons({ stanceActions, stance }: { stanceActions: readonly Action[]; stance?: string | undefined }) {
+  return (
+    <div className="stances stances--icons" role="group" aria-label={t('army.stance')}>
+      {stanceActions.map((action) => (
+        <ActionButton
+          key={action.id}
+          action={action}
+          iconOnly
+          iconSize={24}
+          picture={STANCE_PICTURES[action.id.slice('stance-'.length) as (typeof STANCES)[number]]}
+          showReason={false}
+          pressed={stance !== undefined && action.id === `stance-${stance}`}
+        />
+      ))}
+    </div>
+  )
 }
 
 export function ArmyPanel(props: ArmyPanelProps) {
@@ -1193,21 +1215,7 @@ export function ArmyPanel(props: ArmyPanelProps) {
         </>
       )}
 
-      {stanceActions.length > 0 && !targeting && (
-        <div className="stances stances--icons" role="group" aria-label={t('army.stance')}>
-          {stanceActions.map((action) => (
-            <ActionButton
-              key={action.id}
-              action={action}
-              iconOnly
-              iconSize={24}
-              picture={STANCE_PICTURES[action.id.slice('stance-'.length) as (typeof STANCES)[number]]}
-              showReason={false}
-              pressed={army.stance !== undefined && action.id === `stance-${army.stance}`}
-            />
-          ))}
-        </div>
-      )}
+      {stanceActions.length > 0 && !targeting && <ArmyStanceButtons stanceActions={stanceActions} stance={army.stance} />}
 
       {targeting ? (
         <section className="group" aria-label={t('army.targetLabel')}>
@@ -1294,6 +1302,196 @@ export function ArmyPanel(props: ArmyPanelProps) {
         )
       )}
     </section>
+  )
+}
+
+/**
+ * Der Dock-Inhalt im Zustand 'army' (D19b, E5/D9): Kopf (Name + Kampfkraft/Zustand), Zurueck/
+ * Marsch-Zeile, Haltung (`ArmyStanceButtons`, D19b Schritt 3), Befehle (stop/split/merge sichtbar
+ * + march primaer, bombard/holdFire hinter `MoreMenu`), Zielwahl kompakt. ArmyPanel bleibt
+ * ZUSAETZLICH in der Seitenleiste bestehen (Entfernung erst D19c, kein zweiter Code hier — beide
+ * nutzen `ArmyStanceButtons`/`MoreMenu`/`DepartStepper`).
+ *
+ * `routeText` baut der Aufrufer (App.tsx): dort stehen die Provinznamen (`nameOfProvince`), hier
+ * nicht — sonst muesste diese Datei die Karten-Provinzliste kennen, die sie bisher nicht braucht.
+ */
+export interface ArmyDockContentProps {
+  /** Zurueck zur Provinz der Armee (T-M44-12, wie `ArmyPanel.onBack`). */
+  onBack?: (() => void) | undefined
+  army: VisibleArmy | null
+  name?: string | undefined
+  /** "‹ Ostindien" (steht) bzw. "‹ Ostindien → Katar · 581 · 18:00" (marschiert). */
+  routeText?: string | undefined
+  actions: readonly Action[]
+  targeting?: Targeting | null | undefined
+  pendingNotice?: string | null | undefined
+  condition?: number | undefined
+  ticksPerDay: number
+  currentTick: number
+}
+
+export function ArmyDockContent(props: ArmyDockContentProps) {
+  const army = props.army
+  const targeting = props.targeting ?? null
+  // Wie ArmyPanel (Zeile ~1083-1087): der Fokus auf die Zielliste, sobald die Zielwahl beginnt —
+  // der Knopf, der sie oeffnete ("Marschieren"), ist verschwunden.
+  const targetList = useRef<HTMLSelectElement>(null)
+  const choosing = targeting !== null
+  useEffect(() => {
+    if (choosing) targetList.current?.focus()
+  }, [choosing])
+  if (!army) return null
+
+  const stanceActions = STANCES.map((value) => props.actions.find((action) => action.id === `stance-${value}`)).filter(
+    (action): action is Action => action !== undefined,
+  )
+  const commands = props.actions
+    .filter((action) => !action.id.startsWith('stance-'))
+    .map((action) => (action.icon || !ARMY_ACTION_ICONS[action.id] ? action : { ...action, icon: ARMY_ACTION_ICONS[action.id]! }))
+  const march = commands.find((action) => action.id === 'march')
+  // Sichtbar: Anhalten/Teilen/Zusammenlegen + Marschieren primaer (Bild final-v3b-11-armee.png).
+  // Hinter "Weitere": Beschiessen + Feuer halten (A2 im Ticket).
+  const VISIBLE_IDS = new Set(['stop', 'split', 'merge'])
+  const visibleCommands = commands.filter((action) => VISIBLE_IDS.has(action.id))
+  const hiddenCommands = commands.filter((action) => action.id !== 'march' && !VISIBLE_IDS.has(action.id))
+
+  return (
+    <div className="dock-army">
+      <div className="dock-army__head">
+        {props.onBack && (
+          <button
+            type="button"
+            className="button button--icon dock-army__back"
+            aria-label={t('panel.back')}
+            title={t('panel.back')}
+            onClick={props.onBack}
+          >
+            <Icon name="back" size={18} />
+          </button>
+        )}
+        <b className="dock-army__name">{props.name ?? t('army.title')}</b>
+        <span className="stat" title={t('army.power')}>
+          <Icon name="battle" size={16} title={t('army.power')} /> {amount(army.strength)}
+        </span>
+        {props.condition !== undefined && (
+          <span className="stat" title={t('army.condition')}>
+            <Icon name="morale" size={16} />
+            <Meter
+              label={t('army.condition')}
+              labelHidden
+              value={Math.round(props.condition * 100)}
+              max={100}
+              text={percent(Math.round(props.condition * 100))}
+              tone={toneForShare(props.condition)}
+            />
+          </span>
+        )}
+      </div>
+
+      {props.routeText && <p className="dock-army__route">{props.routeText}</p>}
+
+      {props.pendingNotice && (
+        <p className="action__pending" role="status">
+          {props.pendingNotice}
+        </p>
+      )}
+
+      {targeting ? (
+        <section className="group dock-army__targeting" aria-label={t('army.targetLabel')}>
+          <label className="picker">
+            <span>{t('army.targetLabel')}</span>
+            <select
+              ref={targetList}
+              value={targeting.target?.id ?? ''}
+              onChange={(event) => targeting.onChoose(event.target.value || null)}
+            >
+              <option value="">{t('province.pickNone')}</option>
+              {targeting.unreachable === undefined ? (
+                targeting.options.map((province) => (
+                  <option key={province.id} value={province.id}>
+                    {province.name}
+                  </option>
+                ))
+              ) : (
+                <>
+                  {targeting.options.length > 0 && (
+                    <optgroup label={t('march.reachable')}>
+                      {targeting.options.map((province) => (
+                        <option key={province.id} value={province.id}>
+                          {province.arrivalDay === undefined
+                            ? province.name
+                            : t('march.optionArrival', { name: province.name, day: province.arrivalDay })}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {targeting.unreachable.length > 0 && (
+                    <optgroup label={t('march.unreachable')}>
+                      {targeting.unreachable.map((province) => (
+                        <option key={province.id} value={province.id} disabled>
+                          {province.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                </>
+              )}
+            </select>
+          </label>
+          {targeting.kind === 'move' && targeting.onDelay && (
+            <DepartStepper days={targeting.delayDays ?? 0} onDelay={targeting.onDelay} />
+          )}
+          <div className="actions">
+            {targeting.confirm && <ActionButton action={targeting.confirm} showReason />}
+            <button type="button" className="button" onClick={targeting.onCancel}>
+              {t('army.cancel')}
+            </button>
+          </div>
+        </section>
+      ) : (
+        <>
+          {stanceActions.length > 0 && <ArmyStanceButtons stanceActions={stanceActions} stance={army.stance} />}
+          <div className="actions actions--grid actions--icons dock-army__commands" role="group" aria-label={t('army.commands')}>
+            {visibleCommands.map((action) => (
+              <ActionButton
+                key={action.id}
+                action={action}
+                iconOnly
+                iconSize={24}
+                {...(ARMY_COMMAND_PICTURES[action.id] ? { picture: ARMY_COMMAND_PICTURES[action.id]! } : {})}
+                showReason={false}
+              />
+            ))}
+            {hiddenCommands.length > 0 && (
+              <MoreMenu label={t('diplomacy.more', { count: hiddenCommands.length })} className="diplomacy__more dock-army__more">
+                <div className="actions actions--grid actions--icons">
+                  {hiddenCommands.map((action) => (
+                    <ActionButton
+                      key={action.id}
+                      action={action}
+                      iconOnly
+                      iconSize={24}
+                      {...(ARMY_COMMAND_PICTURES[action.id] ? { picture: ARMY_COMMAND_PICTURES[action.id]! } : {})}
+                      showReason={false}
+                    />
+                  ))}
+                </div>
+              </MoreMenu>
+            )}
+            {march && (
+              <ActionButton
+                action={march}
+                iconOnly
+                iconSize={28}
+                picture={ARMY_COMMAND_PICTURES.march!}
+                showReason={false}
+                primary
+              />
+            )}
+          </div>
+        </>
+      )}
+    </div>
   )
 }
 
@@ -2269,7 +2467,7 @@ function DiplomacyActions({
       )}
       {peaceAction && <ActionButton action={peaceAction} showReason primary />}
       {moreCount > 0 && (
-        <DiplomacyMore count={moreCount}>
+        <MoreMenu label={t('diplomacy.more', { count: moreCount })}>
           {restTreaties.length > 0 && (
             <ActionGroup
               group={{ id: 'treaties', title: t('diplomacy.treaties', { nation }), actions: restTreaties }}
@@ -2280,18 +2478,21 @@ function DiplomacyActions({
           {passageActions.length > 0 && (
             <ActionGroup group={{ id: 'passage', title: t('diplomacy.passageGroup'), actions: passageActions }} collectReasons />
           )}
-        </DiplomacyMore>
+        </MoreMenu>
       )}
     </div>
   )
 }
 
 /**
- * Das "Weitere"-Aufklappmuster (E4.3, Vorbild `Explain.tsx`): aria-expanded/aria-controls am
- * Knopf, Escape schliesst und gibt den Fokus zurueck, ein Druck ausserhalb schliesst auch. Die
- * Liste ueberlagert (`position: absolute`, app.css) statt das Layout zu verschieben.
+ * Das generische "Weitere"-Aufklappmuster (E4.3, verallgemeinert D19b fuer `ArmyDockContent`,
+ * Vorbild `Explain.tsx`): aria-expanded/aria-controls am Knopf, Escape schliesst und gibt den
+ * Fokus zurueck, ein Druck ausserhalb schliesst auch. Die Liste ueberlagert
+ * (`position: absolute`, app.css Klasse `.diplomacy__more`/`-panel`, bewusst wiederverwendet statt
+ * verdoppelt) statt das Layout zu verschieben. `label` traegt den vollstaendigen Knopftext
+ * (Aufrufer entscheidet den Wortlaut, z.B. `t('diplomacy.more', { count })`).
  */
-function DiplomacyMore({ count, children }: { count: number; children: ReactNode }) {
+function MoreMenu({ label, children, className = 'diplomacy__more' }: { label: string; children: ReactNode; className?: string }) {
   const [open, setOpen] = useState(false)
   const id = useId()
   const root = useRef<HTMLDivElement>(null)
@@ -2318,7 +2519,7 @@ function DiplomacyMore({ count, children }: { count: number; children: ReactNode
   }, [open])
 
   return (
-    <div className="diplomacy__more" ref={root}>
+    <div className={className} ref={root}>
       <button
         type="button"
         className="button diplomacy__more-toggle"
@@ -2327,7 +2528,7 @@ function DiplomacyMore({ count, children }: { count: number; children: ReactNode
         aria-controls={id}
         onClick={() => setOpen((current) => !current)}
       >
-        {t('diplomacy.more', { count })}
+        {label}
       </button>
       {open && (
         <div className="diplomacy__more-panel" id={id}>

@@ -7,8 +7,10 @@ import { defenceMultiplier, type Province, type PublicView, type Terrain, type V
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { TOKENS } from './tokens.ts'
 import { t } from '../i18n/text.ts'
+import { resolveKey } from '../keyboard.ts'
 import {
   ActionGroup,
+  ArmyDockContent,
   ArmyPanel,
   DiplomacyPanel,
   EconomyPanel,
@@ -2172,6 +2174,134 @@ describe('T-M31-02 Das Armeepanel traegt Marker, Zustand und Haltungsgruppe', ()
     } finally {
       style.remove()
     }
+  })
+})
+
+/**
+ * D19b: Der Armee-Inhalt im Dock (`ArmyDockContent`) — Haltung, Befehle (sichtbar + "Weitere"),
+ * Zielwahl, Taste E. Dieselben Aktionen wie `ArmyPanel`, aber als eigene, platzsparende Fassung
+ * fuer die Leiste unten (`dockState==='army'`).
+ */
+describe('D19b: ArmyDockContent — Haltung, Befehle, Weitere, Zielwahl im Dock', () => {
+  const dockArmy = { id: 'a1', owner: 'p1', provinceId: 'USA-MW', strength: 12_400, stance: 'defensive' } as VisibleArmy
+  const act = (id: string, label: string, aria?: string): Action => ({
+    id,
+    label,
+    ...(aria ? { aria } : {}),
+    disabledReason: null,
+    onRun: () => undefined,
+  })
+  const dockActions = [
+    act('march', 'Marschieren'),
+    act('stop', 'Anhalten'),
+    act('stance-aggressive', 'Angriff', 'Haltung Angriff einnehmen'),
+    { ...act('stance-defensive', 'Verteidigung', 'Haltung Verteidigung einnehmen'), disabledReason: 'Die Armee hat diese Haltung schon.' },
+    act('stance-retreat', 'Rückzug', 'Haltung Rückzug einnehmen'),
+    act('stance-garrison', 'Garnison', 'Haltung Garnison einnehmen'),
+    act('merge', 'Zusammenlegen'),
+    act('split', 'Teilen'),
+    act('bombard', 'Beschießen'),
+    act('holdFire', 'Feuer halten'),
+  ]
+
+  const dock = () =>
+    render(
+      <ArmyDockContent
+        army={dockArmy}
+        name="3. Armee"
+        routeText="‹ Mittlerer Westen"
+        condition={0.86}
+        actions={dockActions}
+        ticksPerDay={24}
+        currentTick={0}
+      />,
+    )
+
+  it('zeigt die vier Haltung-Knoepfe (eine Gruppe, genau ein gedrueckter)', () => {
+    dock()
+    const group = screen.getByRole('group', { name: 'Haltung' })
+    const buttons = within(group).getAllByRole('button')
+    expect(buttons.length).toBe(4)
+    expect(buttons.filter((b) => b.getAttribute('aria-pressed') === 'true').map((b) => b.getAttribute('aria-label'))).toEqual([
+      'Haltung Verteidigung einnehmen',
+    ])
+  })
+
+  it('zeigt Anhalten/Teilen/Zusammenlegen sichtbar und Marschieren primaer', () => {
+    const { container } = dock()
+    const grid = container.querySelector('.dock-army__commands') as HTMLElement
+    expect(within(grid).getByRole('button', { name: 'Anhalten' })).toBeTruthy()
+    expect(within(grid).getByRole('button', { name: 'Teilen' })).toBeTruthy()
+    expect(within(grid).getByRole('button', { name: 'Zusammenlegen' })).toBeTruthy()
+    const march = within(grid).getByRole('button', { name: 'Marschieren' })
+    expect(march.className).toContain('button--primary')
+    // Beschiessen/Feuer halten stehen NICHT direkt sichtbar, sondern hinter "Weitere".
+    expect(within(grid).queryByRole('button', { name: 'Beschießen' })).toBeNull()
+    expect(within(grid).queryByRole('button', { name: 'Feuer halten' })).toBeNull()
+  })
+
+  it('"Weitere" klappt Beschiessen + Feuer halten auf, Escape schliesst und gibt den Fokus zurueck', () => {
+    const { container } = dock()
+    const toggle = within(container.querySelector('.dock-army__commands') as HTMLElement).getByRole('button', { name: /^Weitere/ })
+    expect(toggle.getAttribute('aria-expanded')).toBe('false')
+    fireEvent.click(toggle)
+    expect(toggle.getAttribute('aria-expanded')).toBe('true')
+    expect(screen.getByRole('button', { name: 'Beschießen' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Feuer halten' })).toBeTruthy()
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(toggle.getAttribute('aria-expanded')).toBe('false')
+    expect(document.activeElement).toBe(toggle)
+  })
+
+  it('MoreMenu wird nur EINMAL implementiert — Diplomacy und Army teilen sich dieselbe Klasse', () => {
+    const { container } = dock()
+    // Dieselbe CSS-Klasse wie DiplomacyActions (app.css .diplomacy__more-panel): kein zweiter
+    // Aufklapp-Code, nur eine zweite CSS-Klasse fuer den Platz im Dock.
+    expect(container.querySelector('.diplomacy__more')).toBeTruthy()
+  })
+
+  it('zeigt die Zurueck/Marsch-Zeile aus `routeText`', () => {
+    dock()
+    expect(screen.getByText('‹ Mittlerer Westen')).toBeTruthy()
+  })
+
+  it('Taste E (Zone recruit) trifft im Dock-Zustand army den Marschieren-Knopf', () => {
+    const { container } = dock()
+    const shortcut = resolveKey({ key: 'e' }, { speed: 1, mode: 'political', typing: false, dialogOpen: false, fastForwarding: false })
+    expect(shortcut).toEqual({ type: 'focusZone', zone: 'recruit' })
+    const march = container.querySelector('.dock-army [data-action-id="march"] button:not(:disabled)')
+    expect(march).toBeTruthy()
+  })
+
+  it('Zielwahl: Zielliste erreichbar, DepartStepper funktioniert, Bestaetigen/Abbrechen vorhanden', () => {
+    const onChoose = vi.fn()
+    const onDelay = vi.fn()
+    const onCancel = vi.fn()
+    const targeting: Targeting = {
+      kind: 'move',
+      target: null,
+      options: [{ id: 'USA-NE', name: 'Nordosten', arrivalDay: 3 }],
+      unreachable: [],
+      confirm: null,
+      onChoose,
+      onCancel,
+      delayDays: 0,
+      onDelay,
+    }
+    render(<ArmyDockContent army={dockArmy} actions={dockActions} targeting={targeting} ticksPerDay={24} currentTick={0} />)
+    expect(document.activeElement?.tagName).toBe('SELECT')
+    fireEvent.change(screen.getByRole('combobox', { name: 'Ziel' }), { target: { value: 'USA-NE' } })
+    expect(onChoose).toHaveBeenCalledWith('USA-NE')
+    fireEvent.click(screen.getByRole('button', { name: 'Abbrechen' }))
+    expect(onCancel).toHaveBeenCalledTimes(1)
+    expect(screen.getByRole('group', { name: 'Abmarsch' })).toBeTruthy()
+    // Im Zielwahl-Zustand stehen die Haltung-Knoepfe und das Befehlsraster nicht (Platzgrund, D19b).
+    expect(screen.queryByRole('group', { name: 'Haltung' })).toBeNull()
+  })
+
+  it('liefert null ohne Armee', () => {
+    const { container } = render(<ArmyDockContent army={null} actions={[]} ticksPerDay={24} currentTick={0} />)
+    expect(container.textContent).toBe('')
   })
 })
 
