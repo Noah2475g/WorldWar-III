@@ -772,17 +772,31 @@ export function markersFor(
 export function collideMarks(markers: readonly Marker[], bounds: MapBounds, selectedArmyId?: string | null): { markers: Marker[]; layout: LayoutResult } {
   const movable: { index: number; marker: Marker }[] = []
   markers.forEach((marker, index) => {
-    if (marker.kind === 'army' || marker.kind === 'armyGroup' || marker.kind === 'building') movable.push({ index, marker })
+    if (
+      marker.kind === 'army' ||
+      marker.kind === 'armyGroup' ||
+      marker.kind === 'building' ||
+      marker.kind === 'buildingGroup'
+    )
+      movable.push({ index, marker })
   })
 
   const inputs: MarkInput[] = movable.map(({ index, marker }) => {
-    const isBuilding = marker.kind === 'building'
+    // D14/E1b: `buildingGroup` zaehlt fuer die Kollision wie `building` (Vorrang 1,
+    // Versatz nur bis 13 px, dann Ruecktritt per BUILDINGS_YIELD_TO) — nur die gewaehlte
+    // Provinz bekommt den hoeheren Vorrang 2,5 (D6), damit sie Armeen nicht weicht.
+    const isBuildingGroup = marker.kind === 'buildingGroup'
+    const isBuilding = marker.kind === 'building' || isBuildingGroup
     const tone = marker.tone ?? (marker.own ? 'own' : 'other')
     const isFoe = tone === 'enemy'
     const isSelected = marker.kind === 'army' && selectedArmyId != null && marker.armyId === selectedArmyId
-    const pri = isBuilding ? 1 : isFoe ? 4 : isSelected ? 3 : 2
+    const pri = isBuildingGroup ? (marker.selected ? 2.5 : 1) : isBuilding ? 1 : isFoe ? 4 : isSelected ? 3 : 2
     const side = isBuilding ? ('bm' as const) : isFoe ? ('foe' as const) : ('me' as const)
-    const { width: w, height: h } = isBuilding ? { width: BUILDING_BOX, height: BUILDING_BOX } : ARMY_BOX
+    const { width: w, height: h } = isBuildingGroup
+      ? BUILDING_GROUP_BOX
+      : isBuilding
+        ? { width: BUILDING_BOX, height: BUILDING_BOX }
+        : ARMY_BOX
     return {
       id: String(index),
       pri,
@@ -793,7 +807,7 @@ export function collideMarks(markers: readonly Marker[], bounds: MapBounds, sele
       ay: marker.y,
       w,
       h,
-      n: marker.kind === 'army' ? (marker.count ?? 1) : (marker.level ?? 1),
+      n: marker.kind === 'army' ? (marker.count ?? 1) : isBuildingGroup ? Number(marker.label) || 1 : (marker.level ?? 1),
       foe: isFoe,
     }
   })
