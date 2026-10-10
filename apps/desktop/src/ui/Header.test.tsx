@@ -183,9 +183,8 @@ describe('R-UI-10 Die Kopfleiste zeigt Rohstoffe mit Symbol', () => {
     const list = screen.getByRole('list', { name: 'Rohstoffe' })
 
     expect(list.querySelectorAll('svg').length).toBe(7)
-    // Und der Name bleibt lesbar — fuer Vorleseprogramme und fuer den Zeiger.
-    expect(screen.getByText('Nahrung')).toBeTruthy()
-    expect(container.querySelector('.resource')?.getAttribute('title')).toBe('Nahrung')
+    // Und der Name bleibt lesbar — sichtbar unter der Zahl (D4), nicht nur als Tooltip.
+    expect(container.querySelector('.resource__name')?.textContent).toBe('Nahrung')
   })
 })
 

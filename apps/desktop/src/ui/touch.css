@@ -214,6 +214,17 @@ select,
    1098x498 und 1097x617 mit sichtbarer Einfuehrung). */
 :root[data-input='touch'] .map-controls {
   flex-direction: row;
+  flex-wrap: wrap;
+}
+
+/* Der Kartenmodus-Cluster (D22) bricht im Touch-Betrieb auf eine EIGENE Zeile unter die
+   Zoomknoepfe, statt sich in die 182-px-Reihe zu quetschen (Befund E2 R1: bei 667x375
+   ragte die Reihe aus 4 Zoomknoepfen + 5 Modusknoepfen seitlich aus dem Bild, "Timeout
+   locator.click" fuer Kartenmodus-Umschalter). `flex-basis: 100%` zwingt den naechsten
+   Flex-Umbruch, die Reihe bleibt row (siehe Begruendung oben), nur dieses Kind wird breit. */
+:root[data-input='touch'] .map-tools {
+  flex-basis: 100%;
+  margin-top: var(--sp-xs);
 }
 
 /* Die Einfuehrung (.tutorial, app.css: unten links an .app, bottom 170px) verdeckte im
@@ -329,6 +340,7 @@ select,
 
   :root[data-input='touch'] .resource {
     padding: 2px 6px;
+    min-height: 44px;
   }
 
   /* Seitenleiste schmaler, damit die Karte die Breite behaelt. */
@@ -711,10 +723,17 @@ select,
 
   /* Die Rohstoffleiste bricht um statt zu rollen (R-UX-01/AK2, gemessen 2026-10-03: 452 px
      Inhalt bei 375 px Breite). Sieben Zahlen sind eine Auskunft, die man nicht erst
-     suchen soll; kein Rollbereich heisst auch: nichts, was per Tab erreichbar sein muss. */
+     suchen soll; kein Rollbereich heisst auch: nichts, was per Tab erreichbar sein muss.
+     E2 (v3b): `.resources` ist jetzt ein Flex-Kind von `.header__top` (vorher eigene
+     Zeile) — hier als eigene volle Zeile einsortiert, damit das Telefon-Hochformat
+     unveraendert bleibt (<= B0). */
   :root:root .resources {
+    order: 7;
+    flex: 1 1 100%;
     flex-wrap: wrap;
     overflow-x: visible;
+    height: auto;
+    margin: 0;
   }
 
   /* Die Mitte: oben die Karte, darunter die Seitenleiste. */
@@ -910,6 +929,41 @@ select,
     min-width: 44px;
     min-height: 44px;
   }
+
+  /* Dialoge: nicht breiter als Viewport (B1, Bau-Fenster) */
+  :root:root .dialog {
+    min-width: 0;
+    max-width: calc(100vw - 32px);
+    margin: var(--sp-lg) auto;
+  }
+  :root:root .dialog__body {
+    max-height: calc(100dvh - 180px);
+    overflow-y: auto;
+  }
+
+  /* Panel-Inhalte (B2) */
+  :root:root .side .slots {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  }
+  :root:root .side .table {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  /* Touch-Ziele (B6) */
+  :root:root .map-control {
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 16px;
+  }
+}
+
+/* Safe-area iPhone 17 Pro (B3) */
+@media (max-width: 599px) and (orientation: portrait) {
+  :root:root .app {
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
 }
 
 /* ---- T-M44-05 · Dialog-Fußzeile (Paket B) ----
@@ -1056,3 +1110,8 @@ select,
     display: none;
   }
 }
+
+/* Quick-Fix-Block (@media max-width: 600px) entfernt (T-M887ed06b):
+ * brach das bestehende Sheet-System (Zeile 479ff.), da er in der Kaskade
+ * spaeter kam und den Portrait-Block ueberschrieb. Siehe Mentor-Befund
+ * t_19b316d0. Ersatz-Fixes (B1-B4, B6) stehen jetzt im Portrait-Block oben. */

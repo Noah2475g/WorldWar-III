@@ -10,7 +10,7 @@ import { planAbsorptions } from '../packages/mapgen/src/absorb.ts'
 import { deriveSeaLanes } from '../packages/mapgen/src/sealanes.ts'
 import { readCsv } from '../packages/mapgen/src/csv.ts'
 import { balanceStartingValues, enrich, ensureStartingBasics, startingValue } from '../packages/mapgen/src/enrich.ts'
-import { MAP_HEIGHT, MAP_WIDTH, drawableRings, toMapX, toMapY } from '../packages/mapgen/src/project.ts'
+import { MAP_HEIGHT, MAP_WIDTH, anchorFor, drawableRings, toMapX, toMapY } from '../packages/mapgen/src/project.ts'
 import { shapeAreaKm2, shapeCentre } from '../packages/mapgen/src/area.ts'
 
 /**
@@ -366,13 +366,20 @@ const gameProvinces = provinces.map((p) => {
   // (84 453 px² against 58 147), so the west coast simply was not drawn (T-M19-02).
   const polygons = drawableRings(p.geometry)
 
+  // `shapeCentre` averages boundary points on the sphere, which for a coast as folded
+  // as Norway's lands at sea. `anchorFor` keeps that centre where it already sits on
+  // drawn land and only moves it — to the widest horizontal chord of the largest ring
+  // — where it does not (T-M19-02 repair, R-MAP-08).
+  const rawCentre = [toMapX(p.centre.lon), toMapY(p.centre.lat)]
+  const center = anchorFor(rawCentre, polygons)
+
   return {
     id: p.id,
     name: p.name,
     kind: enriched.get(p.id).kind,
     terrain: enriched.get(p.id).terrain,
     coastal: p.coastal,
-    center: { x: toMapX(p.centre.lon), y: toMapY(p.centre.lat) },
+    center: { x: center[0], y: center[1] },
     polygons,
     population: Math.round(enriched.get(p.id).population),
     deposits: Object.fromEntries(

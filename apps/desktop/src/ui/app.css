@@ -200,22 +200,27 @@ body {
 .header {
   background: var(--paper);
   border-bottom: 1px solid var(--line);
-  height: 56px;
 }
 
 .header__top {
   display: flex;
   align-items: center;
   gap: var(--sp-md);
-  padding: 0 var(--sp-lg);
-  height: 56px;
-  flex-wrap: nowrap;
+  padding: var(--sp-sm) var(--sp-lg);
+  flex-wrap: wrap;
   font-family: var(--font-map);
   font-weight: 600;
   font-size: 13px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
+
+/* Ab 1280 px (D4): eine Zeile 56 px, Knoepfe rollen statt zu brechen — siehe die
+   min-width:1280px-Regel weiter unten in dieser Datei. Darunter (schmales Maus-/
+   Tastatur-Fenster, NICHT Telefon-Touch — das regelt touch.css eigenstaendig) bricht
+   die Zeile wie vor E2, sonst verschwinden Speichern/Menue ausserhalb des Bilds
+   (Befund E2 R1: 6 von 34 Bildern bei 375x667 ohne Touch scheiterten an genau diesen
+   Knoepfen). */
 
 /* .header__title entfernt (D25) */
 
@@ -282,26 +287,56 @@ body {
   min-width: 140px;
 }
 
+/*
+  E2 (v3b, D4): die Rohstoffleiste sitzt JETZT in der 56-px-Kopfzeile selbst (kein
+  eigenes Zeilenpaar mehr) — ein Flex-Kind von `.header__top`, mit eigenem
+  Ueberlauf-Scrollen (wischbar, T-M44-03a), wenn die Breite nicht reicht.
+*/
 .resources {
   display: flex;
+  align-items: center;
   gap: 0;
   margin: 0;
-  padding: 0 var(--sp-md);
+  padding: 0;
   list-style: none;
-  background: var(--paper-sunk);
-  border-top: 1px solid var(--line);
   font-family: var(--font-num);
   font-variant-numeric: tabular-nums;
   font-size: 11px;
+  height: 56px;
   overflow-x: auto;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .resource {
   display: flex;
   align-items: center;
   gap: 5px;
-  padding: 5px 6px;
+  padding: 0 6px;
   white-space: nowrap;
+  flex: none;
+}
+
+/* Zahl/Zeichen oben, Name 10,5 px darunter (D4) — ein Flex-Kind je Rohstoff. */
+.resource__figures {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  line-height: 1.15;
+}
+
+.resource__row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.resource__name {
+  font-size: 10.5px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0.01em;
+  color: var(--ink-soft);
 }
 
 /*
@@ -2716,9 +2751,15 @@ body {
 /* Ab 1280 px bricht die obere Zeile nicht mehr um; was nicht passt, schrumpft (Uhr und Hinweise
    dürfen kürzer werden, die Knöpfe nicht). */
 @media (min-width: 1280px) {
+  .header {
+    height: 56px;
+  }
+
   .header__top {
     flex-wrap: nowrap;
     gap: var(--sp-md);
+    padding: 0 var(--sp-lg);
+    height: 56px;
   }
 
   .header__top > * {

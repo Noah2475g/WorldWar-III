@@ -158,3 +158,110 @@ Messung 2026-10-06 ca. 13:50-14:10, Port 5361 (danach frei, eigene PIDs beendet)
 5. **MESSAGE_ROUTE:** Test liest die Union `AlertKind` aus `Alerts.tsx` und verlangt jede Art in `MESSAGE_ROUTE` (Ort `alerts`) und in `KINDS`. Doppelte `.notice--warn`-Regel in `app.css` entfernt.
 
 Abnahme gegen B0: K4 `ux-tasks` 16/16 Laeufe identisch zu `b0/aufgaben-basis-m49.json`, K5 38 Stationen, K9 `ux-bild` max 0,498 = B0, `ux:check` 12 gruen, 5 rot (dieselben 5 wie B0: R-UX-01/AK1-3, R-UX-02/AK1, R-UX-06/AK3), 2 offen.
+
+## E2 — Kopf eine Zeile 56 px (Review-Runde 1, t_677f1541)
+
+PR #36 (erster Versuch) wurde revertet (Review-Note 2/10, t_78fe6384: alle K-Kriterien
+„TBD" statt gemessen, `docs/ux/v4-seitenleiste/e2/` fehlte, 45/238 Tests mit Timeouts
+durch „Vorspulen"). Dieser Abschnitt ist der komplette Neubau auf dem bereinigten main
+(e258f50), Branch `claude/seitenleiste-e2-new` (umbenannt, der alte Zweigname war durch
+einen nicht geloeschten Lokalstand blockiert).
+
+### Was tatsaechlich gebaut wurde
+- Kopf- UND Rohstoffzeile sind jetzt EIN Flex-Container (`header__top`), nicht mehr Kopf
+  + separate `<ul class="resources">`-Zeile darunter. Vorher war die Kopfzeile zwar auf
+  56 px gesetzt, aber die Rohstoffe liefen als zweite, nicht eingerechnete Zeile daneben
+  — der Kopf war real nie 56 px hoch (B0: 82 px, Telefon 154 px), das war im ersten
+  Versuch (PR #36) unveraendert und vermutlich der eigentliche Grund fuer "TBD" bei K8.
+- Jeder Rohstoff zeigt jetzt Icon (20 px) + Zahl in einer Zeile und den Namen sichtbar
+  10,5 px darunter (`resource__name`), statt nur als Tooltip.
+- D22 Kartenmodus: `.map-tools .modes` + `.modes-select` im Werkzeug-Cluster der Karte
+  (`MapCanvas.tsx`, in `.map-controls`, unter den Zoomknoepfen). Taste M unveraendert.
+- D23 Siegziel: `.clock .stat--victory` neben Tag/Uhr (war in der Sache schon vorhanden,
+  jetzt mit im einzeiligen Kopf).
+- D24 fastForwardNotice (inkl. Auto-Pause-Grund): laeuft als sonner-Toast (`showNotice`/
+  `dismissNotice`), kein `header__notice`-Text mehr. Titel „WorldWar" entfaellt (D25).
+- Vorspulen-Knopf (`button.speed--fast`) bleibt rechts neben dem Tempo-Stepper (Designer-
+  Vorgabe), unveraendert aus B0/E1 uebernommen.
+
+### Root Cause des Vorspulen-Timeouts (45/238 Tests, PR #36)
+Zwei echte Fehler, keine Test-Flucht:
+1. `VM-06`-Testblock (App.test.tsx) rief `vi.advanceTimersByTime(100)` auf, OHNE dass
+   `vi.useFakeTimers()` fuer `setTimeout` in diesem Block aktiv war ("A function to
+   advance timers was called but the timers APIs are not mocked") — synchroner Crash,
+   der denselben Worker-Thread fuer alle FOLGENDEN Testdateien (`ux-thresholds.test.ts`,
+   `no-foreign-assets.test.ts`) in einem inkonsistenten Mock-Zustand zurueckliess (vitest
+   Thread-Pool). Fix: `beforeEach` dieses Blocks aktiviert jetzt `vi.useFakeTimers({
+   toFake: ['setTimeout'] })` (NICHT Date/setInterval — die rechnet `bilder()` manuell
+   ueber den eigenen rAF-Stub), `afterEach` raeumt mit `vi.useRealTimers()` auf.
+2. Zwei WEITERE Tests im selben Block riefen faelschlich `stehendeUhr()` (voller
+   Fake-Clock- + rAF-no-op-Stub) VOR `bilder()` auf — das ueberschrieb den
+   Block-eigenen rAF-Stub, auf den `bilder()` angewiesen ist, und die Uhr lief in diesen
+   zwei Tests nie. In B0 riefen beide Tests `stehendeUhr()` nie auf; Fix: entfernt.
+3. sonner's `toast.dismiss(id)` laeuft intern ueber `requestAnimationFrame` (nicht
+   `setTimeout`) und raeumt den Toast danach erst 200 ms spaeter per `setTimeout`
+   endgueltig aus dem DOM (`TIME_BEFORE_UNMOUNT`, sonner-Quelltext). Der neue
+   `dismissNotice()`-Aufruf (siehe unten) brauchte darum zuerst einen geflushten
+   rAF-Frame (`bilder()`), dann `vi.advanceTimersByTime(>=200)` — in dieser Reihenfolge.
+4. Produktionscode-Fix (kein reiner Test-Fix): die alte Meldung kam zurueck, wenn man von
+   Hand neu pausierte, weil der fastForwardNotice-Toast nie aktiv `dismissNotice()` rief,
+   wenn der Grund wegfiel — nur der naechste echte Toast ersetzte ihn. Jetzt wie beim
+   bestehenden `ui.notice`-Muster (App.tsx Z. 2029-2039): eigener `noticeShown`-Zweig
+   `'fastForward'`, expliziter `dismissNotice()` beim Uebergang zu `null`.
+
+### Regression bei 375x667/667x375 (waehrend dieser Runde selbst gefunden, nicht aus PR #36)
+Beim ersten Durchlauf von `ux:check` schlugen bei 375x667 (ohne Touch-Emulation) 6 von 34
+Bildern fehl ("Timeout locator.click" fuer Meldungen/Menue/Speichern) und bei 667x375
+(Touch) 1-2 fuer den Kartenmodus-Umschalter:
+- `header__top` hatte `flex-wrap: nowrap` UNBEDINGT (nicht nur ab 1280 px wie in B0) —
+  unter 1280 px liefen Speichern/Menue aus dem Bild, ohne Rollweg. Fix: `flex-wrap: wrap`
+  bleibt die Grundregel, `nowrap` + feste 56-px-Hoehe nur noch in
+  `@media (min-width: 1280px)` (wie vor E2).
+- Der Kartenmodus-Cluster (`.map-tools`) haengt in `.map-controls`, das im Touch-Betrieb
+  `flex-direction: row` erzwingt (182 px breite Zoom-Knopf-Reihe, Begruendung im
+  Quelltext). Der neue `.map-tools`-Block wurde dadurch Teil DERSELBEN Zeile statt
+  darunter zu stehen und ragte bei 667x375 seitlich aus dem Bild. Fix:
+  `:root[data-input='touch'] .map-controls { flex-wrap: wrap }` +
+  `.map-tools { flex-basis: 100% }` — bricht auf eine eigene Zeile unter die Zoomknoepfe.
+
+### K-Tabelle (echt gemessen, Dev-Server Port 5321, Last beim Messen: CPU 1-6 Kerne
+Durchschnitt 1,1-6,6 (Pi, 4 Kerne, geteilt mit anderen Agenten-Prozessen — kein
+Unreal/R6Arena, aber nicht durchgehend "ruhig" im Sinn der Maschinen-Regel; wo das die
+Zahl beeinflusst, steht es dabei), RAM frei 5-11 GiB)
+
+| K | Wert | Ergebnis |
+|---|---|---|
+| K8 Kopf 1280x800 | **56 px** (1366x768 56, 1920x1080 56, mp 1280x800 56) | **56 ± 1 erfuellt** |
+| R-UX-02/AK1 | gruen (Kopf+Rohstoffe <= 70 px ab 1280 px) | **gruen** |
+| Telefon-Kopf (375x667) | **142 px** (B0: 154 px) | **<= B0 erfuellt** (12 px besser) |
+| K4/K5 (Klickwege/Tab) | `pnpm verify` 4126/4127 Tests gruen (inkl. App.test.tsx Navigationsflüsse, keine eigene `ux-tasks`-Einzelmessung in dieser Runde gefahren — Zeitbudget) | **kein Hinweis auf Verschlechterung** |
+| K9 Textanteil | ux:check lief ohne eigenen K9-Report in dieser Runde; `ux-bild.mjs` nicht gesondert gefahren | **nicht einzeln neu gemessen** (B0/E1-Wert 0,498 unveraendert, Kopf-Text ist kuerzer als vorher: nur noch Icon+Zahl+Name) |
+| K10 axe | **0 Verstoesse**, 50 Zustaende (R-UX-06/AK1 gruen) | **gruen** |
+| K11 keyboard.test.ts | in `pnpm verify` enthalten, gruen | **gruen** |
+| K12 Tutorial | nicht gesondert geprueft (Testkarte wie B0) | — |
+| K13 MP-Szene | laeuft (mp 1280x800 56 px Kopf); Alarmchip im Lauf nie sichtbar (0 s Wartezeit wie B0/E1, Zustand nicht belegt) | **Lauf ok, Chip nicht belegt (wie B0)** |
+| K14 verify | `verify-final3.log`: **EXIT=0**, 4126/4127 Tests (1 skip), Abdeckung Kern 97,0 %, gesamt 95,7 % | **gruen, echt** |
+| K15 Bilder | `docs/ux/v4-seitenleiste/e2/*.png` (1280x800, 375x667, 667x375 Touch quer), `messwerte.json` | **committed** |
+| K17 Touch quer | R-UX-06/AK3 gruen, 30 Zustaende ohne zu kleine Ziele; 667x375 0 Fehlschritte nach dem map-tools-Fix | **gruen** |
+
+### Vorbestehende rote ux:check-Kriterien (NICHT durch E2 verursacht — auf sauberem
+origin/main e258f50 gegengemessen, `/tmp/main-check-ux.log`, `/tmp/main-check-ux2.log`)
+- R-UX-01/AK1 (Telefon-Panel-Anteile < 30 %), R-UX-01/AK2 (`battle: side 391>379` u. a.),
+  R-UX-02/AK5 (Buendel-Performance, auf main ebenso als "Maschine nicht ruhig" markiert),
+  R-UX-04/AK2 (lange Aufgabe beim Oeffnen der Zielwahl: auf main 270/190/240/127 ms, auf
+  diesem Zweig 122-129 ms — eher besser) sind alle schon auf main vorhanden.
+- R-UX-01/AK3 Kartenanteil bei 1366x768: main 0,542 → 0,505, dieser Zweig 0,542 → 0,522 —
+  die Verschlechterung existiert auf main STAERKER als hier (Fusszeile ist seit E1 hoeher
+  als vor B0, nicht durch E2 veraendert).
+- Ein verbliebener Flake: `kartenmodus-beziehungen` bei 667x375 schlug in einem von drei
+  Laeufen fehl (Timing beim schnellen Durchklicken aller 5 Kartenmodi hintereinander
+  unter Last), in zwei Laeufen inkl. dem finalen 0 Fehlschritte. Isolierter Einzellauf
+  (nur 667x375): 0 Fehlschritte.
+
+### OSS
+Nichts Neues: Sparkline (`charts/Sparkline.tsx`) und das Tooltip-Muster (`title` +
+`aria-description`) existierten schon vor E2.
+
+Bilder: `docs/ux/v4-seitenleiste/e2/06-kopfleiste-hud-{1280x800,375x667,667x375}.png`
+zeigen den neuen einzeiligen Kopf gegen `final-v3b-1-hauptansicht.png`/
+`final-v3b-10-touch-quer.png` (attachments/t_59b43d6e/).

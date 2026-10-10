@@ -862,6 +862,124 @@ nur 1280x800 und 375x667 (PLAN-V3 Regel 12). Kein Fremdinhalt: Bildschirmfotos d
 | `docs/ux/v4-seitenleiste/e3/e3-touch-quer-1280x800-protokoll.png` | Playwright (headless Chromium), Aufnahme des eigenen Spiels | Seitenleiste v3b E3: Abnahmebild e3-touch-quer-1280x800-protokoll.png |
 | `docs/ux/v4-seitenleiste/e3/e3-touch-quer-1280x800-zu.png` | Playwright (headless Chromium), Aufnahme des eigenen Spiels | Seitenleiste v3b E3: Abnahmebild e3-touch-quer-1280x800-zu.png |
 
+
+## Bildschirmfotos der Seitenleiste E2 (Seitenleiste v3b E2, 2026-10-10)
+
+Kein Fremdinhalt — Bildschirmfotos des eigenen Spiels, erzeugt mit `node scripts/ux-layout.mjs` (34 Szenen x
+1280x800/375x667/667x375 plus vier gezielte Zusatzaufnahmen `x-*`). `docs/ux/v4-seitenleiste/e2/messwerte.json` ist keine
+Bilddatei (von `test/guards/no-foreign-assets.test.ts` nicht verlangt), haelt aber dieselben Messungen als Rohdaten.
+Jede Datei einzeln statt nur durch Namensgleichheit mit before/e1 "bestehend" (Review-Runde 2 Befund, t_78fe6384: der
+Waechter prueft nur den Basisnamen als Teilstring, keine echte Pfadzuordnung — das war vorher Zufall, kein Beleg).
+
+| Datei | Erzeugt von | Zeigt |
+|---|---|---|
+| `docs/ux/v4-seitenleiste/e2/01-start-neue-partie-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 01 start neue partie, 1280x800 |
+| `docs/ux/v4-seitenleiste/e2/01-start-neue-partie-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 01 start neue partie, 375x667 |
+| `docs/ux/v4-seitenleiste/e2/01-start-neue-partie-667x375.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 01 start neue partie, 667x375 |
+| `docs/ux/v4-seitenleiste/e2/02-partie-anlegen-startknopf-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 02 partie anlegen startknopf, 1280x800 |
+| `docs/ux/v4-seitenleiste/e2/02-partie-anlegen-startknopf-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 02 partie anlegen startknopf, 375x667 |
+| `docs/ux/v4-seitenleiste/e2/02-partie-anlegen-startknopf-667x375.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 02 partie anlegen startknopf, 667x375 |
+| `docs/ux/v4-seitenleiste/e2/03-spielstaende-leer-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 03 spielstaende leer, 1280x800 |
+| `docs/ux/v4-seitenleiste/e2/03-spielstaende-leer-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 03 spielstaende leer, 375x667 |
+| `docs/ux/v4-seitenleiste/e2/03-spielstaende-leer-667x375.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 03 spielstaende leer, 667x375 |
+| `docs/ux/v4-seitenleiste/e2/04-karte-start-tutorial-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 04 karte start tutorial, 1280x800 |
+| `docs/ux/v4-seitenleiste/e2/04-karte-start-tutorial-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 04 karte start tutorial, 375x667 |
+| `docs/ux/v4-seitenleiste/e2/04-karte-start-tutorial-667x375.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 04 karte start tutorial, 667x375 |
+| `docs/ux/v4-seitenleiste/e2/05-kartenansicht-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 05 kartenansicht, 1280x800 |
+| `docs/ux/v4-seitenleiste/e2/05-kartenansicht-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 05 kartenansicht, 375x667 |
+| `docs/ux/v4-seitenleiste/e2/05-kartenansicht-667x375.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 05 kartenansicht, 667x375 |
+| `docs/ux/v4-seitenleiste/e2/06-kopfleiste-hud-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 06 kopfleiste hud, 1280x800 |
+| `docs/ux/v4-seitenleiste/e2/06-kopfleiste-hud-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 06 kopfleiste hud, 375x667 |
+| `docs/ux/v4-seitenleiste/e2/06-kopfleiste-hud-667x375.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 06 kopfleiste hud, 667x375 |
+| `docs/ux/v4-seitenleiste/e2/07-karte-gezoomt-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 07 karte gezoomt, 1280x800 |
+| `docs/ux/v4-seitenleiste/e2/07-karte-gezoomt-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 07 karte gezoomt, 375x667 |
+| `docs/ux/v4-seitenleiste/e2/07-karte-gezoomt-667x375.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 07 karte gezoomt, 667x375 |
+| `docs/ux/v4-seitenleiste/e2/08-kartenmodus-rohstoffe-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 08 kartenmodus rohstoffe, 1280x800 |
+| `docs/ux/v4-seitenleiste/e2/08-kartenmodus-rohstoffe-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 08 kartenmodus rohstoffe, 375x667 |
+| `docs/ux/v4-seitenleiste/e2/08-kartenmodus-rohstoffe-667x375.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 08 kartenmodus rohstoffe, 667x375 |
+| `docs/ux/v4-seitenleiste/e2/09-provinz-auswahl-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 09 provinz auswahl, 1280x800 |
+| `docs/ux/v4-seitenleiste/e2/09-provinz-auswahl-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 09 provinz auswahl, 375x667 |
+| `docs/ux/v4-seitenleiste/e2/09-provinz-auswahl-667x375.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 09 provinz auswahl, 667x375 |
+| `docs/ux/v4-seitenleiste/e2/10-hinweis-erklaerung-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 10 hinweis erklaerung, 1280x800 |
+| `docs/ux/v4-seitenleiste/e2/10-hinweis-erklaerung-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 10 hinweis erklaerung, 375x667 |
+| `docs/ux/v4-seitenleiste/e2/10-hinweis-erklaerung-667x375.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 10 hinweis erklaerung, 667x375 |
+| `docs/ux/v4-seitenleiste/e2/11-rueckmeldung-bau-befohlen-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 11 rueckmeldung bau befohlen, 1280x800 |
+| `docs/ux/v4-seitenleiste/e2/11-rueckmeldung-bau-befohlen-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 11 rueckmeldung bau befohlen, 375x667 |
+| `docs/ux/v4-seitenleiste/e2/11-rueckmeldung-bau-befohlen-667x375.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 11 rueckmeldung bau befohlen, 667x375 |
+| `docs/ux/v4-seitenleiste/e2/12-tempo-100-laeuft-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 12 tempo 100 laeuft, 1280x800 |
+| `docs/ux/v4-seitenleiste/e2/12-tempo-100-laeuft-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 12 tempo 100 laeuft, 375x667 |
+| `docs/ux/v4-seitenleiste/e2/12-tempo-100-laeuft-667x375.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 12 tempo 100 laeuft, 667x375 |
+| `docs/ux/v4-seitenleiste/e2/13-pause-armee-ausgehoben-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 13 pause armee ausgehoben, 1280x800 |
+| `docs/ux/v4-seitenleiste/e2/13-pause-armee-ausgehoben-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 13 pause armee ausgehoben, 375x667 |
+| `docs/ux/v4-seitenleiste/e2/13-pause-armee-ausgehoben-667x375.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 13 pause armee ausgehoben, 667x375 |
+| `docs/ux/v4-seitenleiste/e2/14-armee-auswahl-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 14 armee auswahl, 1280x800 |
+| `docs/ux/v4-seitenleiste/e2/14-armee-auswahl-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 14 armee auswahl, 375x667 |
+| `docs/ux/v4-seitenleiste/e2/14-armee-auswahl-667x375.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 14 armee auswahl, 667x375 |
+| `docs/ux/v4-seitenleiste/e2/15-beschuss-gesperrt-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 15 beschuss gesperrt, 1280x800 |
+| `docs/ux/v4-seitenleiste/e2/15-beschuss-gesperrt-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 15 beschuss gesperrt, 375x667 |
+| `docs/ux/v4-seitenleiste/e2/15-beschuss-gesperrt-667x375.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 15 beschuss gesperrt, 667x375 |
+| `docs/ux/v4-seitenleiste/e2/16-marsch-zielwahl-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 16 marsch zielwahl, 1280x800 |
+| `docs/ux/v4-seitenleiste/e2/16-marsch-zielwahl-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 16 marsch zielwahl, 375x667 |
+| `docs/ux/v4-seitenleiste/e2/16-marsch-zielwahl-667x375.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 16 marsch zielwahl, 667x375 |
+| `docs/ux/v4-seitenleiste/e2/17-fehler-ungueltiges-ziel-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 17 fehler ungueltiges ziel, 1280x800 |
+| `docs/ux/v4-seitenleiste/e2/17-fehler-ungueltiges-ziel-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 17 fehler ungueltiges ziel, 375x667 |
+| `docs/ux/v4-seitenleiste/e2/17-fehler-ungueltiges-ziel-667x375.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 17 fehler ungueltiges ziel, 667x375 |
+| `docs/ux/v4-seitenleiste/e2/18-marsch-ziel-gewaehlt-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 18 marsch ziel gewaehlt, 1280x800 |
+| `docs/ux/v4-seitenleiste/e2/18-marsch-ziel-gewaehlt-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 18 marsch ziel gewaehlt, 375x667 |
+| `docs/ux/v4-seitenleiste/e2/18-marsch-ziel-gewaehlt-667x375.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 18 marsch ziel gewaehlt, 667x375 |
+| `docs/ux/v4-seitenleiste/e2/19-marsch-befohlen-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 19 marsch befohlen, 1280x800 |
+| `docs/ux/v4-seitenleiste/e2/19-marsch-befohlen-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 19 marsch befohlen, 375x667 |
+| `docs/ux/v4-seitenleiste/e2/19-marsch-befohlen-667x375.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 19 marsch befohlen, 667x375 |
+| `docs/ux/v4-seitenleiste/e2/20-diplomatie-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 20 diplomatie, 1280x800 |
+| `docs/ux/v4-seitenleiste/e2/20-diplomatie-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 20 diplomatie, 375x667 |
+| `docs/ux/v4-seitenleiste/e2/20-diplomatie-667x375.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 20 diplomatie, 667x375 |
+| `docs/ux/v4-seitenleiste/e2/21-krieg-erklaert-ohne-rueckfrage-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 21 krieg erklaert ohne rueckfrage, 1280x800 |
+| `docs/ux/v4-seitenleiste/e2/21-krieg-erklaert-ohne-rueckfrage-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 21 krieg erklaert ohne rueckfrage, 375x667 |
+| `docs/ux/v4-seitenleiste/e2/21-krieg-erklaert-ohne-rueckfrage-667x375.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 21 krieg erklaert ohne rueckfrage, 667x375 |
+| `docs/ux/v4-seitenleiste/e2/22-kampf-gefecht-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 22 kampf gefecht, 1280x800 |
+| `docs/ux/v4-seitenleiste/e2/22-kampf-gefecht-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 22 kampf gefecht, 375x667 |
+| `docs/ux/v4-seitenleiste/e2/22-kampf-gefecht-667x375.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 22 kampf gefecht, 667x375 |
+| `docs/ux/v4-seitenleiste/e2/23-protokoll-kaempfe-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 23 protokoll kaempfe, 1280x800 |
+| `docs/ux/v4-seitenleiste/e2/23-protokoll-kaempfe-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 23 protokoll kaempfe, 375x667 |
+| `docs/ux/v4-seitenleiste/e2/23-protokoll-kaempfe-667x375.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 23 protokoll kaempfe, 667x375 |
+| `docs/ux/v4-seitenleiste/e2/24-meldungen-depesche-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 24 meldungen depesche, 1280x800 |
+| `docs/ux/v4-seitenleiste/e2/24-meldungen-depesche-667x375.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 24 meldungen depesche, 667x375 |
+| `docs/ux/v4-seitenleiste/e2/25-panel-markt-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 25 panel markt, 1280x800 |
+| `docs/ux/v4-seitenleiste/e2/25-panel-markt-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 25 panel markt, 375x667 |
+| `docs/ux/v4-seitenleiste/e2/25-panel-markt-667x375.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 25 panel markt, 667x375 |
+| `docs/ux/v4-seitenleiste/e2/26-panel-spionage-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 26 panel spionage, 1280x800 |
+| `docs/ux/v4-seitenleiste/e2/26-panel-spionage-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 26 panel spionage, 375x667 |
+| `docs/ux/v4-seitenleiste/e2/26-panel-spionage-667x375.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 26 panel spionage, 667x375 |
+| `docs/ux/v4-seitenleiste/e2/27-panel-rangliste-sieg-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 27 panel rangliste sieg, 1280x800 |
+| `docs/ux/v4-seitenleiste/e2/27-panel-rangliste-sieg-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 27 panel rangliste sieg, 375x667 |
+| `docs/ux/v4-seitenleiste/e2/27-panel-rangliste-sieg-667x375.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 27 panel rangliste sieg, 667x375 |
+| `docs/ux/v4-seitenleiste/e2/28-kartenmodus-beziehungen-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 28 kartenmodus beziehungen, 1280x800 |
+| `docs/ux/v4-seitenleiste/e2/28-kartenmodus-beziehungen-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 28 kartenmodus beziehungen, 375x667 |
+| `docs/ux/v4-seitenleiste/e2/28-kartenmodus-beziehungen-667x375.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 28 kartenmodus beziehungen, 667x375 |
+| `docs/ux/v4-seitenleiste/e2/29-menue-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 29 menue, 1280x800 |
+| `docs/ux/v4-seitenleiste/e2/29-menue-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 29 menue, 375x667 |
+| `docs/ux/v4-seitenleiste/e2/29-menue-667x375.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 29 menue, 667x375 |
+| `docs/ux/v4-seitenleiste/e2/30-einstellungen-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 30 einstellungen, 1280x800 |
+| `docs/ux/v4-seitenleiste/e2/30-einstellungen-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 30 einstellungen, 375x667 |
+| `docs/ux/v4-seitenleiste/e2/30-einstellungen-667x375.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 30 einstellungen, 667x375 |
+| `docs/ux/v4-seitenleiste/e2/31-spielstand-gespeichert-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 31 spielstand gespeichert, 1280x800 |
+| `docs/ux/v4-seitenleiste/e2/31-spielstand-gespeichert-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 31 spielstand gespeichert, 375x667 |
+| `docs/ux/v4-seitenleiste/e2/31-spielstand-gespeichert-667x375.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 31 spielstand gespeichert, 667x375 |
+| `docs/ux/v4-seitenleiste/e2/32-fehler-spielstand-beschaedigt-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 32 fehler spielstand beschaedigt, 1280x800 |
+| `docs/ux/v4-seitenleiste/e2/32-fehler-spielstand-beschaedigt-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 32 fehler spielstand beschaedigt, 375x667 |
+| `docs/ux/v4-seitenleiste/e2/32-fehler-spielstand-beschaedigt-667x375.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 32 fehler spielstand beschaedigt, 667x375 |
+| `docs/ux/v4-seitenleiste/e2/33-spielende-sieg-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 33 spielende sieg, 1280x800 |
+| `docs/ux/v4-seitenleiste/e2/33-spielende-sieg-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 33 spielende sieg, 375x667 |
+| `docs/ux/v4-seitenleiste/e2/33-spielende-sieg-667x375.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 33 spielende sieg, 667x375 |
+| `docs/ux/v4-seitenleiste/e2/34-spielende-niederlage-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 34 spielende niederlage, 1280x800 |
+| `docs/ux/v4-seitenleiste/e2/34-spielende-niederlage-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 34 spielende niederlage, 375x667 |
+| `docs/ux/v4-seitenleiste/e2/34-spielende-niederlage-667x375.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: 34 spielende niederlage, 667x375 |
+| `docs/ux/v4-seitenleiste/e2/x-kartenmodus-rohstoffe-nicht-erreichbar-667x375.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: kartenmodus rohstoffe nicht erreichbar, 667x375 |
+| `docs/ux/v4-seitenleiste/e2/x-krieg-fragt-nach-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: krieg fragt nach, 1280x800 |
+| `docs/ux/v4-seitenleiste/e2/x-krieg-fragt-nach-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: krieg fragt nach, 375x667 |
+| `docs/ux/v4-seitenleiste/e2/x-krieg-fragt-nach-667x375.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: krieg fragt nach, 667x375 |
+| `docs/ux/v4-seitenleiste/e2/x-meldungen-nicht-erreichbar-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E2: meldungen nicht erreichbar, 375x667 |
+
 ## Bildschirmfotos der Bauvorschau (Bauvorschau B3, 2026-10-06)
 
 Kein Fremdinhalt — Bildschirmfotos des eigenen Spiels, erzeugt mit `node scripts/ux-bauvorschau-bild.mjs`. Sie stehen hier, weil

@@ -260,19 +260,19 @@ export interface MapCanvasProps {
   onHover?: (provinceId: string | null, at: { x: number; y: number } | null) => void
   onViewChange: (view: View) => void
   /**
-   /** Die gemessene Groesse der Karte in Punkten (Touch-Bedienung): dieselbe, mit der
-      * Ausschnitt und Klemme hier rechnen — die echte Huelle, ohne Pixeldichte; nur ohne
-      * Layout (jsdom, clientWidth/clientHeight 0) gilt je Achse das Mindestmass 320 x 240
-      * (Befund 2026-09-25: eine Huelle unter 240 px Hoehe wurde sonst auf 240 hochgerechnet
-      * und die Bitmap dadurch verzerrt — 166,5 echte Punkte zeichneten sich wie 240). Wer
-      * ausserhalb zentriert (Sprung auf eine Provinz, Tastatur), rechnet mit ihr statt mit
-      * einem festen Ausschnitt. Gemeldet bei jeder Messung, auch der ersten.
-      */
-     onViewportChange?: (size: { width: number; height: number }) => void
-     labelFor: (provinceId: string) => string
-     /** Kartenmodus wechseln (D22): Button-Gruppe + Select (< 1400 px) im Werkzeug-Cluster. */
-     onMode: (mode: MapMode) => void
-   }
+   * Die gemessene Groesse der Karte in Punkten (Touch-Bedienung): dieselbe, mit der
+   * Ausschnitt und Klemme hier rechnen — die echte Huelle, ohne Pixeldichte; nur ohne
+   * Layout (jsdom, clientWidth/clientHeight 0) gilt je Achse das Mindestmass 320 x 240
+   * (Befund 2026-09-25: eine Huelle unter 240 px Hoehe wurde sonst auf 240 hochgerechnet
+   * und die Bitmap dadurch verzerrt — 166,5 echte Punkte zeichneten sich wie 240). Wer
+   * ausserhalb zentriert (Sprung auf eine Provinz, Tastatur), rechnet mit ihr statt mit
+   * einem festen Ausschnitt. Gemeldet bei jeder Messung, auch der ersten.
+   */
+  onViewportChange?: (size: { width: number; height: number }) => void
+  labelFor: (provinceId: string) => string
+  /** Kartenmodus wechseln (D22): Button-Gruppe + Select (< 1400 px) im Werkzeug-Cluster. */
+  onMode: (mode: MapMode) => void
+}
 
 /**
  * Zeichnen die beiden Listen dasselbe Bild? Gleiche Provinzen mit denselben Umrissen und

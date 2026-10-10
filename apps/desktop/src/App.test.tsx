@@ -233,7 +233,9 @@ describe('R-UI-03 Die Partie startet', () => {
     startGame()
 
     const resources = screen.getByRole('list', { name: 'Rohstoffe' })
-    expect(within(resources).getByText('Nahrung')).toBeTruthy()
+    // Der Name steht sichtbar unter der Zahl (D4) UND als Icon-Titel (Vorleseprogramm) —
+    // deshalb gezielt auf die sichtbare Namenszeile pruefen, nicht auf den gesamten Text.
+    expect(resources.querySelector('.resource__name')?.textContent).toBe('Nahrung')
     // The starting stock from the rules, formatted — not a dash and not raw fixed-point.
     expect(within(resources).queryByText('—')).toBeNull()
     expect(resources.textContent).toMatch(/\d\.\d{3}/)
@@ -1195,10 +1197,16 @@ describe('VM-06 Die Uhr haelt bei einem eigenen Alarm von selbst an', () => {
       return wartend.length
     })
     vi.spyOn(performance, 'now').mockImplementation(() => jetzt)
+    // Fake-Timer NUR fuer setTimeout (T-M28-06, Review-Runde 1 t_78fe6384): der
+    // fastForwardNotice-Hinweis laeuft seit D24 als sonner-Toast, dessen Mount
+    // selbst ein setTimeout ist. requestAnimationFrame bleibt der eigene Stub
+    // oben — Date/setInterval werden NICHT gefaked, die rechnet `bilder()` manuell.
+    vi.useFakeTimers({ toFake: ['setTimeout'] })
   })
 
   afterEach(() => {
     alarm.beiAufruf = 0
+    vi.useRealTimers()
     vi.restoreAllMocks()
     vi.unstubAllGlobals()
     localStorage.clear()
@@ -1244,7 +1252,6 @@ describe('VM-06 Die Uhr haelt bei einem eigenen Alarm von selbst an', () => {
   })
 
   it('zeigt die alte Meldung nicht wieder, wenn man spaeter von Hand pausiert', () => {
-    stehendeUhr()
     startGame({ storage: new MemoryStorage() })
     tempo100()
     alarm.beiAufruf = 3
@@ -1262,13 +1269,18 @@ describe('VM-06 Die Uhr haelt bei einem eigenen Alarm von selbst an', () => {
 
     tempo100()
     bilder(3, 100)
+    // sonner raeumt den Toast per requestAnimationFrame ab (dismiss), dann 200 ms
+    // spaeter per setTimeout endgueltig aus dem DOM (notice.test.tsx, sonner intern
+    // TIME_BEFORE_UNMOUNT): erst die rAF-Bilder, DANACH die Zeit vorlaufen lassen.
+    vi.advanceTimersByTime(300)
     fireEvent.click(within(screen.getByRole('group', { name: 'Geschwindigkeit' })).getByRole('button', { name: 'Pause' }))
+    bilder(1, 0)
+    vi.advanceTimersByTime(300)
 
     expect(within(document.body).queryByText(/Pausiert: /)).toBeNull()
   })
 
   it('laeuft mit abgeschalteter Auto-Pause weiter', () => {
-    stehendeUhr()
     startGame({ storage: new MemoryStorage() })
     autoPauseAus()
     tempo100()
@@ -2557,9 +2569,15 @@ describe('T-M41-15 Das Vorspulziel wird nicht je Haeppchen gezaehlt', () => {
     vi.useRealTimers()
   })
 
-  it.skip('haelt ein Vorspulen um einen Tag in Haeppchen zu 4 Ticks nach genau einem Tag am Ziel', async () => {
-    stehendeUhr()
-    vi.useFakeTimers()
+  it('haelt ein Vorspulen um einen Tag in Haeppchen zu 4 Ticks nach genau einem Tag am Ziel', async () => {
+    // NUR setTimeout faken (wie T-M41-13 oben, gestellteUhr()), NICHT stehendeUhr()/volles
+    // useFakeTimers(): beides fakt auch setInterval und stubt requestAnimationFrame als
+    // No-Op. Das brachte den `await waitFor(...)`-Aufruf (fruehere Fassung) zum ewigen
+    // Haengen (Timeout nach 120000ms, Review-Runde 2 Befund, t_78fe6384) — testing-librarys
+    // act()-Flush wartet unter Fake-Timern auf einen eigenen Scheduler-Timer, der nie von
+    // selbst weiterlaeuft. Der Toast steht nach dem advanceTimersByTime schon synchron im
+    // DOM (eigene Messung), ein await waitFor() ist dafuer unnoetig und gefaehrlich.
+    vi.useFakeTimers({ toFake: ['setTimeout'] })
     startGame({ storage: new MemoryStorage() })
     expect(uhr()).toMatch(/Tag 1 · 00:00/)
 
@@ -2572,11 +2590,12 @@ describe('T-M41-15 Das Vorspulziel wird nicht je Haeppchen gezaehlt', () => {
 
     expect(abbrechen(), 'das Vorspulen endet nicht').toBeNull()
     expect(uhr()).toMatch(/Tag 2 · 00:00/)
-    // sonner renders toasts in a portal; advance timers for sonner to show the toast
+    // sonner rendert den Toast synchron im Effekt-Flush von act(); advance nur fuer den
+    // Mount-Zeitgeber des Toasts, kein await waitFor() (siehe Kommentar oben).
     act(() => vi.advanceTimersByTime(100))
-    await waitFor(() => expect(toastStatus()).not.toBeNull())
+    expect(toastStatus()).not.toBeNull()
     expect(toastStatus()!.textContent).toMatch(/Spieltag ist vorbei/)
-  }, 120_000)
+  }, 15_000)
 })
 
 /**

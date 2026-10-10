@@ -31,8 +31,9 @@ export default tseslint.config(
       // beim ersten verify auf `main` nach dem Merge). Im Worktree selbst faellt es nicht
       // auf, weil dort keine weiteren Baeume liegen.
       '.claude/**',
-      // Playwright-Messskript (läuft im Browser-Kontext via page.evaluate)
-      'measure-header.mjs',
+      // Kanban-Worktrees fuer parallele Tasks (ausserhalb .claude/): gleiche
+      // Begruendung wie oben, nur ein anderer Pfad (Fund 2026-10-09, t_40cba7c6).
+      '.worktrees/**',
     ],
   },
   js.configs.recommended,

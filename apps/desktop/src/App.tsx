@@ -599,7 +599,7 @@ export function App(props: AppProps) {
    * Quittungen, die nach dem Anwenden noch ACK_MIN_MS stehen bleiben (T-M46-11): bei Tempo 100 wendet der naechste Tick
    * den Befehl nach ~100 ms an, und die Quittung war weg, bevor jemand hinsah.
    */
-  const noticeShown = useRef<'ack' | 'ui' | null>(null)
+  const noticeShown = useRef<'ack' | 'ui' | 'fastForward' | null>(null)
   const [ackHeld, setAckHeld] = useState<ReadonlySet<string>>(new Set())
   const ackTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>())
   /**
@@ -2326,12 +2326,25 @@ export function App(props: AppProps) {
     return t('header.stoppedAlert', { time, event: beschrieben.text })
   }, [fastForwardState, speed, ticksPerDay, state, viewerId, activeMap, nameOf])
 
-  /** Zeigt den FastForward-Hinweis als sonner Toast (D24). */
+  /**
+   * Zeigt den FastForward-Hinweis als sonner Toast (D24, R-TIME-03/AK1).
+   *
+   * Geht der Grund weg — manuell pausiert/fortgesetzt, Vorspulen neu gestartet —, geht
+   * auch sein Toast: derselbe Verzicht wie bei `ui.notice` oben (Zeile 2029-2039). Ohne
+   * das explizite `dismissNotice()` blieb die ALTE Meldung stehen, bis ihre eigene Dauer
+   * ablief — auch dann noch, wenn der Spieler laengst von Hand neu pausiert hatte
+   * (Review-Runde 1, t_78fe6384: "zeigt die alte Meldung nicht wieder, wenn man spaeter
+   * von Hand pausiert").
+   */
   useEffect(() => {
     if (fastForwardNotice) {
+      noticeShown.current = 'fastForward'
       showNotice('ack', fastForwardNotice)
+    } else if (noticeShown.current === 'fastForward') {
+      noticeShown.current = null
+      dismissNotice()
     }
-  }, [fastForwardNotice, showNotice])
+  }, [fastForwardNotice])
 
   /** Build, recruit and capital — for an own province; nothing for anyone else's. */
   const provinceGroups: ActionGroupSpec[] = useMemo(() => {

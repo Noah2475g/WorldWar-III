@@ -346,9 +346,9 @@ export function Header(props: HeaderProps) {
               steht er in der Uhrzeile neben der Uhr (R-UX-02/AK1) und nicht mehr als eigenes
               Kind der oberen Zeile: so bricht die Zeile mit Siegziel nicht mehr um. */}
           {victory && (
-                      /* LOESCHVERMERK (Review): bis T-M46-13 stand das Wort "Siegziel" als Beschriftung vor dem Balken
-                         (Meter ohne labelHidden); jetzt das Pokalzeichen mit Tooltip. */
-                      <span className="stat stat--victory" title={t('meter.victoryGoal')}>
+            /* LOESCHVERMERK (Review): bis T-M46-13 stand das Wort "Siegziel" als Beschriftung vor dem Balken
+               (Meter ohne labelHidden); jetzt das Pokalzeichen mit Tooltip. */
+            <span className="stat stat--victory" title={t('meter.victoryGoal')}>
               <Icon name="trophy" size={16} />
               <Meter
                 label={t('meter.victoryGoal')}
@@ -362,6 +362,70 @@ export function Header(props: HeaderProps) {
             </span>
           )}
         </div>
+
+        {/*
+          E2 (v3b, D4): die Rohstoffleiste sitzt in DERSELBEN 56-px-Zeile wie Uhr und Tempo —
+          kein eigenes Zeilenpaar mehr (vorher: zweite Zeile unter dem Kopf). Name 10,5 px
+          unter Zahl/Zeichen sichtbar (D4), nicht mehr nur im Tooltip.
+        */}
+        <ul className="resources" aria-label="Rohstoffe" ref={resourcesScroll.ref} tabIndex={resourcesScroll.tabIndex}>
+          {RESOURCE_KEYS.map((key) => {
+            const flow = props.view?.self.economy?.[key]
+            // Wie lange der Vorrat noch reicht — nur wenn er schrumpft (T-M13-14).
+            const days = flow ? reachInDays(flow.stock, flow.balance) : null
+            const running = days !== null && days < SHORT_REACH_DAYS
+            const short = shortages.has(key) || running
+            const tone = flow ? balanceTone(flow.balance) : 'zero'
+            // Zwei Toene, nicht sieben (T-M36-03, D36.2): wer laeuft oder steht, ist
+            // ruhig; laut ist nur, wer draengt. An einem ruhigen Tag traegt die Leiste
+            // damit keine einzige Farbe — und eine einzige Farbe darin heisst dann etwas.
+            const toneClass = short ? ' resource--short' : ' resource--calm'
+            // Die Gruppe ist eine Linie fuers Auge und keine Ebene fuers Ohr (T-M36-04):
+            // eine verschachtelte Liste spraeche einem Vorleseprogramm vier Untergruppen
+            // vor, wo es sieben Zahlen zu lesen gibt. Deshalb bleibt die Liste flach, und
+            // die Gruppe zeigt sich als Strich an ihrem letzten Rohstoff.
+            const groupClass = GROUP_ENDS.has(key) ? ' resource--groupEnd' : ''
+            return (
+              <li key={key} className={`resource resource--${key}${toneClass}${groupClass}`}>
+                <Icon name={RESOURCE_ICONS[key] ?? 'warning'} size={20} title={t(`resources.${key}`)} />
+                <span className="resource__figures">
+                  <span className="resource__row">
+                    <b>{resources ? amount(resources[key] ?? 0) : '—'}</b>
+                    {flow && (
+                      // Sichtbar ist nur die RICHTUNG (T-M36-02, D36.2): ein Pfeil auf, ab oder ein Strich. Die Bilanzzahl
+                      // steht im Tooltip und im Namen des Pfeils; die vier Groessen bleiben vollstaendig in der
+                      // Wirtschaftsuebersicht (R-ECON-06, R-UI-09).
+                      <em
+                        className={`resource__dir resource__dir--${tone}`}
+                        title={[
+                          `${t('economy.production')} ${rate(flow.production)} · ${t('economy.consumption')} ${rate(-flow.consumption)} · ${t('economy.balance')} ${rate(flow.balance)} ${t('economy.perDay')}`,
+                          days === null ? null : reachText(days),
+                        ]
+                          .filter((part) => part !== null)
+                          .join(' · ')}
+                      >
+                        <Icon
+                          name={tone === 'plus' ? 'arrowUp' : tone === 'minus' ? 'arrowDown' : 'dash'}
+                          size={14}
+                          title={`${t('economy.balance')} ${rate(flow.balance)} ${t('economy.perDay')}`}
+                        />
+                      </em>
+                    )}
+                    {short && days !== null && (
+                      // Die Zahl, nach der gehandelt wird - nur dann, wenn gehandelt werden muss: Sanduhr und Tage.
+                      <span className="resource__reach">
+                        <Icon name="queue" size={14} title={reachText(days)} />
+                        {roundedReach(days)}
+                      </span>
+                    )}
+                  </span>
+                  {/* Der Name sichtbar unter Zahl/Zeichen (D4), 10,5 px — nicht mehr nur Tooltip. */}
+                  <span className="resource__name">{t(`resources.${key}`)}</span>
+                </span>
+              </li>
+            )
+          })}
+        </ul>
 
         {/* Der Einmarsch-Alarm (T-M28-06, D27.6). Der Platz sitzt seit T-M29-02 dort,
             wo er hingehoert, damit die Zeile beim ersten Alarm nicht umbricht. */}
@@ -408,67 +472,6 @@ export function Header(props: HeaderProps) {
           </button>
         </div>
       </div>
-
-      <ul className="resources" aria-label="Rohstoffe" ref={resourcesScroll.ref} tabIndex={resourcesScroll.tabIndex}>
-        {RESOURCE_KEYS.map((key) => {
-          const flow = props.view?.self.economy?.[key]
-          // Wie lange der Vorrat noch reicht — nur wenn er schrumpft (T-M13-14).
-          const days = flow ? reachInDays(flow.stock, flow.balance) : null
-          const running = days !== null && days < SHORT_REACH_DAYS
-          const short = shortages.has(key) || running
-          const tone = flow ? balanceTone(flow.balance) : 'zero'
-          // Zwei Toene, nicht sieben (T-M36-03, D36.2): wer laeuft oder steht, ist
-          // ruhig; laut ist nur, wer draengt. An einem ruhigen Tag traegt die Leiste
-          // damit keine einzige Farbe — und eine einzige Farbe darin heisst dann etwas.
-          const toneClass = short ? ' resource--short' : ' resource--calm'
-          // Die Gruppe ist eine Linie fuers Auge und keine Ebene fuers Ohr (T-M36-04):
-          // eine verschachtelte Liste spraeche einem Vorleseprogramm vier Untergruppen
-          // vor, wo es sieben Zahlen zu lesen gibt. Deshalb bleibt die Liste flach, und
-          // die Gruppe zeigt sich als Strich an ihrem letzten Rohstoff.
-          const groupClass = GROUP_ENDS.has(key) ? ' resource--groupEnd' : ''
-          return (
-            <li
-              key={key}
-              className={`resource resource--${key}${toneClass}${groupClass}`}
-              title={t(`resources.${key}`)}
-            >
-              {/* Das Symbol traegt die Bedeutung fuers Auge und - als Name - fuers Ohr (T-M46-17): kein
-                  versteckter Wortknoten mehr daneben.
-                  LOESCHVERMERK (Review): bis T-M46-17 folgten ein <span className="visually-hidden"> mit dem Rohstoffnamen,
-                  der Richtungspfeil als Textzeichen (▲ ▼ –) samt verstecktem Bilanzsatz und die Reichweite als "6 T"-Text. */}
-              <Icon name={RESOURCE_ICONS[key] ?? 'warning'} size={28} title={t(`resources.${key}`)} />
-              <b>{resources ? amount(resources[key] ?? 0) : '—'}</b>
-              {flow && (
-                // Sichtbar ist nur die RICHTUNG (T-M36-02, D36.2): ein Pfeil auf, ab oder ein Strich. Die Bilanzzahl
-                // steht im Tooltip und im Namen des Pfeils; die vier Groessen bleiben vollstaendig in der
-                // Wirtschaftsuebersicht (R-ECON-06, R-UI-09).
-                <em
-                  className={`resource__dir resource__dir--${tone}`}
-                  title={[
-                    `${t('economy.production')} ${rate(flow.production)} · ${t('economy.consumption')} ${rate(-flow.consumption)} · ${t('economy.balance')} ${rate(flow.balance)} ${t('economy.perDay')}`,
-                    days === null ? null : reachText(days),
-                  ]
-                    .filter((part) => part !== null)
-                    .join(' · ')}
-                >
-                  <Icon
-                    name={tone === 'plus' ? 'arrowUp' : tone === 'minus' ? 'arrowDown' : 'dash'}
-                    size={16}
-                    title={`${t('economy.balance')} ${rate(flow.balance)} ${t('economy.perDay')}`}
-                  />
-                </em>
-              )}
-              {short && days !== null && (
-                // Die Zahl, nach der gehandelt wird - nur dann, wenn gehandelt werden muss: Sanduhr und Tage.
-                <span className="resource__reach">
-                  <Icon name="queue" size={16} title={reachText(days)} />
-                  {roundedReach(days)}
-                </span>
-              )}
-            </li>
-          )
-        })}
-      </ul>
     </header>
   )
 }
