@@ -190,3 +190,59 @@ nicht als "bestanden" behauptet.
 - `App.sidebar.test.tsx`: 6/6 gruen, UNVERAENDERT (testet nur Rail-Bereiche, 1:1 ohne Anpassung).
 - `Panels.test.tsx`, `Dock.test.tsx`, `RecruitSheet.test.tsx`, `keyboard.test.ts`: alle gruen.
 - `pnpm verify`: siehe Ticket-Kommentar fuer den vollstaendigen Lauf/Log-Pfad.
+
+## 10. Live-App-Messung: ux-tasks.mjs nach Kamera-Drift wieder lauffaehig (t_f9f9be23)
+
+### Befund (Ausgangslage)
+Nach dem Merge von PR #46 (E5-Dock) brachen die vier Maus-Aufgaben "bauen", "ausheben",
+"armee-bewegen" und "armee-teilen-zusammenlegen" in `scripts/ux-tasks.mjs` mit Timeout ab:
+`run.clickAt(470, 535, ...)` (feste Pixel-Koordinate fuer "Mittlerer Westen" auf der Karte) traf
+nicht mehr, weil die Kamera nach dem Laden des Standes an einer anderen Bildschirmposition steht
+als vor dem Dock (Gegencheck gegen `origin/main` mit identischem Fixture bestaetigt: Ursache ist
+der neue Dock am unteren Rand, nicht ein Funktionsbruch der Provinzwahl selbst).
+
+### Fix (Option a aus dem Ticket: Picker statt Pixel-Koordinate)
+- `bauen`/`ausheben`: Provinzwahl per `PICKER`-Select (`ux-sel.mjs`) statt `clickAt`.
+- `armee-bewegen`/`armee-teilen-zusammenlegen`: Armeeauswahl per Heer-Uebersicht der Leiste
+  rechts (`RAIL_ITEM('armies')`) statt Klick auf das Karten-Zeichen (`MARKER`/`markerY`, entfernt) --
+  per Live-DOM bestaetigt lebt "Auswählen" seit E5 nur noch dort, nicht mehr im Dock.
+- Marschziel-Select zog vom (nicht mehr existenten) `aside select`-Index in den Dock
+  (`.dock-army__targeting select`, `targetSelect`).
+- `prepareArmies()`/`extras()` (ux-tasks.mjs): lasen den Armee-Fortschritt bisher ueber ein
+  `aside.side`-Regex, das seit E5 immer leer traf (Stand wurde mit "keine Armee" gespeichert) --
+  umgestellt auf die Heer-Uebersicht; `army.select`-Aria-Regex `/^Auswählen/` ersetzt durch
+  `/auswählen/i` (tatsaechliches Label: `"{{name}} auswählen und auf der Karte zeigen"`, de.ts).
+- `wirkt`-Pruefungen (bauen/ausheben/armee-bewegen) lasen bisher "noch N h" aus `aside.side` --
+  dieser Text existiert im neuen Dock laut Design (D19a-Kommentar in `Panels.tsx`) nicht mehr
+  (Platzgrund, nur die rote Randmarke bleibt). Ersetzt durch dock-eigene Signale: "Im Bau" (bauen),
+  sinkende "N frei"-Zahl im Ausheben-Raster (ausheben), Marsch-Status-Text im Dock (armee-bewegen).
+- `Zusammenlegen` (armee-teilen-zusammenlegen) lag dauerhaft unter einer (leeren, aber klickfesten)
+  `.action__pending`-Hinweiszeile -- auch `force:true` traf dort nicht das Ziel (Playwright klickt
+  bei `force` weiterhin an der Bildschirmkoordinate). Neue `run.click(..., { js: true })`-Option
+  loest `el.click()` direkt im Browser aus (wie Screenreader/A11y-Klicks es ohnehin tun).
+
+### Nachpruefung (Dev-Server `pnpm --filter @worldwar/desktop dev`, Port 5173 -- nicht 5351/5361
+wie in aelteren Kommentaren, siehe `vite.config.ts`)
+```
+node scripts/ux-tasks.mjs --url http://localhost:5173/ \
+  --only bauen,ausheben,armee-bewegen,armee-teilen-zusammenlegen --mode maus
+```
+(Hinweis: das Skript kennt nur `--only`, kein `--task` -- die Ticket-Formulierung war ungenau.)
+
+Ergebnis, zweimal unabhaengig gemessen (Last: CPU < 30 %, Raspberry Pi ohne GPU, kein Unreal):
+- `bauen / maus ... erreicht=true Klicks=3 Tasten=0 Fehlwege=0`
+- `ausheben / maus ... erreicht=true Klicks=3 Tasten=0 Fehlwege=0`
+- `armee-bewegen / maus ... erreicht=true Klicks=5 Tasten=0 Fehlwege=0`
+- `armee-teilen-zusammenlegen / maus ... erreicht=true Klicks=3 Tasten=0 Fehlwege=0`
+
+Voller Lauf (alle 8 Aufgaben, beide Bedienungen, inkl. `extras()`) zeigt keine Regression bei den
+bereits gruenen Aufgaben (`krieg-erklaeren`, `frieden-anbieten`, `handel-anbieten`,
+`spion-anwerben`: alle weiterhin `erreicht=true` in beiden Bedienungen).
+
+### Bekannte Einschraenkung (nicht Teil dieses Tickets)
+Die **Tastatur**-Laeufe (`tastatur`) derselben vier Aufgaben scheitern weiterhin
+(`armee-bewegen`, `armee-teilen-zusammenlegen`, `bauen`, `ausheben`) -- derselbe Grundkonflikt
+(Tab-Fokuspfade/`isProvinceSelect` gingen bisher ueber `aside select`, das seit E5 nicht mehr
+existiert), aber ausserhalb des DoD dieses Tickets (das nur die vier **Maus**-Laeufe forderte).
+Nicht als eigenes Kind-Ticket ausgelagert (Nacht-Modus / Fix-Scope dieses Tickets) --
+hier dokumentiert fuer eine spaetere Aufnahme als eigenes Ticket.

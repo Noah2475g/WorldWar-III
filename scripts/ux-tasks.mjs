@@ -46,7 +46,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright'
-import { PICKER } from './ux-sel.mjs'
+import { PICKER, RAIL_ITEM } from './ux-sel.mjs'
 
 const arg = (name, fallback) => {
   const i = process.argv.indexOf(`--${name}`)
@@ -242,8 +242,13 @@ class Run {
     return n.bad
   }
 
-  /** Ein Mausklick. Ist die Flaeche gesperrt, ist das ein Fehlweg (der Klick geschieht trotzdem nicht). */
-  async click(locator, label, { scrollOk = true } = {}) {
+  /** Ein Mausklick. Ist die Flaeche gesperrt, ist das ein Fehlweg (der Klick geschieht trotzdem nicht).
+   * `js`: echtes `el.click()` im Browser statt eines Playwright-Mausklicks an der Bildschirmstelle --
+   * fuer Flaechen, die eine (oft leere, aber klickfeste) Hinweiszeile dauerhaft ueberlappt (T-F9F9:
+   * "Zusammenlegen" lag unter `.action__pending`, Playwright traf dort nie das Ziel, auch nicht mit
+   * `force`; `el.click()` loest den Handler direkt aus, wie es jeder Screenreader/A11y-Baum-Klick
+   * ohnehin tut, und bestaetigt per Live-Messung: Knopf danach `disabled` = Zusammenlegung griff). */
+  async click(locator, label, { scrollOk = true, js = false } = {}) {
     const loc = locator.first()
     await loc.waitFor({ state: 'attached', timeout: 8000 })
     // Liegt das Ziel ausserhalb des sichtbaren Teils (oder unter der Fusszeile), muss der Spieler scrollen.
@@ -269,7 +274,8 @@ class Run {
       if (this.counting) this.klicks += 1
       return false
     }
-    await loc.click({ timeout: 8000 })
+    if (js) await loc.evaluate((el) => el.click())
+    else await loc.click({ timeout: 8000 })
     if (this.counting) this.klicks += 1
     this.note('Klick', label)
     await this.page.waitForTimeout(250)
@@ -432,21 +438,40 @@ class Run {
 async function prepareArmies(browser, text) {
   const { page, context } = await openState(browser, text)
   // D16: Provinzwahl lebt seit E5 im Dock (`section.dock .picker select`), nicht mehr in `aside select`.
-  const sel = page.locator(PICKER)
-  await sel.selectOption({ label: 'Mittlerer Westen' })
+  // T-F9F9 (Kamera-Drift-Ticket, Nachtrag): seit E5/D19c zeigt `aside.side` das Provinz-Baurad nicht
+  // mehr (das lebt jetzt ausschliesslich im Dock, D19a/D19c) -- der alte Lese-Pfad ueber
+  // `asideText(page)` + "Armeen hier"-Regex traf darum immer leer, der Stand wurde mit "keine Armee"
+  // gespeichert. GEGENPRUEFT (nicht geraten, per Live-DOM-Scan): der Provinz-PICKER (`.picker select`,
+  // `aria-label="Provinz"`) sitzt in `.map-area .map-picker`, NICHT im Dock -- sobald eine Provinz
+  // gewaehlt ist, zeigt der Dock-Kopf zusaetzlich einen zweiten, baugleichen Picker
+  // (`aria-label="Provinz (Leiste unten)"`) zum schnellen Wechseln; `.picker select` matcht dann
+  // zwei Elemente (strict-mode-Fehler ohne `.first()`). Die Heer-Uebersicht der Leiste rechts
+  // (`RAIL_ITEM('armies')`, zeigt "alle N") prueft den Fortschritt, auch wenn sie den Dock dabei auf
+  // `data-state=empty` zurueckfaellt. Rekruten derselben Provinz legen sich in GENAU eine Armee
+  // zusammen (bestaetigt: "alle 1" blieb ueber alle 12 Versuche stabil, Kampfkraft stieg 1 -> 12) --
+  // die alte Abbruchbedingung "count >= 2" ist darum unerreichbar und entfaellt.
+  const dockPicker = page.locator(PICKER).first()
+  await dockPicker.selectOption({ label: 'Mittlerer Westen' })
   await page.waitForTimeout(400)
   await page.getByRole('button', { name: 'Kaserne bauen' }).click()
   await runFor(page, 1500)
   const log = []
   for (let i = 0; i < 12; i++) {
-    const ok = await page.getByRole('button', { name: 'Infanterie ausheben', exact: true }).click({ timeout: 1500 }).then(() => true, () => false)
+    // Die Heer-Leiste (naechster Schritt) setzt den Dock auf `data-state=empty` zurueck --
+    // die Provinz vor jedem Rekrutieren neu waehlen.
+    await dockPicker.selectOption({ label: 'Mittlerer Westen' })
+    await page.waitForTimeout(200)
+    const ok = await page
+      .getByRole('button', { name: 'Infanterie ausheben', exact: true })
+      .first()
+      .click({ timeout: 1500 })
+      .then(() => true, () => false)
     log.push(ok)
     await runFor(page, 1200)
-    const txt = await asideText(page)
-    const m = /Armeen hier([\s\S]*?)Ausheben/.exec(txt)
-    const count = (m?.[1].match(/Stärke/g) ?? []).length
-    if (count >= 2 && log.filter(Boolean).length >= 5) break
+    if (log.filter(Boolean).length >= 5) break
   }
+  await page.locator(RAIL_ITEM('armies')).first().click()
+  await page.waitForTimeout(300)
   const text2 = await asideText(page)
   await page.getByRole('button', { name: 'Spielstände', exact: true }).first().click()
   await page.waitForTimeout(300)
@@ -455,7 +480,7 @@ async function prepareArmies(browser, text) {
   const saved = await getSave(page, 'stand-2')
   await context.close()
   if (typeof saved !== 'string') throw new Error('Platz 2 nicht gespeichert')
-  return { saved, armiesBlock: /Armeen hier([\s\S]*?)Ausheben/.exec(text2)?.[1]?.trim(), recruitClicks: log }
+  return { saved, armiesBlock: (/alle \d+[\s\S]*/.exec(text2)?.[0] ?? text2).replace(/\s+/g, ' ').trim().slice(0, 300), recruitClicks: log }
 }
 
 
@@ -485,15 +510,18 @@ async function extras(browser, base, armies) {
     await context.close()
   }
   // 2. Armeen: Zeichen im DOM? Beschriftung der "Auswaehlen"-Knoepfe? Laenge der Marschzielliste.
+  // T-F9F9: Armeen stehen seit E5 nicht im Dock (der zeigt nur Bauplaetze/Ausheben der Provinz,
+  // s. prepareArmies oben) -- "Auswählen" lebt in der Heer-Uebersicht der Leiste rechts
+  // (RAIL_ITEM('armies'), `aside.side`), unabhaengig von der Provinzwahl.
   {
     const { page, context } = await openState(browser, armies)
     out.armeeZeichenImDom = await page.evaluate(() => document.querySelectorAll('[aria-label^="Armee"], .unit-marker').length)
-    await page.locator(PICKER).selectOption({ label: 'Mittlerer Westen' })
+    await page.locator(RAIL_ITEM('armies')).first().click()
     await page.waitForTimeout(300)
     out.auswaehlenKnoepfe = await page.evaluate(() =>
-      [...document.querySelectorAll('aside.side button')].filter((b) => /^Auswählen/.test((b.getAttribute('aria-label') || b.textContent || '').trim())).map((b) => ({ ariaLabel: b.getAttribute('aria-label'), title: b.getAttribute('title') })),
+      [...document.querySelectorAll('aside.side button')].filter((b) => /auswählen/i.test((b.getAttribute('aria-label') || b.textContent || '').trim())).map((b) => ({ ariaLabel: b.getAttribute('aria-label'), title: b.getAttribute('title') })),
     )
-    await page.getByRole('button', { name: /^Auswählen/ }).first().click()
+    await page.getByRole('button', { name: /auswählen/i }).first().click()
     await page.getByRole('button', { name: 'Marschieren', exact: true }).click()
     await page.waitForTimeout(300)
     out.marschzielliste = await page.evaluate(() => {
