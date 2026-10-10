@@ -1,101 +1,87 @@
 # E4 — Inventur alt→neu je Bereich (Seitenleiste 320px)
 
-Stand: Branch `claude/seitenleiste-e4`, IST-Code zum Zeitpunkt dieser Inventur (E3 bereits
-auf main gemergt). Diese Tabelle hält fest, welche heute vorhandene Bedienmöglichkeit in den
-7 Bereichen existiert, und ob/wo sie nach v3b erhalten bleibt.
+Stand: Branch `claude/seitenleiste-e4`, finaler Stand nach E4.1–E4.7 (HEAD `8cfafb9`).
+Hinweis: Protokoll (Kampf-/Ereignisprotokoll) wurde bereits in E3 auf main umgebaut und
+hier nicht erneut angefasst — reine Dokumentation, kein Code-Diff in dieser Etappe.
 
-**Hinweis zur Vollständigkeit dieses Durchlaufs:** In diesem Durchlauf wurde nur die
-Diplomatie-Zeile (`.power-row`-Umstellung, Entscheidung aus dem Plan) tatsächlich umgebaut.
-Die v3b-Neugestaltung der übrigen 6 Bereiche (Markt-Chips, Heer/Spionage/Rangliste/
-Protokoll-Zeilenlayout, Wirtschafts-Tabelle, Weitere-Aufklappmuster, Liefervertrag-Darstellung)
-ist **nicht umgesetzt** — siehe „Offene Fragen" im Bericht. Die Tabelle unten listet den
-IST-Stand, den die nächste Etappe als Grundlage nutzen kann.
-
-## Diplomatie
+## 1. Diplomatie
 
 | Alt (IST) | Fundort | Neu (v3b, Status) |
 |---|---|---|
-| Tabelle Macht/Beziehung/Ansehen/Durchmarsch, Name = Auswahlknopf | `Panels.tsx:1976-2049` | Zeilen jetzt `.power-row[data-power][data-status]` (E4 umgesetzt), Reihenfolge Angebote→Mächte→gewählte Macht laut Spec §10.9.1 **nicht neu sortiert** |
-| Eingehende/Ausgehende Angebote (`OfferList`) | `Panels.tsx:1958-1959` | unverändert, Position vor Tabelle bleibt (passt bereits zu §10.9.1) |
-| Kriegsliste `.group.wars` | `Panels.tsx:2050-2061` | unverändert |
-| Aktionen gewählte Macht: Verträge/Handel/Durchmarsch | `Panels.tsx:2066-2092` | unverändert; „Krieg erklären" liegt in `actionsFor`-Verträgen (ActionGroup), **nicht** als eigener roter Rahmenknopf isoliert — Spec-Vorgabe „sichtbar ohne Rolle, nie Hauptaktion" nicht geprüft/umgesetzt |
-| Liefervertrag-Zeile (PR #26) | `Panels.tsx:2037-2044`, `TradeOfferForm` ab 2102 | Felder (wiederholen/Tage/Lieferungen) vorhanden; Darstellung als eigene „Vertragszeile mit Kündigen" laut §10.9.1 **nicht umgebaut** |
-| `warInEffect`-Prüfung (Skript) | `scripts/ux-tasks.defs.mjs:459` | **umgestellt** auf `.power-row[data-status=war]` (E4 erledigt) |
+| Tabelle Macht/Beziehung/Ansehen/Durchmarsch, Name = Auswahlknopf | `Panels.tsx:1976-2049` (vor E4) | Zeilen jetzt `.power-row[data-power][data-status]` (E4.1 umgesetzt) |
+| Eingehende/Ausgehende Angebote (`OfferList`) | `Panels.tsx` | unverändert, Reihenfolge Angebote→Mächte→gewählte Macht per Grep gegen Commit `c93be37` geprüft: bereits korrekt (E4.1) |
+| „Krieg erklären“ als Hauptaktion vermischt mit Verträgen | `Panels.tsx` (vor E4.3) | eigener roter Rahmenknopf `.button--danger-outline` ausserhalb jeder Gruppe, nie Hauptaktion, aber in jedem Nicht-Kriegs-Status sichtbar/klickbar (E4.3, Commit `0f3e874`) |
+| Restliche Vertrags- und Durchmarsch-/Kartenaktionen inline | `Panels.tsx` (vor E4.3) | wandern ins neue „Weitere“-Aufklappmuster `DiplomacyMore` (Vorbild `Explain.tsx`): aria-expanded/aria-controls, Escape schliesst + gibt Fokus zurück, Klick aussen schliesst, Panel überlagert per `position: absolute` statt Layout zu verschieben (E4.3) |
+| Liefervertrag-Zeile (PR #26) | `Panels.tsx`, `TradeOfferForm` | kompakte Zeile: Icon, Menge, „noch N“, Kündigen-Knopf (E4.2, Commit `59f7240`) |
+| `warInEffect`-Prüfung (Skript) | `scripts/ux-tasks.defs.mjs:459` | umgestellt auf `.power-row[data-status=war]` (E4.1) |
+| Regression gemessen in E4.7 | — | „Frieden anbieten“ per Maus **und** Tastatur nicht erreichbar (Timeout/Tab-Explosion), vermutlich Folge der `.power-row`-Umstellung — dokumentiert in `bericht.md` §E4.7, **nicht behoben** (reines Mess-Ticket), Folge-Fix empfohlen |
 
-## Markt
+## 2. Markt
 
-| Alt (IST) | Fundort | Neu (v3b) |
+| Alt (IST) | Fundort | Neu (v3b, Status) |
 |---|---|---|
-| `MarketPanel` Formular/Liste | `Panels.tsx` (Suche nicht im Detail gelesen in diesem Durchlauf) | 7-Rohstoff-Chip-Leiste (§9.1) **nicht umgesetzt** |
+| `MarketPanel` Formular/Liste ohne Chip-Auswahl | `Panels.tsx` (vor E4.4) | 7-Rohstoff-Chip-Leiste für „Gibt“ (§9.1): Klick setzt den Rohstoff via `selectGiveChip` und fokussiert `#market-amount` (E4.4, Commit `ba99574`) |
+| Nur eine Seite (Geben) mit Chips | `Panels.tsx` | zweite Chip-Leiste für „Verlangen“ ergänzt, gleiches Muster, `selectWantChip` (E4.4, Commit `b621f7f`) |
+| `aria-pressed` je aktivem Chip, CSS `.market__chips`/`.market__chip` (Muster wie `.alarm-chip`) | `app.css` | unverändert seit E4.4, Fokusring bei `:focus-visible` |
+| K2-Messung Markt-Körper (E4.7) | `scripts/ux-layout.mjs` | neue `markt`-Szene ergänzt (gleiches Muster wie Diplomatie-Szene), scrollH/clientH = 1,0 bei 1280×800 und 1920×1080 — erfüllt |
 
-## Heer, Spionage, Rangliste (Standings.tsx), Wirtschaft, Protokoll
+## 3. Heer (ArmiesPanel)
 
-Diese 5 Bereiche wurden in diesem Durchlauf **nicht gelesen/umgebaut** (Zeitbudget). Bestehende
-Bedienmöglichkeiten bleiben unverändert im Code, da keine Änderung vorgenommen wurde — es ist
-also nichts verloren gegangen, aber auch nichts nach v3b migriert.
+Geprüft in E4.6 (Commit-Referenz `1f39225`, Ergebnis dokumentiert im Kommentarverlauf von
+t_564b9f19): `ArmyRow` hat genau 5 Felder (id, name, provinceName, strength, order,
+orderText) — **alle** bereits in `armies__what` (flex-column, stackt automatisch)
+sichtbar. Kein verborgenes Feld gefunden. → **kein Weitere-Pattern gebaut**, bewusst
+begründet, nicht erzwungen. Kein Code-Diff.
 
-## Offene Fragen (nicht raten, hier dokumentiert)
+## 4. Spionage (EspionagePanel)
 
-1. Markt-Chip-Leiste (§9.1: 7 Chips je Seite, Klick fokussiert Mengenfeld) — nicht gebaut.
-2. Wirtschafts-Tabelle auf Spaltenzahl aus Bild 8 bei 292px + Sparkline aus Kopfbereich — nicht gebaut.
-3. Weitere-Aufklappmuster (wie `Explain.tsx`, überlagert statt verschiebt) für Heer/Spionage/
-   Rangliste/Protokoll — nicht gebaut.
-4. Diplomatie: Reihenfolge Angebote→Mächte→gewählte Macht ist bereits so, aber nicht gegen
-   §10.9.1 im Detail geprüft (z. B. Weitere-Liste als Überlagerung).
-5. "Krieg erklären" als eigener roter Rahmenknopf getrennt von der Hauptaktion — nicht umgesetzt,
-   nur Selektor-Grundlage (`.power-row`) gelegt.
+Geprüft in E4.6: Design-Kommentar im CSS (`app.css:788f`) sagt explizit „eine Karte je
+Spion statt einer Tabelle — sechs Spalten schoben die Leiste seitwärts“. Das bestehende
+`<dl class="facts">`-Grid-Layout (auto/1fr) löst das bereits; Ziel/Sold/letztes Ergebnis +
+ActionRow passen bei 320px ohne Umbruchprobleme. → **kein Weitere-Pattern nötig**, kein
+Code-Diff.
 
-## E4.1 — Reihenfolge-Check (geprüft, bereits korrekt)
+## 5. Rangliste (Standings.tsx)
 
-Reihenfolge Angebote→Mächte→gewählte Macht laut Code (`Panels.tsx`, grep-verifiziert auf
-Commit `c93be37`, nach Merge von `origin/main`): `OfferList` (eingehend/ausgehend, Zeilen
-1958-1959) → Mächte-Tabelle `.power-row` (ab 1993) → `<section class="group wars">`
-Kriegsliste (2054) → `chosenAlive`-Block mit Aktionen der gewählten Macht (ab 2070). Die
-geforderte Reihenfolge ist damit bereits erfüllt, keine Strukturänderung nötig.
+Geprüft in E4.6: 4 Spalten (Nation/Score/Beziehung/sichtbare Stärke). Die Komponente hat
+bereits `useScrollableTab` (horizontales Scrollen mit Tabstopp, R-UX-06/AK1, barrierefrei
+getestet) für schmale Breiten. Ein zusätzliches Weitere-Collapse würde diesen etablierten
+Mechanismus duplizieren **und** „sichtbare Stärke“ (Kern-Ehrlichkeitsregel R-DIP-04) hinter
+einem Klick verstecken — das ist eine der 4 Kernfragen der Rangliste, keine seltene
+Zusatzinfo. → **kein Weitere-Pattern gebaut**, bestehender Scroll-Mechanismus bleibt die
+Lösung. Kein Code-Diff.
 
-Kriegsliste-Frage: offen. Die separate Kriegsliste-Sektion (`.group.wars`, alle laufenden
-Kriege auch fremder Mächte) liegt zwischen Mächte-Tabelle und gewählter Macht. Im
-Referenzbild `final-v3-8-schmal-320.png` ist keine separate Kriegsliste-Sektion sichtbar —
-Kriegsstatus steht dort nur als Badge inline in der Mächte-Liste. Der Spec-Text zu §10.9.1
-"Krieg-Fall" war vom Pi-Build-Host nicht erreichbar (Windows-Vaultpfad), daher wurde nicht
-geraten: die Kriegsliste bleibt defensiv erhalten, bis der Spec-Text zugänglich ist.
+## 6. Wirtschaft (EconomyPanel)
 
-## E4.4 — Entscheidung Noah (2026-10-10): nur Ticket-Body, Rest selbst planen
+Bereits vor E4 erfüllt, in E4.5 kompaktiert statt doppelt gebaut: Tabelle mit
+Rohstoff-Icon + 4 Zahlenspalten (Bestand/Produktion/Unterhalt/Bilanz) plus `<Sparkline>`
+je Zeile in der Bestandsspalte. In E4.5 (Commit `1f39225`, nur `app.css`, 17 additive
+Zeilen) Zellenpolsterung 5px→3px und Nebenwert-Schriftgröße 12px→10px verkleinert — keine
+Spalte entfernt, R-ECON-06-Test (Panels.test.tsx, „Ruhiger, nicht kürzer“) bleibt grün.
+Seitenleiste bleibt fix 320px, Tabelle liegt darin ohne horizontales Scrollen (geprüft per
+Playwright-Viewport 375×667).
 
-Noah (Gate t_a51c629e): "Ticket-Body nutzen, fehlende Details selbst planen." §8.1/§9.1/§10.9.1
-bleiben im Repo unauffindbar — ab hier gilt nur noch der Ticket-Body-Text, keine weitere Suche.
+## 7. Protokoll
 
-### Markt — 7-Rohstoff-Chip-Leiste (§9.1, aus Ticket-Body)
+Bereits in E3 (vor dieser Etappe, auf `main`) umgebaut — in E4 **nicht** erneut angefasst.
+Nur zur Vollständigkeit dieser Inventur dokumentiert, kein Diff in E4.
 
-Umgesetzt (`Panels.tsx`, `MarketPanel`): `<ul class="market__chips">` mit einem Chip je
-Rohstoff aus `resources` (im Spiel exakt 7: food/wood/iron/coal/oil/rare/money,
-`packages/core/src/state/types.ts:22`). Klick setzt den Rohstoff als "gibt"
-(`selectGiveChip`) und fokussiert `#market-amount` über `amountInputRef` — genau der im
-Ticket genannte Griff ("Klick fokussiert Mengenfeld"). `aria-pressed` markiert den aktiven
-Chip für Screenreader. CSS: `.market__chips`/`.market__chip` in `app.css`, Muster wie
-`.alarm-chip` (Rahmen, kein Hintergrund, Fokusring bei `:focus-visible`).
+## Offene Punkte für eine Folge-Etappe
 
-### Wirtschaft — 292px-Tabelle + Sparkline
+1. Regression „Frieden anbieten“ (K4, E4.7) — Maus und Tastatur erreichen den Knopf nicht
+   mehr seit der `.power-row`-Umstellung (E4.3/E4.1). Fix-Ticket empfohlen vor Breitenabnahme.
+2. Zwei kleine Tastatur-Abweichungen (+1 Tab-Stopp je) bei krieg-erklaeren und
+   handel-anbieten gegenüber B0 — nicht blockierend, Aufgaben bleiben erreichbar.
 
-Bereits erfüllt, keine Änderung nötig: `EconomyPanel` zeigt eine Tabelle mit Rohstoff-Icon +
-4 Zahlenspalten (Bestand/Produktion/Unterhalt/Bilanz) plus `<Sparkline>` je Zeile in der
-Bestandsspalte (`eco__stock`). Die Seitenleiste ist fix `320px` (`app.css:3726`); die Tabelle
-liegt darin ohne horizontales Scrollen (geprüft per Playwright-Viewport 375×667, siehe
-`pnpm verify`-Lauf dieser Etappe). "4 Spalten" aus dem Ticket-Body sind die vier Zahlenwerte;
-die Icon-Spalte zählt nicht als Datenspalte (Vorgängerentscheidung T-M36-05, bereits
-dokumentiert oben).
+## Verlauf der Etappen (zur Nachvollziehbarkeit)
 
-### Heer, Spionage, Rangliste, Protokoll — Zeilenlayout
-
-Keine Code-Änderung: ohne §8.1-Text ist "Zeilenlayout nach Spec" nicht konkret genug, um
-etwas zu bauen, ohne zu raten. Bestandsaufnahme (diese Etappe, gelesen):
-- Heer (`ArmyPanel`/`ArmiesPanel`, ab Zeile 893/1215): `<ul class="army-list">`,
-  Zeile = Name links, Status/Aktion rechts (`justify-content: space-between`).
-- Spionage (`EspionagePanel`, Zeile 2476): `<ul class="spy-list">`, Zeile = `<dl class="facts">`
-  (Label/Wert-Paare), gleiches Muster wie Diplomatie-Fakten.
-- Rangliste (`Standings.tsx`, nicht in diesem Durchlauf geöffnet): unverändert.
-- Protokoll (Kampf-/Ereignisprotokoll, nicht in diesem Durchlauf geöffnet): unverändert.
-
-Alle vier nutzen bereits ein einheitliches Zeilenmuster (Flex-Zeile oder `dl.facts`), das zur
-320px-Spalte passt — kein Umbau ohne konkretere Spec-Vorgabe, um nicht zu raten und bestehende
-Tests/Verhalten zu riskieren. Offen für eine Folge-Etappe, falls Noah Bild/Spec nachreicht.
+- E4.1 (`838c987`): Diplomatie-Reihenfolge geprüft (bereits korrekt), Kriegsliste-Frage dokumentiert.
+- E4.2 (`59f7240`): Liefervertragszeile kompaktiert.
+- E4.3 (`0f3e874`): Krieg-Rahmenknopf isoliert + `DiplomacyMore`-Aufklappmuster gebaut.
+- E4.4 (`ba99574`, `b621f7f`): Markt-Chip-Leiste (Geben + Verlangen).
+- E4.5 (`1f39225`): Wirtschaftstabelle kompaktiert (292px, R-ECON-06 erhalten).
+- E4.6 (kein Code-Diff, s. Kommentarverlauf t_564b9f19): Heer/Spionage/Rangliste geprüft,
+  begründet kein Weitere-Pattern nötig.
+- E4.7 (`8cfafb9`): Messreihe gegen B0 über 4 Auflösungen, Regression „Frieden anbieten“
+  gefunden und dokumentiert.
+- E4.8 (dieses Ticket): finale Inventur, Gesamt-Verify, PR review-fertig.

@@ -870,6 +870,36 @@ nur 1280x800 und 375x667 (PLAN-V3 Regel 12). Kein Fremdinhalt: Bildschirmfotos d
 | `docs/ux/v4-seitenleiste/e3/e3-touch-quer-1280x800-protokoll.png` | Playwright (headless Chromium), Aufnahme des eigenen Spiels | Seitenleiste v3b E3: Abnahmebild e3-touch-quer-1280x800-protokoll.png |
 | `docs/ux/v4-seitenleiste/e3/e3-touch-quer-1280x800-zu.png` | Playwright (headless Chromium), Aufnahme des eigenen Spiels | Seitenleiste v3b E3: Abnahmebild e3-touch-quer-1280x800-zu.png |
 
+## Bildschirmfotos der Seitenleiste E4.7 (Seitenleiste v3b E4, 2026-10-10)
+
+Kein Fremdinhalt — Bildschirmfotos des eigenen Spiels, erzeugt mit `node scripts/ux-layout.mjs --shots`
+(Messreihe E4.7 gegen B0, 4 Aufloesungen inkl. Touch-quer; Markt-Szene neu ergaenzt).
+
+| Datei | Erzeugt von | Zeigt |
+|---|---|---|
+| `docs/ux/v4-seitenleiste/e4/S575G-e4-diplomatie-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E4.7: Diplomatie-Szene, S575G-e4-diplomatie-1280x800.png |
+| `docs/ux/v4-seitenleiste/e4/S575G-e4-diplomatie-1920x1080.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E4.7: Diplomatie-Szene, S575G-e4-diplomatie-1920x1080.png |
+| `docs/ux/v4-seitenleiste/e4/S575G-e4-diplomatie-auswahl-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E4.7: Diplomatie-Szene mit Auswahl, S575G-e4-diplomatie-auswahl-1280x800.png |
+| `docs/ux/v4-seitenleiste/e4/S575G-e4-diplomatie-auswahl-1920x1080.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E4.7: Diplomatie-Szene mit Auswahl, S575G-e4-diplomatie-auswahl-1920x1080.png |
+| `docs/ux/v4-seitenleiste/e4/S575G-e4-kopf-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E4.7: Kopf-Szene, S575G-e4-kopf-1280x800.png |
+| `docs/ux/v4-seitenleiste/e4/S575G-e4-kopf-1920x1080.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E4.7: Kopf-Szene, S575G-e4-kopf-1920x1080.png |
+| `docs/ux/v4-seitenleiste/e4/S575G-e4-kopf-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E4.7: Kopf-Szene, S575G-e4-kopf-375x667.png |
+| `docs/ux/v4-seitenleiste/e4/S575G-e4-markt-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E4.7: neue Markt-Szene (K2-Messung), S575G-e4-markt-1280x800.png |
+| `docs/ux/v4-seitenleiste/e4/S575G-e4-markt-1920x1080.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E4.7: neue Markt-Szene (K2-Messung), S575G-e4-markt-1920x1080.png |
+| `docs/ux/v4-seitenleiste/e4/S575G-e4-panel-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E4.7: Panel-Szene, S575G-e4-panel-1280x800.png |
+| `docs/ux/v4-seitenleiste/e4/S575G-e4-panel-1920x1080.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E4.7: Panel-Szene, S575G-e4-panel-1920x1080.png |
+| `docs/ux/v4-seitenleiste/e4/S575G-e4-panel-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E4.7: Panel-Szene, S575G-e4-panel-375x667.png |
+| `docs/ux/v4-seitenleiste/e4/S575G-e4-protokoll-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E4.7: Protokoll-Szene, S575G-e4-protokoll-375x667.png |
+| `docs/ux/v4-seitenleiste/e4/S575G-e4-puls-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E4.7: Puls-Szene, S575G-e4-puls-1280x800.png |
+| `docs/ux/v4-seitenleiste/e4/S575G-e4-puls-1920x1080.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E4.7: Puls-Szene, S575G-e4-puls-1920x1080.png |
+| `docs/ux/v4-seitenleiste/e4/S575G-e4-puls-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E4.7: Puls-Szene, S575G-e4-puls-375x667.png |
+| `docs/ux/v4-seitenleiste/e4/S575G-e4-touch-quer-diplomatie-1280x800.png` | `scripts/ux-layout.mjs --tag e4-touch-quer` | Seitenleiste v3b E4.7: Diplomatie-Szene, vierte Aufloesung Touch quer, S575G-e4-touch-quer-diplomatie-1280x800.png |
+| `docs/ux/v4-seitenleiste/e4/S575G-e4-touch-quer-diplomatie-auswahl-1280x800.png` | `scripts/ux-layout.mjs --tag e4-touch-quer` | Seitenleiste v3b E4.7: Diplomatie-Szene mit Auswahl, Touch quer, S575G-e4-touch-quer-diplomatie-auswahl-1280x800.png |
+| `docs/ux/v4-seitenleiste/e4/S575G-e4-touch-quer-kopf-1280x800.png` | `scripts/ux-layout.mjs --tag e4-touch-quer` | Seitenleiste v3b E4.7: Kopf-Szene, Touch quer, S575G-e4-touch-quer-kopf-1280x800.png |
+| `docs/ux/v4-seitenleiste/e4/S575G-e4-touch-quer-markt-1280x800.png` | `scripts/ux-layout.mjs --tag e4-touch-quer` | Seitenleiste v3b E4.7: Markt-Szene, Touch quer, S575G-e4-touch-quer-markt-1280x800.png |
+| `docs/ux/v4-seitenleiste/e4/S575G-e4-touch-quer-panel-1280x800.png` | `scripts/ux-layout.mjs --tag e4-touch-quer` | Seitenleiste v3b E4.7: Panel-Szene, Touch quer, S575G-e4-touch-quer-panel-1280x800.png |
+| `docs/ux/v4-seitenleiste/e4/S575G-e4-touch-quer-puls-1280x800.png` | `scripts/ux-layout.mjs --tag e4-touch-quer` | Seitenleiste v3b E4.7: Puls-Szene, Touch quer, S575G-e4-touch-quer-puls-1280x800.png |
+
 
 ## Bildschirmfotos der Seitenleiste E2 (Seitenleiste v3b E2, 2026-10-10)
 
