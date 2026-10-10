@@ -59,6 +59,7 @@ function karte() {
       selectedProvince={null}
       onSelect={() => undefined}
       onViewChange={() => undefined}
+      onMode={() => undefined}
       labelFor={(id) => id}
     />,
   )

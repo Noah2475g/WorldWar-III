@@ -65,7 +65,7 @@ import { GLYPH_BOX, GLYPH_PATHS } from '../ui/glyphs.ts'
 import { labelsFor } from './labels.ts'
 import { OWNERSHIP_FADE_MS, battleFlash, fadeProgress, motionAllowed, ringRadius } from '../ui/motion.ts'
 import { CUE_SPEED_LIMIT } from '../ui/sound.ts'
-import { fillFor, mixColors, strengthByProvince, type MapMode } from './modes.ts'
+import { fillFor, mixColors, strengthByProvince, type MapMode, MAP_MODES, MAP_MODE_NAMES } from './modes.ts'
 import { PING_MS, edgeMarker, freshPings, pingFrame } from './pings.ts'
 import type { MapPing } from '../game/events.ts'
 
@@ -266,6 +266,8 @@ export interface MapCanvasProps {
    */
   onViewportChange?: (size: { width: number; height: number }) => void
   labelFor: (provinceId: string) => string
+  /** Kartenmodus wechseln (D22): Button-Gruppe + Select (< 1400 px) im Werkzeug-Cluster. */
+  onMode: (mode: MapMode) => void
 }
 
 /**
@@ -1420,6 +1422,36 @@ export function MapCanvas(props: MapCanvasProps) {
             ⛶
           </button>
         )}
+
+        {/* Kartenmodus (D22): Button-Gruppe + Select (< 1400 px) im Werkzeug-Cluster,
+            unter Zoomstufe, vor Minikarte. Taste M bleibt cycleMode. */}
+        <div className="map-tools">
+          <div className="modes" role="group" aria-label={t('mapModes.title')}>
+            {MAP_MODES.map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                className={props.mode === mode ? 'mode mode--active' : 'mode'}
+                aria-pressed={props.mode === mode}
+                onClick={() => props.onMode(mode)}
+              >
+                {MAP_MODE_NAMES[mode]}
+              </button>
+            ))}
+          </div>
+          <select
+            className="modes-select"
+            aria-label={t('mapModes.title')}
+            value={props.mode}
+            onChange={(event) => props.onMode(event.target.value as MapMode)}
+          >
+            {MAP_MODES.map((mode) => (
+              <option key={mode} value={mode}>
+                {MAP_MODE_NAMES[mode]}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <canvas

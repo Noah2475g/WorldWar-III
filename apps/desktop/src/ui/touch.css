@@ -214,6 +214,17 @@ select,
    1098x498 und 1097x617 mit sichtbarer Einfuehrung). */
 :root[data-input='touch'] .map-controls {
   flex-direction: row;
+  flex-wrap: wrap;
+}
+
+/* Der Kartenmodus-Cluster (D22) bricht im Touch-Betrieb auf eine EIGENE Zeile unter die
+   Zoomknoepfe, statt sich in die 182-px-Reihe zu quetschen (Befund E2 R1: bei 667x375
+   ragte die Reihe aus 4 Zoomknoepfen + 5 Modusknoepfen seitlich aus dem Bild, "Timeout
+   locator.click" fuer Kartenmodus-Umschalter). `flex-basis: 100%` zwingt den naechsten
+   Flex-Umbruch, die Reihe bleibt row (siehe Begruendung oben), nur dieses Kind wird breit. */
+:root[data-input='touch'] .map-tools {
+  flex-basis: 100%;
+  margin-top: var(--sp-xs);
 }
 
 /* Die Einfuehrung (.tutorial, app.css: unten links an .app, bottom 170px) verdeckte im
@@ -308,18 +319,14 @@ select,
     max-width: min(230px, 60%);
   }
 
-  /* Kopfleiste: eine Zeile, seitlich wischbar; Titel und Siegbalken stehen in der Lage. */
+  /* Kopfleiste: eine Zeile 56px, seitlich wischbar; Titel entfällt, Siegziel in .clock. */
   :root[data-input='touch'] .header__top {
     flex-wrap: nowrap;
     overflow-x: auto;
     gap: var(--sp-md);
     padding: 0 var(--sp-md);
     scrollbar-width: none;
-  }
-
-  :root[data-input='touch'] .header__title,
-  :root[data-input='touch'] .header__top .meter {
-    display: none;
+    height: 56px;
   }
 
   :root[data-input='touch'] .header__top > *,
@@ -327,12 +334,13 @@ select,
     flex: none;
   }
 
-  :root[data-input='touch'] .modes {
+  :root[data-input='touch'] .map-tools .modes {
     padding: 0;
   }
 
   :root[data-input='touch'] .resource {
     padding: 2px 6px;
+    min-height: 44px;
   }
 
   /* Seitenleiste schmaler, damit die Karte die Breite behaelt. */
@@ -628,6 +636,8 @@ select,
     flex: 1 1 0;
     min-width: 0;
     padding: 0;
+    min-height: 44px;
+    min-width: 44px;
   }
 
   :root:root .clock__time {
@@ -669,11 +679,11 @@ select,
   }
 
   /* Die fuenf Kartenmodi als Auswahl (~150 px gegen 382 px Knoepfe). */
-  :root:root .modes {
+  :root:root .map-tools .modes {
     display: none;
   }
 
-  :root:root .modes-select {
+  :root:root .map-tools .modes-select {
     display: inline-block;
     order: 3;
     flex: 1 1 0;
@@ -713,10 +723,17 @@ select,
 
   /* Die Rohstoffleiste bricht um statt zu rollen (R-UX-01/AK2, gemessen 2026-10-03: 452 px
      Inhalt bei 375 px Breite). Sieben Zahlen sind eine Auskunft, die man nicht erst
-     suchen soll; kein Rollbereich heisst auch: nichts, was per Tab erreichbar sein muss. */
+     suchen soll; kein Rollbereich heisst auch: nichts, was per Tab erreichbar sein muss.
+     E2 (v3b): `.resources` ist jetzt ein Flex-Kind von `.header__top` (vorher eigene
+     Zeile) — hier als eigene volle Zeile einsortiert, damit das Telefon-Hochformat
+     unveraendert bleibt (<= B0). */
   :root:root .resources {
+    order: 7;
+    flex: 1 1 100%;
     flex-wrap: wrap;
     overflow-x: visible;
+    height: auto;
+    margin: 0;
   }
 
   /* Die Mitte: oben die Karte, darunter die Seitenleiste. */
