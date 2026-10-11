@@ -84,7 +84,11 @@
  * `forceWarDeclaration`) — nur falls ein Landnachbar im Frieden wirklich `declareWar` befiehlt
  * (`real: true`), sonst bleibt `stand-5` leer und `data.probes.warFixtureMissing` wird gesetzt,
  * ohne den Lauf abzubrechen. Der Name ist `stand-5`, nicht `stand-krieg`: die Spielstands-UI
- * kennt nur die fuenf festen manuellen Plaetze (`MANUAL_SLOTS`). Schritt `kriegserklaerung-ki`
+ * kennt nur die fuenf festen manuellen Plaetze (`MANUAL_SLOTS`). Nacharbeit (t_69b31fb4,
+ * t_63c19620): die Quelle fuer `stand-5` ist NICHT `stand-1` (das ist mit tick~12000 laengst
+ * Mensch-dominant, Staerkeverhaeltnis jedes KI-Landnachbarn < 800, erklaert daher nie Krieg —
+ * Design, kein Bug), sondern ein unabhaengig frisch konstruierter Standard-Start (Tick 0,
+ * `startGame(DEFAULT_NEW_GAME, ...)`). Schritt `kriegserklaerung-ki`
  * laedt `stand-5` ueber die UI, erhoeht das Tempo auf `10` (nicht `100` — bei hohem Tempo
  * ueberholt das CAPITAL_LOST-Folgeereignis sonst den Kriegserklaerungs-Chip, Mentor-Befund
  * t_0a8d09ee; `1` war in Lauf 4 gemessen zu langsam fuer die KI-Neubewertung) und wartet
@@ -938,6 +942,7 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
     const prepared = await page.evaluate(async ({ origin, root, grantSource, warSource }) => {
       const core = await import(/* @vite-ignore */ `${origin}/@fs${root}/packages/core/src/index.ts`)
       const ai = await import(/* @vite-ignore */ `${origin}/@fs${root}/packages/ai/src/index.ts`)
+      const newGame = await import(/* @vite-ignore */ `${origin}/@fs${root}/apps/desktop/src/game/newGame.ts`)
       const json = async (name) => (await fetch(`${origin}/@fs${root}/data/rules/default/${name}.json`)).json()
       const rules = core.parseRules(
         { constants: await json('constants'), resources: await json('resources'), buildings: await json('buildings'), units: await json('units'), ai: await json('ai') },
@@ -969,14 +974,19 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
       lose.next.victory.condition = 'points'
       await put('stand-4', core.serialise(lose.next))
       await put('stand-3', JSON.stringify({ schemaVersion: state.schemaVersion, savedAtTick: state.tick, kaputt: true }))
-      // Kriegserklaerung (Folgeticket t_22f7a842): dieselbe Quelle (`state`), derselbe Betrachter
-      // (`humanId`) wie bei Sieg/Niederlage — keine zweite Quelle der Wahrheit. Gespeichert unter
-      // `stand-5` (nicht `stand-krieg`): die Spielstands-UI kennt nur die fuenf festen manuellen
-      // Plaetze `stand-1`..`stand-5` (`MANUAL_SLOTS`, `apps/desktop/src/game/saves.ts`); ein frei
-      // benannter Schluessel waere dort nicht ladbar. `stand-5` ist der einzige der fuenf Plaetze,
-      // den `spielstand-praeparieren` bisher nicht belegt.
+      // Kriegserklaerung (Folgeticket t_22f7a842, Nacharbeit t_69b31fb4/t_63c19620): `stand-1`
+      // ist bewusst ein spaeter, Mensch-dominanter Zwischenstand (Save-Liste, Sieg/Niederlage) —
+      // bei tick~12000 liegt jeder KI-Landnachbar laengst unter dem Staerkeverhaeltnis 800 und
+      // erklaert deshalb nie Krieg (`diplomacy.ts:268`, Absicht, kein Bug). Die Kriegsfixture
+      // (`stand-5`) braucht einen eigenen, unabhaengigen Stand: einen frischen Standard-Start
+      // (Tick 0, `startGame(DEFAULT_NEW_GAME, ...)`, Staerkeverhaeltnis nahe 1:1) statt `state`.
+      // Gespeichert unter `stand-5` (nicht `stand-krieg`): die Spielstands-UI kennt nur die
+      // fuenf festen manuellen Plaetze `stand-1`..`stand-5` (`MANUAL_SLOTS`,
+      // `apps/desktop/src/game/saves.ts`); ein frei benannter Schluessel waere dort nicht ladbar.
+      const warState = newGame.startGame(newGame.DEFAULT_NEW_GAME, map, rules)
+      const warHumanId = Object.values(warState.players).find((p) => p.kind === 'human').id
       const forceWarDeclaration = (0, eval)(`(${warSource})`)
-      const war = forceWarDeclaration(core, ai, map, rules, state, humanId)
+      const war = forceWarDeclaration(core, ai, map, rules, warState, warHumanId)
       if (war.real) await put('stand-5', core.serialise(war.next))
       const brief = (r) => ({ real: r.real, moved: r.moved, share: r.share, goal: r.goal, condition: r.condition })
       return {
