@@ -1051,12 +1051,23 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
         const human = Object.values(state.players).find((p) => p.kind === 'human') ?? Object.values(state.players)[0]
         const result = ai.runAi(state, { map, rules })
         const warCommands = result.commands.filter((c) => c.type === 'DIPLOMACY' && c.action === 'declareWar')
+        // Mentor-Befund (t_f08e6419): `runAi` liefert nur Kommandos, kein Ereignis. Der
+        // Node-Test (test/ux-war.test.ts) prueft deshalb nach `advanceTicks`, nicht nach
+        // `runAi` allein, auf `WAR_DECLARED`. Diagnose-only: dieselbe Pruefung hier, um zu
+        // sehen ob die Kommando->Ereignis-Pipeline fuer diesen Snapshot ueberhaupt greift,
+        // unabhaengig vom echten, laufenden Game-Loop im Browser (der separat per `runUntil`
+        // auf den Chip wartet).
+        const aiCount2 = Object.values(state.players).filter((p) => p.kind === 'ai' && p.alive).length
+        const advanced = ai.advanceTicks(state, Math.max(1, aiCount2), { map, rules })
+        const warDeclaredEvents = advanced.events.filter((e) => e.type === 'WAR_DECLARED')
         return {
           tick: state.tick,
           commandCount: result.commands.length,
           commandTypes: [...new Set(result.commands.map((c) => c.type))],
           warCommands: warCommands.map((c) => ({ playerId: c.playerId, targetPlayerId: c.targetPlayerId })),
           declaresAgainstHuman: warCommands.some((c) => c.targetPlayerId === human.id),
+          warDeclaredAfterAdvance: warDeclaredEvents.length > 0,
+          warDeclaredEvents: warDeclaredEvents.map((e) => ({ targetPlayerId: e.targetPlayerId })),
         }
       } catch (err) {
         return { error: String(err && err.stack ? err.stack : err) }
