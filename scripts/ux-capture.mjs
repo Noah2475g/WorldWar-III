@@ -1019,6 +1019,51 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
     await page.waitForTimeout(400)
     await page.getByRole('button', { name: 'Laden' }).nth(4).click({ timeout: 5000 })
     await page.waitForTimeout(600)
+    // Mentor-Befund (t_32727790, Runde 1): der Cooldown-Fix (lastStrategicTick-Reset + Tick-
+    // Sonde, siehe scripts/lib/ux-war.mjs) ist korrekt — forceWarDeclaration() sagt im Node-Test
+    // zuverlaessig real:true voraus, aber der Browser erklaert trotzdem oft keinen Krieg binnen
+    // 90s. Mentor: nicht weiter an der Tick-Berechnung schrauben, sondern DIREKT im geladenen
+    // `stand-5`-Browser-State pruefen, ob `runAi` (dasselbe `@worldwar/ai` wie die laufende Seite,
+    // kein zweiter Code-Pfad) tatsaechlich ein `declareWar`-Kommando fuer den Angreifer liefert.
+    // Diagnose-only, kein Produktionscode-Pfad: haengt an `data.notes`, bricht den Lauf bei Fehlern
+    // nicht ab (vgl. `warFixtureMissing`-Stil oben).
+    const warDiag = await page.evaluate(async ({ origin, root }) => {
+      try {
+        const core = await import(/* @vite-ignore */ `${origin}/@fs${root}/packages/core/src/index.ts`)
+        const ai = await import(/* @vite-ignore */ `${origin}/@fs${root}/packages/ai/src/index.ts`)
+        const json = async (name) => (await fetch(`${origin}/@fs${root}/data/rules/default/${name}.json`)).json()
+        const rules = core.parseRules(
+          { constants: await json('constants'), resources: await json('resources'), buildings: await json('buildings'), units: await json('units'), ai: await json('ai') },
+          'default',
+        )
+        const map = await (await fetch(`${origin}/@fs${root}/data/maps/world.json`)).json()
+        const db = await new Promise((res, rej) => {
+          const r = indexedDB.open('worldwar', 1)
+          r.onsuccess = () => res(r.result)
+          r.onerror = () => rej(r.error)
+        })
+        const raw = await new Promise((res) => {
+          const q = db.transaction('saves').objectStore('saves').get('stand-5')
+          q.onsuccess = () => res(q.result)
+        })
+        if (!raw) return { error: 'kein stand-5 in indexedDB' }
+        const state = core.deserialise(raw)
+        const human = Object.values(state.players).find((p) => p.kind === 'human') ?? Object.values(state.players)[0]
+        const result = ai.runAi(state, { map, rules })
+        const warCommands = result.commands.filter((c) => c.type === 'DIPLOMACY' && c.action === 'declareWar')
+        return {
+          tick: state.tick,
+          commandCount: result.commands.length,
+          commandTypes: [...new Set(result.commands.map((c) => c.type))],
+          warCommands: warCommands.map((c) => ({ playerId: c.playerId, targetPlayerId: c.targetPlayerId })),
+          declaresAgainstHuman: warCommands.some((c) => c.targetPlayerId === human.id),
+        }
+      } catch (err) {
+        return { error: String(err && err.stack ? err.stack : err) }
+      }
+    }, { origin: new URL(run.url).origin, root: fsRoot(ROOT) })
+    data.notes.push({ warDiag })
+    console.log('[ux-capture] warDiag (Mentor-Diagnose t_32727790):', JSON.stringify(warDiag))
     // Mentor-Befund (t_0a8d09ee, Runde 3): speed('100') laesst das CAPITAL_LOST-Folgeereignis
     // das WAR_DECLARED-Ereignis ueberholen (die KI marschiert im beschleunigten Tempo gleich
     // weiter und erobert die Hauptstadt, bevor der Screenshot den Kriegserklaerungs-Chip zeigt

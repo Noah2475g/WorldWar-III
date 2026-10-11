@@ -62,4 +62,20 @@ describe('T-M44-03 ux-war: eine KI-Macht erklärt dem Betrachter wirklich den Kr
     )
     expect(warDeclared, 'ohne Verstimmung erklärt im selben Zeitfenster niemand den Krieg').toBe(false)
   })
+
+  it('erzwingt WAR_DECLARED binnen aiCount Ticks auch dann, wenn die Strategie-Zeitsperre der KI schon lief (spaeter Spielstand wie ein echtes `stand-1`)', () => {
+    // 48 echte Ticks vorlaufen lassen: jede KI hat laengst einmal strategisch gedacht,
+    // `lastStrategicTick` ist fuer alle nicht mehr -1 (Befund t_0ff9f671: ein frischer
+    // Spielstand bestand den Test oben schon, ein spaeter — wie `stand-1` in `ux-capture.mjs` — nicht).
+    const late = ai.advanceTicks(state, 48, { map, rules }).state
+    const r = forceWarDeclaration(core, ai, map, rules, late, humanId)
+    expect(r.real, r.reason ?? 'kein Kandidat gefunden').toBe(true)
+
+    const result = ai.advanceTicks(r.next, Math.max(1, aiCount), { map, rules })
+    const warDeclared = result.events.some(
+      (event: { type: string; targetPlayerId?: string }) =>
+        event.type === 'WAR_DECLARED' && event.targetPlayerId === humanId,
+    )
+    expect(warDeclared, 'WAR_DECLARED auch nach bereits gelaufener Strategie-Zeitsperre binnen aiCount Ticks').toBe(true)
+  })
 })
