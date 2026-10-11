@@ -78,6 +78,22 @@
  * Kerns neu versiegelt — derselbe Weg, den ein Laden nimmt. Der Kern bleibt unveraendert
  * (Befund B-22: vorher stand dort ein gesetzter `winner` ohne erfuellte Bedingung).
  *
+ * Dock-Zustand `attack` (T-M44-03, Folgeticket der Kriegserklaerungs-Fixture): Schritt
+ * `spielstand-praeparieren` legt zusaetzlich `stand-5` an, indem der echte `runAi` aus
+ * `@worldwar/ai` gegen eine maximal verstimmte KI-Macht aufgerufen wird (`scripts/lib/ux-war.mjs`,
+ * `forceWarDeclaration`) — nur falls ein Landnachbar im Frieden wirklich `declareWar` befiehlt
+ * (`real: true`), sonst bleibt `stand-5` leer und `data.probes.warFixtureMissing` wird gesetzt,
+ * ohne den Lauf abzubrechen. Der Name ist `stand-5`, nicht `stand-krieg`: die Spielstands-UI
+ * kennt nur die fuenf festen manuellen Plaetze (`MANUAL_SLOTS`). Schritt `kriegserklaerung-ki`
+ * laedt `stand-5` ueber die UI, erhoeht das Tempo auf `10` (nicht `100` — bei hohem Tempo
+ * ueberholt das CAPITAL_LOST-Folgeereignis sonst den Kriegserklaerungs-Chip, Mentor-Befund
+ * t_0a8d09ee; `1` war in Lauf 4 gemessen zu langsam fuer die KI-Neubewertung) und wartet
+ * (wie `kampf`) bis zu 90s auf den Kriegserklaerungs-Chip-Text selbst
+ * (`.dock__attack-chip` enthaelt "erklärt den Krieg", nicht nur den geteilten
+ * `data-state="attack"`), bevor `dock-attack-krieg.png` entsteht; laeuft das
+ * Zeitfenster ohne Treffer ab, wird trotzdem ein Diagnosebild (`dock-attack-krieg-timeout.png`)
+ * geschossen statt den Lauf scheitern zu lassen.
+ *
  * Nie `playwright install`. Keine Benchmark-Messung: die Ruckler-Zahlen sind grob und haengen
  * an der Maschinenlast — sie dienen dem Vorher/Nachher auf derselben Maschine (Falle 18: am
  * gebauten Buendel, gegen einen am selben Tag gemessenen Ausgangswert).
@@ -97,6 +113,7 @@ import { chromium } from 'playwright'
 import AxeBuilderModule from '@axe-core/playwright'
 import { evaluate, exitCodeFor, render, sectionsNeeded } from './ux-thresholds.mjs'
 import { grantUntilVictory } from './lib/ux-victory.mjs'
+import { forceWarDeclaration } from './lib/ux-war.mjs'
 import { DISPATCH, RAIL_ITEM, SHEET_ITEM, SIDE, STANDINGS_TOP } from './ux-sel.mjs'
 
 const AxeBuilder = AxeBuilderModule.default ?? AxeBuilderModule
@@ -519,8 +536,8 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
     await provincePicker().selectOption({ label: 'Mittlerer Westen' }, { timeout: 5000 })
     await page.waitForTimeout(300)
   }
-  const runUntil = async (predicate, arg, timeout = 60000) => {
-    await speed('100')
+  const runUntil = async (predicate, arg, timeout = 60000, tempo = '100') => {
+    await speed(tempo)
     try {
       await page.waitForFunction(predicate, arg, { timeout })
     } finally {
@@ -918,13 +935,15 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
     // Ein echter Stand der Aufnahme, einmal als Sieg, einmal als Niederlage, einmal kaputt, in Platz 2, 4 und 3.
     // B-22: der Sieger bekommt den Besitz, den die Siegbedingung verlangt — `checkVictory` des Kerns
     // muss ihn selbst melden, bevor `victory.winner` gesetzt wird. Nichts davon aendert den Kern.
-    const prepared = await page.evaluate(async ({ origin, root, grantSource }) => {
+    const prepared = await page.evaluate(async ({ origin, root, grantSource, warSource }) => {
       const core = await import(/* @vite-ignore */ `${origin}/@fs${root}/packages/core/src/index.ts`)
+      const ai = await import(/* @vite-ignore */ `${origin}/@fs${root}/packages/ai/src/index.ts`)
       const json = async (name) => (await fetch(`${origin}/@fs${root}/data/rules/default/${name}.json`)).json()
       const rules = core.parseRules(
         { constants: await json('constants'), resources: await json('resources'), buildings: await json('buildings'), units: await json('units'), ai: await json('ai') },
         'default',
       )
+      const map = await (await fetch(`${origin}/@fs${root}/data/maps/world.json`)).json()
       const db = await new Promise((res, rej) => {
         const r = indexedDB.open('worldwar', 1)
         r.onsuccess = () => res(r.result)
@@ -950,13 +969,32 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
       lose.next.victory.condition = 'points'
       await put('stand-4', core.serialise(lose.next))
       await put('stand-3', JSON.stringify({ schemaVersion: state.schemaVersion, savedAtTick: state.tick, kaputt: true }))
+      // Kriegserklaerung (Folgeticket t_22f7a842): dieselbe Quelle (`state`), derselbe Betrachter
+      // (`humanId`) wie bei Sieg/Niederlage — keine zweite Quelle der Wahrheit. Gespeichert unter
+      // `stand-5` (nicht `stand-krieg`): die Spielstands-UI kennt nur die fuenf festen manuellen
+      // Plaetze `stand-1`..`stand-5` (`MANUAL_SLOTS`, `apps/desktop/src/game/saves.ts`); ein frei
+      // benannter Schluessel waere dort nicht ladbar. `stand-5` ist der einzige der fuenf Plaetze,
+      // den `spielstand-praeparieren` bisher nicht belegt.
+      const forceWarDeclaration = (0, eval)(`(${warSource})`)
+      const war = forceWarDeclaration(core, ai, map, rules, state, humanId)
+      if (war.real) await put('stand-5', core.serialise(war.next))
       const brief = (r) => ({ real: r.real, moved: r.moved, share: r.share, goal: r.goal, condition: r.condition })
-      return { ok: true, win: brief(win), lose: brief(lose) }
-    }, { origin: new URL(run.url).origin, root: fsRoot(ROOT), grantSource: grantUntilVictory.toString() })
+      return {
+        ok: true,
+        win: brief(win),
+        lose: brief(lose),
+        war: { real: war.real, attacker: war.attacker ?? null, reason: war.reason ?? null },
+      }
+    }, { origin: new URL(run.url).origin, root: fsRoot(ROOT), grantSource: grantUntilVictory.toString(), warSource: forceWarDeclaration.toString() })
     data.notes.push({ preparedSaves: prepared.ok ? 'ok' : prepared.error })
     if (prepared.ok) {
       data.notes.push({ victoryState: prepared.win })
       data.notes.push({ defeatState: prepared.lose })
+      data.probes.warFixture = prepared.war
+      if (!prepared.war.real) {
+        console.warn('[ux-capture] stand-krieg (stand-5) nicht erzeugt:', prepared.war.reason)
+        data.probes.warFixtureMissing = true
+      }
     }
     await page.keyboard.press('Escape')
   })
@@ -969,6 +1007,113 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
   // const lose = structuredClone(state)
   // lose.victory.winner = other
   // await put('stand-4', core.serialise(lose))
+  await step('kriegserklaerung-ki', async () => {
+    // Nur ausfuehren, wenn Schritt `spielstand-praeparieren` `stand-5` tatsaechlich belegt hat
+    // (Flag `data.probes.warFixture.real`) — ein fehlender Kandidat ist Qualitaets-Infrastruktur,
+    // kein Pflichtteil, und darf den Rest des Laufs nicht abbrechen.
+    if (!data.probes.warFixture?.real) {
+      console.log('[ux-capture] kriegserklaerung-ki uebersprungen: stand-5 (Kriegsfixture) nicht vorhanden')
+      return
+    }
+    await btn('Spielstände').click({ timeout: 10000 })
+    await page.waitForTimeout(400)
+    await page.getByRole('button', { name: 'Laden' }).nth(4).click({ timeout: 5000 })
+    await page.waitForTimeout(600)
+    // Mentor-Befund (t_32727790, Runde 1): der Cooldown-Fix (lastStrategicTick-Reset + Tick-
+    // Sonde, siehe scripts/lib/ux-war.mjs) ist korrekt — forceWarDeclaration() sagt im Node-Test
+    // zuverlaessig real:true voraus, aber der Browser erklaert trotzdem oft keinen Krieg binnen
+    // 90s. Mentor: nicht weiter an der Tick-Berechnung schrauben, sondern DIREKT im geladenen
+    // `stand-5`-Browser-State pruefen, ob `runAi` (dasselbe `@worldwar/ai` wie die laufende Seite,
+    // kein zweiter Code-Pfad) tatsaechlich ein `declareWar`-Kommando fuer den Angreifer liefert.
+    // Diagnose-only, kein Produktionscode-Pfad: haengt an `data.notes`, bricht den Lauf bei Fehlern
+    // nicht ab (vgl. `warFixtureMissing`-Stil oben).
+    const warDiag = await page.evaluate(async ({ origin, root }) => {
+      try {
+        const core = await import(/* @vite-ignore */ `${origin}/@fs${root}/packages/core/src/index.ts`)
+        const ai = await import(/* @vite-ignore */ `${origin}/@fs${root}/packages/ai/src/index.ts`)
+        const json = async (name) => (await fetch(`${origin}/@fs${root}/data/rules/default/${name}.json`)).json()
+        const rules = core.parseRules(
+          { constants: await json('constants'), resources: await json('resources'), buildings: await json('buildings'), units: await json('units'), ai: await json('ai') },
+          'default',
+        )
+        const map = await (await fetch(`${origin}/@fs${root}/data/maps/world.json`)).json()
+        const db = await new Promise((res, rej) => {
+          const r = indexedDB.open('worldwar', 1)
+          r.onsuccess = () => res(r.result)
+          r.onerror = () => rej(r.error)
+        })
+        const raw = await new Promise((res) => {
+          const q = db.transaction('saves').objectStore('saves').get('stand-5')
+          q.onsuccess = () => res(q.result)
+        })
+        if (!raw) return { error: 'kein stand-5 in indexedDB' }
+        const state = core.deserialise(raw)
+        const human = Object.values(state.players).find((p) => p.kind === 'human') ?? Object.values(state.players)[0]
+        const result = ai.runAi(state, { map, rules })
+        const warCommands = result.commands.filter((c) => c.type === 'DIPLOMACY' && c.action === 'declareWar')
+        // Mentor-Befund (t_f08e6419): `runAi` liefert nur Kommandos, kein Ereignis. Der
+        // Node-Test (test/ux-war.test.ts) prueft deshalb nach `advanceTicks`, nicht nach
+        // `runAi` allein, auf `WAR_DECLARED`. Diagnose-only: dieselbe Pruefung hier, um zu
+        // sehen ob die Kommando->Ereignis-Pipeline fuer diesen Snapshot ueberhaupt greift,
+        // unabhaengig vom echten, laufenden Game-Loop im Browser (der separat per `runUntil`
+        // auf den Chip wartet).
+        const aiCount2 = Object.values(state.players).filter((p) => p.kind === 'ai' && p.alive).length
+        const advanced = ai.advanceTicks(state, Math.max(1, aiCount2), { map, rules })
+        const warDeclaredEvents = advanced.events.filter((e) => e.type === 'WAR_DECLARED')
+        return {
+          tick: state.tick,
+          commandCount: result.commands.length,
+          commandTypes: [...new Set(result.commands.map((c) => c.type))],
+          warCommands: warCommands.map((c) => ({ playerId: c.playerId, targetPlayerId: c.targetPlayerId })),
+          declaresAgainstHuman: warCommands.some((c) => c.targetPlayerId === human.id),
+          warDeclaredAfterAdvance: warDeclaredEvents.length > 0,
+          warDeclaredEvents: warDeclaredEvents.map((e) => ({ targetPlayerId: e.targetPlayerId })),
+        }
+      } catch (err) {
+        return { error: String(err && err.stack ? err.stack : err) }
+      }
+    }, { origin: new URL(run.url).origin, root: fsRoot(ROOT) })
+    data.notes.push({ warDiag })
+    console.log('[ux-capture] warDiag (Mentor-Diagnose t_32727790):', JSON.stringify(warDiag))
+    // Mentor-Befund (t_0a8d09ee, Runde 3): speed('100') laesst das CAPITAL_LOST-Folgeereignis
+    // das WAR_DECLARED-Ereignis ueberholen (die KI marschiert im beschleunigten Tempo gleich
+    // weiter und erobert die Hauptstadt, bevor der Screenshot den Kriegserklaerungs-Chip zeigt
+    // — section.dock[data-state="attack"] wird fuer BEIDE Ereignisse gesetzt, also reicht die
+    // reine State-Pruefung nicht). Fix (Option 1+2 aus Mentor-Diagnose): `runUntil` setzt sonst
+    // IMMER selbst speed('100') (siehe Definition oben) — ein eigener speed('1')-Aufruf davor
+    // wurde dadurch sofort wieder ueberschrieben (Ursache des Haengers in Lauf 3). Jetzt nimmt
+    // `runUntil` einen eigenen `tempo`-Parameter. Lauf 4 (Messung, nicht Annahme) zeigte: bei
+    // `tempo='1'` lief in einem Viewport warFixture.real===true, aber das WAR_DECLARED-Ereignis
+    // kam innerhalb der 90s nicht — zu langsam, die KI reevaluiert Kriegserklaerungen offenbar
+    // nicht jeden Tick. `tempo='10'` als Mittelweg: genug Spielzeit pro Realsekunde, um die
+    // Neubewertung zu erreichen, aber (hoffentlich) nicht so schnell wie '100', dass CAPITAL_LOST
+    // das WAR_DECLARED sofort ueberholt. Zusaetzlich prueft die Wartebedingung weiterhin den
+    // Kriegserklaerungs-Chip-Text selbst (Text 'erklärt den Krieg', siehe i18n/de.ts dock.warChip),
+    // statt nur auf den (geteilten) data-state zu warten.
+    try {
+      await runUntil(
+        () => document.querySelector('.dock__attack-chip')?.textContent?.includes('erklärt den Krieg') ?? false,
+        null,
+        90000,
+        '10',
+      )
+      await shot('dock-attack-krieg')
+      data.probes.dockAttack = await page.evaluate(() => {
+        const chip = document.querySelector('.dock__attack-chip')
+        const action = document.querySelector('.dock__attack-action')
+        return {
+          state: 'attack',
+          chip: chip?.textContent?.trim() ?? null,
+          action: action?.getAttribute('title')?.trim() ?? action?.textContent?.trim() ?? null,
+        }
+      })
+    } catch (err) {
+      await speed('Pause').catch(() => {})
+      console.warn('[ux-capture] dock-attack-krieg: kein data-state="attack" innerhalb des Timeouts:', err.message)
+      data.probes.dockAttack = { state: 'timeout' }
+      await shot('dock-attack-krieg-timeout')
+    }
+  })
   await step('fehler-spielstand-kaputt', async () => {
     await btn('Spielstände').click({ timeout: 5000 })
     await page.waitForTimeout(400)
