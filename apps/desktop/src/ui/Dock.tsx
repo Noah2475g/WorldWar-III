@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { t } from '../i18n/text.ts'
+import { useInputMode } from './inputMode.ts'
 
 /**
  * Die schwebende Leiste unten (E5, D9): Provinz/Armee ziehen aus der Seitenleiste hierher.
@@ -78,6 +79,8 @@ export function Dock({
   attack,
 }: DockProps) {
   const showPicker = state !== 'empty' && state !== 'attack'
+  // Touch quer (D15, Spec §12.14.3): "Land antippen" statt des Tastatur-Hinweises "Land anklicken".
+  const emptyText = useInputMode() === 'touch' ? t('dock.emptyTouch') : t('dock.empty')
   return (
     <section className={dockStateClass(state)} data-state={state}>
       <div className="dock__head">
@@ -96,7 +99,7 @@ export function Dock({
                 }
               }}
             >
-              <option value="">{t('dock.empty')}</option>
+              <option value="">{emptyText}</option>
               {pickerOptions.map((option) => (
                 <option key={option.id} value={option.id}>
                   {option.label}
@@ -105,7 +108,7 @@ export function Dock({
             </select>
           </div>
         ) : (
-          <span className="dock__placeholder">{t('dock.empty')}</span>
+          <span className="dock__placeholder">{emptyText}</span>
         )}
         {state === 'attack' && attack && (
           <span className="chip chip--danger dock__attack-chip" data-msg={attack.msgId}>

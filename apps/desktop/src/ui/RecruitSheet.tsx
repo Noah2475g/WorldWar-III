@@ -127,4 +127,35 @@ export function useRecruitOpen(): [boolean, (open: boolean) => void] {
   return [open, setOpen]
 }
 
+/**
+ * Telefon-Hochformat (E8, D15): eigener Schluessel, eigener Standard — ZU statt offen
+ * (Ausnahme zu D10, Begruendung K6-Metrik: das 4-spaltige Raster ersetzt dort die Bauplaetze
+ * und soll nicht ungefragt den ganzen Platz des Blatts einnehmen).
+ */
+const PHONE_STORAGE_KEY = 'worldwar.recruit.open.phone'
+
+export function readPhoneRecruitOpen(storage: Pick<Storage, 'getItem'> = window.localStorage): boolean {
+  try {
+    return storage.getItem(PHONE_STORAGE_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+export function writePhoneRecruitOpen(open: boolean, storage: Pick<Storage, 'setItem'> = window.localStorage): void {
+  try {
+    storage.setItem(PHONE_STORAGE_KEY, open ? '1' : '0')
+  } catch {
+    // Privater Modus o.ae.: Zustand bleibt nur fuer die Sitzung im State, kein Absturz.
+  }
+}
+
+export function usePhoneRecruitOpen(): [boolean, (open: boolean) => void] {
+  const [open, setOpen] = useState<boolean>(() => readPhoneRecruitOpen())
+  useEffect(() => {
+    writePhoneRecruitOpen(open)
+  }, [open])
+  return [open, setOpen]
+}
+
 export type { DockPickerOption, DockState }
