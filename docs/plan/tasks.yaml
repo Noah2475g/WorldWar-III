@@ -4453,7 +4453,7 @@ tasks:
   - id: T-M51-01
     milestone: M51
     title: "Gebaeude-Gruppierung als reine Funktion (sammel.ts)"
-    status: todo
+    status: done
     deps: [T-M49-01]
     requirements: [R-MAP-05]
     design: []
@@ -4463,7 +4463,7 @@ tasks:
   - id: T-M51-02
     milestone: M51
     title: "Zeichnen und Klick der Gebaeude-Sammelmarke in MapCanvas"
-    status: todo
+    status: done
     deps: [T-M51-01]
     requirements: [R-MAP-05]
     design: []
@@ -4473,7 +4473,7 @@ tasks:
   - id: T-M51-03
     milestone: M51
     title: "Waechter S575 und Messung"
-    status: todo
+    status: done
     deps: [T-M51-02]
     requirements: [R-MAP-05]
     design: []
@@ -4483,11 +4483,11 @@ tasks:
   - id: T-M51-04
     milestone: M51
     title: "Abnahme am laufenden Programm, Bericht, PR"
-    status: todo
+    status: done
     deps: [T-M51-03]
     requirements: [R-MAP-05]
     design: []
-    files: [scripts/v4-zoomcluster-bild.mjs, docs/ux/v4-zoomcluster, docs/reports/v4/zoomcluster.md, docs/plan/PROGRESS.md, docs/ASSETS.md]
+    files: [scripts/v4-zoomcluster-bild.mjs, docs/ux/v4-zoomcluster/, docs/reports/v4/zoomcluster.md, docs/plan/PROGRESS.md, docs/ASSETS.md]
     tests: [scripts/v4-zoomcluster-bild.mjs]
     dod: "Bilder angesehen, pnpm verify Exit 0, PR offen (Noah2475g), Merge nur durch reviewer."
   - id: T-M51-05
