@@ -6,7 +6,8 @@ import { HOVER_DELAY_MS, MapCanvas } from './MapCanvas.tsx'
 import { anchorsFor } from './anchors.ts'
 import { boundsOf } from './picking.ts'
 import { toMap } from './picking.ts'
-import { markersFor } from './markers.ts'
+import { ARMY_LIFT_Y, buildingMarkers, markersFor } from './markers.ts'
+import { GROUP_ZOOM_SCALE } from './sammel.ts'
 import { marchLabel } from './render.ts'
 import type { RenderProvince } from './render.ts'
 import { TOKENS } from '../ui/tokens.ts'
@@ -704,5 +705,147 @@ describe('T-M49-02 Sammelmarke', () => {
     cleanup()
     const { container: nah } = zeichne({ speed: 100, view: ansicht(1) })
     expect(nah.querySelector('[data-zoom-tier]')!.getAttribute('data-zoom-tier')).toBe('near')
+  })
+})
+
+describe('T-M51-02 Gebaeude-Sammelmarke', () => {
+  const woProvince = world.provinces[0]!
+  const wo = woProvince.id
+  const andereProvince = world.provinces[4]!.id
+  const anchors = { [wo]: anchorsFor(woProvince.polygons, woProvince.center) }
+  // Vier Arten (D3: n >= BUILDING_GROUP_MIN = 2) in derselben Provinz.
+  const buildings = { [wo]: { factory: 1, airfield: 1, harbour: 1, shipyard: 1 } }
+  const ansicht = (scale: number) => ({
+    x: woProvince.center.x - 160 * scale,
+    y: woProvince.center.y - 120 * scale,
+    scale,
+  })
+  const mitGruppe = (scale: number, selectedProvinceId: string | null = null) =>
+    buildingMarkers(buildings, centres, ansicht(scale), { buildingGroups: { selectedProvinceId } })
+  const ueberzug = (container: HTMLElement) => container.querySelector('canvas[role="application"]') as HTMLCanvasElement
+  const rahmen = () => {
+    const rect = ueberzug(document.body)
+    rect.getBoundingClientRect = () => ({ left: 0, top: 0, width: 320, height: 240 }) as DOMRect
+    return rect
+  }
+
+  it('(a) Provinz mit 4 Arten: bei 0.9 vier Gebaeude-Stempel, bei 1.6 eine Marke', () => {
+    // Zaehlweise wie M49-Test (a): near stempelt je Art ein Quadrat per drawImage;
+    // mid zeichnet EINE Pille per arcTo (vier Boegen, kein Quadrat mehr, kein drawImage).
+    zeichne({ speed: 100, buildings, anchors, view: ansicht(0.9) })
+    const nahStempel = recorder.calls.drawImage ?? 0
+    const nahBoegen = recorder.calls.arcTo ?? 0
+    cleanup()
+    zeichne({ speed: 100, buildings, anchors, view: ansicht(1.6) })
+    const mittelBoegen = recorder.calls.arcTo ?? 0
+    const mittelStempel = recorder.calls.drawImage ?? 0
+
+    expect(nahStempel).toBeGreaterThan(0)
+    expect(nahStempel % 4).toBe(0)
+    expect(nahBoegen).toBe(0)
+    expect(mittelBoegen).toBeGreaterThan(0)
+    expect(mittelBoegen % 4).toBe(0)
+    expect(mittelStempel).toBe(0)
+  })
+
+  it('(b) Klick auf die Marke mit onSelectArmy zoomt auf GROUP_ZOOM_SCALE und zentriert', () => {
+    const marke = mitGruppe(1.6).find((m) => m.kind === 'buildingGroup')!
+    const ansichten: { x: number; y: number; scale: number }[] = []
+    const onSelectArmy = vi.fn()
+    const onSelect = vi.fn()
+    zeichne({
+      speed: 100,
+      buildings,
+      anchors,
+      view: ansicht(1.6),
+      onSelectArmy,
+      onSelect,
+      onViewChange: (v) => ansichten.push(v),
+    })
+    fireEvent.click(rahmen(), { clientX: marke.x, clientY: marke.y })
+
+    expect(ansichten.length).toBe(1)
+    expect(ansichten[0]!.scale).toBe(GROUP_ZOOM_SCALE)
+    const punkt = toMap({ x: marke.x, y: marke.y }, ansicht(1.6))
+    // Ausschnitt der Leinwand (jsdom: 320x240), centreOnVisible: Mitte bei x+160, y+126.
+    expect(ansichten[0]!.x + 160).toBeCloseTo(punkt.x, 0)
+    expect(ansichten[0]!.y + 126).toBeCloseTo(punkt.y, 0)
+    expect(onSelectArmy).not.toHaveBeenCalled()
+    expect(onSelect).not.toHaveBeenCalled()
+  })
+
+  it('(c) ohne onSelectArmy bleibt der Klick Ortswahl', () => {
+    const marke = mitGruppe(1.6).find((m) => m.kind === 'buildingGroup')!
+    const onSelect = vi.fn()
+    const onViewChange = vi.fn()
+    zeichne({ speed: 100, buildings, anchors, view: ansicht(1.6), onSelect, onViewChange })
+    fireEvent.click(rahmen(), { clientX: marke.x, clientY: marke.y })
+    expect(onSelect).toHaveBeenCalledTimes(1)
+    expect(onViewChange).not.toHaveBeenCalled()
+  })
+
+  it('(d) ein Armee-Kasten ueber der Marke gewinnt den Klick, nicht die Marke', () => {
+    const marke = mitGruppe(1.6).find((m) => m.kind === 'buildingGroup')!
+    // Dieselbe Rechnung wie `armyScreenPoint` rueckwaerts: `home` so gewaehlt, dass der
+    // gezeichnete Punkt der Armee (base.y - ARMY_LIFT_Y) genau auf der Marke liegt.
+    const home = toMap({ x: marke.x, y: marke.y + ARMY_LIFT_Y }, ansicht(1.6))
+    const armee = { id: 'a9', provinceId: wo, owner: 'p1', strength: 1000, own: true, home }
+    const onSelectArmy = vi.fn()
+    const onViewChange = vi.fn()
+    zeichne({ speed: 100, buildings, anchors, armies: [armee], view: ansicht(1.6), onSelectArmy, onViewChange })
+    fireEvent.click(rahmen(), { clientX: marke.x, clientY: marke.y })
+    expect(onSelectArmy).toHaveBeenCalledWith('a9')
+    expect(onViewChange).not.toHaveBeenCalled()
+  })
+
+  it('(e) gewaehlte Provinz zeichnet den Ring der Marke in primary (strokeStyle-Mitschnitt)', () => {
+    // Pure Funktion: die gewaehlte Provinz bekommt `selected: true` (D6).
+    expect(mitGruppe(1.6, wo).find((m) => m.kind === 'buildingGroup')?.selected).toBe(true)
+    expect(mitGruppe(1.6, andereProvince).find((m) => m.kind === 'buildingGroup')?.selected).toBeFalsy()
+
+    const primaryStrokes = (selectedProvince: string) => {
+      const strokes: string[] = []
+      const { context: basis, recorder: rec } = recordingContext()
+      recorder = rec
+      const context = new Proxy(basis, {
+        get(target, key) {
+          if (key === 'stroke')
+            return () => {
+              strokes.push(String(rec.props.strokeStyle))
+              rec.calls.stroke = (rec.calls.stroke ?? 0) + 1
+            }
+          return Reflect.get(target, key)
+        },
+      })
+      HTMLCanvasElement.prototype.getContext = (() => context) as never
+      render(
+        <MapCanvas
+          provinces={provinces}
+          centres={centres}
+          armies={[]}
+          buildings={buildings}
+          anchors={anchors}
+          mode="political"
+          width={world.width}
+          height={world.height}
+          view={ansicht(1.6)}
+          ownershipVersion={1}
+          selectedProvince={selectedProvince}
+          onSelect={() => undefined}
+          onViewChange={() => undefined}
+          onMode={() => undefined}
+          labelFor={(id) => id}
+          speed={100}
+        />,
+      )
+      cleanup()
+      return strokes.filter((s) => s === TOKENS.primary).length
+    }
+
+    // Andere Provinz gewaehlt: nur deren eigener Auswahlring ist primary, die Marke nicht.
+    const ohneRing = primaryStrokes(andereProvince)
+    // `wo` gewaehlt: zusaetzlich die Markenring (D6) zeichnet primary — mehr Treffer.
+    const mitRing = primaryStrokes(wo)
+    expect(mitRing).toBeGreaterThan(ohneRing)
   })
 })

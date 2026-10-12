@@ -847,6 +847,9 @@ nur 1280x800 und 375x667 (PLAN-V3 Regel 12). Kein Fremdinhalt: Bildschirmfotos d
 | `docs/ux/v4-sammel/mid-vorher.png` | `scripts/v4-sammel-bild.mjs` | T-M49-04: Stand S575G, SAU, Uebersichtskarte (mid, scale 2.0) ohne Sammelmarke, 1280x800 |
 | `docs/ux/v4-sammel/mid-nachher.png` | `scripts/v4-sammel-bild.mjs` | T-M49-04: Stand S575G, SAU, Uebersichtskarte (mid, scale 2.0) mit Sammelmarke, 1280x800 |
 | `docs/ux/v4-sammel/nah-nachher.png` | `scripts/v4-sammel-bild.mjs` | T-M49-04: Stand S575G, SAU, 4 Rad-Schritte hinein (near, scale 0.9645), Einzelkaesten, 1280x800 |
+| `docs/ux/v4-zoomcluster/mid-vorher.png` | `scripts/zoom-shot.mjs` | T-M51-04: Stand S575G, SAU, Uebersichtskarte (mid, scale 1.6) ohne Gebaeude-Sammelmarke, 1280x800 |
+| `docs/ux/v4-zoomcluster/mid-nachher.png` | `scripts/zoom-shot.mjs` | T-M51-04: Stand S575G, SAU, Uebersichtskarte (mid, scale 1.6) mit Gebaeude-Sammelmarke, 1280x800 |
+| `docs/ux/v4-zoomcluster/nah-nachher.png` | `scripts/zoom-shot.mjs` | T-M51-04: Stand S575G, SAU, near (scale 0.97), gebuendelte nummerierte Marken, 1280x800 |
 | `docs/ux/v4-stellung/marsch-vorher.png` | `scripts/v4-stellung-bild.mjs` | T-M48-04: eine Spielstunde Marsch, ohne Stellung, 1280x800 |
 | `docs/ux/v4-stellung/marsch-nachher.png` | `scripts/v4-stellung-bild.mjs` | T-M48-04: eine Spielstunde Marsch, mit Stellung, 1280x800 |
 | `docs/ux/v4-seitenleiste/b0/S575G-basis-diplomatie-1280x800.png` | `scripts/ux-capture.mjs` | Seitenleiste v3b B0: Basisaufnahme, S575G-basis-diplomatie-1280x800.png |

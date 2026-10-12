@@ -1,4 +1,4 @@
-# PROGRESS
+﻿# PROGRESS
 
 Eine Zeile je abgeschlossener Aufgabe: `T-ID · Datum · Kurzbeschreibung · Tests · verify`
 
@@ -862,3 +862,7 @@ die Prüfkette je Block.
 | T-M50-02 | 2026-10-05 | **Liefervertrag B1: Kern.** schedule an OFFER_TRADE, settleContracts, CANCEL_CONTRACT, fünf Konstanten; contract.test.ts deckt AK1–AK4 und die Grenzen. | grün |
 | T-M50-03 | 2026-10-05 | **Liefervertrag B1: Schema 5.** Migration 4 → 5, validateState, Sicht (R-DIP-04), PROTOCOL_VERSION 3, Gleichschritt-Test mit zwei Menschen. | grün |
 | T-M50-04 | 2026-10-05 | **Liefervertrag B1: Golden und Parität.** tiny-500.json und walkthrough.json neu (UPDATE_GOLDEN=1); asV4 trifft die Literale von 6ca34a4 (d32e63834ba2ce4d … 5256d8cd46eb636b, 5a5c3d40488d4af2). | grün |
+| T-M51-01 | 2026-10-12 | **Zoom-Cluster: Gebaeude-Sammelmarke als reine Gruppierung.** `BUILDING_GROUP_MIN = 2`, Gruppierung pro Provinz ohne Zeichenaenderung; Commit `9d6aafe`. | gruen |
+| T-M51-02 | 2026-10-12 | **Zoom-Cluster: Sammelmarke zeichnen, Kollision, Klick zoomt.** Pillenform (D6), Icon-Prioritaet (D4), Kollisionsausweichen, Klick auf Marke zoomt auf Provinz; Commit `48b8462`. | gruen |
+| T-M51-03 | 2026-10-12 | **Zoom-Cluster-Waechter an S575.** `zoomcluster.slow.test.ts`: near bitgleich, far 0 Gebaeude, Tier-Mismatch bricht ab; Commit `11c7741`. | gruen |
+| T-M51-04 | 2026-10-12 | **Zoom-Cluster Abnahme, Bilder, Bericht.** mid 230 auf 99 Gebaeude-Eintraege (900x548, scale 1.6), 272 auf 113 (scale 2.0); Bilder mid-vorher/mid-nachher/nah-nachher in docs/ux/v4-zoomcluster; Bericht docs/reports/v4/zoomcluster.md. AK1,AK2,AK4,AK5,AK6 erfuellt; AK3-Zahlen (41/37/16) weichen vom Plan-Wert ab, per Mentor t_da25ef8a geklaert; AK7 (verify+PR) noch offen, folgt in E1d Schritt 5/6. | gruen |
