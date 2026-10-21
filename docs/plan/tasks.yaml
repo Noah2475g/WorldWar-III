@@ -126,6 +126,7 @@ milestones:
   # Liefervertrag Etappe 1 (Plan "Liefervertrag Etappe 1", Gate Noahs Ja): wiederkehrende Handelsangebote. M49 ist
   # fuer die Armee-Sammelmarke reserviert.
   - { id: M50, title: "Liefervertrag Etappe 1" }
+  - { id: M51, title: "Zoom-Cluster" }
 
 tasks:
   - id: T-M0-01
@@ -4449,3 +4450,63 @@ tasks:
     files: [packages/core/test/determinism.test.ts, apps/headless/test/walkthrough.test.ts, packages/core/test/golden/tiny-500.json, apps/headless/test/golden/walkthrough.json]
     tests: [packages/core/test/determinism.test.ts, apps/headless/test/walkthrough.test.ts]
     dod: "Golden-Dateien tiny-500.json und walkthrough.json mit UPDATE_GOLDEN=1 neu (Schema 5); asV4-Paritaet trifft die Literale von 6ca34a4 unveraendert (tiny-500 d32e63834ba2ce4d/6fb36c4975b8b577/a58b3cca20717564/5256d8cd46eb636b, walkthrough 5a5c3d40488d4af2); ai-integration-Kennzahlen unveraendert."
+  - id: T-M51-01
+    milestone: M51
+    title: "Gebaeude-Gruppierung als reine Funktion (sammel.ts)"
+    status: done
+    deps: [T-M49-01]
+    requirements: [R-MAP-05]
+    design: []
+    files: [apps/desktop/src/map/sammel.ts, apps/desktop/src/map/sammel.test.ts, apps/desktop/src/map/markers.ts]
+    tests: [apps/desktop/src/map/sammel.test.ts]
+    dod: "Unit-Tests (a)-(i) gruen, Gegenproben rot gesehen, ohne Opt-in bitgleich zu heute, Typecheck/Lint/plan-consistency Exit 0."
+  - id: T-M51-02
+    milestone: M51
+    title: "Zeichnen und Klick der Gebaeude-Sammelmarke in MapCanvas"
+    status: done
+    deps: [T-M51-01]
+    requirements: [R-MAP-05]
+    design: []
+    files: [apps/desktop/src/map/MapCanvas.tsx, apps/desktop/src/map/MapCanvas.test.tsx, apps/desktop/src/map/layoutMarks.ts, apps/desktop/src/App.tsx]
+    tests: [apps/desktop/src/map/MapCanvas.test.tsx]
+    dod: "Neue MapCanvas-Tests gruen, alte unveraendert gruen, Klick zoomt wie Armee-Sammelmarke."
+  - id: T-M51-03
+    milestone: M51
+    title: "Waechter S575 und Messung"
+    status: done
+    deps: [T-M51-02]
+    requirements: [R-MAP-05]
+    design: []
+    files: [apps/desktop/src/map/zoomcluster.slow.test.ts, docs/reports/v4/zoomcluster.json]
+    tests: [apps/desktop/src/map/zoomcluster.slow.test.ts]
+    dod: "Slow-Test gruen, Messwerte in zoomcluster.json."
+  - id: T-M51-04
+    milestone: M51
+    title: "Abnahme am laufenden Programm, Bericht, PR"
+    status: done
+    deps: [T-M51-03]
+    requirements: [R-MAP-05]
+    design: []
+    files: [scripts/v4-zoomcluster-bild.mjs, docs/ux/v4-zoomcluster/, docs/reports/v4/zoomcluster.md, docs/plan/PROGRESS.md, docs/ASSETS.md]
+    tests: [scripts/v4-zoomcluster-bild.mjs]
+    dod: "Bilder angesehen, pnpm verify Exit 0, PR offen (Noah2475g), Merge nur durch reviewer."
+  - id: T-M51-05
+    milestone: M51
+    title: "Uebergang (Tween) E2a"
+    status: todo
+    deps: [T-M51-04]
+    requirements: [R-MAP-05]
+    design: []
+    files: [apps/desktop/src/ui/motion.ts, apps/desktop/src/map/sammel.ts]
+    tests: []
+    dod: "D9-Uebergang belegt, Unit-Tests gruen."
+  - id: T-M51-06
+    milestone: M51
+    title: "Uebergang verdrahtet, Bericht, PR"
+    status: todo
+    deps: [T-M51-05]
+    requirements: [R-MAP-05]
+    design: []
+    files: [apps/desktop/src/map/MapCanvas.tsx, docs/reports/v4/zoomcluster-e2.md]
+    tests: [apps/desktop/src/map/MapCanvas.test.tsx]
+    dod: "pnpm verify Exit 0, PR offen (Noah2475g), Merge nur durch reviewer."

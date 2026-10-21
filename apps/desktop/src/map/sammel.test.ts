@@ -1,15 +1,29 @@
 import { describe, expect, it } from 'vitest'
 import type { View } from './picking.ts'
-import { armyScreenPoint, markersFor, pickArmy, pickArmyGroup, toneFor as toneForViaMarkers, type ArmyMarker } from './markers.ts'
+import {
+  armyScreenPoint,
+  buildingMarkers,
+  markersFor,
+  pickArmy,
+  pickArmyGroup,
+  pickBuildingGroup,
+  toneFor as toneForViaMarkers,
+  type ArmyMarker,
+  type BuildingsByProvince,
+} from './markers.ts'
 import {
   ARMY_GROUP_MIN,
+  BUILDING_GROUP_MIN,
+  BUILDING_SYMBOL_PRIO,
   GROUP_ZOOM_SCALE,
   arrowArmies,
   groupArmies,
+  groupBuildings,
   groupKey,
   showDayLabel,
   toneFor,
 } from './sammel.ts'
+import { BUILDING_ICONS } from '../ui/icons.tsx'
 
 /** Sammelmarke als reine Funktion (T-M49-01, R-MAP-05, D1-D10). */
 
@@ -172,5 +186,104 @@ describe('T-M49-01 Sammelmarke', () => {
     expect(second.filter((m) => m.kind === 'army')).toHaveLength(6)
     const third = markersFor(armies, {}, centres, mid, { grouping: { selectedArmyId: 'a0' } })
     expect(third.filter((m) => m.kind === 'army')).toHaveLength(1)
+  })
+})
+
+describe('T-M51-01 Gebaeude-Sammelmarke', () => {
+  it('Konstanten', () => {
+    expect(BUILDING_GROUP_MIN).toBe(2)
+    expect(BUILDING_SYMBOL_PRIO).toEqual(['factory', 'airfield', 'harbour', 'shipyard', 'barracks', 'railway', 'fortress'])
+  })
+
+  it('(a) Gruppe erst ab zwei Arten, Stufe 0 zaehlt nicht', () => {
+    expect(groupBuildings({ alpha: { barracks: 3 } }).size).toBe(0)
+    expect(groupBuildings({ alpha: { barracks: 3, fortress: 0 } }).size).toBe(0)
+    const g = groupBuildings({ alpha: { barracks: 3, fortress: 2 } })
+    expect(g.get('alpha')?.n).toBe(2)
+  })
+
+  it('(b) Symbol nach Vorrang', () => {
+    expect(groupBuildings({ a: { fortress: 1, railway: 1, barracks: 1 } }).get('a')?.icon).toBe(BUILDING_ICONS.barracks)
+    expect(groupBuildings({ a: { fortress: 1, factory: 1, harbour: 1 } }).get('a')?.icon).toBe(BUILDING_ICONS.factory)
+    expect(groupBuildings({ a: { fortress: 1, railway: 1 } }).get('a')?.icon).toBe(BUILDING_ICONS.railway)
+  })
+
+  const buildings3: BuildingsByProvince = {
+    alpha: { barracks: 3, fortress: 2 },
+    beta: { factory: 1 },
+    gamma: { harbour: 4, shipyard: 1, railway: 2 },
+  }
+  const centres3 = { ...centres, gamma: { x: 500, y: 500 } }
+
+  it('(c) buildingMarkers ohne Opt-in bitgleich zur alten Gebaeudeliste aus markersFor', () => {
+    const v: View = { x: 0, y: 0, scale: 1.6 }
+    const fromOld = markersFor([], buildings3, centres3, v).filter((m) => m.kind === 'building')
+    const fromNew = buildingMarkers(buildings3, centres3, v)
+    expect(fromNew).toEqual(fromOld)
+
+    const withAnchors = { anchors: { alpha: [{ x: 90, y: 90, edgeDistance: 5 }, { x: 110, y: 110, edgeDistance: 5 }] } }
+    const fromOldA = markersFor([], buildings3, centres3, v, withAnchors).filter((m) => m.kind === 'building')
+    const fromNewA = buildingMarkers(buildings3, centres3, v, withAnchors)
+    expect(fromNewA).toEqual(fromOldA)
+  })
+
+  it('(d) mit Opt-in auf near bitgleich ohne Opt-in', () => {
+    const buildings: BuildingsByProvince = { alpha: { barracks: 3, fortress: 2 } }
+    const v: View = { x: 0, y: 0, scale: 0.97 }
+    const without = buildingMarkers(buildings, centres, v)
+    const withOptIn = buildingMarkers(buildings, centres, v, { buildingGroups: { selectedProvinceId: null } })
+    expect(withOptIn).toEqual(without)
+  })
+
+  it('(e) bei 1.6 genau eine buildingGroup am ersten placeBuildings-Platz; 1 Art bleibt Einzelquadrat', () => {
+    const buildings: BuildingsByProvince = { alpha: { barracks: 1, fortress: 1, factory: 1, railway: 1 }, beta: { harbour: 2 } }
+    const v: View = { x: 0, y: 0, scale: 1.6 }
+    const extras = { buildingGroups: { selectedProvinceId: null } }
+    const markers = buildingMarkers(buildings, centres, v, extras)
+    const groups = markers.filter((m) => m.kind === 'buildingGroup')
+    expect(groups).toHaveLength(1)
+    expect(groups[0]).toMatchObject({ provinceId: 'alpha', label: '4', icon: BUILDING_ICONS.factory })
+    // Punkt = erster Eintrag von placeBuildings (barracks steht am gleichen Anker wie allein).
+    const soloBarracks = buildingMarkers({ alpha: { barracks: 1 } }, centres, v).find((m) => m.kind === 'building')!
+    expect(groups[0]).toMatchObject({ x: soloBarracks.x, y: soloBarracks.y })
+    const singles = markers.filter((m) => m.kind === 'building')
+    expect(singles).toHaveLength(1)
+    expect(singles[0]!.provinceId).toBe('beta')
+  })
+
+  it('(f) bei 2.5 (far) 0 Gebaeude-Eintraege', () => {
+    const v: View = { x: 0, y: 0, scale: 2.5 }
+    const extras = { buildingGroups: { selectedProvinceId: null } }
+    expect(buildingMarkers(buildings3, centres3, v, extras)).toHaveLength(0)
+  })
+
+  it('(g) selected nur bei selectedProvinceId', () => {
+    const buildings: BuildingsByProvince = { alpha: { barracks: 1, fortress: 1 }, beta: { barracks: 1, fortress: 1 } }
+    const v: View = { x: 0, y: 0, scale: 1.6 }
+    const markers = buildingMarkers(buildings, centres, v, { buildingGroups: { selectedProvinceId: 'alpha' } })
+    const groups = markers.filter((m) => m.kind === 'buildingGroup')
+    expect(groups.find((m) => m.provinceId === 'alpha')?.selected).toBe(true)
+    expect(groups.find((m) => m.provinceId === 'beta')?.selected).toBeUndefined()
+  })
+
+  it('(h) pickBuildingGroup: Mitte trifft, 40 px daneben nicht, ohne Opt-in nie', () => {
+    const buildings: BuildingsByProvince = { alpha: { barracks: 1, fortress: 1 } }
+    const v: View = { x: 0, y: 0, scale: 1.6 }
+    const extras = { buildingGroups: { selectedProvinceId: null } }
+    const g = buildingMarkers(buildings, centres, v, extras).find((m) => m.kind === 'buildingGroup')!
+    expect(pickBuildingGroup({ x: g.x, y: g.y }, buildings, centres, v, extras)).toEqual({ provinceId: 'alpha', x: g.x, y: g.y })
+    expect(pickBuildingGroup({ x: g.x + 40, y: g.y }, buildings, centres, v, extras)).toBeNull()
+    expect(pickBuildingGroup({ x: g.x, y: g.y }, buildings, centres, v)).toBeNull()
+  })
+
+  it('(i) markersFor mit buildingGroups-Opt-in laesst den Armeeteil unveraendert', () => {
+    const armies = many(4)
+    const buildings: BuildingsByProvince = { alpha: { barracks: 1, fortress: 1 } }
+    const v: View = { x: 0, y: 0, scale: 1.6 }
+    const without = markersFor(armies, buildings, centres, v).filter((m) => m.kind === 'army' || m.kind === 'armyGroup')
+    const withOptIn = markersFor(armies, buildings, centres, v, { buildingGroups: { selectedProvinceId: null } }).filter(
+      (m) => m.kind === 'army' || m.kind === 'armyGroup',
+    )
+    expect(withOptIn).toEqual(without)
   })
 })

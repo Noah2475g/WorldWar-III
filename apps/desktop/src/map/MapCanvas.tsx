@@ -51,10 +51,12 @@ import {
   ARMY_BOX,
   BUILDING_BOX,
   collideMarks,
+  BUILDING_GROUP_BOX,
   marchEnds,
   markersFor,
   pickArmy,
   pickArmyGroup,
+  pickBuildingGroup,
   type ArmyMarker,
   type BuildingsByProvince,
   type MarkerTone,
@@ -818,8 +820,10 @@ export function MapCanvas(props: MapCanvasProps) {
     const strengthOf = strengthByProvince(props.armies)
 
     const grouping = { selectedArmyId: props.selectedArmyId ?? null }
+    const buildingGroups = { selectedProvinceId: props.selectedProvince ?? null }
     const rawMarkers = markersFor(props.armies, props.buildings, props.centres, props.view, {
       grouping,
+      buildingGroups,
       capitalProvinceId: props.capitalProvinceId ?? null,
       battleProvinces: props.battleProvinces ?? [],
       ...(props.anchors ? { anchors: props.anchors } : {}),
@@ -872,6 +876,48 @@ export function MapCanvas(props: MapCanvasProps) {
           context.textAlign = 'left'
           context.textBaseline = 'alphabetic'
         }
+        continue
+      }
+
+      if (marker.kind === 'buildingGroup') {
+        // Gebaeude-Sammelmarke (T-M51-02, D6, Mockup v3b `.bm`): leise Pille mit Glyphe
+        // und Zahl statt mehrerer Quadrate — Breite waechst mit der Zahl, Hoehe bleibt 20.
+        const label = marker.label ?? ''
+        context.font = `400 10.5px ${TYPE.num}`
+        const textWidth = context.measureText(label).width
+        const width = Math.max(BUILDING_GROUP_BOX.width, 3 + 12 + 3 + textWidth + 4)
+        const height = BUILDING_GROUP_BOX.height
+        const left = marker.x - width / 2
+        const top = marker.y - height / 2
+        const radius = 7
+        context.beginPath()
+        context.moveTo(left + radius, top)
+        context.arcTo(left + width, top, left + width, top + height, radius)
+        context.arcTo(left + width, top + height, left, top + height, radius)
+        context.arcTo(left, top + height, left, top, radius)
+        context.arcTo(left, top, left + width, top, radius)
+        context.closePath()
+        context.globalAlpha = 0.7
+        context.fillStyle = TOKENS.surface
+        context.fill()
+        context.globalAlpha = 1
+        if (marker.selected) {
+          context.lineWidth = 1.5
+          context.strokeStyle = TOKENS.primary
+          context.stroke()
+        }
+        context.strokeStyle = marker.selected ? TOKENS.primary : TOKENS.muted
+        context.lineWidth = 1.4
+        drawIcon(context, marker.icon ?? 'warning', left + 3 + 6, marker.y, 12)
+        context.globalAlpha = 0.85
+        context.fillStyle = TOKENS.text
+        context.font = `400 10.5px ${TYPE.num}`
+        context.textAlign = 'left'
+        context.textBaseline = 'middle'
+        context.fillText(label, left + 3 + 12 + 3, marker.y)
+        context.globalAlpha = 1
+        context.textAlign = 'left'
+        context.textBaseline = 'alphabetic'
         continue
       }
 
@@ -1175,6 +1221,15 @@ export function MapCanvas(props: MapCanvasProps) {
     time: event.timeStamp,
   })
 
+  const zoomToGroup = useCallback(
+    (point: Point) => {
+      props.onViewChange(
+        centreOnVisible(toMap(point, props.view), { ...props.view, scale: GROUP_ZOOM_SCALE }, limits, props.insets),
+      )
+    },
+    [props, limits],
+  )
+
   const handleClick = useCallback(
     (event: React.MouseEvent<HTMLCanvasElement>) => {
       if (suppressClickRef.current) {
@@ -1222,21 +1277,27 @@ export function MapCanvas(props: MapCanvasProps) {
           hitBox,
         )
         if (hit) {
-          props.onViewChange(
-            centreOnVisible(
-              toMap({ x: hit.x, y: hit.y }, props.view),
-              { ...props.view, scale: GROUP_ZOOM_SCALE },
-              limits,
-              props.insets,
-            ),
-          )
+          zoomToGroup({ x: hit.x, y: hit.y })
+          return
+        }
+        // Gebaeude-Sammelmarke (T-M51-02, D7): derselbe Zoom-Weg, kein onSelect/onSelectArmy.
+        const buildingHit = pickBuildingGroup(
+          screen,
+          props.buildings,
+          props.centres,
+          props.view,
+          { buildingGroups: { selectedProvinceId: props.selectedProvince ?? null } },
+          hitBox,
+        )
+        if (buildingHit) {
+          zoomToGroup({ x: buildingHit.x, y: buildingHit.y })
           return
         }
       }
 
       props.onSelect(pickProvince(screen, props.view, withBounds))
     },
-    [props, withBounds, size],
+    [props, withBounds, size, zoomToGroup],
   )
 
   const handleWheel = useCallback(
