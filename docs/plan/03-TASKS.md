@@ -8311,3 +8311,30 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Dateien:** `apps/desktop/src/map/welt.ts`, `apps/desktop/src/map/welt.test.ts`, `apps/desktop/src/map/layoutMarks.ts` (nur additive Erweiterung, Mid/Near bitgleich), `apps/desktop/src/map/layoutMarks.test.ts` (angehängt)
 - **Tests zuerst:** `welt.test.ts` (a)-(f), `layoutMarks.test.ts` (g)-(h)
 - **Fertig wenn:** alle Testfälle grün, Gegenprobe mergeRadius=64 statt 72 rot gesehen, `pnpm typecheck`/`lint` grün. Zeichnen/Klick folgt in E3b.
+
+### T-M51-08 · Welt-Pille E3b: Zeichnen, Klick
+- **Ziel:** Die Welt-Pille wird auf der Zoomstufe "Welt" (far) gezeichnet (D22) und ist klickbar (Klick zoomt auf die Provinz-Gruppe, D23).
+- **Paket und Priorität:** Zoom-Cluster · P2
+- **Anforderungen:** R-MAP-05
+- **Abhängigkeiten:** T-M51-07
+- **Dateien:** `apps/desktop/src/map/markers.ts`, `apps/desktop/src/map/MapCanvas.tsx`
+- **Tests zuerst:** `apps/desktop/src/map/markers.test.ts`, `apps/desktop/src/map/MapCanvas.test.tsx`
+- **Fertig wenn:** Welt-Pille auf far gezeichnet und klickbar, Mid/Near unverändert.
+
+### T-M51-09 · Welt-Pille E3c: Wächter an S575
+- **Ziel:** Ein Slow-Test belegt Rohstand und zusammengelegte Zahl der Welt-Pille an S575 und beweist, dass Mid/Near bitgleich bleiben (D24).
+- **Paket und Priorität:** Zoom-Cluster · P2
+- **Anforderungen:** R-MAP-05
+- **Abhängigkeiten:** T-M51-08
+- **Dateien:** `apps/desktop/src/map/zoomcluster-welt.slow.test.ts`, `docs/reports/v4/weltpille.json`
+- **Tests zuerst:** `apps/desktop/src/map/zoomcluster-welt.slow.test.ts`
+- **Fertig wenn:** Slow-Test grün, Messwerte in `weltpille.json`, `git diff --exit-code` zeigt Mid/Near unverändert.
+
+### T-M51-10 · Welt-Pille E3d: Abnahme, Bilder, Bericht, PR
+- **Ziel:** Vorher/Nachher-Bilder gegen Bild 5 verglichen, Bericht geschrieben, `pnpm verify` grün, PR offen (Merge nur reviewer).
+- **Paket und Priorität:** Zoom-Cluster · P2
+- **Anforderungen:** R-MAP-05
+- **Abhängigkeiten:** T-M51-09
+- **Dateien:** `scripts/v4-weltpille-bild.mjs`, `docs/ux/v4-weltpille/`, `docs/reports/v4/weltpille.md`, `docs/plan/PROGRESS.md`, `docs/ASSETS.md`
+- **Tests zuerst:** `scripts/v4-weltpille-bild.mjs`
+- **Fertig wenn:** Bilder angesehen und gegen Bild 5 verglichen, `pnpm verify` Exit 0, PR offen (Noah2475g), Merge nur durch reviewer.

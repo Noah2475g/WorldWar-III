@@ -111,7 +111,7 @@ describe('T-M51-09: Welt-Pille-Waechter an S575', () => {
     const zusammengelegt = collideWorldMarks(raw, bounds, null)
     const byOwner: Record<string, number> = {}
     for (const m of zusammengelegt) {
-      if (m.kind !== 'worldPill') continue
+      if (m.kind !== 'worldPill' || !m.ownerId) continue
       byOwner[m.ownerId] = (byOwner[m.ownerId] ?? 0) + 1
     }
 

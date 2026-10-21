@@ -854,6 +854,8 @@ nur 1280x800 und 375x667 (PLAN-V3 Regel 12). Kein Fremdinhalt: Bildschirmfotos d
 | `docs/ux/v4-zoomcluster/teilen-100.png` | `scripts/v4-zoomcluster-bild.mjs --film` | T-M<n>-06: Stufenwechsel mid->near (Teilen), > 588 ms spaeter (Zielbild), 1280x800 |
 | `docs/ux/v4-zoomcluster/buendeln-000.png` | `scripts/v4-zoomcluster-bild.mjs --film` | T-M<n>-06: Stufenwechsel near->mid (Buendeln), t=0 (Klickmoment), 1280x800 |
 | `docs/ux/v4-zoomcluster/buendeln-100.png` | `scripts/v4-zoomcluster-bild.mjs --film` | T-M<n>-06: Stufenwechsel near->mid (Buendeln), > 280 ms spaeter (Zielbild), 1280x800 |
+| `docs/ux/v4-weltpille/welt-vorher.png` | `scripts/v4-weltpille-bild.mjs` | T-M51-10: Stand S575G, Welt (far), gegen main/aa88f92 vor E3a-E3d — nur Armee-Sammelmarken, keine Gebaeude-Pillen, 1280x800 |
+| `docs/ux/v4-weltpille/welt-nachher.png` | `scripts/v4-weltpille-bild.mjs` | T-M51-10: Stand S575G, Welt (far), gegen zoomcluster-e3 — Welt-Pille (zwei Segmente, D22), 1280x800 |
 | `docs/ux/v4-stellung/marsch-vorher.png` | `scripts/v4-stellung-bild.mjs` | T-M48-04: eine Spielstunde Marsch, ohne Stellung, 1280x800 |
 | `docs/ux/v4-stellung/marsch-nachher.png` | `scripts/v4-stellung-bild.mjs` | T-M48-04: eine Spielstunde Marsch, mit Stellung, 1280x800 |
 | `docs/ux/v4-seitenleiste/b0/S575G-basis-diplomatie-1280x800.png` | `scripts/ux-capture.mjs` | Seitenleiste v3b B0: Basisaufnahme, S575G-basis-diplomatie-1280x800.png |
