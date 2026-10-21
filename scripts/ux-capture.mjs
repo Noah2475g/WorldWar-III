@@ -148,6 +148,7 @@ const MP_ALARM_WAIT_S = Number(arg('mp-alarm-wait', '0'))
 // Den Einmarsch selbst herbeifuehren (T-M46-08): der Gast (der Nachbar des Gastgebers) baut eine Kaserne, hebt Infanterie
 // aus, erklaert den Krieg und marschiert in eine Provinz des Gastgebers - alles ueber die Oberflaeche, im Gleichschritt.
 const MP_FORCE_INTRUSION = flag('mp-force-intrusion')
+const DIAG = flag('diag')
 // Im Pruefmodus entstehen keine Bilder und nichts im Repo: der Zwischenordner liegt im Temp.
 const OUT = resolve(arg('out', CHECK ? join(tmpdir(), 'ux-check') : 'docs/ux/before'))
 const BASE_URL = arg('url', 'http://localhost:5321/')
@@ -1084,7 +1085,7 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
       }
     }, { origin: new URL(run.url).origin, root: fsRoot(ROOT) })
     data.notes.push({ warDiag })
-    console.log('[ux-capture] warDiag (Mentor-Diagnose t_32727790):', JSON.stringify(warDiag))
+    if (DIAG) console.log('[ux-capture] warDiag (Mentor-Diagnose t_32727790):', JSON.stringify(warDiag))
     // Mentor-Befund (t_0a8d09ee, Runde 3): speed('100') laesst das CAPITAL_LOST-Folgeereignis
     // das WAR_DECLARED-Ereignis ueberholen (die KI marschiert im beschleunigten Tempo gleich
     // weiter und erobert die Hauptstadt, bevor der Screenshot den Kriegserklaerungs-Chip zeigt
