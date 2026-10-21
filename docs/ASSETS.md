@@ -1063,3 +1063,27 @@ Kein Fremdinhalt — Bildschirmfotos des eigenen Spiels, erzeugt mit `node scrip
 |---|---|---|
 | `docs/ux/bauvorschau/desktop-1280x800.png` | `scripts/ux-bauvorschau-bild.mjs` | Bauvorschau, 1280x800 |
 | `docs/ux/bauvorschau/telefon-375x667.png` | `scripts/ux-bauvorschau-bild.mjs` | Bauvorschau, 375x667 |
+
+## Bildschirmfotos der Seitenleiste E8 (Seitenleiste v3b E8, 2026-10-11)
+
+Kein Fremdinhalt — Bildschirmfotos des eigenen Spiels, erzeugt mit `node scripts/ux-layout.mjs --shots`
+(Messreihe E8 gegen B0: Telefon-Blatt + Touch quer, 4 Aufloesungen).
+
+| Datei | Erzeugt von | Zeigt |
+|---|---|---|
+| `docs/ux/v4-seitenleiste/e8/S575G-e8-diplomatie-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E8: Diplomatie-Szene, S575G-e8-diplomatie-1280x800.png |
+| `docs/ux/v4-seitenleiste/e8/S575G-e8-diplomatie-1920x1080.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E8: Diplomatie-Szene, S575G-e8-diplomatie-1920x1080.png |
+| `docs/ux/v4-seitenleiste/e8/S575G-e8-diplomatie-auswahl-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E8: Diplomatie-Szene mit Auswahl, S575G-e8-diplomatie-auswahl-1280x800.png |
+| `docs/ux/v4-seitenleiste/e8/S575G-e8-diplomatie-auswahl-1920x1080.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E8: Diplomatie-Szene mit Auswahl, S575G-e8-diplomatie-auswahl-1920x1080.png |
+| `docs/ux/v4-seitenleiste/e8/S575G-e8-kopf-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E8: Kopf-Szene, S575G-e8-kopf-1280x800.png |
+| `docs/ux/v4-seitenleiste/e8/S575G-e8-kopf-1920x1080.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E8: Kopf-Szene, S575G-e8-kopf-1920x1080.png |
+| `docs/ux/v4-seitenleiste/e8/S575G-e8-kopf-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E8: Kopf-Szene, Telefon-Hochformat, S575G-e8-kopf-375x667.png |
+| `docs/ux/v4-seitenleiste/e8/S575G-e8-markt-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E8: Markt-Szene, S575G-e8-markt-1280x800.png |
+| `docs/ux/v4-seitenleiste/e8/S575G-e8-markt-1920x1080.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E8: Markt-Szene, S575G-e8-markt-1920x1080.png |
+| `docs/ux/v4-seitenleiste/e8/S575G-e8-panel-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E8: Panel-Szene, S575G-e8-panel-1280x800.png |
+| `docs/ux/v4-seitenleiste/e8/S575G-e8-panel-1920x1080.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E8: Panel-Szene, S575G-e8-panel-1920x1080.png |
+| `docs/ux/v4-seitenleiste/e8/S575G-e8-panel-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E8: Panel-Szene, Telefon-Hochformat (Blatt), S575G-e8-panel-375x667.png |
+| `docs/ux/v4-seitenleiste/e8/S575G-e8-protokoll-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E8: Protokoll-Szene, Telefon-Hochformat, S575G-e8-protokoll-375x667.png |
+| `docs/ux/v4-seitenleiste/e8/S575G-e8-puls-1280x800.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E8: Puls-Szene, S575G-e8-puls-1280x800.png |
+| `docs/ux/v4-seitenleiste/e8/S575G-e8-puls-1920x1080.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E8: Puls-Szene, S575G-e8-puls-1920x1080.png |
+| `docs/ux/v4-seitenleiste/e8/S575G-e8-puls-375x667.png` | `scripts/ux-layout.mjs` | Seitenleiste v3b E8: Puls-Szene, Telefon-Hochformat, S575G-e8-puls-375x667.png |

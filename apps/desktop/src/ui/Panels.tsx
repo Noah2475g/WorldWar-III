@@ -567,6 +567,15 @@ export interface ProvincePanelProps {
   isCapital?: boolean
   ticksPerDay: number
   currentTick: number
+  /**
+   * Telefon-Hochformat, Blatt (E8, Spec §12.15, D15): das Ausheben-Raster wird 4-spaltig
+   * dargestellt und ersetzt die Bauplaetze, solange es offen ist — "Bauen" bleibt nur als
+   * eine Kopfzeile stehen. Ohne diese Angabe (Desktop/Dock) unveraendert (wie vor E8).
+   */
+  compactRecruit?: boolean
+  /** Ob das Ausheben-Raster im Blatt offen ist (D15: Telefon-Standard ist ZU, Ausnahme zu D10). */
+  recruitOpen?: boolean
+  onToggleRecruit?: () => void
 }
 
 /**
@@ -945,12 +954,20 @@ export function ProvincePanel(props: ProvincePanelProps) {
           und sieben freie Felder behaupteten dort „hier steht nichts" — eine Auskunft,
           die der Spieler gar nicht hat. Dann steht hier nichts, wie vor dem Umbau. */}
       {province.buildings !== undefined && (
-        <ProvinceBuildSlots
-          province={province}
-          buildActions={buildActions}
-          currentTick={props.currentTick}
-          ticksPerDay={props.ticksPerDay}
-        />
+        props.compactRecruit ? (
+          // E8/D15: im Blatt bleibt von "Bauen" nur die Kopfzeile stehen — das Raster
+          // selbst weicht dem Ausheben-Raster, solange das Blatt offen ist.
+          <h3 className="panel__icon-title panel__icon-title--compact">
+            <Icon name="slots" size={26} title={t('province.buildSlots')} />
+          </h3>
+        ) : (
+          <ProvinceBuildSlots
+            province={province}
+            buildActions={buildActions}
+            currentTick={props.currentTick}
+            ticksPerDay={props.ticksPerDay}
+          />
+        )
       )}
 
       {(province.recruitQueue ?? []).map((order) => (
@@ -1008,9 +1025,30 @@ export function ProvincePanel(props: ProvincePanelProps) {
       )}
 
       <ActionRow actions={props.actions} />
-      {otherGroups.map((group) => (
-        <ActionGroup key={group.id} group={group} next={group.id === 'recruit' ? props.nextUnlock : undefined} iconOnly={group.id === 'espionage'} preview={group.id === 'recruit'} />
-      ))}
+      {otherGroups.map((group) => {
+        const isRecruit = group.id === 'recruit'
+        const node = (
+          <ActionGroup key={group.id} group={group} next={isRecruit ? props.nextUnlock : undefined} iconOnly={group.id === 'espionage'} preview={isRecruit} />
+        )
+        if (!isRecruit || !props.compactRecruit) return node
+        // E8/D15: im Blatt hat das Ausheben-Raster einen eigenen Auf/Zu-Knopf (Telefon-Standard: ZU,
+        // Ausnahme zu D10 — K6-Metrik) und wird 4-spaltig dargestellt (recruit-grid--phone, app.css).
+        return (
+          <section key={`${group.id}-compact`} className="group group--recruit-compact" data-group="recruit-compact">
+            <button
+              type="button"
+              className="button recruit-sheet__toggle"
+              aria-expanded={Boolean(props.recruitOpen)}
+              aria-controls="recruit-sheet-phone"
+              onClick={() => props.onToggleRecruit?.()}
+              title={props.recruitOpen ? t('recruitSheet.collapse') : t('recruitSheet.expand')}
+            >
+              {t('dock.recruitAction')} {props.recruitOpen ? '▾' : '▸'}
+            </button>
+            {props.recruitOpen && <div id="recruit-sheet-phone" className="recruit-grid--phone">{node}</div>}
+          </section>
+        )
+      })}
     </section>
   )
 }

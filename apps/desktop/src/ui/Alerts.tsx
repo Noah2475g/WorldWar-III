@@ -621,16 +621,24 @@ export function Alerts({
   onJump,
   onDismiss,
   column = false,
+  compact = column,
 }: {
   alerts: readonly Alert[]
   onJump: (target: JumpTarget) => void
   /** Eine Ankuendigung oder Freischaltung bis zum Ende ihres Spieltags ausblenden. */
   onDismiss?: (id: string) => void
   /**
-   * Hinweisspalte oben links ueber der Karte (v3b E1, D3): `.alerts.map-alerts`, hoechstens
-   * COLUMN_MAX Zeilen, der Rest hinter „+n“. Ohne: die Liste im Blatt (Telefon-Hochformat, E8).
+   * Hinweisspalte oben links ueber der Karte (v3b E1, D3): `.alerts.map-alerts`, schwebt ueber
+   * der Karte. Ohne: die Liste im Blatt (Telefon-Hochformat, E8) — dort bestimmt `compact`
+   * allein, ob hoechstens COLUMN_MAX Zeichen stehen.
    */
   column?: boolean
+  /**
+   * Hoechstens COLUMN_MAX Zeichen, der Rest hinter „+n" (E8, D15): Zeichen mit 44px
+   * Trefferflaeche statt des ganzen Satzes. Folgt ohne Angabe `column` (unveraendertes
+   * Verhalten vor E8); im Blatt des Telefons gilt `compact` unabhaengig von `column`.
+   */
+  compact?: boolean
 }) {
   const [expanded, setExpanded] = useState(false)
   if (alerts.length === 0) return null
@@ -665,11 +673,11 @@ export function Alerts({
   // Zeichen gross, Kurzwort klein (T-M46-17): der Satz steht als Name des Zeichens und als Tooltip.
   // LOESCHVERMERK (Review): bis T-M46-17 stand der ganze Satz neben einem 14-px-Zeichen
   // (<Icon name={alert.icon} size={14} /> und {alert.text} im Knopf bzw. in der Zusammenfassung).
-  const hidden = column && !expanded ? Math.max(0, rows.length - COLUMN_MAX) : 0
+  const hidden = compact && !expanded ? Math.max(0, rows.length - COLUMN_MAX) : 0
   const visibleRows = hidden > 0 ? rows.slice(0, COLUMN_MAX) : rows
-  const iconSize = column ? COLUMN_ICON : ALERT_ICON
+  const iconSize = compact ? COLUMN_ICON : ALERT_ICON
   return (
-    <section className={column ? 'alerts map-alerts' : 'alerts'} aria-label={t('alerts.title')}>
+    <section className={column ? 'alerts map-alerts' : compact ? 'alerts alerts--sheet' : 'alerts'} aria-label={t('alerts.title')}>
       <ul>
         {visibleRows.map(({ alert, ids, group }) => {
           const target = targetOf(alert)
@@ -709,7 +717,7 @@ export function Alerts({
             </li>
           )
         })}
-        {column && rows.length > COLUMN_MAX && (
+        {compact && rows.length > COLUMN_MAX && (
           <li className="alert alert--more">
             <button
               type="button"

@@ -1524,9 +1524,20 @@ export const de = {
   /** Die schwebende Leiste unten (E5, D9): Provinz/Armee statt in der Seitenleiste. */
   dock: {
     empty: 'Land anklicken, um Bauplätze und Ausheben zu sehen.',
+    /** Touch quer (E8, D15, Spec §12.14.3): Tipp statt Klick — kein Tastatur-Hinweis in diesem Modus. */
+    emptyTouch: 'Land antippen, um Bauplätze und Ausheben zu sehen.',
     recruitAction: 'Ausheben',
     recruitActionAria: 'Ausheben-Raster öffnen oder schließen',
     pickerAria: 'Provinz (Leiste unten)',
+    /** E6 (D9, Spec §12.14.4): Hauptaktion der Leiste unten im Zustand attack. */
+    attackAction: 'Angriff ansehen',
+    attackActionAria: 'Zur angegriffenen Provinz springen und sie wählen',
+    powerAction: 'Macht ansehen',
+    powerActionAria: 'Zur Diplomatie mit dieser Macht springen',
+    /** Chip-Satz im Zustand attack: "<Macht> greift an" (eigener Provinzangriff). */
+    attackChip: '{{power}} greift an',
+    /** Chip-Satz bei WAR_DECLARED: keine eigene Provinz, nur die Kriegserklärung. */
+    warChip: '{{power}} erklärt den Krieg',
   },
 
   /** Das Ausheben-Raster (E5, D10): 5×2 Felder über der Leiste unten. */

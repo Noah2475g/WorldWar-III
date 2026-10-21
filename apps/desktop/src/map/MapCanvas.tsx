@@ -50,6 +50,7 @@ import { ZOOM_STEP } from '../keyboard.ts'
 import {
   ARMY_BOX,
   BUILDING_BOX,
+  collideMarks,
   marchEnds,
   markersFor,
   pickArmy,
@@ -59,17 +60,29 @@ import {
   type MarkerTone,
 } from './markers.ts'
 import { GROUP_ZOOM_SCALE, arrowArmies, showDayLabel } from './sammel.ts'
+import { centreOnVisible } from './viewRect.ts'
 import type { Anchor } from './anchors.ts'
+import type { MapInsets } from '../ui/viewRect.ts'
 import { ICON_PATHS, type IconName } from '../ui/icons.tsx'
 import { GLYPH_BOX, GLYPH_PATHS } from '../ui/glyphs.ts'
 import { labelsFor } from './labels.ts'
 import { OWNERSHIP_FADE_MS, battleFlash, fadeProgress, motionAllowed, ringRadius } from '../ui/motion.ts'
 import { CUE_SPEED_LIMIT } from '../ui/sound.ts'
+import type { LayoutResult } from './layoutMarks.ts'
 import { fillFor, mixColors, strengthByProvince, type MapMode } from './modes.ts'
 import { PING_MS, edgeMarker, freshPings, pingFrame } from './pings.ts'
 import type { MapPing } from '../game/events.ts'
 import { MapTools, ZOOM_TIER_SCALE } from '../ui/MapTools.tsx'
 import type { ReactNode } from 'react'
+
+/**
+ * Letzte Markenkollision (E7, Plan D14), nur fuer `window.__wwMarks()` im Dev-Build
+ * (Mess-Skript, Plan K16/K15). `undefined` im Build (D14-Entscheidung: kein Hook ausserhalb DEV).
+ */
+let lastMarksLayout: LayoutResult | null = null
+if (import.meta.env.DEV) {
+  ;(window as unknown as { __wwMarks?: () => LayoutResult | null }).__wwMarks = () => lastMarksLayout
+}
 
 /**
  * The map (T-M10-03a/b, R-UI-03).
@@ -201,6 +214,12 @@ function buildingStamp(cache: Map<string, HTMLCanvasElement>, icon: IconName, ra
 export interface MapCanvasProps {
   /** Die Legende, unten in der Werkzeug-Spalte (E3, D8). */
   legend?: ReactNode
+  /**
+   * Insets der Leiste unten/Werkzeuge ueber der Karte (E7, D8-Folge-Fix M49): der
+   * Sammelmarken-Klick zentriert damit in den sichtbaren Ausschnitt statt unter die
+   * Leiste. Fehlt es, zaehlt die ganze Leinwand (wie bisher).
+   */
+  insets?: MapInsets
   provinces: readonly RenderProvince[]
   centres: Readonly<Record<string, { x: number; y: number }>>
   armies: readonly ArmyMarker[]
@@ -799,7 +818,7 @@ export function MapCanvas(props: MapCanvasProps) {
     const strengthOf = strengthByProvince(props.armies)
 
     const grouping = { selectedArmyId: props.selectedArmyId ?? null }
-    for (const marker of markersFor(props.armies, props.buildings, props.centres, props.view, {
+    const rawMarkers = markersFor(props.armies, props.buildings, props.centres, props.view, {
       grouping,
       capitalProvinceId: props.capitalProvinceId ?? null,
       battleProvinces: props.battleProvinces ?? [],
@@ -807,7 +826,24 @@ export function MapCanvas(props: MapCanvasProps) {
       // Ohne `tick` stehen marschierende Armeen in der Provinzmitte. Genau das ist
       // gewollt, wenn Bewegung abgeschaltet ist (T-M20-04).
       ...(motionAllowed(props.speed ?? 0) && props.tick !== undefined ? { tick: props.tick } : {}),
-    })) {
+    })
+    // E7 (Plan D14, K16): Markenkollision auf mid/far — near bleibt bitgleich. Reine
+    // Positionierung (Mentor-Befund t_9778f304); die "gemischte Pille" zeichnet weiterhin
+    // nicht, das ist E7b.
+    const tier = zoomTier(props.view.scale)
+    let drawMarkers = rawMarkers
+    if (tier !== 'near') {
+      const { markers: placed, layout } = collideMarks(
+        rawMarkers,
+        { x: 0, y: 0, width: bitmap.width, height: bitmap.height },
+        props.selectedArmyId ?? null,
+      )
+      drawMarkers = placed
+      if (import.meta.env.DEV) lastMarksLayout = layout
+    } else if (import.meta.env.DEV) {
+      lastMarksLayout = null
+    }
+    for (const marker of drawMarkers) {
       if (marker.kind === 'building') {
         // Ein Quadrat je Gebaeude an seinem Anker (T-M30-02, D27.2): Rahmen in
         // `building`, Glyphe aus demselben Pfad wie im Panel, Stufe ab 2 als Ziffer
@@ -1187,7 +1223,12 @@ export function MapCanvas(props: MapCanvasProps) {
         )
         if (hit) {
           props.onViewChange(
-            centreOn(toMap({ x: hit.x, y: hit.y }, props.view), { ...props.view, scale: GROUP_ZOOM_SCALE }, limits),
+            centreOnVisible(
+              toMap({ x: hit.x, y: hit.y }, props.view),
+              { ...props.view, scale: GROUP_ZOOM_SCALE },
+              limits,
+              props.insets,
+            ),
           )
           return
         }
