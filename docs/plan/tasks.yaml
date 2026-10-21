@@ -4493,20 +4493,20 @@ tasks:
   - id: T-M51-05
     milestone: M51
     title: "Uebergang (Tween) E2a"
-    status: todo
+    status: done
     deps: [T-M51-04]
     requirements: [R-MAP-05]
     design: []
-    files: [apps/desktop/src/ui/motion.ts, apps/desktop/src/map/sammel.ts]
-    tests: []
+    files: [apps/desktop/src/ui/motion.ts, apps/desktop/src/ui/motion.test.ts, apps/desktop/src/map/tween.ts, apps/desktop/src/map/tween.test.ts]
+    tests: [apps/desktop/src/ui/motion.test.ts, apps/desktop/src/map/tween.test.ts]
     dod: "D9-Uebergang belegt, Unit-Tests gruen."
   - id: T-M51-06
     milestone: M51
     title: "Uebergang verdrahtet, Bericht, PR"
-    status: todo
+    status: done
     deps: [T-M51-05]
     requirements: [R-MAP-05]
     design: []
-    files: [apps/desktop/src/map/MapCanvas.tsx, docs/reports/v4/zoomcluster-e2.md]
+    files: [apps/desktop/src/map/MapCanvas.tsx, docs/reports/v4/zoomcluster.md]
     tests: [apps/desktop/src/map/MapCanvas.test.tsx]
     dod: "pnpm verify Exit 0, PR offen (Noah2475g), Merge nur durch reviewer."
