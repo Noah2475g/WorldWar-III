@@ -4493,12 +4493,12 @@ tasks:
   - id: T-M51-05
     milestone: M51
     title: "Uebergang (Tween) E2a"
-    status: todo
+    status: done
     deps: [T-M51-04]
     requirements: [R-MAP-05]
     design: []
-    files: [apps/desktop/src/ui/motion.ts, apps/desktop/src/map/sammel.ts]
-    tests: []
+    files: [apps/desktop/src/ui/motion.ts, apps/desktop/src/ui/motion.test.ts, apps/desktop/src/map/tween.ts, apps/desktop/src/map/tween.test.ts]
+    tests: [apps/desktop/src/ui/motion.test.ts, apps/desktop/src/map/tween.test.ts]
     dod: "D9-Uebergang belegt, Unit-Tests gruen."
   - id: T-M51-06
     milestone: M51
