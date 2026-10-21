@@ -483,14 +483,37 @@ const contextOptions = (vp) => ({
 })
 
 async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ONLY }) {
-  const context = await browser.newContext(contextOptions(vp))
-  const page = await context.newPage()
+  let context = await browser.newContext(contextOptions(vp))
+  let page = await context.newPage()
   const data = { steps: [], failures: [], axe: {}, touch: {}, keyboard: {}, perf: {}, notes: [], probes: {}, dialogs: {} }
   const errors = []
-  page.on('pageerror', (e) => errors.push(String(e).slice(0, 200)))
-  page.on('console', (m) => {
-    if (m.type() === 'error') errors.push(m.text().slice(0, 200))
-  })
+  const attachPageListeners = () => {
+    page.on('pageerror', (e) => errors.push(String(e).slice(0, 200)))
+    page.on('console', (m) => {
+      if (m.type() === 'error') errors.push(m.text().slice(0, 200))
+    })
+  }
+  attachPageListeners()
+  // Absturzfestigkeit unter Last (Befund PR #51 Runde 2 / Mentor t_7309ab7b): wenn Browser oder
+  // Context zwischen zwei Schritten bereits geschlossen wurden ("Target page, context or browser
+  // has been closed"), reisst das sonst den ganzen Lauf ab. Statt den Fehler weiterzureichen, baut
+  // ensureSession() eine frische Session auf derselben Fenstergroesse auf, damit folgende Schritte
+  // (inkl. der Kriegsfixture) weiterlaufen koennen, statt den Prozess mitzunehmen.
+  const isClosedSessionError = (e) => /has been closed|Target (page|context|browser)/i.test(String(e))
+  const ensureSession = async () => {
+    if (browser.isConnected && !browser.isConnected()) return false // Browser selbst weg: nichts zu retten
+    try {
+      context = await browser.newContext(contextOptions(vp))
+      page = await context.newPage()
+      attachPageListeners()
+      await page.goto(run.url, { waitUntil: 'domcontentloaded', timeout: 15000 }).catch(() => {})
+      data.notes.push({ sessionRestarted: true })
+      return true
+    } catch (e2) {
+      data.notes.push({ sessionRestartFailed: String(e2).split('\n')[0].slice(0, 200) })
+      return false
+    }
+  }
   const shot = async (name, opts = {}) => {
     const index = SCENES.indexOf(name)
     const prefix = index >= 0 ? String(index + 1).padStart(2, '0') : 'x'
@@ -507,6 +530,7 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
       // Was der Spieler an dieser Stelle sieht, ist selbst ein Befund.
       if (!String(e).includes('PERF_ONLY')) await shot(`${label}-nicht-erreichbar`).catch(() => {})
       await page.keyboard.press('Escape').catch(() => {})
+      if (isClosedSessionError(e)) await ensureSession()
     }
   }
   const btn = (name, exact = true) => page.getByRole('button', { name, exact }).first()
@@ -760,19 +784,22 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
       await speed('Pause')
       throw new Error('PERF_ONLY')
     }
-    await page.getByRole('button', { name: 'Infanterie ausheben', exact: true }).and(page.locator(':enabled')).waitFor({ timeout: 60000 })
+    // .first(): es gibt zwei Treffer fuer den Namen (Playwright-Strict-Mode), vorbestehender Befund
+    // aus Review PR #51 Runde 2 / Mentor t_7309ab7b — ohne .first() wirft waitFor() sofort einen
+    // Strict-Mode-Fehler statt zu warten.
+    await page.getByRole('button', { name: 'Infanterie ausheben', exact: true }).and(page.locator(':enabled')).first().waitFor({ timeout: 60000 })
     await speed('Pause')
   })
   if (run.perfOnly) {
     data.failures = data.failures.filter((f) => !f.error.includes('PERF_ONLY'))
     data.consoleErrors = errors.slice(0, 20)
-    await context.close()
+    await context.close().catch(() => {}) // ggf. schon durch ensureSession()/Absturz geschlossen
     return data
   }
   await step('ausheben', async () => {
     let clicked = 0
     for (let i = 0; i < 3; i++) {
-      const ok = await page.getByRole('button', { name: 'Infanterie ausheben', exact: true }).click({ timeout: 3000 }).then(() => true, () => false)
+      const ok = await page.getByRole('button', { name: 'Infanterie ausheben', exact: true }).first().click({ timeout: 3000 }).then(() => true, () => false)
       if (ok) clicked += 1
       await page.waitForTimeout(150)
     }
@@ -1158,7 +1185,7 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
   })
 
   data.consoleErrors = errors.slice(0, 20)
-  await context.close()
+  await context.close().catch(() => {}) // ggf. schon durch ensureSession()/Absturz geschlossen
   return data
 }
 
