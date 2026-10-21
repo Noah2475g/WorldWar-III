@@ -51,9 +51,9 @@ const btn = (page, name, exact = true) => page.getByRole('button', { name, exact
 // hier ein Regex, der beide Schreibweisen trifft, nicht `/^Auswählen/`.
 const auswaehlenBtn = (page) => page.getByRole('button', { name: /auswählen/i }).first()
 const openArmiesRail = (page) => page.locator(RAIL_ITEM('armies')).first().click()
-const asideHas = (src) => new RegExp(src).test(document.querySelector('aside.side')?.innerText ?? '')
-// T-F9F9: das Baurad/Ausheben-Raster der Provinz lebt seit E5 im Dock, nicht mehr in `aside.side`
-// (D19c) -- Rueckmeldungen dazu ("Im Bau" waehrend ein Auftrag laeuft) stehen darum im Dock.
+// `asideHas` entfernt (dieses Ticket, Folge von T-F9F9): keine Aufgabe liest ihre Rueckmeldung noch aus
+// `aside.side` -- Marsch/Teilen/Zusammenlegen nutzen `dockHas`/globale Buttonsuche, Bau/Ausheben
+// `dockHas`/"N frei" (s.u.).
 const dockHas = (src) => new RegExp(src).test(document.querySelector('.dock')?.innerText ?? '')
 const MOVING = '(Marsch\\s+Ankunft Tag \\d+|\\d+ · \\d\\d:00)' // Symbol-Durchgang T-M46-17: Ankunft steht als "380 · 03:00"
 const bodyHas = (src) => new RegExp(src).test(document.body.innerText)
@@ -78,6 +78,13 @@ async function kbSelectArmy(run, page) {
   await sleep(page, 300)
   return true
 }
+
+/** "N frei" im Kopf des Ausheben-Rasters (T-F9F9) -- einziges textliches Vorher/Nachher-Signal fuer einen Ausheben-Auftrag. */
+const freiCount = (page) =>
+  page.evaluate(() => {
+    const m = /·\s*(\d+)\s*frei/.exec(document.querySelector('#recruit-sheet')?.innerText ?? '')
+    return m ? Number(m[1]) : null
+  })
 
 /** Klartext der Armee-Liste der Provinz -- Anzahl der Eintraege "Armee ... Staerke". */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- Hilfe fuer weitere Aufgabenlaeufe (V3 M46), bewusst behalten (Regel 1)
@@ -126,8 +133,9 @@ export const TASKS = [
       await sleep(page, 400)
       await run.checkNotice('Marsch befehlen')
       run.stop()
-      const ok = await until(page, asideHas, MOVING, 5000)
-      const text = await page.evaluate(() => document.querySelector('aside.side')?.innerText.slice(0, 600) ?? '')
+      // T-F9F9 gilt auch fuer die Tastatur: der Marsch-Status steht seit E5 im Dock, nicht in `aside.side`.
+      const ok = await until(page, dockHas, MOVING, 5000)
+      const text = await page.evaluate(() => document.querySelector('.dock')?.innerText.slice(0, 600) ?? '')
       return run.result(ok || /befohlen/.test(text), { beleg: text.replace(/\s+/g, ' ').slice(0, 300) })
     },
     async tastaturAlt(run, page) {
@@ -144,8 +152,8 @@ export const TASKS = [
       await sleep(page, 400)
       await run.checkNotice('Marsch befehlen')
       run.stop()
-      const ok = await until(page, asideHas, MOVING, 5000)
-      const text = await page.evaluate(() => document.querySelector('aside.side')?.innerText.slice(0, 600) ?? '')
+      const ok = await until(page, dockHas, MOVING, 5000)
+      const text = await page.evaluate(() => document.querySelector('.dock')?.innerText.slice(0, 600) ?? '')
       return run.result(ok || /befohlen/.test(text), { beleg: text.replace(/\s+/g, ' ').slice(0, 300) })
     },
   },
@@ -181,12 +189,12 @@ export const TASKS = [
       await sleep(page, 300)
       if (!(await run.tabTo(isButton(/^Teilen$/), 'Teilen', { checkFirst: true }))) return (run.stop(), run.result(false))
       await run.key('Enter', 'Teilen')
-      const geteilt = await until(page, () => [...document.querySelectorAll('aside.side button')].some((b) => (b.getAttribute('aria-label') || b.textContent || '').trim() === 'Zusammenlegen' && !b.disabled), null, 5000)
+      const geteilt = await until(page, () => [...document.querySelectorAll('button')].some((b) => (b.getAttribute('aria-label') || b.textContent || '').trim() === 'Zusammenlegen' && !b.disabled), null, 5000)
       if (!geteilt) run.detour('Teilen', 'Zusammenlegen wurde nach 5 s nicht frei')
       if (!(await run.tabTo(isButton(/^Zusammenlegen$/), 'Zusammenlegen', { max: 40, back: true }))) return (run.stop(), run.result(false))
       await run.key('Enter', 'Zusammenlegen')
       run.stop()
-      const ok = await until(page, () => [...document.querySelectorAll('aside.side button')].some((b) => (b.getAttribute('aria-label') || b.textContent || '').trim() === 'Zusammenlegen' && b.disabled), null, 5000)
+      const ok = await until(page, () => [...document.querySelectorAll('button')].some((b) => (b.getAttribute('aria-label') || b.textContent || '').trim() === 'Zusammenlegen' && b.disabled), null, 5000)
       return run.result(geteilt && ok, { beleg: `geteilt=${geteilt}, wieder eine Armee=${ok}` })
     },
     async tastaturAlt(run, page) {
@@ -195,13 +203,13 @@ export const TASKS = [
       if (!(await kbSelectArmy(run, page))) return (run.stop(), run.result(false))
       if (!(await run.tabTo(isButton(/^Teilen$/), 'Teilen'))) return (run.stop(), run.result(false))
       await run.key('Enter', 'Teilen')
-      const geteilt = await until(page, () => [...document.querySelectorAll('aside.side button')].some((b) => (b.getAttribute('aria-label') || b.textContent || '').trim() === 'Zusammenlegen' && !b.disabled), null, 5000)
+      const geteilt = await until(page, () => [...document.querySelectorAll('button')].some((b) => (b.getAttribute('aria-label') || b.textContent || '').trim() === 'Zusammenlegen' && !b.disabled), null, 5000)
       if (!geteilt) run.detour('Teilen', 'Zusammenlegen wurde nach 5 s nicht frei')
       // Der Fokus steht nach dem Befehl auf dem Teilen-Knopf; Zusammenlegen liegt davor: Umschalt+Tab.
       if (!(await run.tabTo(isButton(/^Zusammenlegen$/), 'Zusammenlegen', { max: 40, back: true }))) return (run.stop(), run.result(false))
       await run.key('Enter', 'Zusammenlegen')
       run.stop()
-      const ok = await until(page, () => [...document.querySelectorAll('aside.side button')].some((b) => (b.getAttribute('aria-label') || b.textContent || '').trim() === 'Zusammenlegen' && b.disabled), null, 5000)
+      const ok = await until(page, () => [...document.querySelectorAll('button')].some((b) => (b.getAttribute('aria-label') || b.textContent || '').trim() === 'Zusammenlegen' && b.disabled), null, 5000)
       return run.result(geteilt && ok, { beleg: `geteilt=${geteilt}, wieder eine Armee=${ok}` })
     },
   },
@@ -234,12 +242,13 @@ export const TASKS = [
       await run.key('Enter', 'Wahl bestaetigen (Fokus zu den Handlungen der Provinz)')
       if (!(await run.tabTo(isButton(/^Kaserne bauen$/), 'Kaserne bauen', { checkFirst: true }))) return (run.stop(), run.result(false))
       await run.key('Enter', 'Kaserne bauen')
-      // Sofort nachsehen (T-M46-05): die Restzeit steht nur so lange im Panel, wie der Bau laeuft (12 h = 1,2 s bei Tempo 10).
-      const wirkt = await until(page, asideHas, 'noch \\d+ [hd]', 4000)
+      // Sofort nachsehen (T-M46-05, T-F9F9): "Im Bau" (cancelGroup) steht im Dock, solange der Auftrag laeuft --
+      // der Fortschrittstext "noch N h" gibt es seit D19a nicht mehr (aside.side fuehrt das Baurad gar nicht).
+      const wirkt = await until(page, dockHas, 'Im Bau', 4000)
       await run.checkNotice('Kaserne bauen')
       run.stop()
       const ok = wirkt && (await accepted(run, page))
-      return run.result(ok, { beleg: `Rückmeldung gesehen: ${await accepted(run, page)}; Fortschrittsanzeige (noch N h) im Panel: ${wirkt}`, panel: (await page.evaluate(() => document.querySelector('aside.side')?.innerText ?? '')).replace(/\s+/g, ' ').slice(0, 400) })
+      return run.result(ok, { beleg: `Rückmeldung gesehen: ${await accepted(run, page)}; "Im Bau" im Dock gesehen: ${wirkt}` })
     },
     async tastaturAlt(run, page) {
       await clockOn(page)
@@ -251,9 +260,9 @@ export const TASKS = [
       await sleep(page, 300)
       await run.checkNotice('Kaserne bauen')
       run.stop()
-      const wirkt = await until(page, asideHas, 'noch \\d+ [hd]', 4000)
+      const wirkt = await until(page, dockHas, 'Im Bau', 4000)
       const ok = wirkt && (await accepted(run, page))
-      return run.result(ok, { beleg: `Rückmeldung gesehen: ${await accepted(run, page)}; Fortschrittsanzeige (noch N h) im Panel: ${wirkt}` })
+      return run.result(ok, { beleg: `Rückmeldung gesehen: ${await accepted(run, page)}; "Im Bau" im Dock gesehen: ${wirkt}` })
     },
   },
   // ------------------------------------------------------------------------------------
@@ -302,13 +311,16 @@ export const TASKS = [
       // Der Fokus steht auf dem ersten freien Bauplatz; E springt zu den Aushebeknoepfen.
       await run.key('e', 'Aushebeknoepfe')
       if (!(await run.tabTo(isButton(/^Infanterie ausheben$/), 'Infanterie ausheben', { checkFirst: true }))) return (run.stop(), run.result(false))
+      const freiVorher = await freiCount(page)
       await run.key('Enter', 'Infanterie ausheben')
-      // Sofort nachsehen (T-M46-05): die Restzeit steht nur so lange im Panel, wie der Bau laeuft (12 h = 1,2 s bei Tempo 10).
-      const wirkt = await until(page, asideHas, 'noch \\d+ [hd]', 4000)
+      // T-F9F9: "noch N h" gibt es im Ausheben-Raster nicht -- "N frei" im Rasterkopf faellt fuer die
+      // Dauer der Ausbildung um eins (wie bei der Maus-Variante gemessen).
+      const wirkt =
+        freiVorher === null ? await until(page, dockHas, 'Infanterie', 4000) : await until(page, (vorher) => { const m = /·\s*(\d+)\s*frei/.exec(document.querySelector('#recruit-sheet')?.innerText ?? ''); return m ? Number(m[1]) < vorher : false }, freiVorher, 4000)
       await run.checkNotice('Infanterie ausheben')
       run.stop()
       const ok = wirkt && (await accepted(run, page))
-      return run.result(ok, { beleg: `Rückmeldung gesehen: ${await accepted(run, page)}; Fortschrittsanzeige (noch N h) im Panel: ${wirkt}`, panel: (await page.evaluate(() => document.querySelector('aside.side')?.innerText ?? '')).replace(/\s+/g, ' ').slice(0, 400) })
+      return run.result(ok, { beleg: `Rückmeldung gesehen: ${await accepted(run, page)}; "N frei" im Ausheben-Raster gesunken: ${wirkt}` })
     },
     async tastaturAlt(run, page) {
       await clockOn(page)
@@ -316,13 +328,15 @@ export const TASKS = [
       if (!(await run.tabTo(isProvinceSelect, 'Provinzliste'))) return (run.stop(), run.result(false))
       if (!(await run.typeSelect('Mittlerer Westen', 'Provinz'))) return (run.stop(), run.result(false))
       if (!(await run.tabTo(isButton(/^Infanterie ausheben$/), 'Infanterie ausheben'))) return (run.stop(), run.result(false))
+      const freiVorher = await freiCount(page)
       await run.key('Enter', 'Infanterie ausheben')
       await sleep(page, 300)
       await run.checkNotice('Infanterie ausheben')
       run.stop()
-      const wirkt = await until(page, asideHas, 'noch \\d+ [hd]', 4000)
+      const wirkt =
+        freiVorher === null ? await until(page, dockHas, 'Infanterie', 4000) : await until(page, (vorher) => { const m = /·\s*(\d+)\s*frei/.exec(document.querySelector('#recruit-sheet')?.innerText ?? ''); return m ? Number(m[1]) < vorher : false }, freiVorher, 4000)
       const ok = wirkt && (await accepted(run, page))
-      return run.result(ok, { beleg: `Rückmeldung gesehen: ${await accepted(run, page)}; Fortschrittsanzeige (noch N h) im Panel: ${wirkt}` })
+      return run.result(ok, { beleg: `Rückmeldung gesehen: ${await accepted(run, page)}; "N frei" im Ausheben-Raster gesunken: ${wirkt}` })
     },
   },
   // ------------------------------------------------------------------------------------
