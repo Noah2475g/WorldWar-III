@@ -439,7 +439,7 @@ async function prepareArmies(browser, text) {
   await runFor(page, 1500)
   const log = []
   for (let i = 0; i < 12; i++) {
-    const ok = await page.getByRole('button', { name: 'Infanterie ausheben', exact: true }).click({ timeout: 1500 }).then(() => true, () => false)
+    const ok = await page.getByRole('button', { name: 'Infanterie ausheben', exact: true }).first().click({ timeout: 1500 }).then(() => true, () => false)
     log.push(ok)
     await runFor(page, 1200)
     const txt = await asideText(page)

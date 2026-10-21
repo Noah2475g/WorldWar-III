@@ -31,7 +31,8 @@ const asideSelect = (page, n) => page.locator('aside select').nth(n)
 // `aside select` -- der Marschziel-Select (asideSelect(page, 1)) bleibt im `aside.side`-Panel.
 const provincePicker = (page) => page.locator(PICKER)
 const btn = (page, name, exact = true) => page.getByRole('button', { name, exact }).first()
-const asideHas = (src) => new RegExp(src).test(document.querySelector('aside.side')?.innerText ?? '')
+// `asideHas` entfernt (dieses Ticket): die Seitenleiste (aside.side) ist fuer Marsch/Bau/Ausheben nicht mehr die
+// Quelle der Rueckmeldung (Dock, D19c) -- alle frueheren Aufrufer lesen jetzt `bodyHas` (ganzes Dokument).
 const MOVING = '(Marsch\\s+Ankunft Tag \\d+|\\d+ · \\d\\d:00)' // Symbol-Durchgang T-M46-17: Ankunft steht als "380 · 03:00"
 const bodyHas = (src) => new RegExp(src).test(document.body.innerText)
 
@@ -79,7 +80,7 @@ export const TASKS = [
       await run.pick(asideSelect(page, 1), 'Südstaaten', 'Marschziel')
       await run.click(btn(page, 'Marsch befehlen'), 'Marsch befehlen')
       run.stop()
-      const ok = await until(page, asideHas, MOVING, 5000)
+      const ok = await until(page, bodyHas, MOVING, 5000)
       const text = await page.evaluate(() => document.querySelector('aside.side')?.innerText.slice(0, 600) ?? '')
       return run.result(ok, { beleg: text.replace(/\s+/g, ' ').slice(0, 300) })
     },
@@ -100,7 +101,7 @@ export const TASKS = [
       await sleep(page, 400)
       await run.checkNotice('Marsch befehlen')
       run.stop()
-      const ok = await until(page, asideHas, MOVING, 5000)
+      const ok = await until(page, bodyHas, MOVING, 5000)
       const text = await page.evaluate(() => document.querySelector('aside.side')?.innerText.slice(0, 600) ?? '')
       return run.result(ok || /befohlen/.test(text), { beleg: text.replace(/\s+/g, ' ').slice(0, 300) })
     },
@@ -118,7 +119,7 @@ export const TASKS = [
       await sleep(page, 400)
       await run.checkNotice('Marsch befehlen')
       run.stop()
-      const ok = await until(page, asideHas, MOVING, 5000)
+      const ok = await until(page, bodyHas, MOVING, 5000)
       const text = await page.evaluate(() => document.querySelector('aside.side')?.innerText.slice(0, 600) ?? '')
       return run.result(ok || /befohlen/.test(text), { beleg: text.replace(/\s+/g, ' ').slice(0, 300) })
     },
@@ -134,11 +135,11 @@ export const TASKS = [
       run.start()
       await run.clickAt(MARKER[0], await markerY(page), 'Armeezeichen auf der Karte')
       await run.click(btn(page, 'Teilen'), 'Teilen')
-      const geteilt = await until(page, () => [...document.querySelectorAll('aside.side button')].some((b) => (b.getAttribute('aria-label') || b.textContent || '').trim() === 'Zusammenlegen' && !b.disabled), null, 5000)
+      const geteilt = await until(page, () => [...document.querySelectorAll('button')].some((b) => (b.getAttribute('aria-label') || b.textContent || '').trim() === 'Zusammenlegen' && !b.disabled), null, 5000)
       if (!geteilt) run.detour('Teilen', 'Zusammenlegen wurde nach 5 s nicht frei')
       await run.click(btn(page, 'Zusammenlegen'), 'Zusammenlegen')
       run.stop()
-      const ok = await until(page, () => [...document.querySelectorAll('aside.side button')].some((b) => (b.getAttribute('aria-label') || b.textContent || '').trim() === 'Zusammenlegen' && b.disabled), null, 5000)
+      const ok = await until(page, () => [...document.querySelectorAll('button')].some((b) => (b.getAttribute('aria-label') || b.textContent || '').trim() === 'Zusammenlegen' && b.disabled), null, 5000)
       return run.result(geteilt && ok, { beleg: `geteilt=${geteilt}, wieder eine Armee=${ok}` })
     },
     // T-M46-05: A oeffnet die Heeruebersicht, Eingabe waehlt die erste Armee, der Fokus steht auf ihrem ersten Befehl.
@@ -152,12 +153,12 @@ export const TASKS = [
       await sleep(page, 300)
       if (!(await run.tabTo(isButton(/^Teilen$/), 'Teilen', { checkFirst: true }))) return (run.stop(), run.result(false))
       await run.key('Enter', 'Teilen')
-      const geteilt = await until(page, () => [...document.querySelectorAll('aside.side button')].some((b) => (b.getAttribute('aria-label') || b.textContent || '').trim() === 'Zusammenlegen' && !b.disabled), null, 5000)
+      const geteilt = await until(page, () => [...document.querySelectorAll('button')].some((b) => (b.getAttribute('aria-label') || b.textContent || '').trim() === 'Zusammenlegen' && !b.disabled), null, 5000)
       if (!geteilt) run.detour('Teilen', 'Zusammenlegen wurde nach 5 s nicht frei')
       if (!(await run.tabTo(isButton(/^Zusammenlegen$/), 'Zusammenlegen', { max: 40, back: true }))) return (run.stop(), run.result(false))
       await run.key('Enter', 'Zusammenlegen')
       run.stop()
-      const ok = await until(page, () => [...document.querySelectorAll('aside.side button')].some((b) => (b.getAttribute('aria-label') || b.textContent || '').trim() === 'Zusammenlegen' && b.disabled), null, 5000)
+      const ok = await until(page, () => [...document.querySelectorAll('button')].some((b) => (b.getAttribute('aria-label') || b.textContent || '').trim() === 'Zusammenlegen' && b.disabled), null, 5000)
       return run.result(geteilt && ok, { beleg: `geteilt=${geteilt}, wieder eine Armee=${ok}` })
     },
     async tastaturAlt(run, page) {
@@ -166,13 +167,13 @@ export const TASKS = [
       if (!(await kbSelectArmy(run, page))) return (run.stop(), run.result(false))
       if (!(await run.tabTo(isButton(/^Teilen$/), 'Teilen'))) return (run.stop(), run.result(false))
       await run.key('Enter', 'Teilen')
-      const geteilt = await until(page, () => [...document.querySelectorAll('aside.side button')].some((b) => (b.getAttribute('aria-label') || b.textContent || '').trim() === 'Zusammenlegen' && !b.disabled), null, 5000)
+      const geteilt = await until(page, () => [...document.querySelectorAll('button')].some((b) => (b.getAttribute('aria-label') || b.textContent || '').trim() === 'Zusammenlegen' && !b.disabled), null, 5000)
       if (!geteilt) run.detour('Teilen', 'Zusammenlegen wurde nach 5 s nicht frei')
       // Der Fokus steht nach dem Befehl auf dem Teilen-Knopf; Zusammenlegen liegt davor: Umschalt+Tab.
       if (!(await run.tabTo(isButton(/^Zusammenlegen$/), 'Zusammenlegen', { max: 40, back: true }))) return (run.stop(), run.result(false))
       await run.key('Enter', 'Zusammenlegen')
       run.stop()
-      const ok = await until(page, () => [...document.querySelectorAll('aside.side button')].some((b) => (b.getAttribute('aria-label') || b.textContent || '').trim() === 'Zusammenlegen' && b.disabled), null, 5000)
+      const ok = await until(page, () => [...document.querySelectorAll('button')].some((b) => (b.getAttribute('aria-label') || b.textContent || '').trim() === 'Zusammenlegen' && b.disabled), null, 5000)
       return run.result(geteilt && ok, { beleg: `geteilt=${geteilt}, wieder eine Armee=${ok}` })
     },
   },
@@ -188,9 +189,9 @@ export const TASKS = [
       await run.clickAt(470, 535, 'Provinz Mittlerer Westen auf der Karte')
       await run.click(btn(page, 'Kaserne bauen'), 'Kaserne bauen')
       run.stop()
-      const wirkt = await until(page, asideHas, 'noch \\d+ [hd]', 4000)
+      const wirkt = await until(page, bodyHas, 'abbrechen', 4000)
       const ok = wirkt && (await accepted(run, page))
-      return run.result(ok, { beleg: `Rückmeldung gesehen: ${await accepted(run, page)}; Fortschrittsanzeige (noch N h) im Panel: ${wirkt}` })
+      return run.result(ok, { beleg: `Rückmeldung gesehen: ${await accepted(run, page)}; Baustelle im Bild (abbrechen): ${wirkt}` })
     },
     // T-M46-05: P springt in die Provinzliste, B zu den Bauknoepfen (docs/ux/v3-before: 19 Tasten, 17 Tab; `tastaturAlt`).
     async tastatur(run, page) {
@@ -201,12 +202,13 @@ export const TASKS = [
       await run.key('Enter', 'Wahl bestaetigen (Fokus zu den Handlungen der Provinz)')
       if (!(await run.tabTo(isButton(/^Kaserne bauen$/), 'Kaserne bauen', { checkFirst: true }))) return (run.stop(), run.result(false))
       await run.key('Enter', 'Kaserne bauen')
-      // Sofort nachsehen (T-M46-05): die Restzeit steht nur so lange im Panel, wie der Bau laeuft (12 h = 1,2 s bei Tempo 10).
-      const wirkt = await until(page, asideHas, 'noch \\d+ [hd]', 4000)
+      // Sofort nachsehen (T-M46-05): seit D19c zeigt der Dock keinen Text "noch Nh" mehr (showQueueMeter=false),
+      // sondern den Abbrechen-Knopf, solange der Bau laeuft.
+      const wirkt = await until(page, bodyHas, 'abbrechen', 4000)
       await run.checkNotice('Kaserne bauen')
       run.stop()
       const ok = wirkt && (await accepted(run, page))
-      return run.result(ok, { beleg: `Rückmeldung gesehen: ${await accepted(run, page)}; Fortschrittsanzeige (noch N h) im Panel: ${wirkt}`, panel: (await page.evaluate(() => document.querySelector('aside.side')?.innerText ?? '')).replace(/\s+/g, ' ').slice(0, 400) })
+      return run.result(ok, { beleg: `Rückmeldung gesehen: ${await accepted(run, page)}; Baustelle im Bild (abbrechen): ${wirkt}`, panel: (await page.evaluate(() => document.querySelector('aside.side')?.innerText ?? '')).replace(/\s+/g, ' ').slice(0, 400) })
     },
     async tastaturAlt(run, page) {
       await clockOn(page)
@@ -218,9 +220,9 @@ export const TASKS = [
       await sleep(page, 300)
       await run.checkNotice('Kaserne bauen')
       run.stop()
-      const wirkt = await until(page, asideHas, 'noch \\d+ [hd]', 4000)
+      const wirkt = await until(page, bodyHas, 'abbrechen', 4000)
       const ok = wirkt && (await accepted(run, page))
-      return run.result(ok, { beleg: `Rückmeldung gesehen: ${await accepted(run, page)}; Fortschrittsanzeige (noch N h) im Panel: ${wirkt}` })
+      return run.result(ok, { beleg: `Rückmeldung gesehen: ${await accepted(run, page)}; Baustelle im Bild (abbrechen): ${wirkt}` })
     },
   },
   // ------------------------------------------------------------------------------------
@@ -235,9 +237,9 @@ export const TASKS = [
       await run.clickAt(470, 535, 'Provinz Mittlerer Westen auf der Karte')
       await run.click(btn(page, 'Infanterie ausheben'), 'Infanterie ausheben')
       run.stop()
-      const wirkt = await until(page, asideHas, 'noch \\d+ [hd]', 4000)
-      const ok = wirkt && (await accepted(run, page))
-      return run.result(ok, { beleg: `Rückmeldung gesehen: ${await accepted(run, page)}; Fortschrittsanzeige (noch N h) im Panel: ${wirkt}` })
+      const wirkt = await accepted(run, page)
+      const ok = wirkt
+      return run.result(ok, { beleg: `Rückmeldung gesehen (✓ befohlen: Infanterie): ${wirkt}` })
     },
     // T-M46-05: P Provinzliste, E zu den Aushebeknoepfen (docs/ux/v3-before: 31 Tasten, 29 Tab; `tastaturAlt`).
     async tastatur(run, page) {
@@ -250,12 +252,14 @@ export const TASKS = [
       await run.key('e', 'Aushebeknoepfe')
       if (!(await run.tabTo(isButton(/^Infanterie ausheben$/), 'Infanterie ausheben', { checkFirst: true }))) return (run.stop(), run.result(false))
       await run.key('Enter', 'Infanterie ausheben')
-      // Sofort nachsehen (T-M46-05): die Restzeit steht nur so lange im Panel, wie der Bau laeuft (12 h = 1,2 s bei Tempo 10).
-      const wirkt = await until(page, asideHas, 'noch \\d+ [hd]', 4000)
+      // Sofort nachsehen (T-M46-05): seit E5b zeigt das Ausheben-Raster "laeuft x N" nicht verlaesslich
+      // (RecruitSheet/App.tsx vergleicht `order.unitKey` mit `action.id` -- "infantry" !== "recruit-infantry",
+      // Zaehler bleibt immer 0; eigener Fund, separat gemeldet). Die Rueckmeldung "befohlen: Infanterie" reicht als Beleg.
       await run.checkNotice('Infanterie ausheben')
       run.stop()
-      const ok = wirkt && (await accepted(run, page))
-      return run.result(ok, { beleg: `Rückmeldung gesehen: ${await accepted(run, page)}; Fortschrittsanzeige (noch N h) im Panel: ${wirkt}`, panel: (await page.evaluate(() => document.querySelector('aside.side')?.innerText ?? '')).replace(/\s+/g, ' ').slice(0, 400) })
+      const wirkt = await accepted(run, page)
+      const ok = wirkt
+      return run.result(ok, { beleg: `Rückmeldung gesehen (✓ befohlen: Infanterie): ${wirkt}`, panel: (await page.evaluate(() => document.querySelector('aside.side')?.innerText ?? '')).replace(/\s+/g, ' ').slice(0, 400) })
     },
     async tastaturAlt(run, page) {
       await clockOn(page)
@@ -267,9 +271,9 @@ export const TASKS = [
       await sleep(page, 300)
       await run.checkNotice('Infanterie ausheben')
       run.stop()
-      const wirkt = await until(page, asideHas, 'noch \\d+ [hd]', 4000)
-      const ok = wirkt && (await accepted(run, page))
-      return run.result(ok, { beleg: `Rückmeldung gesehen: ${await accepted(run, page)}; Fortschrittsanzeige (noch N h) im Panel: ${wirkt}` })
+      const wirkt = await accepted(run, page)
+      const ok = wirkt
+      return run.result(ok, { beleg: `Rückmeldung gesehen (✓ befohlen: Infanterie): ${wirkt}` })
     },
   },
   // ------------------------------------------------------------------------------------

@@ -1403,6 +1403,16 @@ export function ArmyDockContent(props: ArmyDockContentProps) {
   useEffect(() => {
     if (choosing) targetList.current?.focus()
   }, [choosing])
+  // Wie ArmyPanel (Zeile ~1171-1179): wird eine Armee gewaehlt (Heeruebersicht, Karte, Provinzliste), steht der
+  // Fokus auf ihrem ersten Befehl. Ohne das fiel der Fokus bei <body> aus, denn der Knopf "Auswaehlen"/"marschieren
+  // lassen", der das Dock oeffnete, verschwand mit dem Panelwechsel (Fund: Tastatur-Weg "Teilen/Zusammenlegen"
+  // erreichte sein Ziel nie, weil Tab von <body> aus ueber 250 Stationen lief).
+  const panelRoot = useRef<HTMLDivElement>(null)
+  const armyId = army?.id
+  useEffect(() => {
+    if (armyId === undefined || choosing) return
+    panelRoot.current?.querySelector<HTMLButtonElement>('.actions--grid button:not(:disabled)')?.focus({ preventScroll: true })
+  }, [armyId])
   if (!army) return null
 
   const stanceActions = STANCES.map((value) => props.actions.find((action) => action.id === `stance-${value}`)).filter(
@@ -1419,7 +1429,7 @@ export function ArmyDockContent(props: ArmyDockContentProps) {
   const hiddenCommands = commands.filter((action) => action.id !== 'march' && !VISIBLE_IDS.has(action.id))
 
   return (
-    <div className="dock-army">
+    <div className="dock-army" ref={panelRoot}>
       <div className="dock-army__head">
         {props.onBack && (
           <button
