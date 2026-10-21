@@ -1,0 +1,26 @@
+{
+  "base": "a94d7c6f0ec25a4ac57860e5c04d6ca3f2001489",
+  "viewer": "p6",
+  "rohstand": {
+    "eigen": 121,
+    "feind": 5
+  },
+  "zusammengelegt": 126,
+  "byOwner": {
+    "p8": 5,
+    "p6": 121
+  },
+  "abweichungErwartung": {
+    "eigen": {
+      "gemessen": 121,
+      "erwartet": 126,
+      "ueber10Prozent": false
+    },
+    "feind": {
+      "gemessen": 5,
+      "erwartet": 11,
+      "ueber10Prozent": true,
+      "hinweis": "Spielstand S575 hat sich seit A19/A20 (E3a) weiterentwickelt (weniger sichtbare Feind-Armeen) -- kein Blocker, nur Protokoll (R13)."
+    }
+  }
+}
