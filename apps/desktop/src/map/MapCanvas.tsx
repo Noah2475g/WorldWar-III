@@ -36,6 +36,7 @@ import {
   type Point,
   type View,
   type ViewLimits,
+  type ZoomTier,
 } from './picking.ts'
 import {
   IDLE,
@@ -59,8 +60,10 @@ import {
   pickBuildingGroup,
   type ArmyMarker,
   type BuildingsByProvince,
+  type Marker,
   type MarkerTone,
 } from './markers.ts'
+import { planTransition, frameAt, done as tweenDone, type DrawnMarker, type TransitionPlan } from './tween.ts'
 import { GROUP_ZOOM_SCALE, arrowArmies, showDayLabel } from './sammel.ts'
 import { centreOnVisible } from './viewRect.ts'
 import type { Anchor } from './anchors.ts'
@@ -378,6 +381,17 @@ export function MapCanvas(props: MapCanvasProps) {
     // props.tick und speed gehoeren zur Beurteilung der neuen Pulse, nicht zum Ausloeser: nur eine neue Liste startet.
   }, [props.pings])
 
+  /**
+   * Der Uebergang zwischen Zoomstufen (T-M<n>-06, D9, Plan Zoom-Cluster §5 E2b): Teilen
+   * und Buendeln der Sammelmarken. `startedMs` bleibt null bis zum ersten Bild, wie bei
+   * Farbwellen und Pulsen. `lastDrawnRef` haelt die zuletzt tatsaechlich gezeichneten
+   * (ggf. interpolierten) Markenpositionen fest — ein neuer Stufenwechsel mitten im
+   * Tween setzt von dort fort, kein Sprung (deckt Pinch um 1,0).
+   */
+  const [clusterTween, setClusterTween] = useState<{ plan: TransitionPlan; startedMs: number | null } | null>(null)
+  const lastDrawnRef = useRef<{ view: View; markers: readonly Marker[] } | null>(null)
+  const prevTierRef = useRef<ZoomTier | null>(null)
+
   // LOESCHVERMERK (T-M45-04): bis dahin stand hier nur
   //   useMemo(() => props.provinces.map((province) => ({ ...province, bounds: ... })), [props.provinces])
   // `props.provinces` ist bei jedem Tick eine neue Liste (die Sicht wird neu abgeleitet), also zeichnete die
@@ -549,6 +563,7 @@ export function MapCanvas(props: MapCanvasProps) {
 
   const fading = fades.length > 0
   const pinging = rings.length > 0
+  const tweening = clusterTween !== null
 
   useEffect(() => {
     // Die Schleife laeuft, solange irgendetwas sich bewegt: ein Gefecht atmet, eine
@@ -556,7 +571,7 @@ export function MapCanvas(props: MapCanvasProps) {
     // Animationsschleife ohne Grund ist ein Ventilator (T-M13-16).
     const fighting = (props.battleProvinces ?? []).length > 0
     const marching = props.armies.some((army) => army.march !== undefined)
-    if ((!fighting && !marching && !fading && !pinging) || !motionAllowed(props.speed ?? 0)) return
+    if ((!fighting && !marching && !fading && !pinging && !tweening) || !motionAllowed(props.speed ?? 0)) return
 
     let running = true
     const step = (time: number): void => {
@@ -601,13 +616,20 @@ export function MapCanvas(props: MapCanvasProps) {
         })
         return changed ? next : old
       })
+      // Der Zoom-Cluster-Uebergang (T-M<n>-06): startet mit dem ersten Bild, endet mit `done`.
+      setClusterTween((old) => {
+        if (!old) return old
+        if (old.startedMs === null) return { ...old, startedMs: time }
+        if (tweenDone(old.plan, time - old.startedMs)) return null
+        return old
+      })
       requestAnimationFrame(step)
     }
     requestAnimationFrame(step)
     return () => {
       running = false
     }
-  }, [props.battleProvinces, props.armies, props.speed, fading, pinging])
+  }, [props.battleProvinces, props.armies, props.speed, fading, pinging, tweening])
 
   // Ohne Bewegung (Systemeinstellung) laeuft keine Bildschleife: der stehende Ring verschwindet per Zeitgeber.
   useEffect(() => {
@@ -835,7 +857,7 @@ export function MapCanvas(props: MapCanvasProps) {
     // Positionierung (Mentor-Befund t_9778f304); die "gemischte Pille" zeichnet weiterhin
     // nicht, das ist E7b.
     const tier = zoomTier(props.view.scale)
-    let drawMarkers = rawMarkers
+    let drawMarkers: readonly (Marker | DrawnMarker)[] = rawMarkers
     if (tier !== 'near') {
       const { markers: placed, layout } = collideMarks(
         rawMarkers,
@@ -847,7 +869,46 @@ export function MapCanvas(props: MapCanvasProps) {
     } else if (import.meta.env.DEV) {
       lastMarksLayout = null
     }
+
+    // Der Zoom-Cluster-Uebergang (T-M<n>-06, D9): wechselt die Stufe und ist Bewegung
+    // erlaubt, teilen/buendeln sich die Sammelmarken statt hart zu wechseln. Ohne
+    // Partner (Plan ohne Dauer, nur Einzelne betroffen) bleibt es beim harten Wechsel.
+    const tierRank: Record<ZoomTier, number> = { near: 0, mid: 1, far: 2 }
+    if (prevTierRef.current !== null && tier !== prevTierRef.current && lastDrawnRef.current) {
+      if (motionAllowed(props.speed ?? 0)) {
+        const direction: 'split' | 'merge' = tierRank[tier] < tierRank[prevTierRef.current] ? 'split' : 'merge'
+        const plan = planTransition(lastDrawnRef.current, drawMarkers, direction)
+        if (plan.durationMs > 0) {
+          setClusterTween({ plan, startedMs: null })
+        } else if (clusterTween) {
+          setClusterTween(null)
+        }
+      } else if (clusterTween) {
+        setClusterTween(null)
+      }
+    }
+    prevTierRef.current = tier
+
+    if (clusterTween) {
+      const elapsed = clusterTween.startedMs === null ? 0 : clock - clusterTween.startedMs
+      drawMarkers = frameAt(clusterTween.plan, elapsed, props.view)
+    }
+    lastDrawnRef.current = { view: props.view, markers: drawMarkers }
+
     for (const marker of drawMarkers) {
+      const tweenAlpha = (marker as Partial<DrawnMarker>).alpha
+      const tweenScale = (marker as Partial<DrawnMarker>).scale
+      const hasTween = tweenAlpha !== undefined || tweenScale !== undefined
+      if (hasTween) {
+        context.save()
+        context.globalAlpha *= tweenAlpha ?? 1
+        if ((tweenScale ?? 1) !== 1) {
+          context.translate(marker.x, marker.y)
+          context.scale(tweenScale ?? 1, tweenScale ?? 1)
+          context.translate(-marker.x, -marker.y)
+        }
+      }
+      try {
       if (marker.kind === 'building') {
         // Ein Quadrat je Gebaeude an seinem Anker (T-M30-02, D27.2): Rahmen in
         // `building`, Glyphe aus demselben Pfad wie im Panel, Stufe ab 2 als Ziffer
@@ -1078,6 +1139,9 @@ export function MapCanvas(props: MapCanvasProps) {
       context.strokeStyle = MAP_COLORS.battle
       context.lineWidth = 1.6
       drawIcon(context, 'battle', marker.x, marker.y, 14)
+      } finally {
+        if (hasTween) context.restore()
+      }
     }
   }, [
     fades,
@@ -1095,6 +1159,7 @@ export function MapCanvas(props: MapCanvasProps) {
     props.ticksPerDay,
     props.speed,
     clock,
+    clusterTween,
     props.view,
     props.centres,
     withBounds,

@@ -4503,10 +4503,10 @@ tasks:
   - id: T-M51-06
     milestone: M51
     title: "Uebergang verdrahtet, Bericht, PR"
-    status: todo
+    status: done
     deps: [T-M51-05]
     requirements: [R-MAP-05]
     design: []
-    files: [apps/desktop/src/map/MapCanvas.tsx, docs/reports/v4/zoomcluster-e2.md]
+    files: [apps/desktop/src/map/MapCanvas.tsx, docs/reports/v4/zoomcluster.md]
     tests: [apps/desktop/src/map/MapCanvas.test.tsx]
     dod: "pnpm verify Exit 0, PR offen (Noah2475g), Merge nur durch reviewer."

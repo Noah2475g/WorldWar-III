@@ -14,6 +14,7 @@ import { TOKENS } from '../ui/tokens.ts'
 import { ICON_PATHS } from '../ui/icons.tsx'
 import { GLYPH_PATHS } from '../ui/glyphs.ts'
 import { ART } from '../ui/art.tsx'
+import { planTransition, frameAt, done as tweenDone } from './tween.ts'
 
 /**
  * Die Karte, die wirklich zeichnet (T-M16-06, R-ARCH-06/AK2, R-UI-12).
@@ -847,5 +848,206 @@ describe('T-M51-02 Gebaeude-Sammelmarke', () => {
     // `wo` gewaehlt: zusaetzlich die Markenring (D6) zeichnet primary — mehr Treffer.
     const mitRing = primaryStrokes(wo)
     expect(mitRing).toBeGreaterThan(ohneRing)
+  })
+})
+
+describe('T-M<n>-06 Zoom-Cluster Uebergang', () => {
+  const wo = world.provinces[Math.floor(world.provinces.length / 2)]!.id
+  const ansicht = (scale: number) => ({ x: centres[wo]!.x - 160 * scale, y: centres[wo]!.y - 120 * scale, scale })
+  const vier = ['a1', 'a2', 'a3', 'a4'].map((id) => ({
+    id,
+    provinceId: wo,
+    owner: 'p1',
+    strength: 5000,
+    own: true,
+    icon: 'infantry' as const,
+    count: 3,
+  }))
+  const eine = [{ id: 'solo', provinceId: wo, owner: 'p1', strength: 5000, own: true, icon: 'infantry' as const }]
+
+  /**
+   * Treibt die Uhr selbst (Plan §8: jsdom-rAF ist gestubbt, Test (b) braucht eigene Uhr).
+   * Ruft wie der globale Stub synchron auf, aber mit wachsender Zeit und einer Decke —
+   * ein unveraendertes `fn(0)` liefe hier endlos rekursiv, bis der Aufrufstapel ueberlaeuft.
+   */
+  function steppedRaf(ceilingMs: number, stepMs = 49) {
+    const prevRaf = globalThis.requestAnimationFrame
+    const prevCaf = globalThis.cancelAnimationFrame
+    let calls = 0
+    let t = 0
+    globalThis.requestAnimationFrame = ((fn: FrameRequestCallback) => {
+      calls += 1
+      if (t > ceilingMs) return 1
+      t += stepMs
+      fn(t)
+      return 1
+    }) as never
+    globalThis.cancelAnimationFrame = (() => undefined) as never
+    return {
+      callCount: () => calls,
+      restore() {
+        globalThis.requestAnimationFrame = prevRaf
+        globalThis.cancelAnimationFrame = prevCaf
+      },
+    }
+  }
+
+  /** Rendert einmal mit `extra`; der erste Zeichenlauf zaehlt verdoppelt (T-M30-01) und
+   * ist daher als absoluter Wert nicht vergleichbar — nur der DELTA eines spaeteren
+   * Stufenwechsels per `rerender` ist das eine echte, ungedoppelte Bild. */
+  const mounted = (extra: Partial<Parameters<typeof MapCanvas>[0]>) => zeichne(extra)
+
+  it('(a) Tempo 100: nach Stufenwechsel sofort das Zielbild, keine rAF-Anforderung', () => {
+    const rafSpy = vi.spyOn(globalThis, 'requestAnimationFrame')
+    const { rerender } = mounted({ speed: 100, armies: vier, view: ansicht(1.6) })
+    const vor = recorder.calls.drawImage ?? 0
+    rafSpy.mockClear()
+
+    rerender(
+      <MapCanvas
+        provinces={provinces}
+        centres={centres}
+        armies={vier}
+        buildings={{}}
+        mode="political"
+        width={world.width}
+        height={world.height}
+        view={ansicht(0.9)}
+        ownershipVersion={1}
+        selectedProvince={null}
+        onSelect={() => undefined}
+        onViewChange={() => undefined}
+        onMode={() => undefined}
+        labelFor={(id) => id}
+        speed={100}
+      />,
+    )
+
+    const danach = (recorder.calls.drawImage ?? 0) - vor
+    // Sofort das Zielbild: vier eigene Kaesten (je Armee ein Stempel, D9/R-D6) statt
+    // der einen Sammelmarke der mittleren Stufe — vier ist unabhaengig vom (verdoppelten)
+    // Ausgangswert `vor`, denn dieser hier ist der eine echte Bildwechsel per `rerender`.
+    expect(danach).toBe(4)
+    expect(rafSpy).not.toHaveBeenCalled()
+    rafSpy.mockRestore()
+  })
+
+  it('(b) Tempo 1, reduced false: rAF laeuft, nach > 588 ms steht die Schleife am Ziel', () => {
+    const { rerender } = mounted({ speed: 1, armies: vier, view: ansicht(0.9) })
+    const vor = recorder.calls.drawImage ?? 0
+    expect(vor).toBeGreaterThan(0)
+
+    const raf = steppedRaf(650)
+    try {
+      rerender(
+        <MapCanvas
+          provinces={provinces}
+          centres={centres}
+          armies={vier}
+          buildings={{}}
+          mode="political"
+          width={world.width}
+          height={world.height}
+          view={ansicht(1.6)}
+          ownershipVersion={1}
+          selectedProvince={null}
+          onSelect={() => undefined}
+          onViewChange={() => undefined}
+          onMode={() => undefined}
+          labelFor={(id) => id}
+          speed={1}
+        />,
+      )
+    } finally {
+      raf.restore()
+    }
+
+    // Die Schleife lief (sonst waere sie nie bis >588 ms vorgedrungen, sondern haette
+    // nach einem Bild (t=0) schon aufgehoert).
+    expect(raf.callCount()).toBeGreaterThan(1)
+    // Irgendetwas wurde waehrend des Tweens gezeichnet (fading Kinder + einblendende Marke).
+    expect((recorder.calls.drawImage ?? 0) - vor).toBeGreaterThan(0)
+
+    // Das Ziel selbst (unabhaengig vom Leinwand-Mitschnitt): nach > 588 ms ist der Plan
+    // fertig, und `frameAt` liefert genau eine sichtbare Marke — die Sammelmarke (D9 Buendeln).
+    const von = markersFor(vier, {}, centres, ansicht(0.9), { grouping: { selectedArmyId: null } })
+    const nach = markersFor(vier, {}, centres, ansicht(1.6), { grouping: { selectedArmyId: null } })
+    const plan = planTransition({ view: ansicht(0.9), markers: von }, nach, 'merge')
+    expect(tweenDone(plan, 650)).toBe(true)
+    const frame = frameAt(plan, 650, ansicht(1.6)).filter((m) => m.alpha > 0)
+    expect(frame.length).toBe(1)
+    expect(frame[0]!.kind).toBe('armyGroup')
+  })
+
+  it('(c) Klick waehrend des Tweens trifft die Ziel-Anordnung (onSelectArmy)', () => {
+    const onSelectArmy = vi.fn()
+    const { rerender, container } = zeichne({ speed: 1, armies: vier, view: ansicht(1.6), onSelectArmy })
+
+    const raf = steppedRaf(100) // erstes Bild: Tween laeuft, noch lange nicht fertig (< 588 ms)
+    try {
+      rerender(
+        <MapCanvas
+          provinces={provinces}
+          centres={centres}
+          armies={vier}
+          buildings={{}}
+          mode="political"
+          width={world.width}
+          height={world.height}
+          view={ansicht(0.9)}
+          ownershipVersion={1}
+          selectedProvince={null}
+          onSelect={() => undefined}
+          onViewChange={() => undefined}
+          onMode={() => undefined}
+          labelFor={(id) => id}
+          speed={1}
+          onSelectArmy={onSelectArmy}
+        />,
+      )
+    } finally {
+      raf.restore()
+    }
+    expect(raf.callCount()).toBeGreaterThan(0)
+
+    // Klick fragt markersFor ohne Tween -> die Ziel-Anordnung (near: einzelne Kaesten, D9).
+    const ziel = markersFor(vier, {}, centres, ansicht(0.9), { grouping: { selectedArmyId: null } }).find(
+      (m) => m.kind === 'army' && m.armyId === 'a2',
+    )!
+    const overlay = container.querySelectorAll('canvas[role="application"]')[0] as HTMLCanvasElement
+    overlay.getBoundingClientRect = () => ({ left: 0, top: 0, width: 320, height: 240 }) as DOMRect
+    fireEvent.click(overlay, { clientX: ziel.x, clientY: ziel.y })
+
+    expect(onSelectArmy).toHaveBeenCalledWith('a2')
+  })
+
+  it('(d) Stufenwechsel ohne Gruppen (nur Einzelne): kein Tween', () => {
+    const rafSpy = vi.spyOn(globalThis, 'requestAnimationFrame')
+    const { rerender } = zeichne({ speed: 1, armies: eine, view: ansicht(1.6) })
+    rafSpy.mockClear()
+
+    rerender(
+      <MapCanvas
+        provinces={provinces}
+        centres={centres}
+        armies={eine}
+        buildings={{}}
+        mode="political"
+        width={world.width}
+        height={world.height}
+        view={ansicht(0.9)}
+        ownershipVersion={1}
+        selectedProvince={null}
+        onSelect={() => undefined}
+        onViewChange={() => undefined}
+        onMode={() => undefined}
+        labelFor={(id) => id}
+        speed={1}
+      />,
+    )
+
+    // Eine einzelne Armee hat denselben Schluessel auf beiden Stufen (D9 g): sofortiges Ziel, kein Plan.
+    expect(rafSpy).not.toHaveBeenCalled()
+    rafSpy.mockRestore()
   })
 })

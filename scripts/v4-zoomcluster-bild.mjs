@@ -28,6 +28,13 @@ const FX = Number(arg('fx', String(2479 / 4000)))
 const FY = Number(arg('fy', String(1250 / 2400)))
 const WHEEL = Number(arg('wheel', '3'))
 const NOTIER = process.argv.includes('--no-tier-check')
+/**
+ * Filmstreifen (T-M<n>-06, D9, Plan §5 E2b, Schritt 3): `page.clock.install()` faelscht
+ * rAF NICHT (A11, R8 — Playwright-Dokumentation) — die Zoom-Cluster-Animation laeuft ueber
+ * `requestAnimationFrame`, `clock.runFor` ruehrt sie also nicht. Deshalb nur zwei echte
+ * Bilder: 000 (Klickmoment, Tween startet) und 100 (nach > 588 ms Echtzeit, Ziel erreicht).
+ */
+const FILM = process.argv.includes('--film')
 const OUTDIR = resolve(ROOT, arg('out', 'docs/ux/v4-zoomcluster'))
 const baseName = (n) => n.replace(/G$/, '')
 const readState = (raw) => {
@@ -103,6 +110,7 @@ mkdirSync(OUTDIR, { recursive: true })
 const browser = await chromium.launch(process.platform === 'win32' ? { channel: 'msedge' } : {})
 const context = await browser.newContext({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1, locale: 'de-DE' })
 const page = await context.newPage()
+if (FILM) await page.clock.install({ time: 0 })
 await openState(page, 'S575G')
 await page.getByRole('button', { name: 'Nicht mehr zeigen', exact: true }).first().click({ timeout: 3000 }).catch(() => {})
 await page.waitForTimeout(400)
@@ -174,5 +182,51 @@ if (TAG === 'nachher') {
   await page.screenshot({ path: join(OUTDIR, `nah-${TAG}.png`) })
   console.log('Bild', `nah-${TAG}.png`)
 }
+
+if (FILM) {
+  /**
+   * Filmstreifen (Schritt 3, D9): von 'mid' (hier bereits angefahren) aus Teilen (Klick
+   * 'Nah') und Buendeln (Klick 'Region') je als 000/100-Paar. `page.clock.runFor` wird
+   * aufgerufen, weil der Plan es verlangt — sie bewegt NUR die virtuelle Uhr der Seite
+   * (setTimeout/Date), nicht die Zoom-Cluster-Animation (die haengt an rAF, A11).
+   * Das eigentliche Abwarten ist deshalb `page.waitForTimeout` (Echtzeit).
+   */
+  await pause()
+  if (!(await setTierViaButton('mid'))) await wheelFallback(0)
+  await pause()
+  await check('mid', 'film-teilen-vor')
+
+  // Teilen: mid -> near (D9 Kinder fliegen vom Elternpunkt, <= 588 ms).
+  await setTierViaButton('near')
+  await page.screenshot({ path: join(OUTDIR, 'teilen-000.png') })
+  console.log('Bild', 'teilen-000.png')
+  await page.clock.runFor(600)
+  await page.waitForTimeout(650)
+  await check('near', 'film-teilen-nach')
+  await page.screenshot({ path: join(OUTDIR, 'teilen-100.png') })
+  console.log('Bild', 'teilen-100.png')
+
+  // Zurueck auf 'mid', dann Buendeln: near -> mid (D9 Kinder fliegen zur Gruppe, 280 ms).
+  await pause()
+  if (!(await setTierViaButton('mid'))) await wheelFallback(0)
+  await pause()
+  await check('mid', 'film-buendeln-vor')
+  // Erneut 'near' anfahren, damit der folgende Klick auf 'Region' tatsaechlich einen
+  // Stufenwechsel (near -> mid) ausloest statt eines Neins (schon auf der Stufe).
+  await setTierViaButton('near')
+  await page.waitForTimeout(400)
+  await pause()
+  await check('near', 'film-buendeln-start')
+
+  await setTierViaButton('mid')
+  await page.screenshot({ path: join(OUTDIR, 'buendeln-000.png') })
+  console.log('Bild', 'buendeln-000.png')
+  await page.clock.runFor(400)
+  await page.waitForTimeout(450)
+  await check('mid', 'film-buendeln-nach')
+  await page.screenshot({ path: join(OUTDIR, 'buendeln-100.png') })
+  console.log('Bild', 'buendeln-100.png')
+}
+
 await context.close()
 await browser.close()

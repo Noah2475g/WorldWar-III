@@ -8299,6 +8299,6 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Paket und Priorität:** Zoom-Cluster · P2
 - **Anforderungen:** R-MAP-05
 - **Abhängigkeiten:** T-M51-05
-- **Dateien:** `apps/desktop/src/map/MapCanvas.tsx`, `docs/reports/v4/zoomcluster-e2.md`
+- **Dateien:** `apps/desktop/src/map/MapCanvas.tsx`, `docs/reports/v4/zoomcluster.md`
 - **Tests zuerst:** `apps/desktop/src/map/MapCanvas.test.tsx`
 - **Fertig wenn:** `pnpm verify` Exit 0, PR offen (Noah2475g), Merge nur durch reviewer.
