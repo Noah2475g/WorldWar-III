@@ -115,3 +115,27 @@ describe('layoutMarks (E7, Spec §12.14.1)', () => {
     expect(marks[0]).toMatchObject({ kind: 'building', tone: 'building', foe: false, rect: { x: expect.any(Number), y: expect.any(Number), w: 14, h: 14 } })
   })
 })
+
+describe('layoutMarks mergeRadius-Parameter (E3a, D21b)', () => {
+  it('(g) zwei MarkInput gleicher Macht/Seite, 70 px Abstand (Plan nennt 50, widerspricht "Abstand > 64" fuer den 64er-Fall; 70 px erfuellt beide Teilaussagen D21b): bei mergeRadius 64 nicht, bei 72 zusammengelegt (n+n2 addiert)', () => {
+    const a = mark({ id: 'a', pri: 2, kind: 'army', side: 'me', pow: 'p1', ax: 100, ay: 100, n: 3, n2: 5, w: 160, h: 160 })
+    const b = mark({ id: 'b', pri: 2, kind: 'army', side: 'me', pow: 'p1', ax: 170, ay: 100, n: 2, n2: 4, w: 160, h: 160 })
+
+    const at64 = layoutMarks([a, b], BOUNDS, 64)
+    expect(at64.marks.filter((m) => m.merged)).toHaveLength(0)
+
+    const at72 = layoutMarks([a, b], BOUNDS, 72)
+    expect(at72.marks.filter((m) => m.merged)).toHaveLength(1)
+    const survivor = at72.marks.find((m) => !m.merged && (m.id === 'a' || m.id === 'b'))!
+    expect(survivor.label).toBe('5') // 3 + 2
+    expect(survivor.label2).toBe('9') // 5 + 4
+  })
+
+  it('(h) bestehende Testfaelle ohne mergeRadius-Argument bleiben identisch zum Default 64', () => {
+    const base = mark({ id: 'b1', pri: 2, kind: 'army', side: 'me', pow: 'p1', w: 200, h: 200 })
+    const near = mark({ id: 'b2', pri: 2, kind: 'army', side: 'me', pow: 'p1', ax: 130, ay: 100, n: 3, w: 200, h: 200 })
+    const withDefault = layoutMarks([base, near], BOUNDS)
+    const withExplicit64 = layoutMarks([base, near], BOUNDS, 64)
+    expect(withDefault).toEqual(withExplicit64)
+  })
+})

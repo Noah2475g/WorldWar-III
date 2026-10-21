@@ -8302,3 +8302,12 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Dateien:** `apps/desktop/src/map/MapCanvas.tsx`, `docs/reports/v4/zoomcluster.md`
 - **Tests zuerst:** `apps/desktop/src/map/MapCanvas.test.tsx`
 - **Fertig wenn:** `pnpm verify` Exit 0, PR offen (Noah2475g), Merge nur durch reviewer.
+
+### T-M51-07 · Welt-Pille E3a: Rohmarken + Zusammenlegen-Parameter
+- **Ziel:** `welt.ts` liefert Welt-Rohmarken (D16-D20) und `layoutMarks.ts` kann sie macht-übergreifend zusammenlegen (D21), Grundlage für E3b (Zeichnen/Klick).
+- **Paket und Priorität:** Zoom-Cluster · P2
+- **Anforderungen:** R-MAP-05
+- **Abhängigkeiten:** T-M51-06 (M51/E1+E2 auf main)
+- **Dateien:** `apps/desktop/src/map/welt.ts`, `apps/desktop/src/map/welt.test.ts`, `apps/desktop/src/map/layoutMarks.ts` (nur additive Erweiterung, Mid/Near bitgleich), `apps/desktop/src/map/layoutMarks.test.ts` (angehängt)
+- **Tests zuerst:** `welt.test.ts` (a)-(f), `layoutMarks.test.ts` (g)-(h)
+- **Fertig wenn:** alle Testfälle grün, Gegenprobe mergeRadius=64 statt 72 rot gesehen, `pnpm typecheck`/`lint` grün. Zeichnen/Klick folgt in E3b.
