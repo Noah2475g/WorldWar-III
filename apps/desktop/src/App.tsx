@@ -59,7 +59,7 @@ import { boundsOf, centreOn, clampView, zoomAt, toScreen, type View } from './ma
 import { Tooltip } from './ui/Tooltip.tsx'
 import { useMapTooltip } from './ui/useMapTooltip.ts'
 import { Sidebar } from './ui/Sidebar.tsx'
-import { DockWithRecruit, useRecruitOpen, type DockState, type DockPickerOption, type RecruitUnit } from './ui/RecruitSheet.tsx'
+import { DockWithRecruit, useRecruitOpen, usePhoneRecruitOpen, type DockState, type DockPickerOption, type RecruitUnit } from './ui/RecruitSheet.tsx'
 import { ProvincePopup } from './ui/ProvincePopup.tsx'
 import { OrientationHint } from './ui/OrientationHint.tsx'
 import { MENU_ENTRIES } from './ui/menuEntries.ts'
@@ -1604,6 +1604,7 @@ export function App(props: AppProps) {
   /** Ausheben-Raster (E5a/D10): Offen/Zu-Zustand steht an localStorage, hier geteilt
    * zwischen Dock-Verdrahtung und Escape-Kaskade (K11: Popup -> Raster -> Seitenleiste). */
   const [recruitOpen, setRecruitOpen] = useRecruitOpen()
+  const [phoneRecruitOpen, setPhoneRecruitOpen] = usePhoneRecruitOpen()
 
   /** A click on the map: a target while an order waits for one, a selection otherwise. */
   const selectOnMap = useCallback(
@@ -2161,6 +2162,9 @@ export function App(props: AppProps) {
       alerts={shownAlerts}
       onJump={jumpToTarget}
       column={!phonePortrait}
+      // E8/D15: im Blatt bleiben Hinweise Zeichen mit 44px Trefferflaeche, hoechstens 3 + "+n" —
+      // nur die Position wechselt (Blatt statt Kartenueberlagerung, daher `column` getrennt).
+      compact={true}
       onDismiss={(id) =>
         news.alerts.has(id)
           ? setNews((old) => dismissNews(old, id))
@@ -2819,10 +2823,13 @@ export function App(props: AppProps) {
       // Die Seitenleiste offen oder zu (E3, D6): die Werkzeug-Spalte rutscht mit (app.css).
       data-side-open={sidebarPanel ? 'true' : 'false'}
     >
-      {/* Ein Toaster (D2): Desktop unten links, Telefon-Hochformat oben mittig; hoechstens einer sichtbar. */}
+      {/* Ein Toaster (D2): Desktop unten links, Telefon-Hochformat oben mittig; hoechstens einer sichtbar.
+          Im Telefon-Hochformat (E8/D15) traegt der Toast einen eigenen Schliessen-Knopf mit 44px
+          Trefferflaeche (`.toaster [data-close-button]`, touch.css) — ohne ihn blieb nur das Ablaufen. */}
       <Toaster
         position={phonePortrait ? 'top-center' : 'bottom-left'}
         visibleToasts={1}
+        closeButton={phonePortrait}
         offset={{ bottom: 'calc(var(--edge) + var(--dock-h))', left: 'var(--edge)', top: 'calc(var(--edge) + var(--head-h))' }}
         mobileOffset={{ bottom: 'calc(var(--edge) + var(--dock-h))', left: 'var(--edge)', top: 'calc(var(--edge) + var(--head-h))' }}
         className="toaster"
@@ -2878,6 +2885,7 @@ export function App(props: AppProps) {
       <main className="main">
         <div className="map-area">
           <MapCanvas
+            insets={phonePortrait ? {} : { bottomBarHeight: 72 }}
             provinces={provinces}
             centres={centres}
             armies={armies}
@@ -3013,8 +3021,10 @@ export function App(props: AppProps) {
               ) : null}
             </DockWithRecruit>
           )}
-          {/* Das Provinz-Popup (E5d, D11): nur bei fremder Provinz und geschlossener Seitenleiste. */}
-          {!phonePortrait && foreignPreview && foreignPreviewAnchor && (
+          {/* Das Provinz-Popup (E5d, D11; Touch-quer D15/§12.14.3): nur bei fremder Provinz und
+              geschlossener Seitenleiste — `sidebarPanel` ist auch gesetzt, wenn ein Rail-Bereich
+              (Diplomatie, Markt, ...) offen steht, nicht nur bei Provinz/Armee. */}
+          {!phonePortrait && !sidebarPanel && foreignPreview && foreignPreviewAnchor && (
             <ProvincePopup
               anchor={foreignPreviewAnchor}
               viewport={{ width: viewportRef.current.viewportWidth, height: viewportRef.current.viewportHeight }}
@@ -3054,16 +3064,21 @@ export function App(props: AppProps) {
           handle={
             sidebarPanel ? (
               // Griff und Panelwahl in einer Leiste (T-M46-10): das Blatt deckt den Fuss, die Wahl bleibt erreichbar.
+              // E8/K6-Nacharbeit (Noah-Entscheidung c): die Hinweise-Zeichen (D3/D15) stehen NICHT mehr als
+              // eigene Zeile im Koerper des Blatts (eigene Box + Abstand oben/unten), sondern IN dieser
+              // sticky Leiste — zweite Zeile desselben Kopfs statt eines eigenen Blocks (touch.css `.sheet__bar`
+              // bekommt `flex-wrap`, die Zeichen bleiben 44 px Trefferflaeche per Minusrand wie `.explain__toggle`).
               <div className="sheet__bar">
                 <SheetHandle snap={sheetSnap} onSnap={setSheetSnap} onClose={() => dispatch({ type: 'closePanel' })} />
                 {phonePortrait && <SheetNav active={ui.panel} onPanel={openFootPanel} />}
+                {phonePortrait && alertsElement}
               </div>
             ) : null
           }
           picker={
             phonePortrait ? pickerElement : null
           }
-          alerts={phonePortrait ? alertsElement : null}
+          alerts={null}
           notice={null}
           panel={
             <>
@@ -3085,6 +3100,9 @@ export function App(props: AppProps) {
                   isCapital={selected?.id === view.self.capitalProvinceId}
                   ticksPerDay={ticksPerDay}
                   currentTick={state.tick}
+                  compactRecruit={phonePortrait}
+                  recruitOpen={phoneRecruitOpen}
+                  onToggleRecruit={() => setPhoneRecruitOpen(!phoneRecruitOpen)}
                 />
               )}
               {sidebarPanel === 'army' && (

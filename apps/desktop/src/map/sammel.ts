@@ -1,6 +1,7 @@
 import { ZOOM_NEAR_MAX_SCALE, zoomTier } from './picking.ts'
-import type { IconName } from '../ui/icons.tsx'
-import type { ArmyMarker, MarkerTone } from './markers.ts'
+import { BUILDING_ICONS, type IconName } from '../ui/icons.tsx'
+import type { BuildingKey } from '@worldwar/core'
+import type { ArmyMarker, BuildingsByProvince, MarkerTone } from './markers.ts'
 
 /**
  * Die Sammelmarke (T-M49-01, D1-D7): ab vier Armeen mit gleichem Schluessel — Provinz, Station,
@@ -126,4 +127,50 @@ export function arrowArmies(
 export function showDayLabel(armyId: string, scale: number, selectedArmyId: string | null): boolean {
   if (zoomTier(scale) === 'near') return true
   return armyId === selectedArmyId
+}
+
+/**
+ * Gebaeude-Sammelmarke (T-M51-01, D1-D8, Plan Zoom-Cluster): ab zwei Gebaeudearten mit
+ * Stufe >= 1 in derselben Provinz wird auf mid EINE Marke statt mehrerer Quadrate
+ * berechnet. Reine Funktion ohne Leinwand, wie `groupArmies` — Zeichnen (`markers.ts`)
+ * und Klick (`pickBuildingGroup`) fragen dieselbe Gruppierung.
+ */
+
+/** Ab so vielen Gebaeudearten (Stufe >= 1) entsteht eine Gruppe (D3). */
+export const BUILDING_GROUP_MIN = 2
+
+/**
+ * Vorrang des Symbols (D4): die erste vorhandene Art gewinnt. Bewusste Abweichung vom
+ * Mockup v3b (`v3b.mjs:58`), das noch die alte Thinker-Prio (Festung zuerst) nutzt.
+ */
+export const BUILDING_SYMBOL_PRIO: readonly BuildingKey[] = [
+  'factory',
+  'airfield',
+  'harbour',
+  'shipyard',
+  'barracks',
+  'railway',
+  'fortress',
+]
+
+export interface BuildingGroup {
+  /** Zahl der Arten mit Stufe >= 1 (Datenwahrheit, nicht die Zahl platzierter Quadrate). */
+  n: number
+  icon: IconName
+  /** Die vorhandenen Arten, nach Vorrang sortiert (D4). */
+  kinds: readonly BuildingKey[]
+}
+
+/**
+ * Gruppiert Gebaeude je Provinz (D3-D4). Nur Provinzen mit mindestens `BUILDING_GROUP_MIN`
+ * Arten (Stufe >= 1) landen in der Map — eine einzelne Art bleibt das heutige Einzelquadrat.
+ */
+export function groupBuildings(buildings: BuildingsByProvince): Map<string, BuildingGroup> {
+  const out = new Map<string, BuildingGroup>()
+  for (const [provinceId, byKind] of Object.entries(buildings)) {
+    const kinds = BUILDING_SYMBOL_PRIO.filter((kind) => (byKind[kind] ?? 0) >= 1)
+    if (kinds.length < BUILDING_GROUP_MIN) continue
+    out.set(provinceId, { n: kinds.length, icon: BUILDING_ICONS[kinds[0]!] ?? 'warning', kinds })
+  }
+  return out
 }

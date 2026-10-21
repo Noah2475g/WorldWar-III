@@ -50,26 +50,41 @@ import { ZOOM_STEP } from '../keyboard.ts'
 import {
   ARMY_BOX,
   BUILDING_BOX,
+  collideMarks,
+  BUILDING_GROUP_BOX,
   marchEnds,
   markersFor,
   pickArmy,
   pickArmyGroup,
+  pickBuildingGroup,
   type ArmyMarker,
   type BuildingsByProvince,
   type MarkerTone,
 } from './markers.ts'
 import { GROUP_ZOOM_SCALE, arrowArmies, showDayLabel } from './sammel.ts'
+import { centreOnVisible } from './viewRect.ts'
 import type { Anchor } from './anchors.ts'
+import type { MapInsets } from '../ui/viewRect.ts'
 import { ICON_PATHS, type IconName } from '../ui/icons.tsx'
 import { GLYPH_BOX, GLYPH_PATHS } from '../ui/glyphs.ts'
 import { labelsFor } from './labels.ts'
 import { OWNERSHIP_FADE_MS, battleFlash, fadeProgress, motionAllowed, ringRadius } from '../ui/motion.ts'
 import { CUE_SPEED_LIMIT } from '../ui/sound.ts'
+import type { LayoutResult } from './layoutMarks.ts'
 import { fillFor, mixColors, strengthByProvince, type MapMode } from './modes.ts'
 import { PING_MS, edgeMarker, freshPings, pingFrame } from './pings.ts'
 import type { MapPing } from '../game/events.ts'
 import { MapTools, ZOOM_TIER_SCALE } from '../ui/MapTools.tsx'
 import type { ReactNode } from 'react'
+
+/**
+ * Letzte Markenkollision (E7, Plan D14), nur fuer `window.__wwMarks()` im Dev-Build
+ * (Mess-Skript, Plan K16/K15). `undefined` im Build (D14-Entscheidung: kein Hook ausserhalb DEV).
+ */
+let lastMarksLayout: LayoutResult | null = null
+if (import.meta.env.DEV) {
+  ;(window as unknown as { __wwMarks?: () => LayoutResult | null }).__wwMarks = () => lastMarksLayout
+}
 
 /**
  * The map (T-M10-03a/b, R-UI-03).
@@ -201,6 +216,12 @@ function buildingStamp(cache: Map<string, HTMLCanvasElement>, icon: IconName, ra
 export interface MapCanvasProps {
   /** Die Legende, unten in der Werkzeug-Spalte (E3, D8). */
   legend?: ReactNode
+  /**
+   * Insets der Leiste unten/Werkzeuge ueber der Karte (E7, D8-Folge-Fix M49): der
+   * Sammelmarken-Klick zentriert damit in den sichtbaren Ausschnitt statt unter die
+   * Leiste. Fehlt es, zaehlt die ganze Leinwand (wie bisher).
+   */
+  insets?: MapInsets
   provinces: readonly RenderProvince[]
   centres: Readonly<Record<string, { x: number; y: number }>>
   armies: readonly ArmyMarker[]
@@ -799,15 +820,34 @@ export function MapCanvas(props: MapCanvasProps) {
     const strengthOf = strengthByProvince(props.armies)
 
     const grouping = { selectedArmyId: props.selectedArmyId ?? null }
-    for (const marker of markersFor(props.armies, props.buildings, props.centres, props.view, {
+    const buildingGroups = { selectedProvinceId: props.selectedProvince ?? null }
+    const rawMarkers = markersFor(props.armies, props.buildings, props.centres, props.view, {
       grouping,
+      buildingGroups,
       capitalProvinceId: props.capitalProvinceId ?? null,
       battleProvinces: props.battleProvinces ?? [],
       ...(props.anchors ? { anchors: props.anchors } : {}),
       // Ohne `tick` stehen marschierende Armeen in der Provinzmitte. Genau das ist
       // gewollt, wenn Bewegung abgeschaltet ist (T-M20-04).
       ...(motionAllowed(props.speed ?? 0) && props.tick !== undefined ? { tick: props.tick } : {}),
-    })) {
+    })
+    // E7 (Plan D14, K16): Markenkollision auf mid/far — near bleibt bitgleich. Reine
+    // Positionierung (Mentor-Befund t_9778f304); die "gemischte Pille" zeichnet weiterhin
+    // nicht, das ist E7b.
+    const tier = zoomTier(props.view.scale)
+    let drawMarkers = rawMarkers
+    if (tier !== 'near') {
+      const { markers: placed, layout } = collideMarks(
+        rawMarkers,
+        { x: 0, y: 0, width: bitmap.width, height: bitmap.height },
+        props.selectedArmyId ?? null,
+      )
+      drawMarkers = placed
+      if (import.meta.env.DEV) lastMarksLayout = layout
+    } else if (import.meta.env.DEV) {
+      lastMarksLayout = null
+    }
+    for (const marker of drawMarkers) {
       if (marker.kind === 'building') {
         // Ein Quadrat je Gebaeude an seinem Anker (T-M30-02, D27.2): Rahmen in
         // `building`, Glyphe aus demselben Pfad wie im Panel, Stufe ab 2 als Ziffer
@@ -836,6 +876,48 @@ export function MapCanvas(props: MapCanvasProps) {
           context.textAlign = 'left'
           context.textBaseline = 'alphabetic'
         }
+        continue
+      }
+
+      if (marker.kind === 'buildingGroup') {
+        // Gebaeude-Sammelmarke (T-M51-02, D6, Mockup v3b `.bm`): leise Pille mit Glyphe
+        // und Zahl statt mehrerer Quadrate — Breite waechst mit der Zahl, Hoehe bleibt 20.
+        const label = marker.label ?? ''
+        context.font = `400 10.5px ${TYPE.num}`
+        const textWidth = context.measureText(label).width
+        const width = Math.max(BUILDING_GROUP_BOX.width, 3 + 12 + 3 + textWidth + 4)
+        const height = BUILDING_GROUP_BOX.height
+        const left = marker.x - width / 2
+        const top = marker.y - height / 2
+        const radius = 7
+        context.beginPath()
+        context.moveTo(left + radius, top)
+        context.arcTo(left + width, top, left + width, top + height, radius)
+        context.arcTo(left + width, top + height, left, top + height, radius)
+        context.arcTo(left, top + height, left, top, radius)
+        context.arcTo(left, top, left + width, top, radius)
+        context.closePath()
+        context.globalAlpha = 0.7
+        context.fillStyle = TOKENS.surface
+        context.fill()
+        context.globalAlpha = 1
+        if (marker.selected) {
+          context.lineWidth = 1.5
+          context.strokeStyle = TOKENS.primary
+          context.stroke()
+        }
+        context.strokeStyle = marker.selected ? TOKENS.primary : TOKENS.muted
+        context.lineWidth = 1.4
+        drawIcon(context, marker.icon ?? 'warning', left + 3 + 6, marker.y, 12)
+        context.globalAlpha = 0.85
+        context.fillStyle = TOKENS.text
+        context.font = `400 10.5px ${TYPE.num}`
+        context.textAlign = 'left'
+        context.textBaseline = 'middle'
+        context.fillText(label, left + 3 + 12 + 3, marker.y)
+        context.globalAlpha = 1
+        context.textAlign = 'left'
+        context.textBaseline = 'alphabetic'
         continue
       }
 
@@ -1139,6 +1221,15 @@ export function MapCanvas(props: MapCanvasProps) {
     time: event.timeStamp,
   })
 
+  const zoomToGroup = useCallback(
+    (point: Point) => {
+      props.onViewChange(
+        centreOnVisible(toMap(point, props.view), { ...props.view, scale: GROUP_ZOOM_SCALE }, limits, props.insets),
+      )
+    },
+    [props, limits],
+  )
+
   const handleClick = useCallback(
     (event: React.MouseEvent<HTMLCanvasElement>) => {
       if (suppressClickRef.current) {
@@ -1186,16 +1277,27 @@ export function MapCanvas(props: MapCanvasProps) {
           hitBox,
         )
         if (hit) {
-          props.onViewChange(
-            centreOn(toMap({ x: hit.x, y: hit.y }, props.view), { ...props.view, scale: GROUP_ZOOM_SCALE }, limits),
-          )
+          zoomToGroup({ x: hit.x, y: hit.y })
+          return
+        }
+        // Gebaeude-Sammelmarke (T-M51-02, D7): derselbe Zoom-Weg, kein onSelect/onSelectArmy.
+        const buildingHit = pickBuildingGroup(
+          screen,
+          props.buildings,
+          props.centres,
+          props.view,
+          { buildingGroups: { selectedProvinceId: props.selectedProvince ?? null } },
+          hitBox,
+        )
+        if (buildingHit) {
+          zoomToGroup({ x: buildingHit.x, y: buildingHit.y })
           return
         }
       }
 
       props.onSelect(pickProvince(screen, props.view, withBounds))
     },
-    [props, withBounds, size],
+    [props, withBounds, size, zoomToGroup],
   )
 
   const handleWheel = useCallback(

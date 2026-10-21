@@ -1,0 +1,174 @@
+{
+  "390x844_panel": {
+    "total": 33,
+    "under44": 0,
+    "under44Samples": [],
+    "overlapPairs25": 9,
+    "overlapSamples": [
+      {
+        "a": "Einmarsch in Oberägypten durch Indien — anzeigen",
+        "b": "Weltkarte",
+        "s": 0.98
+      },
+      {
+        "a": "Einmarsch in Oberägypten durch Indien — anzeigen",
+        "b": "Hinweis ausblenden",
+        "s": 0.77
+      },
+      {
+        "a": "Weltkarte",
+        "b": "Hineinzoomen",
+        "s": 1
+      },
+      {
+        "a": "Weltkarte",
+        "b": "Herauszoomen",
+        "s": 1
+      },
+      {
+        "a": "Weltkarte",
+        "b": "Hauptstadt zentrieren",
+        "s": 1
+      },
+      {
+        "a": "Weltkarte",
+        "b": "Vollbild",
+        "s": 1
+      },
+      {
+        "a": "Weltkarte",
+        "b": "Kartenmodus",
+        "s": 1
+      },
+      {
+        "a": "Weltkarte",
+        "b": "Was ist Besitz?",
+        "s": 1
+      },
+      {
+        "a": "Weltkarte",
+        "b": "Hinweis ausblenden",
+        "s": 1
+      }
+    ],
+    "headOverflow": true
+  },
+  "1280x800_touch_panel": {
+    "total": 54,
+    "under44": 0,
+    "under44Samples": [],
+    "overlapPairs25": 24,
+    "overlapSamples": [
+      {
+        "a": "Vorspulen",
+        "b": "Rohstoffe",
+        "s": 0.77
+      },
+      {
+        "a": "Weltkarte",
+        "b": "Hineinzoomen",
+        "s": 1
+      },
+      {
+        "a": "Weltkarte",
+        "b": "Herauszoomen",
+        "s": 1
+      },
+      {
+        "a": "Weltkarte",
+        "b": "Hauptstadt zentrieren",
+        "s": 1
+      },
+      {
+        "a": "Weltkarte",
+        "b": "Vollbild",
+        "s": 1
+      },
+      {
+        "a": "Weltkarte",
+        "b": "Welt",
+        "s": 1
+      },
+      {
+        "a": "Weltkarte",
+        "b": "Region",
+        "s": 1
+      },
+      {
+        "a": "Weltkarte",
+        "b": "Nah",
+        "s": 1
+      },
+      {
+        "a": "Weltkarte",
+        "b": "Besitz",
+        "s": 1
+      },
+      {
+        "a": "Weltkarte",
+        "b": "Rohstoffe",
+        "s": 1
+      }
+    ],
+    "headOverflow": false
+  },
+  "1280x800_touch_nopanel": {
+    "total": 39,
+    "under44": 0,
+    "under44Samples": [],
+    "overlapPairs25": 24,
+    "overlapSamples": [
+      {
+        "a": "Vorspulen",
+        "b": "Rohstoffe",
+        "s": 0.77
+      },
+      {
+        "a": "Weltkarte",
+        "b": "Hineinzoomen",
+        "s": 1
+      },
+      {
+        "a": "Weltkarte",
+        "b": "Herauszoomen",
+        "s": 1
+      },
+      {
+        "a": "Weltkarte",
+        "b": "Hauptstadt zentrieren",
+        "s": 1
+      },
+      {
+        "a": "Weltkarte",
+        "b": "Vollbild",
+        "s": 1
+      },
+      {
+        "a": "Weltkarte",
+        "b": "Welt",
+        "s": 1
+      },
+      {
+        "a": "Weltkarte",
+        "b": "Region",
+        "s": 1
+      },
+      {
+        "a": "Weltkarte",
+        "b": "Nah",
+        "s": 1
+      },
+      {
+        "a": "Weltkarte",
+        "b": "Besitz",
+        "s": 1
+      },
+      {
+        "a": "Weltkarte",
+        "b": "Rohstoffe",
+        "s": 1
+      }
+    ],
+    "headOverflow": false
+  }
+}

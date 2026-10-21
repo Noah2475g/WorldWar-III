@@ -1,5 +1,5 @@
 /* global document, HTMLElement */
-import { PICKER } from './ux-sel.mjs'
+import { PICKER, RAIL_ITEM } from './ux-sel.mjs'
 /**
  * Die acht Handlungen (PLAN-V3 P0-B2). Jede hat `maus` und `tastatur`; `minimum` ist die kuerzeste
  * Folge der Oberflaeche, von Hand gezaehlt. Bei der Tastatur steht als Mass die Zahl der Absichten
@@ -26,12 +26,35 @@ async function until(page, fn, arg, ms = 6000) {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- Hilfe fuer weitere Aufgabenlaeufe (V3 M46), bewusst behalten (Regel 1)
 const aside = (page) => page.locator('aside.side')
-const asideSelect = (page, n) => page.locator('aside select').nth(n)
 // D16: die Provinzwahl lebt seit E5 in `section.dock .picker select` (PICKER), nicht mehr in
-// `aside select` -- der Marschziel-Select (asideSelect(page, 1)) bleibt im `aside.side`-Panel.
+// `aside select`. T-F9F9 (Nachtrag, per Live-DOM bestaetigt): der Marschziel-Select ist bei "Marschieren"
+// NICHT im `aside.side`-Panel geblieben wie der Kommentar hier frueher sagte -- er steckt im Dock
+// selbst (`section.dock.dock--army .dock-army__targeting select`, Dock wechselt beim Marschieren-Klick
+// in den Armee-Modus). `asideSelect` (frueher: Provinz- und Marschziel-Select in `aside select`) ist
+// damit tot und entfernt (Regel 1 gilt fuer Wege, nicht fuer einen Selektor ohne Ziel mehr).
+const targetSelect = (page) => page.locator('.dock-army__targeting select')
 const provincePicker = (page) => page.locator(PICKER)
 const btn = (page, name, exact = true) => page.getByRole('button', { name, exact }).first()
+// T-F9F9: Kamera-Drift nach E5-Dock (s. ux-tasks.mjs-Ticket) -- die eigene Armee stand bis E5 an
+// einer festen Pixelstelle auf der Canvas-Karte (MARKER/markerY); das Laden des S300/armeen-Standes
+// zentriert die Kamera seit dem Dock anders, die feste Stelle trifft nicht mehr zuverlaessig.
+// GEGENPRUEFT (nicht geraten): der Dock-Picker zeigt fuer eine Provinz nur Bauplaetze/Ausheben, KEINE
+// Armeenliste (anders als vor E5/D19c, wo `aside.side` beides gleichzeitig fuehrte) -- Auswaehlen
+// lebt seit E5 ausschliesslich in der Heer-Uebersicht der Leiste rechts (`RAIL_ITEM('armies')`,
+// Taste A, `aside.side`), unabhaengig von einer Provinzwahl im Dock. Die Maus-Laeufe fuer die
+// Armee-Aufgaben gehen daher ueber die Leiste, nicht ueber den Picker. ACHTUNG (per Live-DOM bestaetigt,
+// nicht die App.test.tsx-Vermutung uebernommen): die Heer-Uebersicht setzt den zugaenglichen Namen
+// ueber `armies.selectAria` = "{{name}} auswählen und auf der Karte zeigen" (de.ts) -- klein
+// geschrieben, mitten im Satz. Das ist NICHT dieselbe Flaeche wie das `army.select`-Aria-Label
+// ("Auswählen: {{name}}", gross, am Anfang) der Dock-Provinzliste aus Panels.tsx; jene Flaeche
+// existiert in der aktuellen UI fuer Armeen gar nicht (nur fuer Gebaeude/Ausheben im Dock). Darum
+// hier ein Regex, der beide Schreibweisen trifft, nicht `/^Auswählen/`.
+const auswaehlenBtn = (page) => page.getByRole('button', { name: /auswählen/i }).first()
+const openArmiesRail = (page) => page.locator(RAIL_ITEM('armies')).first().click()
 const asideHas = (src) => new RegExp(src).test(document.querySelector('aside.side')?.innerText ?? '')
+// T-F9F9: das Baurad/Ausheben-Raster der Provinz lebt seit E5 im Dock, nicht mehr in `aside.side`
+// (D19c) -- Rueckmeldungen dazu ("Im Bau" waehrend ein Auftrag laeuft) stehen darum im Dock.
+const dockHas = (src) => new RegExp(src).test(document.querySelector('.dock')?.innerText ?? '')
 const MOVING = '(Marsch\\s+Ankunft Tag \\d+|\\d+ · \\d\\d:00)' // Symbol-Durchgang T-M46-17: Ankunft steht als "380 · 03:00"
 const bodyHas = (src) => new RegExp(src).test(document.body.innerText)
 
@@ -41,10 +64,10 @@ const isProvinceSelect = (f) => f.tag === 'select' && /Provinz/.test(f.name)
 const isOtherSelect = (f) => f.tag === 'select' && !/Provinz|Kartenmodus/.test(f.name)
 const isInput = (re) => (f) => f.tag === 'input' && re.test(f.name)
 
-/** Die eigene Armee steht als Zeichen auf der Canvas-Karte (kein DOM-Element): Pixel neben dem Stern der Hauptstadt (1280x800). */
-const MARKER = [513, 484]
-/** Seit E2/E3 (Kopf 56 px, Karte unter dem Kopf in voller Breite) haengt die Hoehe am oberen Kartenrand: Zeichen relativ zur Karte. */
-const markerY = (page) => page.evaluate((dy) => Math.round(document.querySelector('.map-wrapper').getBoundingClientRect().top) + dy, MARKER[1])
+// T-F9F9: `MARKER`/`markerY` (feste Canvas-Pixelstelle der eigenen Armee) sind seit dem Kamera-Drift-Fix
+// nicht mehr in Benutzung (s. Kommentar oben bei `auswaehlenBtn`) -- die Maus-Laeufe gehen jetzt ueber
+// den PICKER + "Auswählen", unabhaengig vom Kamerastand. Absichtlich entfernt, nicht nur auskommentiert
+// (Regel 1 gilt fuer Wege, nicht fuer tote Koordinaten einer ueberholten Technik).
 
 /** Keyboard: Armee in Mittlerer Westen auswaehlen (Provinzliste, dann "Auswaehlen"). */
 async function kbSelectArmy(run, page) {
@@ -70,17 +93,20 @@ export const TASKS = [
     id: 'armee-bewegen',
     title: 'Armee finden und bewegen (Mittlerer Westen nach Südstaaten)',
     base: 'armeen',
-    minimum: { maus: { klicks: 5, tasten: 0, hinweis: 'Zeichen auf der Karte, Marschieren, Liste (2), Marsch befehlen' }, tastatur: { absichten: 7, hinweis: 'Liste fokussieren, tippen, Auswählen, Marschieren, Ziel fokussieren, tippen, Marsch befehlen' } },
+    minimum: { maus: { klicks: 6, tasten: 0, hinweis: 'Heer (Leiste rechts), Auswählen, Marschieren, Ziel-Liste (2), Marsch befehlen' }, tastatur: { absichten: 7, hinweis: 'Liste fokussieren, tippen, Auswählen, Marschieren, Ziel fokussieren, tippen, Marsch befehlen' } },
     async maus(run, page) {
       await clockOn(page)
       run.start()
-      await run.clickAt(MARKER[0], await markerY(page), 'Armeezeichen auf der Karte')
+      await openArmiesRail(page)
+      await run.click(auswaehlenBtn(page), 'Auswählen (Armee)')
       await run.click(btn(page, 'Marschieren'), 'Marschieren')
-      await run.pick(asideSelect(page, 1), 'Südstaaten', 'Marschziel')
+      await run.pick(targetSelect(page), 'Südstaaten', 'Marschziel')
       await run.click(btn(page, 'Marsch befehlen'), 'Marsch befehlen')
       run.stop()
-      const ok = await until(page, asideHas, MOVING, 5000)
-      const text = await page.evaluate(() => document.querySelector('aside.side')?.innerText.slice(0, 600) ?? '')
+      // T-F9F9: der Marsch-Status ("Ziel · Tag N, HH:00") steht seit E5 im Dock (Armee-Modus), nicht
+      // in `aside.side` (das bleibt hier leer) -- per Live-DOM bestaetigt.
+      const ok = await until(page, dockHas, MOVING, 5000)
+      const text = await page.evaluate(() => document.querySelector('.dock')?.innerText.slice(0, 600) ?? '')
       return run.result(ok, { beleg: text.replace(/\s+/g, ' ').slice(0, 300) })
     },
     // T-M46-01: seit der Heeruebersicht: A oeffnet sie (Fokus auf der ersten Armee), Tab zu "Marschieren", Eingabe;
@@ -128,17 +154,20 @@ export const TASKS = [
     id: 'armee-teilen-zusammenlegen',
     title: 'Armee teilen und wieder zusammenlegen (Mittlerer Westen)',
     base: 'armeen',
-    minimum: { maus: { klicks: 3, tasten: 0, hinweis: 'Zeichen, Teilen, Zusammenlegen' }, tastatur: { absichten: 6, hinweis: 'Liste, tippen, Auswählen, Teilen, Zusammenlegen' } },
+    minimum: { maus: { klicks: 4, tasten: 0, hinweis: 'Heer (Leiste rechts), Auswählen, Teilen, Zusammenlegen' }, tastatur: { absichten: 6, hinweis: 'Liste, tippen, Auswählen, Teilen, Zusammenlegen' } },
     async maus(run, page) {
       await clockOn(page)
       run.start()
-      await run.clickAt(MARKER[0], await markerY(page), 'Armeezeichen auf der Karte')
+      await openArmiesRail(page)
+      await run.click(auswaehlenBtn(page), 'Auswählen (Armee)')
       await run.click(btn(page, 'Teilen'), 'Teilen')
-      const geteilt = await until(page, () => [...document.querySelectorAll('aside.side button')].some((b) => (b.getAttribute('aria-label') || b.textContent || '').trim() === 'Zusammenlegen' && !b.disabled), null, 5000)
+      // T-F9F9: die Armee-Werkzeuge (Teilen/Zusammenlegen) leben seit E5 im Dock (`section.dock.dock--army`),
+      // nicht mehr in `aside.side` -- `aside.side` ist hier durchgehend leer (per Live-DOM bestaetigt).
+      const geteilt = await until(page, () => [...document.querySelectorAll('button')].some((b) => (b.getAttribute('aria-label') || b.textContent || '').trim() === 'Zusammenlegen' && !b.disabled), null, 5000)
       if (!geteilt) run.detour('Teilen', 'Zusammenlegen wurde nach 5 s nicht frei')
-      await run.click(btn(page, 'Zusammenlegen'), 'Zusammenlegen')
+      await run.click(btn(page, 'Zusammenlegen'), 'Zusammenlegen', { js: true })
       run.stop()
-      const ok = await until(page, () => [...document.querySelectorAll('aside.side button')].some((b) => (b.getAttribute('aria-label') || b.textContent || '').trim() === 'Zusammenlegen' && b.disabled), null, 5000)
+      const ok = await until(page, () => [...document.querySelectorAll('button')].some((b) => (b.getAttribute('aria-label') || b.textContent || '').trim() === 'Zusammenlegen' && b.disabled), null, 5000)
       return run.result(geteilt && ok, { beleg: `geteilt=${geteilt}, wieder eine Armee=${ok}` })
     },
     // T-M46-05: A oeffnet die Heeruebersicht, Eingabe waehlt die erste Armee, der Fokus steht auf ihrem ersten Befehl.
@@ -181,16 +210,20 @@ export const TASKS = [
     id: 'bauen',
     title: 'Kaserne bauen (Mittlerer Westen)',
     base: 'S300',
-    minimum: { maus: { klicks: 2, tasten: 0, hinweis: 'Provinz auf der Karte, Kaserne bauen' }, tastatur: { absichten: 4, hinweis: 'Liste, tippen, Kaserne bauen' } },
+    minimum: { maus: { klicks: 3, tasten: 0, hinweis: 'Provinz-Liste (2), Kaserne bauen' }, tastatur: { absichten: 4, hinweis: 'Liste, tippen, Kaserne bauen' } },
     async maus(run, page) {
       await clockOn(page)
       run.start()
-      await run.clickAt(470, 535, 'Provinz Mittlerer Westen auf der Karte')
+      await run.pick(provincePicker(page), 'Mittlerer Westen', 'Provinz (Kartenpicker)')
       await run.click(btn(page, 'Kaserne bauen'), 'Kaserne bauen')
       run.stop()
-      const wirkt = await until(page, asideHas, 'noch \\d+ [hd]', 4000)
+      // T-F9F9: der Fortschrittstext "noch N h" ist seit D19a aus dem Dock entfernt (nur Platz fuer
+      // Raster, nicht Meter) -- "Im Bau" (die Ueberschrift ueber dem Abbrechen-Knopf, cancelGroup)
+      // bleibt waehrend ein Auftrag laeuft die einzige textliche Auskunft im Dock (bestaetigt per
+      // Live-Messung: 150-900ms nach dem Klick sichtbar, danach nach Fertigstellung wieder weg).
+      const wirkt = await until(page, dockHas, 'Im Bau', 4000)
       const ok = wirkt && (await accepted(run, page))
-      return run.result(ok, { beleg: `Rückmeldung gesehen: ${await accepted(run, page)}; Fortschrittsanzeige (noch N h) im Panel: ${wirkt}` })
+      return run.result(ok, { beleg: `Rückmeldung gesehen: ${await accepted(run, page)}; "Im Bau" im Dock gesehen: ${wirkt}` })
     },
     // T-M46-05: P springt in die Provinzliste, B zu den Bauknoepfen (docs/ux/v3-before: 19 Tasten, 17 Tab; `tastaturAlt`).
     async tastatur(run, page) {
@@ -228,16 +261,36 @@ export const TASKS = [
     id: 'ausheben',
     title: 'Infanterie ausheben (Mittlerer Westen, Kaserne steht)',
     base: 'armeen',
-    minimum: { maus: { klicks: 2, tasten: 0, hinweis: 'Provinz auf der Karte, Infanterie ausheben' }, tastatur: { absichten: 4, hinweis: 'Liste, tippen, Infanterie ausheben' } },
+    minimum: { maus: { klicks: 3, tasten: 0, hinweis: 'Provinz-Liste (2), Infanterie ausheben' }, tastatur: { absichten: 4, hinweis: 'Liste, tippen, Infanterie ausheben' } },
     async maus(run, page) {
       await clockOn(page)
       run.start()
-      await run.clickAt(470, 535, 'Provinz Mittlerer Westen auf der Karte')
+      await run.pick(provincePicker(page), 'Mittlerer Westen', 'Provinz (Kartenpicker)')
+      // T-F9F9: der Fortschrittstext "noch N h" gibt es im Ausheben-Raster nicht (nie gegeben --
+      // mehrere Einheiten lassen sich gleichzeitig in die Ausbildung geben, kein Platz "belegt" sich
+      // dafuer). Live bestaetigt: der Kopf des Rasters zaehlt "N frei" (freie Bevoelkerungs-Slots) und
+      // faellt fuer die Dauer der Ausbildung um eins, bevor er zurueckspringt -- das ist das einzige
+      // textliche Vorher/Nachher-Signal; vorher merken, nachher auf einen niedrigeren Wert warten.
+      const freiVorher = await page.evaluate(() => {
+        const m = /·\s*(\d+)\s*frei/.exec(document.querySelector('#recruit-sheet')?.innerText ?? '')
+        return m ? Number(m[1]) : null
+      })
       await run.click(btn(page, 'Infanterie ausheben'), 'Infanterie ausheben')
       run.stop()
-      const wirkt = await until(page, asideHas, 'noch \\d+ [hd]', 4000)
+      const wirkt =
+        freiVorher === null
+          ? await until(page, dockHas, 'Infanterie', 4000) // Raster ohne lesbaren Kopf (Fallback): zumindest noch da
+          : await until(
+              page,
+              (vorher) => {
+                const m = /·\s*(\d+)\s*frei/.exec(document.querySelector('#recruit-sheet')?.innerText ?? '')
+                return m ? Number(m[1]) < vorher : false
+              },
+              freiVorher,
+              4000,
+            )
       const ok = wirkt && (await accepted(run, page))
-      return run.result(ok, { beleg: `Rückmeldung gesehen: ${await accepted(run, page)}; Fortschrittsanzeige (noch N h) im Panel: ${wirkt}` })
+      return run.result(ok, { beleg: `Rückmeldung gesehen: ${await accepted(run, page)}; "N frei" im Ausheben-Raster gesunken: ${wirkt}` })
     },
     // T-M46-05: P Provinzliste, E zu den Aushebeknoepfen (docs/ux/v3-before: 31 Tasten, 29 Tab; `tastaturAlt`).
     async tastatur(run, page) {

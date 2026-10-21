@@ -976,6 +976,71 @@ select,
     min-height: 44px;
     font-size: 16px;
   }
+
+  /* E8/D15 + K6-Nacharbeit (Noah-Entscheidung c, "Blatt/Kopf kompakter"): Hinweisspalte im Blatt
+     (Alerts compact=true, kein `column`) — Zeichen mit 44px Trefferflaeche statt des ganzen Satzes,
+     wie die Hinweisspalte ueber der Karte. Die 44px bleiben D15 woertlich (Trefferflaeche), aber die
+     Zeile selbst bleibt so hoch wie das sichtbare Zeichen (COLUMN_ICON = 28, Alerts.tsx): derselbe
+     Kniff wie `.explain__toggle` (Minusrand zieht den UNSICHTBAREN Teil der 44px-Box aus dem Fluss,
+     das Zeichen bleibt mittig). Davor nahm die Zeile volle 44px + der Abstand des Blatt-Koerpers
+     (`.side__body` gap) zweimal (oben/unten) — zusammen die Haupt-Ursache fuer K6 (Telefon-Kopf
+     154 -> 195 px, mapShare 0,269 -> 0,208 < Grenze 0,259). Jetzt steht die Zeile IN der sticky
+     `.sheet__bar` (App.tsx) statt als eigener Block im Koerper: kein eigener `gap`-Abstand mehr. */
+  :root:root .alerts--sheet .alert__jump,
+  :root:root .alerts--sheet .alert__plain,
+  :root:root .alerts--sheet .alert__more,
+  :root:root .alerts--sheet .alert__dismiss,
+  :root:root .alerts--sheet summary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    margin: -8px;
+  }
+
+  :root:root .alerts--sheet ul {
+    display: flex;
+    flex-wrap: wrap;
+    /* 16px gleichen die -8px Minusrand je Seite aus zweier Nachbarn aus (kein Ueberlapp der
+       44px-Trefferflaechen, K16); der Rest ist sichtbarer Abstand zwischen den 28px-Zeichen. */
+    gap: 20px var(--sp-sm);
+    list-style: none;
+    margin: 0;
+    padding: 4px 0;
+  }
+
+  /* Die Zeile sitzt in der sticky Leiste (zweite Zeile, nicht eigener Block im Blatt-Koerper). */
+  :root:root .sheet__bar {
+    flex-wrap: wrap;
+  }
+
+  :root:root .sheet__bar .alerts--sheet {
+    flex: 1 1 100%;
+    order: 3;
+  }
+
+  /* E8/D15: der Schliessen-Knopf des Toasts (sonner `closeButton`) auf 44px. */
+  :root:root .toaster [data-close-button] {
+    width: 44px;
+    height: 44px;
+  }
+
+  /* E8/D15: das Ausheben-Raster ersetzt im Blatt die Bauplaetze, solange es offen ist —
+     4 Spalten statt der 5x2-Felder des schwebenden Rasters (Desktop/Dock, recruit-grid). */
+  :root:root .recruit-grid--phone .actions {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--sp-sm);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  :root:root .group--recruit-compact .recruit-sheet__toggle {
+    width: 100%;
+    min-height: 44px;
+  }
 }
 
 /* Safe-area iPhone 17 Pro (B3) */
@@ -1149,6 +1214,24 @@ select,
   :root[data-input='touch'] .map-picker {
     top: var(--edge);
     bottom: auto;
+  }
+}
+
+/* Touch quer (E8, D15, Spec §12.14.1/§12.14.3): Messzeile "ALLE interaktiven Ziele >= 44 px
+   Trefferflaeche" gilt bereits ueber die generischen Touch-Regeln weiter oben in dieser Datei
+   (button/summary/.alarm-chip/.map-control/...). Was zusaetzlich zu diesem Modus gehoert: keine
+   Tastatur-Hinweise (kbd entfaellt komplett), Rohstoff-Chips zu viert in der Reihe, und das
+   Kontextmenue (ProvincePopup) nur, solange die Seitenleiste zu ist (App.tsx: `!sidebarPanel`). */
+@media (max-height: 480px) {
+  :root[data-input='touch'] .rail__key,
+  :root[data-input='touch'] .side__key {
+    display: none;
+  }
+
+  :root[data-input='touch'] .resources {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 2px var(--sp-md);
   }
 }
 

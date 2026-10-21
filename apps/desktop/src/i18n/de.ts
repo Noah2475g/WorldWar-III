@@ -1524,6 +1524,8 @@ export const de = {
   /** Die schwebende Leiste unten (E5, D9): Provinz/Armee statt in der Seitenleiste. */
   dock: {
     empty: 'Land anklicken, um Bauplätze und Ausheben zu sehen.',
+    /** Touch quer (E8, D15, Spec §12.14.3): Tipp statt Klick — kein Tastatur-Hinweis in diesem Modus. */
+    emptyTouch: 'Land antippen, um Bauplätze und Ausheben zu sehen.',
     recruitAction: 'Ausheben',
     recruitActionAria: 'Ausheben-Raster öffnen oder schließen',
     pickerAria: 'Provinz (Leiste unten)',

@@ -2,7 +2,8 @@ import { ZOOM_MID_MAX_SCALE, toScreen, zoomTier, type Point, type View } from '.
 import { BUILDING_ICONS, UNIT_ICONS, type IconName } from '../ui/icons.tsx'
 import { placeBuildings, type Anchor } from './anchors.ts'
 import { dominantUnitKey } from './stellung.ts'
-import { groupArmies, toneFor } from './sammel.ts'
+import { groupArmies, toneFor, groupBuildings } from './sammel.ts'
+import { layoutMarks, type MapBounds, type MarkInput, type LayoutResult } from './layoutMarks.ts'
 
 /**
  * What sits on top of the map (R-MAP-05, T-M10-03b).
@@ -63,7 +64,7 @@ export interface ArmyMarker {
   }
 }
 
-export type MarkerKind = 'building' | 'army' | 'armyGroup' | 'battle' | 'capital'
+export type MarkerKind = 'building' | 'buildingGroup' | 'army' | 'armyGroup' | 'battle' | 'capital'
 
 /** Wessen Stapel das ist — entscheidet die Rahmenfarbe (D27.2). */
 export type MarkerTone = 'own' | 'ally' | 'enemy' | 'other'
@@ -92,6 +93,14 @@ export interface Marker {
   armyIds?: readonly string[]
   /** Sammelmarke: die Beschriftung, Summe der Stueckzahl oder `×n` (T-M49-01, D6). */
   label?: string
+  /**
+   * E7 (Plan D14): in `collideMarks` mit einer anderen Marke zusammengelegt (Schritt 5 der
+   * Kollisionsregel) — steht an deren Stelle, aber ohne eigene gezeichnete Pille (das ist E7b).
+   * Fehlt ausserhalb von `collideMarks`.
+   */
+  merged?: boolean
+  /** Gebaeude-Sammelmarke (T-M51-01, D6): ob die Provinz die gewaehlte ist (Ring). */
+  selected?: boolean
 }
 
 /**
@@ -313,6 +322,11 @@ export interface MarkerExtras {
    * gruppiert. Ohne diese Angabe ist die Ausgabe bitgleich zu der vor M49.
    */
   grouping?: { selectedArmyId: string | null }
+  /**
+   * Gebaeude-Sammelmarke (T-M51-01, D2): nur wenn gesetzt UND auf mid werden Gebaeude je
+   * Provinz ab zwei Arten gruppiert. Ohne diese Angabe ist die Ausgabe bitgleich zu heute.
+   */
+  buildingGroups?: { selectedProvinceId: string | null }
 }
 
 /**
@@ -480,6 +494,42 @@ export function pickArmyGroup(
   return best
 }
 
+/** Mindestmass der Sammelmarke (D6: Breite waechst mit dem Text, Hoehe bleibt 20). */
+export const BUILDING_GROUP_BOX = { width: 20, height: 20 } as const
+
+/**
+ * Die Gebaeude-Sammelmarke unter einem Bildschirmpunkt — oder null (T-M51-01, D7, D8).
+ *
+ * Fragt `buildingMarkers` direkt (nicht `markersFor` mit leeren Armeen — das wuerde
+ * `layoutCache` verdraengen). Ohne `extras.buildingGroups` gibt es keine Gruppen: null.
+ */
+export function pickBuildingGroup(
+  screen: Point,
+  buildings: BuildingsByProvince,
+  centres: Readonly<Record<string, Point>>,
+  view: View,
+  extras: MarkerExtras = {},
+  hitBox: number = ARMY_HIT_BOX,
+): { provinceId: string; x: number; y: number } | null {
+  const reachX = Math.max(hitBox, BUILDING_GROUP_BOX.width) / 2
+  const reachY = Math.max(hitBox, BUILDING_GROUP_BOX.height) / 2
+  let best: { provinceId: string; x: number; y: number } | null = null
+  let bestDistance = Infinity
+
+  for (const marker of buildingMarkers(buildings, centres, view, extras)) {
+    if (marker.kind !== 'buildingGroup') continue
+    const dx = screen.x - marker.x
+    const dy = screen.y - marker.y
+    if (Math.abs(dx) > reachX || Math.abs(dy) > reachY) continue
+    const distance = dx * dx + dy * dy
+    if (distance <= bestDistance) {
+      bestDistance = distance
+      best = { provinceId: marker.provinceId, x: marker.x, y: marker.y }
+    }
+  }
+  return best
+}
+
 /** Sieben Plaetze in einer Reihe unter der Provinzmitte, abwechselnd rechts und links. */
 function fallbackAnchors(centre: Point, scale: number): Anchor[] {
   return Array.from({ length: 7 }, (_, i) => {
@@ -581,8 +631,14 @@ function armyLayout(
   return result
 }
 
-export function markersFor(
-  armies: readonly ArmyMarker[],
+/**
+ * Die Gebaeudemarker einer Sicht, in Bildpunkten (D27.4, T-M30-02, T-M51-01).
+ *
+ * Ab der mittleren Stufe mit `extras.buildingGroups` entsteht ab zwei Gebaeudearten
+ * (Stufe >= 1) in einer Provinz EINE Sammelmarke (`buildingGroup`) statt mehrerer
+ * Quadrate (D1-D6) — ohne diese Angabe oder auf near/far bitgleich zu heute.
+ */
+export function buildingMarkers(
   buildings: BuildingsByProvince,
   centres: Readonly<Record<string, Point>>,
   view: View,
@@ -592,33 +648,70 @@ export function markersFor(
 
   // Gebaeude erst ab der mittleren Stufe (D27.4): auf der Weltansicht waeren 1 700
   // Quadrate ein Schleier und kosten das Bildbudget (KRIEGSRAT §6.1).
-  if (zoomTier(view.scale) !== 'far') {
-    for (const [provinceId, byKind] of Object.entries(buildings)) {
-      const centre = centres[provinceId]
-      if (!centre) continue
+  if (zoomTier(view.scale) === 'far') return markers
 
-      // An den Ankern der Provinz (T-M30-02); ohne Anker in einer Reihe unter der
-      // Mitte, das erste genau darunter — wie bisher, nur als Marker statt als Pip.
-      const anchors = extras.anchors?.[provinceId] ?? fallbackAnchors(centre, view.scale)
-      for (const placed of placeBuildings(byKind, anchors)) {
-        const point = toScreen(placed, view)
-        // Sitzt der Anker auf der Provinzmitte, sitzt dort auch der Armeekasten — und
-        // der deckt mit 30x18 das 14x14-Quadrat restlos (T-M28-12, Befund 2 der
-        // Durchsicht vom 2026-09-11). `anchorsFor` faellt bei zu kleinen Provinzen
-        // genau darauf zurueck, weil nur die Mitte sicher im Land liegt; der Versatz
-        // gehoert deshalb hierher, in Bildpunkte, und nicht an den Anker.
-        const aufDerMitte = placed.x === centre.x && placed.y === centre.y
-        markers.push({
-          kind: 'building',
-          provinceId,
-          x: point.x,
-          y: aufDerMitte ? point.y + BUILDING_OFFSET_Y : point.y,
-          icon: BUILDING_ICONS[placed.building] ?? 'warning',
-          level: placed.level,
-        })
-      }
+  const groups = extras.buildingGroups && zoomTier(view.scale) === 'mid' ? groupBuildings(buildings) : null
+
+  for (const [provinceId, byKind] of Object.entries(buildings)) {
+    const centre = centres[provinceId]
+    if (!centre) continue
+
+    // An den Ankern der Provinz (T-M30-02); ohne Anker in einer Reihe unter der
+    // Mitte, das erste genau darunter — wie bisher, nur als Marker statt als Pip.
+    const anchors = extras.anchors?.[provinceId] ?? fallbackAnchors(centre, view.scale)
+    const group = groups?.get(provinceId)
+
+    if (group) {
+      // D5: Punkt = erster Eintrag von placeBuildings, dieselbe Mitte-Regel wie das Quadrat.
+      const placed = placeBuildings(byKind, anchors)
+      const first = placed[0]
+      if (!first) continue
+      const point = toScreen(first, view)
+      const aufDerMitte = first.x === centre.x && first.y === centre.y
+      markers.push({
+        kind: 'buildingGroup',
+        provinceId,
+        x: point.x,
+        y: aufDerMitte ? point.y + BUILDING_OFFSET_Y : point.y,
+        icon: group.icon,
+        label: String(group.n),
+        ...(extras.buildingGroups!.selectedProvinceId === provinceId ? { selected: true } : {}),
+      })
+      continue
+    }
+
+    for (const placed of placeBuildings(byKind, anchors)) {
+      const point = toScreen(placed, view)
+      // Sitzt der Anker auf der Provinzmitte, sitzt dort auch der Armeekasten — und
+      // der deckt mit 30x18 das 14x14-Quadrat restlos (T-M28-12, Befund 2 der
+      // Durchsicht vom 2026-09-11). `anchorsFor` faellt bei zu kleinen Provinzen
+      // genau darauf zurueck, weil nur die Mitte sicher im Land liegt; der Versatz
+      // gehoert deshalb hierher, in Bildpunkte, und nicht an den Anker.
+      const aufDerMitte = placed.x === centre.x && placed.y === centre.y
+      markers.push({
+        kind: 'building',
+        provinceId,
+        x: point.x,
+        y: aufDerMitte ? point.y + BUILDING_OFFSET_Y : point.y,
+        icon: BUILDING_ICONS[placed.building] ?? 'warning',
+        level: placed.level,
+      })
     }
   }
+
+  return markers
+}
+
+export function markersFor(
+  armies: readonly ArmyMarker[],
+  buildings: BuildingsByProvince,
+  centres: Readonly<Record<string, Point>>,
+  view: View,
+  extras: MarkerExtras = {},
+): Marker[] {
+  const markers: Marker[] = []
+
+  markers.push(...buildingMarkers(buildings, centres, view, extras))
 
   // Stapel an einem Punkt werden aufgefaechert und ueberlappende Raster auseinandergeschoben
   // (T-M46-03). LOESCHVERMERK (Review): bis dahin lagen alle Armeen einer Provinz exakt
@@ -661,4 +754,79 @@ export function markersFor(
   }
 
   return markers
+}
+
+/**
+ * Markenkollision (E7, Plan D14) — Positionierung, Schritt 2 (Verdrahtung). Nur die Lage der
+ * Armee-/Gebaeudemarker weicht aus (Ring-Versatz, Notfall, Gebaeude-Ruecktritt); gezeichnet wird
+ * weiterhin mit dem bisherigen Pfad je `kind`. Die "gemischte Pille" (Schritt 2 der Spec, eigen+feind
+ * zu einer Marke zusammenlegen) und die Anker-Linie (Schritt 4) sind eine neue Zeichnung und bewusst
+ * NICHT Teil dieser Karte (Mentor-Befund t_9778f304: Phase "Verdrahtung" != Phase "Zeichnung") —
+ * Folge-Ticket E7b. Zusammengelegte Marken (`merged`) bleiben darum unveraendert an ihrer alten Stelle
+ * stehen, damit nichts verschwindet, ohne dass eine neue Pille dafuer gezeichnet wird.
+ *
+ * `pow` (fuer das Zusammenlegen, Schritt 5) ist hier die Provinz, nicht die Macht — Marker tragen
+ * keine Machtkennung (nur `tone`); das ist eine bewusste Naeherung fuer diese Karte, siehe Bericht.
+ * `near` wird nie aufgerufen (Plan K16, bitgleich).
+ */
+export function collideMarks(markers: readonly Marker[], bounds: MapBounds, selectedArmyId?: string | null): { markers: Marker[]; layout: LayoutResult } {
+  const movable: { index: number; marker: Marker }[] = []
+  markers.forEach((marker, index) => {
+    if (
+      marker.kind === 'army' ||
+      marker.kind === 'armyGroup' ||
+      marker.kind === 'building' ||
+      marker.kind === 'buildingGroup'
+    )
+      movable.push({ index, marker })
+  })
+
+  const inputs: MarkInput[] = movable.map(({ index, marker }) => {
+    // D14/E1b: `buildingGroup` zaehlt fuer die Kollision wie `building` (Vorrang 1,
+    // Versatz nur bis 13 px, dann Ruecktritt per BUILDINGS_YIELD_TO) — nur die gewaehlte
+    // Provinz bekommt den hoeheren Vorrang 2,5 (D6), damit sie Armeen nicht weicht.
+    const isBuildingGroup = marker.kind === 'buildingGroup'
+    const isBuilding = marker.kind === 'building' || isBuildingGroup
+    const tone = marker.tone ?? (marker.own ? 'own' : 'other')
+    const isFoe = tone === 'enemy'
+    const isSelected = marker.kind === 'army' && selectedArmyId != null && marker.armyId === selectedArmyId
+    const pri = isBuildingGroup ? (marker.selected ? 2.5 : 1) : isBuilding ? 1 : isFoe ? 4 : isSelected ? 3 : 2
+    const side = isBuilding ? ('bm' as const) : isFoe ? ('foe' as const) : ('me' as const)
+    const { width: w, height: h } = isBuildingGroup
+      ? BUILDING_GROUP_BOX
+      : isBuilding
+        ? { width: BUILDING_BOX, height: BUILDING_BOX }
+        : ARMY_BOX
+    return {
+      id: String(index),
+      pri,
+      kind: isBuilding ? 'building' : 'army',
+      side,
+      pow: marker.provinceId,
+      ax: marker.x,
+      ay: marker.y,
+      w,
+      h,
+      n: marker.kind === 'army' ? (marker.count ?? 1) : isBuildingGroup ? Number(marker.label) || 1 : (marker.level ?? 1),
+      foe: isFoe,
+    }
+  })
+
+  const layout = layoutMarks(inputs, bounds)
+  const byId = new Map(layout.marks.map((m) => [m.id, m]))
+  const retreated = new Set(
+    movable.filter(({ index }) => !byId.has(String(index))).map(({ index }) => index),
+  )
+
+  const result: Marker[] = []
+  markers.forEach((marker, index) => {
+    if (retreated.has(index)) return // Schritt 7: zurueckgetretenes Gebaeude, nicht gezeichnet.
+    const placed = byId.get(String(index))
+    if (!placed || placed.merged) {
+      result.push(placed?.merged ? { ...marker, merged: true } : marker) // unveraendert: kein Treffer (Marker-Art nicht Teil der Kollision) oder zusammengelegt (E7b).
+      return
+    }
+    result.push({ ...marker, x: placed.rect.x + placed.rect.w / 2, y: placed.rect.y + placed.rect.h / 2 })
+  })
+  return { markers: result, layout }
 }
