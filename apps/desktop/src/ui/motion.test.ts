@@ -8,6 +8,8 @@ import {
   motionAllowed,
   pulse,
   ringRadius,
+  easeOut,
+  spring,
 } from './motion.ts'
 import { CUE_SPEED_LIMIT } from './sound.ts'
 
@@ -126,5 +128,74 @@ describe('T-M28-08 Das Aufblitzen je Gefechtsrunde', () => {
   it('bleibt dunkel, wenn weniger Bewegung verlangt ist oder das Spiel rennt', () => {
     expect(battleFlash(0, { reduced: true })).toBe(0)
     expect(battleFlash(0, { reduced: false, speed: 100 })).toBe(0)
+  })
+})
+
+/**
+ * T-M<n>-05 · Die Feder- und Blendkurve des Zoom-Cluster-Uebergangs (D9).
+ *
+ * `spring` ist der JS-Nachbau der CSS-`--spring`-Kurve (jsdom kennt keine CSS-Kurven),
+ * `easeOut` von `cubic-bezier(.22,1,.36,1)`. Beide werden gegen die Stuetzstellen aus dem
+ * Plan geprueft statt gegen ein Gefuehl.
+ */
+describe('T-M<n>-05 spring() und easeOut() des Zoom-Cluster-Uebergangs', () => {
+  it('spring beginnt bei 0 und endet bei 1', () => {
+    expect(spring(0)).toBe(0)
+    expect(spring(1)).toBe(1)
+  })
+
+  it('spring ueberschwingt auf rund 1,056 bei t ~ 0,265', () => {
+    let max = -Infinity
+    let maxAt = 0
+    for (let i = 0; i <= 1000; i++) {
+      const t = i / 1000
+      const v = spring(t)
+      if (v > max) {
+        max = v
+        maxAt = t
+      }
+    }
+    expect(max).toBeCloseTo(1.056, 2)
+    expect(maxAt).toBeCloseTo(0.265, 1)
+  })
+
+  it('spring steigt bis zum Maximum monoton', () => {
+    let prev = spring(0)
+    for (let i = 1; i <= 265; i++) {
+      const v = spring(i / 1000)
+      expect(v).toBeGreaterThanOrEqual(prev - 1e-9)
+      prev = v
+    }
+  })
+
+  it('spring trifft die Stuetzstellen aus dem Plan auf 1 % genau', () => {
+    const stops: [number, number][] = [
+      [0, 0],
+      [0.021, 0.035],
+      [0.044, 0.141],
+      [0.129, 0.723],
+      [0.167, 0.938],
+      [0.198, 1.017],
+      [0.23, 1.051],
+      [0.265, 1.056],
+      [0.336, 1.032],
+      [0.415, 1.006],
+      [0.5, 0.996],
+      [1, 1],
+    ]
+    for (const [t, expected] of stops) {
+      expect(spring(t)).toBeCloseTo(expected, 1)
+    }
+  })
+
+  it('easeOut beginnt bei 0 und endet bei 1, monoton dazwischen', () => {
+    expect(easeOut(0)).toBeCloseTo(0, 6)
+    expect(easeOut(1)).toBeCloseTo(1, 6)
+    let prev = easeOut(0)
+    for (let i = 1; i <= 100; i++) {
+      const v = easeOut(i / 100)
+      expect(v).toBeGreaterThanOrEqual(prev - 1e-6)
+      prev = v
+    }
   })
 })
