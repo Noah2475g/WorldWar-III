@@ -33,6 +33,8 @@ import {
   toScreen,
   zoomAt,
   zoomTier,
+  ZOOM_MID_MAX_SCALE,
+  ZOOM_NEAR_MAX_SCALE,
   type Point,
   type View,
   type ViewLimits,
@@ -58,11 +60,13 @@ import {
   pickArmy,
   pickArmyGroup,
   pickBuildingGroup,
+  pickWorldPill,
   type ArmyMarker,
   type BuildingsByProvince,
   type Marker,
   type MarkerTone,
 } from './markers.ts'
+import type { WorldProvinceInfo } from './welt.ts'
 import { planTransition, frameAt, done as tweenDone, type DrawnMarker, type TransitionPlan } from './tween.ts'
 import { GROUP_ZOOM_SCALE, arrowArmies, showDayLabel } from './sammel.ts'
 import { centreOnVisible } from './viewRect.ts'
@@ -416,6 +420,22 @@ export function MapCanvas(props: MapCanvasProps) {
     drawn.current = { mode: props.mode, fills, provinces: props.provinces, result }
     return result
   }, [props.provinces, props.mode])
+
+  // T-M51-08 (D16): "Land" = `province.owner`, Beziehung = `province.relation` — beide
+  // kommen bereits abgeleitet aus der Sicht (`modes.ts: relationKindFor`, vom Aufrufer
+  // gesetzt); hier nur zu einer Map je Provinz zusammengefasst, fuer `worldRawMarks`.
+  // Abweichung (kein Blocker): ohne JEDE Relationsangabe (kein Aufrufer setzt `relation`,
+  // z. B. aeltere Tests vor T-M26-03) bleibt far unveraendert beim alten Pfad — die
+  // Welt-Pille braucht die Beziehung, um eigen/Feind/friedlich zu unterscheiden (D16);
+  // ohne sie waere jede Provinz "unbekannt" und die Pille liefe staendig leer.
+  const worldPillProvinces = useMemo<Readonly<Record<string, WorldProvinceInfo>> | null>(() => {
+    if (!props.provinces.some((province) => province.relation !== undefined)) return null
+    const out: Record<string, WorldProvinceInfo> = {}
+    for (const province of props.provinces) {
+      out[province.id] = { owner: province.owner, relation: province.relation }
+    }
+    return out
+  }, [props.provinces])
 
   const limits: ViewLimits = useMemo(
     () => ({
@@ -846,6 +866,9 @@ export function MapCanvas(props: MapCanvasProps) {
     const rawMarkers = markersFor(props.armies, props.buildings, props.centres, props.view, {
       grouping,
       buildingGroups,
+      ...(worldPillProvinces
+        ? { worldPill: { provinces: worldPillProvinces, selectedProvinceId: props.selectedProvince ?? null } }
+        : {}),
       capitalProvinceId: props.capitalProvinceId ?? null,
       battleProvinces: props.battleProvinces ?? [],
       ...(props.anchors ? { anchors: props.anchors } : {}),
@@ -979,6 +1002,74 @@ export function MapCanvas(props: MapCanvasProps) {
         context.globalAlpha = 1
         context.textAlign = 'left'
         context.textBaseline = 'alphabetic'
+        continue
+      }
+
+      if (marker.kind === 'worldPill') {
+        // Welt-Pille (T-M51-08, D22, Mockup Bild 5 "92|60"): wie `.bm` (Hoehe 20, Fuellung
+        // `surface` 0,7 Deckkraft), Rand `primary` (eigen) bzw. `danger` (Feind). Zwei Segmente
+        // nebeneinander mit 1-px-Trennlinie `muted`, nur wenn beide Segmente vorhanden sind.
+        context.font = `400 10.5px ${TYPE.num}`
+        const segments: { icon: IconName; label: string }[] = []
+        if (marker.buildingLabel !== undefined) {
+          segments.push({ icon: marker.buildingIcon ?? 'factory', label: marker.buildingLabel })
+        }
+        if (marker.armyLabel !== undefined) {
+          segments.push({ icon: marker.armyIcon ?? 'infantry', label: marker.armyLabel })
+        }
+        if (segments.length === 0) continue
+        const segmentWidths = segments.map((segment) =>
+          Math.max(BUILDING_GROUP_BOX.width, 3 + 12 + 3 + context.measureText(segment.label).width + 4),
+        )
+        const width = segmentWidths.reduce((sum, w) => sum + w, 0)
+        const height = BUILDING_GROUP_BOX.height
+        const left = marker.x - width / 2
+        const top = marker.y - height / 2
+        const radius = 7
+        context.beginPath()
+        context.moveTo(left + radius, top)
+        context.arcTo(left + width, top, left + width, top + height, radius)
+        context.arcTo(left + width, top + height, left, top + height, radius)
+        context.arcTo(left, top + height, left, top, radius)
+        context.arcTo(left, top, left + width, top, radius)
+        context.closePath()
+        context.globalAlpha = 0.7
+        context.fillStyle = TOKENS.surface
+        context.fill()
+        context.globalAlpha = 1
+        const rim = marker.tone === 'enemy' ? TOKENS.danger : TOKENS.primary
+        if (marker.selected) {
+          context.lineWidth = 1.5
+          context.strokeStyle = TOKENS.primary
+          context.stroke()
+        }
+        context.strokeStyle = rim
+        context.lineWidth = 1.5
+        context.stroke()
+        let segLeft = left
+        segments.forEach((segment, index) => {
+          const segWidth = segmentWidths[index]!
+          context.strokeStyle = rim
+          drawIcon(context, segment.icon, segLeft + 3 + 6, marker.y, 12)
+          context.globalAlpha = 0.85
+          context.fillStyle = TOKENS.text
+          context.font = `400 10.5px ${TYPE.num}`
+          context.textAlign = 'left'
+          context.textBaseline = 'middle'
+          context.fillText(segment.label, segLeft + 3 + 12 + 3, marker.y)
+          context.globalAlpha = 1
+          context.textAlign = 'left'
+          context.textBaseline = 'alphabetic'
+          if (index === 0 && segments.length === 2) {
+            context.strokeStyle = TOKENS.muted
+            context.lineWidth = 1
+            context.beginPath()
+            context.moveTo(segLeft + segWidth, top + 2)
+            context.lineTo(segLeft + segWidth, top + height - 2)
+            context.stroke()
+          }
+          segLeft += segWidth
+        })
         continue
       }
 
@@ -1287,13 +1378,16 @@ export function MapCanvas(props: MapCanvasProps) {
   })
 
   const zoomToGroup = useCallback(
-    (point: Point) => {
-      props.onViewChange(
-        centreOnVisible(toMap(point, props.view), { ...props.view, scale: GROUP_ZOOM_SCALE }, limits, props.insets),
-      )
+    (point: Point, scale: number = GROUP_ZOOM_SCALE) => {
+      props.onViewChange(centreOnVisible(toMap(point, props.view), { ...props.view, scale }, limits, props.insets))
     },
     [props, limits],
   )
+
+  // T-M51-08 (D23): Welt-Pille zoomt auf `mid`, nicht auf `near` wie Armee-/Gebaeude-Sammelmarke
+  // (`GROUP_ZOOM_SCALE`) — dieselbe Hilfsfunktion (`zoomToGroup`/`centreOnVisible`), nur mit
+  // anderem Ziel-Massstab (Mitte des mid-Bereichs, bewusst nicht die Grenze).
+  const WORLD_PILL_ZOOM_SCALE = (ZOOM_NEAR_MAX_SCALE + ZOOM_MID_MAX_SCALE) / 2
 
   const handleClick = useCallback(
     (event: React.MouseEvent<HTMLCanvasElement>) => {
@@ -1314,33 +1408,43 @@ export function MapCanvas(props: MapCanvasProps) {
       if (props.onSelectArmy) {
         const hitBox = touch ? TOUCH_TARGET_PX * (rect.width > 0 ? size.width / rect.width : 1) : undefined
         const grouping = { selectedArmyId: props.selectedArmyId ?? null }
-        const armyId = pickArmy(
-          screen,
-          props.armies,
-          props.centres,
-          props.view,
-          {
-            grouping,
-            ...(motionAllowed(props.speed ?? 0) && props.tick !== undefined ? { tick: props.tick } : {}),
-          },
-          hitBox,
-        )
+        // T-M51-08 (D23): auf far mit aktiver Welt-Pille zeichnet `markersFor` keine
+        // einzelnen Armee-/Sammelmarken mehr (siehe `else`-Zweig dort) — `pickArmy`/
+        // `pickArmyGroup` fragen aber ihre EIGENE `markersFor`-Kopie ohne `worldPill`-Extra
+        // und faenden die Armee trotzdem (Schritt 0: NICHT ohnehin leer). Darum hier explizit
+        // uebersprungen, statt sich auf Zufall zu verlassen.
+        const worldPillActive = zoomTier(props.view.scale) === 'far' && worldPillProvinces !== null
+        const armyId = worldPillActive
+          ? null
+          : pickArmy(
+              screen,
+              props.armies,
+              props.centres,
+              props.view,
+              {
+                grouping,
+                ...(motionAllowed(props.speed ?? 0) && props.tick !== undefined ? { tick: props.tick } : {}),
+              },
+              hitBox,
+            )
         if (armyId) {
           props.onSelectArmy(armyId)
           return
         }
         // Sammelmarke (T-M49-02, D8): Klick zoomt nah heran, waehlt nichts.
-        const hit = pickArmyGroup(
-          screen,
-          props.armies,
-          props.centres,
-          props.view,
-          {
-            grouping,
-            ...(motionAllowed(props.speed ?? 0) && props.tick !== undefined ? { tick: props.tick } : {}),
-          },
-          hitBox,
-        )
+        const hit = worldPillActive
+          ? null
+          : pickArmyGroup(
+              screen,
+              props.armies,
+              props.centres,
+              props.view,
+              {
+                grouping,
+                ...(motionAllowed(props.speed ?? 0) && props.tick !== undefined ? { tick: props.tick } : {}),
+              },
+              hitBox,
+            )
         if (hit) {
           zoomToGroup({ x: hit.x, y: hit.y })
           return
@@ -1358,11 +1462,30 @@ export function MapCanvas(props: MapCanvasProps) {
           zoomToGroup({ x: buildingHit.x, y: buildingHit.y })
           return
         }
+        // Welt-Pille (T-M51-08, D23): gleicher Zoom-Weg, kein onSelect/onSelectArmy — nur auf
+        // far, wo die drei Greifer oben ohnehin leer sind (Schritt 0 gepruft), und nur wenn der
+        // Aufrufer Beziehungsdaten liefert (sonst `null`, siehe `worldPillProvinces`).
+        const worldPillHit = worldPillProvinces
+          ? pickWorldPill(
+              screen,
+              props.buildings,
+              props.armies,
+              worldPillProvinces,
+              props.centres,
+              props.view,
+              props.selectedProvince ?? null,
+              hitBox,
+            )
+          : null
+        if (worldPillHit) {
+          zoomToGroup({ x: worldPillHit.x, y: worldPillHit.y }, WORLD_PILL_ZOOM_SCALE)
+          return
+        }
       }
 
       props.onSelect(pickProvince(screen, props.view, withBounds))
     },
-    [props, withBounds, size, zoomToGroup],
+    [props, withBounds, size, zoomToGroup, worldPillProvinces, WORLD_PILL_ZOOM_SCALE],
   )
 
   const handleWheel = useCallback(

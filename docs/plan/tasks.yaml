@@ -4510,3 +4510,43 @@ tasks:
     files: [apps/desktop/src/map/MapCanvas.tsx, docs/reports/v4/zoomcluster.md]
     tests: [apps/desktop/src/map/MapCanvas.test.tsx]
     dod: "pnpm verify Exit 0, PR offen (Noah2475g), Merge nur durch reviewer."
+  - id: T-M51-07
+    milestone: M51
+    title: "Welt-Pille: Rohmarken, Zusammenlegen-Parameter (E3a)"
+    status: done
+    deps: [T-M51-06]
+    requirements: [R-MAP-05]
+    design: []
+    files: [apps/desktop/src/map/welt.ts, apps/desktop/src/map/welt.test.ts, apps/desktop/src/map/layoutMarks.ts, apps/desktop/src/map/layoutMarks.test.ts]
+    tests: [apps/desktop/src/map/welt.test.ts, apps/desktop/src/map/layoutMarks.test.ts]
+    dod: "Unit-Tests (a)-(h) gruen, mergeRadius additiv (Default unveraendert)."
+  - id: T-M51-08
+    milestone: M51
+    title: "Welt-Pille zeichnen, klickbar (E3b)"
+    status: done
+    deps: [T-M51-07]
+    requirements: [R-MAP-05]
+    design: []
+    files: [apps/desktop/src/map/markers.ts, apps/desktop/src/map/MapCanvas.tsx]
+    tests: [apps/desktop/src/map/markers.test.ts, apps/desktop/src/map/MapCanvas.test.tsx]
+    dod: "Welt-Pille auf far gezeichnet und klickbar (Klick -> zoomToGroup auf mid), Mid/Near unveraendert."
+  - id: T-M51-09
+    milestone: M51
+    title: "Waechter an S575 (E3c)"
+    status: done
+    deps: [T-M51-08]
+    requirements: [R-MAP-05]
+    design: []
+    files: [apps/desktop/src/map/zoomcluster-welt.slow.test.ts, docs/reports/v4/weltpille.json]
+    tests: [apps/desktop/src/map/zoomcluster-welt.slow.test.ts]
+    dod: "Slow-Test gruen, Messwerte in weltpille.json, Mid/Near bitgleich belegt (git diff --exit-code)."
+  - id: T-M51-10
+    milestone: M51
+    title: "Welt-Pille Abnahme, Bilder, Bericht, PR (E3d)"
+    status: done
+    deps: [T-M51-09]
+    requirements: [R-MAP-05]
+    design: []
+    files: [scripts/v4-weltpille-bild.mjs, docs/ux/v4-weltpille/, docs/reports/v4/weltpille.md, docs/plan/PROGRESS.md, docs/ASSETS.md]
+    tests: [scripts/v4-weltpille-bild.mjs]
+    dod: "Bilder angesehen und gegen Bild 5 verglichen, pnpm verify Exit 0, PR offen (Noah2475g), Merge nur durch reviewer."

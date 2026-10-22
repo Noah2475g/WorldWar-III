@@ -5,7 +5,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { HOVER_DELAY_MS, MapCanvas } from './MapCanvas.tsx'
 import { anchorsFor } from './anchors.ts'
 import { boundsOf } from './picking.ts'
-import { toMap } from './picking.ts'
+import { toMap, toScreen, ZOOM_MID_MAX_SCALE, ZOOM_NEAR_MAX_SCALE } from './picking.ts'
 import { ARMY_LIFT_Y, buildingMarkers, markersFor } from './markers.ts'
 import { GROUP_ZOOM_SCALE } from './sammel.ts'
 import { marchLabel } from './render.ts'
@@ -1049,5 +1049,168 @@ describe('T-M<n>-06 Zoom-Cluster Uebergang', () => {
     // Eine einzelne Armee hat denselben Schluessel auf beiden Stufen (D9 g): sofortiges Ziel, kein Plan.
     expect(rafSpy).not.toHaveBeenCalled()
     rafSpy.mockRestore()
+  })
+})
+
+describe('T-M51-08 Welt-Pille', () => {
+  const woProvince = world.provinces[0]!
+  const wo = woProvince.id
+  const feindProvince = world.provinces[1]!
+  const feind = feindProvince.id
+  const friedeProvince = world.provinces[2]!
+  const friede = friedeProvince.id
+  const ansicht = (scale: number) => ({ x: woProvince.center.x - 160 * scale, y: woProvince.center.y - 120 * scale, scale })
+  // far: scale > ZOOM_MID_MAX_SCALE (2) — Mindestabstand zur Grenze, damit `zoomTier` sicher 'far' liefert.
+  const FAR = ansicht(4)
+
+  // D16: eigene Provinz (relation 'self'), Kriegsgegner ('war'), friedliche Fremdmacht ('peace') —
+  // nur die ersten zwei bekommen eine Pille (A19).
+  const weltProvinces: RenderProvince[] = provinces.map((province) => {
+    if (province.id === wo) return { ...province, owner: 'p1', relation: 'self' as const }
+    if (province.id === feind) return { ...province, owner: 'p2', relation: 'war' as const }
+    if (province.id === friede) return { ...province, owner: 'p3', relation: 'peace' as const }
+    return province
+  })
+  const worldPillProvinceInfo = Object.fromEntries(
+    weltProvinces.map((province) => [province.id, { owner: province.owner, relation: province.relation }]),
+  )
+
+  const buildings = { [wo]: { factory: 2, airfield: 1 }, [friede]: { factory: 3 } }
+  const eigeneArmee = { id: 'a1', provinceId: wo, owner: 'p1', strength: 5000, own: true, icon: 'infantry' as const, count: 7 }
+  const feindArmee = {
+    id: 'a2',
+    provinceId: feind,
+    owner: 'p2',
+    strength: 5000,
+    own: false,
+    relation: 'war' as const,
+    icon: 'armour' as const,
+    count: 4,
+  }
+  const friedeArmee = { id: 'a3', provinceId: friede, owner: 'p3', strength: 2000, own: false, relation: 'peace' as const }
+
+  const pillen = (armies: Parameters<typeof markersFor>[0], marks: Parameters<typeof markersFor>[1], selectedProvinceId: string | null = null) =>
+    markersFor(armies, marks, centres, FAR, {
+      worldPill: { provinces: worldPillProvinceInfo, selectedProvinceId },
+    }).filter((m) => m.kind === 'worldPill')
+
+  const ueberzug = (container: HTMLElement) => container.querySelector('canvas[role="application"]') as HTMLCanvasElement
+  const rahmen = () => {
+    const rect = ueberzug(document.body)
+    rect.getBoundingClientRect = () => ({ left: 0, top: 0, width: 320, height: 240 }) as DOMRect
+    return rect
+  }
+
+  it('(a) eigene Provinz mit Gebaeuden+Armee: eine Pille, zwei Segmente', () => {
+    const marken = pillen([eigeneArmee], buildings)
+    const eigene = marken.filter((m) => m.provinceId === wo)
+    expect(eigene).toHaveLength(1)
+    const pille = eigene[0]!
+    expect(pille.tone).toBe('own')
+    // D17: Summe der Gebaeude-STUFEN (factory 2 + airfield 1 = 3), nicht die Artenzahl.
+    expect(pille.buildingLabel).toBe('3')
+    // D18: Summe der Stueckzahl (count: 7, eine Armee).
+    expect(pille.armyLabel).toBe('7')
+  })
+
+  it('(b) Kriegsgegner-Provinz: rote Pille, nur das Armee-Segment', () => {
+    const marken = pillen([feindArmee], {})
+    const gegner = marken.filter((m) => m.provinceId === feind)
+    expect(gegner).toHaveLength(1)
+    const pille = gegner[0]!
+    expect(pille.tone).toBe('enemy')
+    expect(pille.buildingLabel).toBeUndefined()
+    expect(pille.armyLabel).toBe('4')
+  })
+
+  it('(c) friedliche Fremdmacht bekommt keine Pille (A19)', () => {
+    const marken = pillen([friedeArmee], buildings)
+    expect(marken.find((m) => m.provinceId === friede)).toBeUndefined()
+  })
+
+  it('(d) Klick auf die Pille mit onSelectArmy zoomt in den mid-Bereich, zentriert', () => {
+    const pille = pillen([eigeneArmee], buildings).find((m) => m.provinceId === wo)!
+    const ansichten: { x: number; y: number; scale: number }[] = []
+    const onSelectArmy = vi.fn()
+    const onSelect = vi.fn()
+    zeichne({
+      speed: 100,
+      provinces: weltProvinces,
+      buildings,
+      armies: [eigeneArmee],
+      view: FAR,
+      onSelectArmy,
+      onSelect,
+      onViewChange: (v) => ansichten.push(v),
+    })
+    fireEvent.click(rahmen(), { clientX: pille.x, clientY: pille.y })
+
+    expect(ansichten.length).toBe(1)
+    // D23: mid, nicht near (GROUP_ZOOM_SCALE waere near) — Grenzen bewusst strikt (weder near noch far).
+    expect(ansichten[0]!.scale).toBeGreaterThan(ZOOM_NEAR_MAX_SCALE)
+    expect(ansichten[0]!.scale).toBeLessThanOrEqual(ZOOM_MID_MAX_SCALE)
+    const punkt = toMap({ x: pille.x, y: pille.y }, FAR)
+    // Zentriert heisst: der Kartenpunkt der Pille liegt nach dem Zoom im sichtbaren
+    // Ausschnitt (jsdom: 320x240) — nicht zwingend exakt in der Mitte, denn `clampView`
+    // darf am Kartenrand nachziehen (Befund beim Bauen, t_447fcdc7: woProvince.center
+    // und `centres[wo]` (erster Umrisspunkt) weichen leicht voneinander ab).
+    const wiederAufDemSchirm = toScreen(punkt, ansichten[0]!)
+    expect(wiederAufDemSchirm.x).toBeGreaterThanOrEqual(0)
+    expect(wiederAufDemSchirm.x).toBeLessThanOrEqual(320)
+    expect(wiederAufDemSchirm.y).toBeGreaterThanOrEqual(0)
+    expect(wiederAufDemSchirm.y).toBeLessThanOrEqual(240)
+    expect(onSelectArmy).not.toHaveBeenCalled()
+    expect(onSelect).not.toHaveBeenCalled()
+  })
+
+  it('(e) gewaehlte Provinz zeichnet einen zusaetzlichen primary-Ring (wie D6/buildingGroup)', () => {
+    expect(pillen([eigeneArmee], buildings, wo).find((m) => m.provinceId === wo)?.selected).toBe(true)
+    expect(pillen([eigeneArmee], buildings, feind).find((m) => m.provinceId === wo)?.selected).toBeFalsy()
+
+    const primaryStrokes = (selectedProvince: string | null) => {
+      const strokes: string[] = []
+      const { context: basis, recorder: rec } = recordingContext()
+      recorder = rec
+      const context = new Proxy(basis, {
+        get(target, key) {
+          if (key === 'stroke')
+            return () => {
+              strokes.push(String(rec.props.strokeStyle))
+              rec.calls.stroke = (rec.calls.stroke ?? 0) + 1
+            }
+          return Reflect.get(target, key)
+        },
+      })
+      HTMLCanvasElement.prototype.getContext = (() => context) as never
+      render(
+        <MapCanvas
+          provinces={weltProvinces}
+          centres={centres}
+          armies={[eigeneArmee]}
+          buildings={buildings}
+          mode="political"
+          width={world.width}
+          height={world.height}
+          view={FAR}
+          ownershipVersion={1}
+          selectedProvince={selectedProvince}
+          onSelect={() => undefined}
+          onViewChange={() => undefined}
+          onMode={() => undefined}
+          labelFor={(id) => id}
+          speed={100}
+        />,
+      )
+      cleanup()
+      return strokes.filter((s) => s === TOKENS.primary).length
+    }
+
+    // Baseline `null` statt einer anderen Provinz: zwei verschiedene Provinzen haben
+    // unterschiedlich viele Umriss-Teile und damit von sich aus verschieden viele
+    // generische Auswahl-Strokes (Befund beim Bauen, t_447fcdc7) — `null` zeichnet gar
+    // keinen Provinz-Ring und ist der einzige saubere Nullpunkt.
+    const ohneRing = primaryStrokes(null)
+    const mitRing = primaryStrokes(wo)
+    expect(mitRing).toBeGreaterThan(ohneRing)
   })
 })

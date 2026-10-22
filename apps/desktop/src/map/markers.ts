@@ -4,6 +4,7 @@ import { placeBuildings, type Anchor } from './anchors.ts'
 import { dominantUnitKey } from './stellung.ts'
 import { groupArmies, toneFor, groupBuildings } from './sammel.ts'
 import { layoutMarks, type MapBounds, type MarkInput, type LayoutResult } from './layoutMarks.ts'
+import { clusterWorldMarks, worldRawMarks, type WorldProvinceInfo, type WorldRawMark } from './welt.ts'
 
 /**
  * What sits on top of the map (R-MAP-05, T-M10-03b).
@@ -64,7 +65,7 @@ export interface ArmyMarker {
   }
 }
 
-export type MarkerKind = 'building' | 'buildingGroup' | 'army' | 'armyGroup' | 'battle' | 'capital'
+export type MarkerKind = 'building' | 'buildingGroup' | 'army' | 'armyGroup' | 'battle' | 'capital' | 'worldPill'
 
 /** Wessen Stapel das ist — entscheidet die Rahmenfarbe (D27.2). */
 export type MarkerTone = 'own' | 'ally' | 'enemy' | 'other'
@@ -101,6 +102,14 @@ export interface Marker {
   merged?: boolean
   /** Gebaeude-Sammelmarke (T-M51-01, D6): ob die Provinz die gewaehlte ist (Ring). */
   selected?: boolean
+  /** Welt-Pille (T-M51-08, D22): die Macht, der die Pille zugerechnet wird. */
+  ownerId?: string
+  /** Welt-Pille: Gebaeude-Segment (Symbol+Zahl), nur eigene Provinzen (D16). */
+  buildingIcon?: IconName
+  buildingLabel?: string
+  /** Welt-Pille: Armee-Segment (Symbol+Zahl), eigen ODER Feind (D16). */
+  armyIcon?: IconName
+  armyLabel?: string
 }
 
 /**
@@ -327,6 +336,14 @@ export interface MarkerExtras {
    * Provinz ab zwei Arten gruppiert. Ohne diese Angabe ist die Ausgabe bitgleich zu heute.
    */
   buildingGroups?: { selectedProvinceId: string | null }
+  /**
+   * Welt-Pille (T-M51-08, D16-D24): auf far ersetzt sie Gebaeude-Quadrate und
+   * Armee-Gruppierung durch je eine Pille pro Macht/Provinz. Ohne diese Angabe bleibt
+   * far wie bisher (`buildingMarkers` liefert `[]`, `armyLayout` gruppiert normal weiter) —
+   * Provinzdaten (owner/relation) kennt nur der Aufrufer (MapCanvas/App), darum hier
+   * durchgereicht statt neu geladen (D25: keine neue Datei).
+   */
+  worldPill?: { provinces: Readonly<Record<string, WorldProvinceInfo>>; selectedProvinceId?: string | null }
 }
 
 /**
@@ -530,6 +547,144 @@ export function pickBuildingGroup(
   return best
 }
 
+/** Mindestmass je Segment der Welt-Pille (T-M51-08, D22): wie die Gebaeude-Sammelmarke (D6). */
+export const WORLD_PILL_SEGMENT = { width: BUILDING_GROUP_BOX.width, height: BUILDING_GROUP_BOX.height } as const
+
+/**
+ * Die Welt-Pille auf far, gelegt mit `layoutMarks` (T-M51-08, D16-D24).
+ *
+ * Konsumiert `worldRawMarks` (E3a, D20) und legt sie zusammen (D21, `mergeRadius=72`). Die
+ * Sicht-Rechteck-Grenzen kennt nur die Leinwand (`MapCanvas`/Bitmap) — hier steht statt ihrer
+ * ein weites Feld, denn Schritt 5 (Zusammenlegen) ist das, was auf far wirklich zaehlt; der
+ * Notfall-Ausweich (Schritt 6) greift bei <=137 Welt-Marken (A20) bisher nicht beobachtet
+ * (dokumentierte Naeherung, kein Blocker — Nachbesserung nur falls E3c/Bild es zeigt).
+ */
+function worldPillMarkers(
+  buildings: BuildingsByProvince,
+  armies: readonly ArmyMarker[],
+  provinces: Readonly<Record<string, WorldProvinceInfo>>,
+  centres: Readonly<Record<string, Point>>,
+  view: View,
+  selectedProvinceId: string | null,
+): Marker[] {
+  if (zoomTier(view.scale) !== 'far') return []
+  const raw = worldRawMarks(buildings, armies, provinces, centres, view)
+  const projected = raw.map((mark) => {
+    const point = toScreen({ x: mark.x, y: mark.y }, view)
+    return { ...mark, x: point.x, y: point.y }
+  })
+  const bounds: MapBounds = { x: -100_000, y: -100_000, width: 200_000, height: 200_000 }
+  return collideWorldMarks(projected, bounds, selectedProvinceId)
+}
+
+/** D21/AK15: Reichweite, innerhalb der `clusterWorldMarks` Rohmarken VOR dem Platzieren zusammenlegt. */
+const WORLD_MERGE_RADIUS = 72
+
+/**
+ * D21/AK15 (Review-Runde 1 nachgebessert): Zusammenlegen der Welt-Rohmarken
+ * (`worldRawMarks`) in zwei Schritten. Schritt A (neu, `clusterWorldMarks`, welt.ts):
+ * macht-uebergreifendes Zusammenlegen gleicher Seite/Macht in `WORLD_MERGE_RADIUS` px,
+ * VOR dem Platzieren — ohne diesen Vorlauf blieb `layoutMarks`s eigener
+ * Zusammenlegen-Zweig (Schritt 5) bei realistischen Provinz-Abstaenden fast immer
+ * unerreicht, weil `WORLD_PILL_SEGMENT` (20-41 px) fast immer schon im Ring-Versatz einen
+ * freien Platz findet (Review-Befund, reproduziert). Schritt B (wie bisher): `layoutMarks`
+ * selbst mit `mergeRadius=WORLD_MERGE_RADIUS` als Notfall-Netz fuer den seltenen Fall, dass
+ * trotz Vorlauf kein Ring-Platz frei ist. `pri` 4/2 wiederverwendet die Vorrangstufen von
+ * Feind/eigener Armee (R11, dokumentiertes Risiko). Icon nach dem Zusammenlegen ist das der
+ * groessten Einzelsumme (D19-Muster, siehe `clusterWorldMarks`).
+ */
+export function collideWorldMarks(
+  raw: readonly WorldRawMark[],
+  bounds: MapBounds,
+  selectedProvinceId: string | null = null,
+): Marker[] {
+  const clustered = clusterWorldMarks(raw, WORLD_MERGE_RADIUS)
+  const hasBuilding = (mark: WorldRawMark): boolean => (mark.buildingSum ?? 0) > 0
+  const hasArmy = (mark: WorldRawMark): boolean => (mark.armySum ?? 0) > 0
+
+  const inputs: MarkInput[] = clustered.map((mark): MarkInput => {
+    const segments = (hasBuilding(mark) ? 1 : 0) + (hasArmy(mark) ? 1 : 0)
+    const width = segments * WORLD_PILL_SEGMENT.width + (segments === 2 ? 1 : 0)
+    return {
+      id: mark.provinceId,
+      pri: mark.tone === 'enemy' ? 4 : 2,
+      kind: mark.tone === 'enemy' ? 'foe' : 'army',
+      side: mark.tone === 'enemy' ? 'foe' : 'me',
+      pow: mark.ownerId,
+      ax: mark.x,
+      ay: mark.y,
+      w: width,
+      h: WORLD_PILL_SEGMENT.height,
+      n: mark.buildingSum ?? 0,
+      ...(hasBuilding(mark) ? { label: String(mark.buildingSum) } : {}),
+      ...(hasArmy(mark) ? { n2: mark.armySum, label2: String(mark.armySum) } : {}),
+      foe: mark.tone === 'enemy',
+    }
+  })
+
+  const byId = new Map(clustered.map((mark) => [mark.provinceId, mark]))
+  const { marks } = layoutMarks(inputs, bounds, WORLD_MERGE_RADIUS)
+  const out: Marker[] = []
+  for (const placed of marks) {
+    if (placed.merged) continue // Schritt 5: in eine andere Welt-Pille aufgegangen, nicht gezeichnet.
+    const source = byId.get(placed.id)
+    if (!source) continue
+    const isSelected =
+      selectedProvinceId !== null &&
+      (source.provinceId === selectedProvinceId || (source.memberProvinceIds?.includes(selectedProvinceId) ?? false))
+    out.push({
+      kind: 'worldPill',
+      provinceId: source.provinceId,
+      ownerId: source.ownerId,
+      x: placed.rect.x + placed.rect.w / 2,
+      y: placed.rect.y + placed.rect.h / 2,
+      tone: source.tone,
+      ...(source.buildingIcon ? { buildingIcon: source.buildingIcon } : {}),
+      ...(placed.label !== undefined ? { buildingLabel: placed.label } : {}),
+      ...(source.armyIcon ? { armyIcon: source.armyIcon } : {}),
+      ...(placed.label2 !== undefined ? { armyLabel: placed.label2 } : {}),
+      ...(isSelected ? { selected: true } : {}),
+    })
+  }
+  return out
+}
+
+/**
+ * Die Welt-Pille unter einem Bildschirmpunkt — oder null (T-M51-08, D23).
+ *
+ * Gleiches Muster wie `pickBuildingGroup`: eigene Berechnung statt `markersFor` mit leeren
+ * Armeen (das wuerde `layoutCache` verdraengen). Nur auf far — dort sind die anderen drei
+ * Greifer (`pickArmy`/`pickArmyGroup`/`pickBuildingGroup`) ohnehin leer (Schritt 0 gepruft).
+ */
+export function pickWorldPill(
+  screen: Point,
+  buildings: BuildingsByProvince,
+  armies: readonly ArmyMarker[],
+  provinces: Readonly<Record<string, WorldProvinceInfo>>,
+  centres: Readonly<Record<string, Point>>,
+  view: View,
+  selectedProvinceId: string | null = null,
+  hitBox: number = ARMY_HIT_BOX,
+): { provinceId: string; x: number; y: number } | null {
+  const reachX = Math.max(hitBox, WORLD_PILL_SEGMENT.width * 2) / 2
+  const reachY = Math.max(hitBox, WORLD_PILL_SEGMENT.height) / 2
+  let best: { provinceId: string; x: number; y: number } | null = null
+  let bestDistance = Infinity
+
+  for (const marker of worldPillMarkers(buildings, armies, provinces, centres, view, selectedProvinceId)) {
+    if (marker.kind !== 'worldPill') continue
+    const dx = screen.x - marker.x
+    const dy = screen.y - marker.y
+    if (Math.abs(dx) > reachX || Math.abs(dy) > reachY) continue
+    const distance = dx * dx + dy * dy
+    if (distance <= bestDistance) {
+      bestDistance = distance
+      best = { provinceId: marker.provinceId, x: marker.x, y: marker.y }
+    }
+  }
+  return best
+}
+
 /** Sieben Plaetze in einer Reihe unter der Provinzmitte, abwechselnd rechts und links. */
 function fallbackAnchors(centre: Point, scale: number): Anchor[] {
   return Array.from({ length: 7 }, (_, i) => {
@@ -711,17 +866,33 @@ export function markersFor(
 ): Marker[] {
   const markers: Marker[] = []
 
-  markers.push(...buildingMarkers(buildings, centres, view, extras))
+  // T-M51-08 (D24): auf far ersetzt die Welt-Pille Gebaeude-Quadrate (ohnehin `[]`, siehe
+  // `buildingMarkers`) UND die Armee-Gruppierung — ohne `extras.worldPill` (kein
+  // Provinzwissen durchgereicht) bleibt far wie bisher (`else`-Zweig, bitgleich).
+  if (zoomTier(view.scale) === 'far' && extras.worldPill) {
+    markers.push(
+      ...worldPillMarkers(
+        buildings,
+        armies,
+        extras.worldPill.provinces,
+        centres,
+        view,
+        extras.worldPill.selectedProvinceId ?? null,
+      ),
+    )
+  } else {
+    markers.push(...buildingMarkers(buildings, centres, view, extras))
 
-  // Stapel an einem Punkt werden aufgefaechert und ueberlappende Raster auseinandergeschoben
-  // (T-M46-03). LOESCHVERMERK (Review): bis dahin lagen alle Armeen einer Provinz exakt
-  // aufeinander — hier stand `markers.push({ kind: 'army', … })` je Armee ohne Versatz.
-  // Die Anordnung haengt nur vom Massstab ab, nicht vom Ausschnitt: sie wird einmal gerechnet und
-  // beim Schieben der Karte nur verschoben.
-  const laidOut = armyLayout(armies, centres, view.scale, extras.tick, extras.grouping)
-  const shiftX = -view.x / view.scale
-  const shiftY = -view.y / view.scale
-  for (const marker of laidOut) markers.push({ ...marker, x: marker.x + shiftX, y: marker.y + shiftY })
+    // Stapel an einem Punkt werden aufgefaechert und ueberlappende Raster auseinandergeschoben
+    // (T-M46-03). LOESCHVERMERK (Review): bis dahin lagen alle Armeen einer Provinz exakt
+    // aufeinander — hier stand `markers.push({ kind: 'army', … })` je Armee ohne Versatz.
+    // Die Anordnung haengt nur vom Massstab ab, nicht vom Ausschnitt: sie wird einmal gerechnet und
+    // beim Schieben der Karte nur verschoben.
+    const laidOut = armyLayout(armies, centres, view.scale, extras.tick, extras.grouping)
+    const shiftX = -view.x / view.scale
+    const shiftY = -view.y / view.scale
+    for (const marker of laidOut) markers.push({ ...marker, x: marker.x + shiftX, y: marker.y + shiftY })
+  }
 
   // The capital sits above the units of its own province: it is a place, not a piece,
   // and the player looks for it more often than for anything else on the map.

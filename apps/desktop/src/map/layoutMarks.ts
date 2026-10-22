@@ -34,6 +34,9 @@ export interface MarkInput {
   n: number
   label?: string
   foe?: boolean
+  /** Zweite Zahl/Beschriftung (E3a, D21a): Welt-Pille mit Gebaeude- UND Armee-Segment. */
+  n2?: number
+  label2?: string
 }
 
 export interface PlacedMark {
@@ -43,6 +46,8 @@ export interface PlacedMark {
   tone: 'own' | 'enemy' | 'mix' | 'building'
   rect: { x: number; y: number; w: number; h: number }
   label?: string
+  /** Zweites Segment (E3a, D21a): analog zu `label`, addiert aus `n2`. */
+  label2?: string
   foe: boolean
   /** Anker-Linie zur Provinzmitte, nur wenn der Versatz die Mitte verlaesst (Schritt 4). */
   anchor?: { x: number; y: number }
@@ -146,7 +151,11 @@ interface Placed {
  * Bildpunkten (z. B. {x:0,y:0,width:1280,height:744}); Marken ausserhalb werden
  * trotzdem platziert, wenn ihr Anker im Rechteck liegt — das ist Aufgabe des Aufrufers.
  */
-export function layoutMarks(input: readonly MarkInput[], bounds: MapBounds): LayoutResult {
+export function layoutMarks(
+  input: readonly MarkInput[],
+  bounds: MapBounds,
+  mergeRadius: number = MERGE_RADIUS,
+): LayoutResult {
   const items = [...input].sort((a, b) => b.pri - a.pri || b.n - a.n)
   const placed: Placed[] = []
   const out: PlacedMark[] = []
@@ -190,14 +199,19 @@ export function layoutMarks(input: readonly MarkInput[], bounds: MapBounds): Lay
       for (const p of placed) {
         if (p.input.side !== it.side || p.input.pow !== it.pow || it.side === 'mix') continue
         const d = Math.hypot(p.cx - it.ax, p.cy - it.ay)
-        if (d < MERGE_RADIUS && d < bestDistance) {
+        if (d < mergeRadius && d < bestDistance) {
           bestDistance = d
           target = p
         }
       }
       if (target) {
         const existing = out.find((o) => o.id === target!.input.id)
-        if (existing) existing.label = String((Number(existing.label) || target.input.n) + it.n)
+        if (existing) {
+          existing.label = String((Number(existing.label) || target.input.n) + it.n)
+          if (target.input.n2 !== undefined || it.n2 !== undefined) {
+            existing.label2 = String((Number(existing.label2) || target.input.n2 || 0) + (it.n2 ?? 0))
+          }
+        }
         out.push({
           id: it.id,
           kind: it.kind,
@@ -242,6 +256,7 @@ export function layoutMarks(input: readonly MarkInput[], bounds: MapBounds): Lay
       tone: toneOf(it.side),
       rect: r,
       ...(it.label !== undefined ? { label: it.label } : {}),
+      ...(it.label2 !== undefined ? { label2: it.label2 } : {}),
       foe: it.foe ?? false,
       // Schritt 4: Anker-Linie nur wenn die Mitte den Versatz verlaesst (die Marke die Mitte nicht mehr deckt).
       ...(dx !== 0 || dy !== 0 ? { anchor: { x: it.ax, y: it.ay } } : {}),
