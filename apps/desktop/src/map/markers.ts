@@ -4,7 +4,7 @@ import { placeBuildings, type Anchor } from './anchors.ts'
 import { dominantUnitKey } from './stellung.ts'
 import { groupArmies, toneFor, groupBuildings } from './sammel.ts'
 import { layoutMarks, type MapBounds, type MarkInput, type LayoutResult } from './layoutMarks.ts'
-import { worldRawMarks, type WorldProvinceInfo, type WorldRawMark } from './welt.ts'
+import { clusterWorldMarks, worldRawMarks, type WorldProvinceInfo, type WorldRawMark } from './welt.ts'
 
 /**
  * What sits on top of the map (R-MAP-05, T-M10-03b).
@@ -577,22 +577,32 @@ function worldPillMarkers(
   return collideWorldMarks(projected, bounds, selectedProvinceId)
 }
 
+/** D21/AK15: Reichweite, innerhalb der `clusterWorldMarks` Rohmarken VOR dem Platzieren zusammenlegt. */
+const WORLD_MERGE_RADIUS = 72
+
 /**
- * D21: Zusammenlegen der Welt-Rohmarken (`worldRawMarks`) — `layoutMarks` mit `mergeRadius=72`
- * statt der 64 der Armeen/Gebaeude. `pri` 4/2 wiederverwendet die Vorrangstufen von Feind/eigener
- * Armee (R11, dokumentiertes Risiko). Icon nach dem Zusammenlegen bleibt das der ERSTEN Provinz
- * (Naeherung wie bei `collideMarks`: `pow` ist hier ebenfalls die Provinz-Herkunft, keine erneute
- * Symbolwahl ueber die zusammengelegte Gruppe — D19 waehlt das Symbol schon in `worldRawMarks`).
+ * D21/AK15 (Review-Runde 1 nachgebessert): Zusammenlegen der Welt-Rohmarken
+ * (`worldRawMarks`) in zwei Schritten. Schritt A (neu, `clusterWorldMarks`, welt.ts):
+ * macht-uebergreifendes Zusammenlegen gleicher Seite/Macht in `WORLD_MERGE_RADIUS` px,
+ * VOR dem Platzieren — ohne diesen Vorlauf blieb `layoutMarks`s eigener
+ * Zusammenlegen-Zweig (Schritt 5) bei realistischen Provinz-Abstaenden fast immer
+ * unerreicht, weil `WORLD_PILL_SEGMENT` (20-41 px) fast immer schon im Ring-Versatz einen
+ * freien Platz findet (Review-Befund, reproduziert). Schritt B (wie bisher): `layoutMarks`
+ * selbst mit `mergeRadius=WORLD_MERGE_RADIUS` als Notfall-Netz fuer den seltenen Fall, dass
+ * trotz Vorlauf kein Ring-Platz frei ist. `pri` 4/2 wiederverwendet die Vorrangstufen von
+ * Feind/eigener Armee (R11, dokumentiertes Risiko). Icon nach dem Zusammenlegen ist das der
+ * groessten Einzelsumme (D19-Muster, siehe `clusterWorldMarks`).
  */
 export function collideWorldMarks(
   raw: readonly WorldRawMark[],
   bounds: MapBounds,
   selectedProvinceId: string | null = null,
 ): Marker[] {
+  const clustered = clusterWorldMarks(raw, WORLD_MERGE_RADIUS)
   const hasBuilding = (mark: WorldRawMark): boolean => (mark.buildingSum ?? 0) > 0
   const hasArmy = (mark: WorldRawMark): boolean => (mark.armySum ?? 0) > 0
 
-  const inputs: MarkInput[] = raw.map((mark): MarkInput => {
+  const inputs: MarkInput[] = clustered.map((mark): MarkInput => {
     const segments = (hasBuilding(mark) ? 1 : 0) + (hasArmy(mark) ? 1 : 0)
     const width = segments * WORLD_PILL_SEGMENT.width + (segments === 2 ? 1 : 0)
     return {
@@ -612,13 +622,16 @@ export function collideWorldMarks(
     }
   })
 
-  const byId = new Map(raw.map((mark) => [mark.provinceId, mark]))
-  const { marks } = layoutMarks(inputs, bounds, 72)
+  const byId = new Map(clustered.map((mark) => [mark.provinceId, mark]))
+  const { marks } = layoutMarks(inputs, bounds, WORLD_MERGE_RADIUS)
   const out: Marker[] = []
   for (const placed of marks) {
     if (placed.merged) continue // Schritt 5: in eine andere Welt-Pille aufgegangen, nicht gezeichnet.
     const source = byId.get(placed.id)
     if (!source) continue
+    const isSelected =
+      selectedProvinceId !== null &&
+      (source.provinceId === selectedProvinceId || (source.memberProvinceIds?.includes(selectedProvinceId) ?? false))
     out.push({
       kind: 'worldPill',
       provinceId: source.provinceId,
@@ -630,7 +643,7 @@ export function collideWorldMarks(
       ...(placed.label !== undefined ? { buildingLabel: placed.label } : {}),
       ...(source.armyIcon ? { armyIcon: source.armyIcon } : {}),
       ...(placed.label2 !== undefined ? { armyLabel: placed.label2 } : {}),
-      ...(selectedProvinceId === source.provinceId ? { selected: true } : {}),
+      ...(isSelected ? { selected: true } : {}),
     })
   }
   return out

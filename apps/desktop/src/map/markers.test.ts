@@ -8,6 +8,7 @@ import {
   ARMY_HIT_BOX,
   ARMY_LIFT_Y,
   armyScreenPoint,
+  collideWorldMarks,
   declutter,
   BUILDING_BOX,
   BUILDING_MAX_SCALE,
@@ -22,6 +23,7 @@ import {
   pickArmy,
   type ArmyMarker,
 } from './markers.ts'
+import type { WorldRawMark } from './welt.ts'
 import { PLAYER_COLORS, contrastRatio, deltaE } from '../ui/tokens.ts'
 
 /**
@@ -813,5 +815,68 @@ describe('R-MAP-05/AK1 Stellung: Layout und Marsch', () => {
     expect(armyScreenPoint(ohne, centres, view, 15)).toEqual({ x: 200, y: 150 })
     expect(marchEnds(ohne, centres, view)).toEqual([{ x: 100, y: 100 }, { x: 300, y: 200 }])
     expect(armyScreenPoint(army('z', 'fehlt'), centres, view)).toBeNull()
+  })
+})
+
+/**
+ * collideWorldMarks mit dem Cluster-Vorlauf (AK15-Nachbesserung, Review-Runde 1).
+ *
+ * Reproduziert den Review-Befund: vor der Nachbesserung erreichte der Merge-Zweig von
+ * `layoutMarks` bei realistischen Box-Groessen (20-41 px) fast nie, weil der Ring-Versatz
+ * (12/20/28/36/44 px) schon bei > 40-50 px Abstand einen freien Platz fand. Hier liegen
+ * mehrere eigene Rohmarken derselben Macht deutlich unter 72 px auseinander (aber weiter
+ * als der Ring reicht) -- sie muessen jetzt zu EINER Welt-Pille zusammengelegt werden.
+ */
+describe('collideWorldMarks mit Cluster-Vorlauf (AK15-Nachbesserung)', () => {
+  const bounds = { x: -100_000, y: -100_000, width: 200_000, height: 200_000 }
+
+  it('5 eigene Rohmarken derselben Macht, je 15 px Abstand -> genau EINE Welt-Pille mit Summe', () => {
+    const raw: WorldRawMark[] = Array.from({ length: 5 }, (_, i) => ({
+      tone: 'own' as const,
+      provinceId: `p${i}`,
+      ownerId: 'macht1',
+      x: i * 15,
+      y: 0,
+      buildingSum: 2,
+    }))
+    const out = collideWorldMarks(raw, bounds, null)
+    const pills = out.filter((m) => m.kind === 'worldPill')
+    expect(pills).toHaveLength(1)
+    expect(pills[0]).toMatchObject({ ownerId: 'macht1', buildingLabel: '10' })
+  })
+
+  it('zwei Gruppen 80 px voneinander entfernt -> zwei Welt-Pillen (jeweils intern zusammengelegt)', () => {
+    const raw: WorldRawMark[] = [
+      { tone: 'own', provinceId: 'a1', ownerId: 'macht1', x: 0, y: 0, buildingSum: 3 },
+      { tone: 'own', provinceId: 'a2', ownerId: 'macht1', x: 10, y: 0, buildingSum: 4 },
+      { tone: 'own', provinceId: 'b1', ownerId: 'macht1', x: 90, y: 0, buildingSum: 5 },
+      { tone: 'own', provinceId: 'b2', ownerId: 'macht1', x: 100, y: 0, buildingSum: 6 },
+    ]
+    const out = collideWorldMarks(raw, bounds, null)
+    const pills = out.filter((m) => m.kind === 'worldPill')
+    expect(pills).toHaveLength(2)
+    const labels = pills.map((p) => p.buildingLabel).sort()
+    expect(labels).toEqual(['11', '7'])
+  })
+
+  it('selectedProvinceId trifft auch ein zusammengelegtes Nicht-Vertreter-Mitglied', () => {
+    const raw: WorldRawMark[] = [
+      { tone: 'own', provinceId: 'a1', ownerId: 'macht1', x: 0, y: 0, buildingSum: 3 },
+      { tone: 'own', provinceId: 'a2', ownerId: 'macht1', x: 10, y: 0, buildingSum: 4 },
+    ]
+    const out = collideWorldMarks(raw, bounds, 'a2')
+    const pills = out.filter((m) => m.kind === 'worldPill')
+    expect(pills).toHaveLength(1)
+    expect(pills[0]).toMatchObject({ selected: true })
+  })
+
+  it('unter sich weit entfernte Einzelmarken (>= 72 px) bleiben unveraendert, keine Zusammenlegung', () => {
+    const raw: WorldRawMark[] = [
+      { tone: 'own', provinceId: 'a', ownerId: 'macht1', x: 0, y: 0, buildingSum: 3 },
+      { tone: 'own', provinceId: 'b', ownerId: 'macht1', x: 500, y: 0, buildingSum: 4 },
+    ]
+    const out = collideWorldMarks(raw, bounds, null)
+    const pills = out.filter((m) => m.kind === 'worldPill')
+    expect(pills).toHaveLength(2)
   })
 })

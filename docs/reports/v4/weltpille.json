@@ -1,14 +1,14 @@
 {
-  "base": "a94d7c6f0ec25a4ac57860e5c04d6ca3f2001489",
+  "base": "4d8297b6b23ee4ef21d65e682ffd73238259310f",
   "viewer": "p6",
   "rohstand": {
     "eigen": 121,
     "feind": 5
   },
-  "zusammengelegt": 126,
+  "zusammengelegt": 38,
   "byOwner": {
-    "p8": 5,
-    "p6": 121
+    "p8": 3,
+    "p6": 35
   },
   "abweichungErwartung": {
     "eigen": {

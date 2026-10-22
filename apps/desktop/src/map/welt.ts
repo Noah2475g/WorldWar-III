@@ -39,6 +39,12 @@ export interface WorldRawMark {
   buildingIcon?: IconName
   armySum?: number
   armyIcon?: IconName
+  /**
+   * AK15-Nachbesserung (Review-Runde 1): nur auf einer zusammengelegten Marke gesetzt —
+   * die Provinzen, die `clusterWorldMarks` in diese eine Marke zusammengefasst hat
+   * (einschliesslich `provinceId` selbst). Fehlt auf unberuehrten Einzelmarken.
+   */
+  memberProvinceIds?: readonly string[]
 }
 
 /** D18: Summe `count` wie `sammel.ts:groupLabel`, sonst Mitgliederzahl (dieselbe Regel). */
@@ -145,6 +151,120 @@ export function worldRawMarks(
         ...(armyIconFor(provinceArmies) ? { armyIcon: armyIconFor(provinceArmies)! } : {}),
       })
     }
+  }
+  return out
+}
+
+/** Die groesste Einzelsumme einer Auswahl, fuer das Symbol nach dem Zusammenlegen (D19-Muster). */
+function biggestIcon(
+  members: readonly WorldRawMark[],
+  sumOf: (m: WorldRawMark) => number | undefined,
+  iconOf: (m: WorldRawMark) => IconName | undefined,
+): IconName | undefined {
+  let best: IconName | undefined
+  let bestSum = -Infinity
+  for (const m of members) {
+    const icon = iconOf(m)
+    if (icon === undefined) continue
+    const sum = sumOf(m) ?? 0
+    if (sum > bestSum) {
+      best = icon
+      bestSum = sum
+    }
+  }
+  return best
+}
+
+/**
+ * AK15-Nachbesserung (Review-Runde 1, Befund Abschnitt 6): echtes macht-uebergreifendes
+ * Zusammenlegen auf far, VOR dem Platzieren durch `layoutMarks`.
+ *
+ * `layoutMarks`s eigener Zusammenlegen-Zweig (Schritt 5) wird bei realistischen
+ * Provinz-Abstaenden praktisch nie erreicht: `WORLD_PILL_SEGMENT`/`BUILDING_GROUP_BOX`
+ * (20x20 bzw. 41x20 px) findet fast immer schon im Ring-Versatz (12/20/28, bei
+ * Armee/Feind zusaetzlich 36/44 px) einen kollisionsfreien Platz, sodass `mergeRadius`
+ * (64/72/0) fuer `collideWorldMarks` praktisch wirkungslos blieb (vom Reviewer am
+ * Produktionscode reproduziert).
+ *
+ * Dieser Vorlauf fasst Rohmarken VOR dem Platzieren zusammen: gleiche `tone` UND
+ * `ownerId`, Abstand < `radius` — Union-Find wie das Verkettungsmuster von
+ * `groupArmies`/`groupBuildings` (sammel.ts), nur ueber Distanz statt ueber einen festen
+ * Schluessel, und **verkettend** (A liegt < radius bei B, B < radius bei C -> alle drei
+ * eine Gruppe, auch wenn A und C selbst weiter als `radius` auseinanderliegen — wie ein
+ * Single-Linkage-Cluster). `buildingSum`/`armySum` werden aufsummiert (D18-Muster), Symbol
+ * je Segment ist das der groessten Einzelsumme (D19-Muster, `armyIconFor`-Analogon). Der
+ * Ankerpunkt der zusammengelegten Marke ist der Schwerpunkt (Mittel) der Mitglieder, die
+ * Kennung (`provinceId`/`ownerId`) die des ersten Mitglieds (Naeherung wie bei
+ * `layoutMarks`s eigenem Zusammenlegen: "Icon/Kennung der ersten Provinz").
+ *
+ * Isoliert in `welt.ts` — `layoutMarks.ts`-Kernschleife (Mid/Near/E1/E2) bleibt
+ * unberuehrt, nur `collideWorldMarks` (markers.ts) ruft diese Funktion vor dem Bau der
+ * `MarkInput`-Liste auf.
+ */
+export function clusterWorldMarks(marks: readonly WorldRawMark[], radius: number): WorldRawMark[] {
+  const n = marks.length
+  const parent = Array.from({ length: n }, (_, i) => i)
+  const find = (i: number): number => {
+    while (parent[i] !== i) i = parent[i]!
+    return i
+  }
+
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      const a = marks[i]!
+      const b = marks[j]!
+      if (a.tone !== b.tone || a.ownerId !== b.ownerId) continue
+      if (Math.hypot(a.x - b.x, a.y - b.y) >= radius) continue
+      const ra = find(i)
+      const rb = find(j)
+      if (ra !== rb) parent[ra] = rb
+    }
+  }
+
+  const groups = new Map<number, number[]>()
+  for (let i = 0; i < n; i++) {
+    const root = find(i)
+    const list = groups.get(root)
+    if (list) list.push(i)
+    else groups.set(root, [i])
+  }
+
+  const out: WorldRawMark[] = []
+  for (const indices of groups.values()) {
+    const first = marks[indices[0]!]!
+    if (indices.length < 2) {
+      out.push(first)
+      continue
+    }
+    const members = indices.map((i) => marks[i]!)
+    const buildingSum = members.reduce((sum, m) => sum + (m.buildingSum ?? 0), 0)
+    const armySum = members.reduce((sum, m) => sum + (m.armySum ?? 0), 0)
+    const x = members.reduce((sum, m) => sum + m.x, 0) / members.length
+    const y = members.reduce((sum, m) => sum + m.y, 0) / members.length
+    out.push({
+      tone: first.tone,
+      provinceId: first.provinceId,
+      ownerId: first.ownerId,
+      x,
+      y,
+      memberProvinceIds: members.map((m) => m.provinceId),
+      ...(buildingSum > 0
+        ? {
+            buildingSum,
+            ...(biggestIcon(members, (m) => m.buildingSum, (m) => m.buildingIcon)
+              ? { buildingIcon: biggestIcon(members, (m) => m.buildingSum, (m) => m.buildingIcon)! }
+              : {}),
+          }
+        : {}),
+      ...(armySum > 0
+        ? {
+            armySum,
+            ...(biggestIcon(members, (m) => m.armySum, (m) => m.armyIcon)
+              ? { armyIcon: biggestIcon(members, (m) => m.armySum, (m) => m.armyIcon)! }
+              : {}),
+          }
+        : {}),
+    })
   }
   return out
 }
