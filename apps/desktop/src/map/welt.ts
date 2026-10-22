@@ -187,15 +187,32 @@ function biggestIcon(
  * Produktionscode reproduziert).
  *
  * Dieser Vorlauf fasst Rohmarken VOR dem Platzieren zusammen: gleiche `tone` UND
- * `ownerId`, Abstand < `radius` — Union-Find wie das Verkettungsmuster von
- * `groupArmies`/`groupBuildings` (sammel.ts), nur ueber Distanz statt ueber einen festen
- * Schluessel, und **verkettend** (A liegt < radius bei B, B < radius bei C -> alle drei
- * eine Gruppe, auch wenn A und C selbst weiter als `radius` auseinanderliegen — wie ein
- * Single-Linkage-Cluster). `buildingSum`/`armySum` werden aufsummiert (D18-Muster), Symbol
- * je Segment ist das der groessten Einzelsumme (D19-Muster, `armyIconFor`-Analogon). Der
- * Ankerpunkt der zusammengelegten Marke ist der Schwerpunkt (Mittel) der Mitglieder, die
- * Kennung (`provinceId`/`ownerId`) die des ersten Mitglieds (Naeherung wie bei
- * `layoutMarks`s eigenem Zusammenlegen: "Icon/Kennung der ersten Provinz").
+ * `ownerId`, Abstand < `radius`. `buildingSum`/`armySum` werden aufsummiert
+ * (D18-Muster), Symbol je Segment ist das der groessten Einzelsumme (D19-Muster,
+ * `armyIconFor`-Analogon). Der Ankerpunkt der zusammengelegten Marke ist der Schwerpunkt
+ * (Mittel) der Mitglieder, die Kennung (`provinceId`/`ownerId`) die des ersten Mitglieds
+ * (Naeherung wie bei `layoutMarks`s eigenem Zusammenlegen: "Icon/Kennung der ersten
+ * Provinz").
+ *
+ * AK15-Nachbesserung (Review-Runde 2, Befund "Zentraler Mangel"): die urspruengliche
+ * Variante (Runde 1) nutzte Union-Find mit Single-Linkage-Verkettung ("A < radius bei B,
+ * B < radius bei C -> eine Gruppe, auch wenn A und C selbst >= radius auseinanderliegen").
+ * Das erzeugt auf echten Kartendaten mit dicht aneinandergereihten Provinzzentren einen
+ * unbegrenzten "chaining effect": eine durchgehende Nachbarschaftskette zieht beliebig
+ * weit entfernte Punkte in EINE Gruppe (am S575-Spielstand kollabierte so die gesamte
+ * West-Afrika-bis-Zentralasien-Landmasse auf eine Marke statt mehrerer, vgl. Bild 5).
+ *
+ * Runde 2 ersetzt das durch eine **Complete-Linkage-Variante** (gewaehlte Option von den
+ * drei im Review vorgeschlagenen, siehe R11-Risikoabschnitt im Bericht): ein Punkt wird
+ * einer bestehenden Gruppe nur dann zugeschlagen, wenn er zu JEDEM bereits vorhandenen
+ * Mitglied dieser Gruppe < `radius` liegt (nicht nur zum naechsten einzelnen Punkt wie bei
+ * Single-Linkage). Dadurch bleibt der maximale paarweise Abstand innerhalb einer Gruppe per
+ * Konstruktion immer < `radius` — die Gruppen-Ausdehnung ist begrenzt, eine Kettenreaktion
+ * ueber mehrere Gruppenlaengen hinweg ist ausgeschlossen. Passt ein Punkt zu mehreren
+ * bestehenden Gruppen, wird die mit dem naechsten Mitglied gewaehlt (deterministisch,
+ * reihenfolgeabhaengig wie ein Greedy-Verfahren — fuer die Welt-Pille ausreichend, da nur
+ * die Anzahl/Groesse der resultierenden Pillen zaehlt, nicht ein global optimales
+ * Clustering).
  *
  * Isoliert in `welt.ts` — `layoutMarks.ts`-Kernschleife (Mid/Near/E1/E2) bleibt
  * unberuehrt, nur `collideWorldMarks` (markers.ts) ruft diese Funktion vor dem Bau der
@@ -203,34 +220,37 @@ function biggestIcon(
  */
 export function clusterWorldMarks(marks: readonly WorldRawMark[], radius: number): WorldRawMark[] {
   const n = marks.length
-  const parent = Array.from({ length: n }, (_, i) => i)
-  const find = (i: number): number => {
-    while (parent[i] !== i) i = parent[i]!
-    return i
-  }
+  const groups: number[][] = []
 
   for (let i = 0; i < n; i++) {
-    for (let j = i + 1; j < n; j++) {
-      const a = marks[i]!
-      const b = marks[j]!
-      if (a.tone !== b.tone || a.ownerId !== b.ownerId) continue
-      if (Math.hypot(a.x - b.x, a.y - b.y) >= radius) continue
-      const ra = find(i)
-      const rb = find(j)
-      if (ra !== rb) parent[ra] = rb
+    const m = marks[i]!
+    let bestGroup: number[] | undefined
+    let bestDist = Infinity
+    for (const group of groups) {
+      const first = marks[group[0]!]!
+      if (first.tone !== m.tone || first.ownerId !== m.ownerId) continue
+      let fits = true
+      let minDist = Infinity
+      for (const idx of group) {
+        const other = marks[idx]!
+        const d = Math.hypot(other.x - m.x, other.y - m.y)
+        if (d >= radius) {
+          fits = false
+          break
+        }
+        if (d < minDist) minDist = d
+      }
+      if (fits && minDist < bestDist) {
+        bestDist = minDist
+        bestGroup = group
+      }
     }
-  }
-
-  const groups = new Map<number, number[]>()
-  for (let i = 0; i < n; i++) {
-    const root = find(i)
-    const list = groups.get(root)
-    if (list) list.push(i)
-    else groups.set(root, [i])
+    if (bestGroup) bestGroup.push(i)
+    else groups.push([i])
   }
 
   const out: WorldRawMark[] = []
-  for (const indices of groups.values()) {
+  for (const indices of groups) {
     const first = marks[indices[0]!]!
     if (indices.length < 2) {
       out.push(first)

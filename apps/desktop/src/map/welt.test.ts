@@ -117,12 +117,36 @@ describe('clusterWorldMarks (AK15-Nachbesserung, Review-Runde 1)', () => {
     expect(out).toHaveLength(2)
   })
 
-  it('verkettet transitiv: a-b < 72, b-c < 72, a-c >= 72 -> trotzdem eine Gruppe', () => {
+  it('Runde 2 AK15: verkettet NICHT mehr transitiv: a-b < 72, b-c < 72, a-c >= 72 -> zwei Gruppen (kein Single-Linkage-Chaining)', () => {
     const marks = [own('a', 0, 0), own('b', 50, 0), own('c', 100, 0)]
     const out = clusterWorldMarks(marks, 72)
-    expect(out).toHaveLength(1)
-    expect(out[0]!.memberProvinceIds).toEqual(['a', 'b', 'c'])
-    expect(out[0]!.buildingSum).toBe(15)
+    // a-c = 100 >= 72, duerfen NICHT in derselben Gruppe landen (Complete-Linkage-Obergrenze).
+    expect(out).toHaveLength(2)
+    const grouped = out.find((m) => m.memberProvinceIds !== undefined)
+    const single = out.find((m) => m.memberProvinceIds === undefined)
+    expect(grouped!.memberProvinceIds).toEqual(['a', 'b'])
+    expect(grouped!.buildingSum).toBe(10)
+    expect(single!.provinceId).toBe('c')
+    expect(single!.buildingSum).toBe(5)
+  })
+
+  it('Runde 2 AK15: lange Kette a-b-c-d-e (je < 72 px benachbart, a-e weit auseinander) zerfaellt in mehrere Gruppen, nicht eine Monster-Gruppe', () => {
+    const marks = [own('a', 0, 0), own('b', 50, 0), own('c', 100, 0), own('d', 150, 0), own('e', 200, 0)]
+    const out = clusterWorldMarks(marks, 72)
+    // a-e = 200 px >= 72: duerften unter keinen Umstaenden in derselben Gruppe landen.
+    expect(out.length).toBeGreaterThan(1)
+    const groupOfA = out.find((m) => m.provinceId === 'a' || m.memberProvinceIds?.includes('a'))!
+    const groupOfE = out.find((m) => m.provinceId === 'e' || m.memberProvinceIds?.includes('e'))!
+    expect(groupOfA).not.toBe(groupOfE)
+    expect(groupOfA.memberProvinceIds?.includes('e')).toBeFalsy()
+    expect(groupOfE.memberProvinceIds?.includes('a')).toBeFalsy()
+    // Jede resultierende Gruppe muss paarweise < 72 px Ausdehnung haben (Obergrenze eingehalten).
+    for (const m of out) {
+      if (m.memberProvinceIds) {
+        const xs = m.memberProvinceIds.map((id) => marks.find((mk) => mk.provinceId === id)!.x)
+        expect(Math.max(...xs) - Math.min(...xs)).toBeLessThan(72)
+      }
+    }
   })
 
   it('verschiedene Macht (ownerId) in Reichweite -> NICHT zusammengelegt', () => {
