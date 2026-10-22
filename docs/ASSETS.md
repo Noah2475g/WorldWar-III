@@ -850,6 +850,10 @@ nur 1280x800 und 375x667 (PLAN-V3 Regel 12). Kein Fremdinhalt: Bildschirmfotos d
 | `docs/ux/v4-zoomcluster/mid-vorher.png` | `scripts/zoom-shot.mjs` | T-M51-04: Stand S575G, SAU, Uebersichtskarte (mid, scale 1.6) ohne Gebaeude-Sammelmarke, 1280x800 |
 | `docs/ux/v4-zoomcluster/mid-nachher.png` | `scripts/zoom-shot.mjs` | T-M51-04: Stand S575G, SAU, Uebersichtskarte (mid, scale 1.6) mit Gebaeude-Sammelmarke, 1280x800 |
 | `docs/ux/v4-zoomcluster/nah-nachher.png` | `scripts/zoom-shot.mjs` | T-M51-04: Stand S575G, SAU, near (scale 0.97), gebuendelte nummerierte Marken, 1280x800 |
+| `docs/ux/v4-zoomcluster/teilen-000.png` | `scripts/v4-zoomcluster-bild.mjs --film` | T-M<n>-06: Stufenwechsel mid->near (Teilen), t=0 (Klickmoment), 1280x800 |
+| `docs/ux/v4-zoomcluster/teilen-100.png` | `scripts/v4-zoomcluster-bild.mjs --film` | T-M<n>-06: Stufenwechsel mid->near (Teilen), > 588 ms spaeter (Zielbild), 1280x800 |
+| `docs/ux/v4-zoomcluster/buendeln-000.png` | `scripts/v4-zoomcluster-bild.mjs --film` | T-M<n>-06: Stufenwechsel near->mid (Buendeln), t=0 (Klickmoment), 1280x800 |
+| `docs/ux/v4-zoomcluster/buendeln-100.png` | `scripts/v4-zoomcluster-bild.mjs --film` | T-M<n>-06: Stufenwechsel near->mid (Buendeln), > 280 ms spaeter (Zielbild), 1280x800 |
 | `docs/ux/v4-stellung/marsch-vorher.png` | `scripts/v4-stellung-bild.mjs` | T-M48-04: eine Spielstunde Marsch, ohne Stellung, 1280x800 |
 | `docs/ux/v4-stellung/marsch-nachher.png` | `scripts/v4-stellung-bild.mjs` | T-M48-04: eine Spielstunde Marsch, mit Stellung, 1280x800 |
 | `docs/ux/v4-seitenleiste/b0/S575G-basis-diplomatie-1280x800.png` | `scripts/ux-capture.mjs` | Seitenleiste v3b B0: Basisaufnahme, S575G-basis-diplomatie-1280x800.png |

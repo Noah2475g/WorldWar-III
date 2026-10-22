@@ -83,3 +83,62 @@ Haupt-Kennzahl des Berichts (Fenster 900×548, Zoomstufe mid/1,6): vor der Grupp
 - AK7 (verify + PR) ist nicht Teil dieser Karte und noch offen — folgt in E1d Schritt 5/6.
 - AK3-Zahlen weichen vom ursprünglichen Plan-Wert ab (bereits per Mentor geklärt, s. o.).
 - Ring-Darstellung bei ausgewählter Provinz (Teil D6) ist im aktuellen Screenshot nicht sichtbar, da keine Provinz ausgewählt war.
+
+---
+
+# Zoom-Cluster E2 — Bericht (Uebergang Teilen/Buendeln, T-M<n>-05/06)
+
+Stand: 2026-10-21 · Vorlage: `tween.ts` (E2a, pure Funktion) + Einbau in `MapCanvas.tsx` (E2b, dieser Teil).
+
+## 10. Ziel E2
+
+Beim Wechsel der Zoomstufe (mid <-> near) teilen sich Sammelmarken sanft auf bzw.
+buendeln sich wieder, statt hart umzuspringen — sofern Bewegung erlaubt ist (R-D6:
+Reduced Motion oder Tempo > 10 bleibt hart). Belegt mit Filmstreifen-Bildern neben
+Storyboard A (`t_59b43d6e/final-v3b-9-storyboard.png`).
+
+## 11. Bilder (selbst angesehen)
+
+| Datei | Moment | Beschreibung |
+|---|---|---|
+| `docs/ux/v4-zoomcluster/teilen-000.png` | Klick auf „Nah" (mid -> near), t=0 | Zoom gerade ausgeloest; Tween startet. |
+| `docs/ux/v4-zoomcluster/teilen-100.png` | > 588 ms spaeter | Zielbild: einzelne Armee-Kaesten, Tween fertig. |
+| `docs/ux/v4-zoomcluster/buendeln-000.png` | Klick auf „Region" (near -> mid), t=0 | Tween startet, Kaesten beginnen zur Gruppe zu fliegen. |
+| `docs/ux/v4-zoomcluster/buendeln-100.png` | > 280 ms spaeter | Zielbild: eine Sammelmarke. |
+
+Da `page.clock.install()`/`runFor()` die Animation NICHT bewegt (sie haengt an
+`requestAnimationFrame`, nicht an der virtuellen Seitenuhr — Playwright-Dokumentation,
+Risiko R8), sind nur die beiden Randbilder (000/100) echt, keine Zwischenbilder 035/070
+wie urspruenglich im Skript-Kommentar vorgesehen. A11-Ergebnis: **page.clock faelscht
+rAF: nein** — AK8 (Timing 420/280/120 ms, Versatz) traegt die Unit-Suite
+(`tween.test.ts`), nicht der Filmstreifen.
+
+## 12. Abnahmekriterien AK8–AK11
+
+| AK | Beschreibung | Status | Beleg |
+|---|---|---|---|
+| AK8 | Teilen 420 ms Feder + Versatz <= 588 ms, Buendeln 280 ms, ohne Partner 120 ms | ✅ | `tween.test.ts` (E2a, unveraendert gruen), `MapCanvas.test.tsx` Tests (a)/(b)/(d) |
+| AK9 | Reduced Motion / Tempo > 10 -> harter Wechsel, keine rAF-Schleife | ✅ | `MapCanvas.test.tsx` Test (a): `requestAnimationFrame` nicht aufgerufen |
+| AK10 | Klick waehrend des Tweens trifft Ziel-Anordnung; Rueckwechsel ohne Sprung | ✅ | `MapCanvas.test.tsx` Test (c); `lastDrawnRef`-Schnappschuss deckt den Rueckwechsel (Code, `tween.test.ts` AK8 h-Fall aus E2a) |
+| AK11 | Filmstreifen angesehen, verify Exit 0, Gegenprobe rot, PR offen | ✅/⏳ | Bilder siehe §11; Logs `e2b-verify.log`, `e2b-verify-nach-commit.log`, `e2b-gegenprobe-motion.log`; PR-Status siehe Kanban-Meldung |
+
+## 13. Render-Bench vorher/nachher (Info, R7)
+
+Last beim Messen (Pi, `free -h`): MemAvailable ~5,2-5,9 GB, kein paralleler
+`pnpm verify`/`test:slow` eines anderen Workers.
+
+- Vorher (Stand ohne E2b-Einbau, `git stash` auf `MapCanvas.tsx`): 95. Perzentil
+  **22,00 ms** (Budget-Test `haelt das Budget auch im teuersten Modus` ROT, 22,00 > 16,7 ms —
+  auf dem Pi ohnehin grenzwertig, nicht E2b-bedingt).
+- Nachher (mit E2b-Einbau): alle 9 Bench-Tests GRUEN (Budget eingehalten). Der
+  Zoom-Cluster-Uebergang selbst kostet in diesem Lauf keine messbare zusaetzliche Zeit je
+  Bild — er zeichnet nur waehrend eines Stufenwechsels, nicht im Dauerbetrieb.
+
+## 14. Last-Werte beim Messlauf (Maschinen-Regel, Pi-Fassung)
+
+- Vor jedem `pnpm vitest`/Bild-Lauf: `free -h` geprueft, MemAvailable > 4 GB; `ps aux`
+  auf parallele `pnpm verify`/`test:slow` anderer Worker geprueft (einmal musste 5 min
+  gewartet werden, siehe Kommentarverlauf).
+- Dev-Server eigens auf Port 5371 (`--strictPort`, D13), danach per PID beendet.
+- Chromium (Playwright) lief nur waehrend des Bild-Skripts, danach geschlossen
+  (`await browser.close()` im Skript selbst).
